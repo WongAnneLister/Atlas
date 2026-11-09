@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import math
 import os
+from datetime import date
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 
@@ -101,10 +103,46 @@ class MilvusSettings(BaseModel):
     collection: str
 
 
+class SeedProduct(BaseModel):
+    product_id: str = Field(min_length=1)
+    model: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    category: str = Field(min_length=1)
+
+
 class OrdersSettings(BaseModel):
     db_path: str
     seed: int
-    n_orders: int
+    n_orders: int = Field(gt=0)
+    n_customers: int = Field(gt=0)
+    today: date
+    currency: str = Field(pattern=r"^[A-Z]{3}$")
+    recent_limit: int = Field(gt=0)
+    min_items: int = Field(gt=0)
+    max_items: int = Field(gt=0)
+    max_quantity: int = Field(gt=0)
+    min_unit_price_cents: int = Field(gt=0)
+    max_unit_price_cents: int = Field(gt=0)
+    max_order_age_days: int = Field(gt=0)
+    delivery_ages_days: list[int] = Field(min_length=1)
+    shipping_lead_days: int = Field(gt=0)
+    transit_age_days: int = Field(gt=0)
+    tracking_delay_days: int = Field(gt=0)
+    coupon_probability: float = Field(ge=0, le=1)
+    final_sale_probability: float = Field(ge=0, le=1)
+    coupon_code: str = Field(min_length=1)
+    coupon_discount: Decimal = Field(ge=0, lt=1)
+    fallback_products: list[SeedProduct] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _valid_seed_ranges(self) -> OrdersSettings:
+        if self.min_items > self.max_items:
+            raise ValueError("orders.min_items exceeds max_items")
+        if self.min_unit_price_cents > self.max_unit_price_cents:
+            raise ValueError("orders.min_unit_price_cents exceeds max_unit_price_cents")
+        if any(age < 0 for age in self.delivery_ages_days):
+            raise ValueError("orders.delivery_ages_days must be nonnegative")
+        return self
 
 
 class MemorySettings(BaseModel):

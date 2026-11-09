@@ -4,7 +4,8 @@
 UV ?= uv
 RUN := $(UV) run
 
-.PHONY: setup up down data data-download data-licenses data-docs data-validate-docs eval-docs \
+.PHONY: setup up down data data-download data-licenses data-docs data-validate-docs data-orders \
+        eval-docs eval-orders \
         ingest eval-retrieval eval-intent eval-e2e sweep serve \
         lint format typecheck test check notes-check notes
 
@@ -22,8 +23,8 @@ up:
 down:
 	docker compose down
 
-# Commit 04 appends order seeding.
 data: data-download data-licenses data-docs
+	$(MAKE) data-orders
 
 data-download:
 	$(RUN) python -m support_agent.data.download
@@ -41,6 +42,13 @@ data-validate-docs:
 
 eval-docs:
 	$(RUN) python eval/docs_build.py
+
+data-orders:
+	$(RUN) python -m support_agent.orders.seed
+	$(RUN) python eval/orders_seed.py
+
+eval-orders:
+	$(RUN) python eval/orders_seed.py
 
 ingest:
 	$(call todo,06)

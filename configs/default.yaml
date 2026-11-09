@@ -94,6 +94,29 @@ orders:
   db_path: data/orders.sqlite
   seed: 42
   n_orders: 300
+  n_customers: 50
+  today: '2026-11-09'
+  currency: USD
+  recent_limit: 5
+  min_items: 1
+  max_items: 4
+  max_quantity: 3
+  min_unit_price_cents: 1500
+  max_unit_price_cents: 50000
+  max_order_age_days: 120
+  delivery_ages_days: [5, 29, 31, 90]
+  shipping_lead_days: 3
+  transit_age_days: 7
+  tracking_delay_days: 10
+  coupon_probability: 0.25
+  final_sale_probability: 0.10
+  coupon_code: DEMO10
+  coupon_discount: 0.10
+  fallback_products:
+    - {product_id: demo-w40, model: W40, name: Demo W40 Fan, category: home}
+    - {product_id: demo-w40-pro, model: W40 Pro, name: Demo W40 Pro Fan, category: home}
+    - {product_id: demo-w400, model: W400, name: Demo W400 Headphones, category: electronics}
+    - {product_id: demo-shirt, model: T100, name: Demo T100 Shirt, category: clothing}
 
 memory:                    # P1 placeholders
   recent_turns: 6
