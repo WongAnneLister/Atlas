@@ -35,6 +35,7 @@ class MilvusStore:
 
         self.settings = settings
         self.config = settings.milvus
+        self._chunk_snapshot: dict[str, Chunk] | None = None
         self.client: Any = (
             client
             if client is not None
@@ -46,6 +47,48 @@ class MilvusStore:
 
     def server_version(self) -> str:
         return str(self.client.get_server_version(timeout=self.config.timeout_s))
+
+    @property
+    def collection(self) -> str:
+        return self.config.collection
+
+    def exists(self) -> bool:
+        return bool(self.client.has_collection(collection_name=self.config.collection))
+
+    def collection_identity(self) -> str:
+        info = self.client.describe_collection(
+            collection_name=self.config.collection, timeout=self.config.timeout_s
+        )
+        if info.get("description") != DESCRIPTION:
+            raise ValueError("Expected a support-agent collection")
+        return str(info["collection_id"])
+
+    def read_chunks(self) -> list[Chunk]:
+        count = self.count()
+        if not count:
+            return []
+        reader = self.client.query_iterator(
+            collection_name=self.config.collection,
+            filter="",
+            batch_size=self.config.query_batch_size,
+            output_fields=list(Chunk.model_fields),
+            consistency_level="Strong",
+            timeout=self.config.timeout_s,
+        )
+        chunks: list[Chunk] = []
+        try:
+            while rows := reader.next():
+                chunks.extend(Chunk.model_validate(row) for row in rows)
+        finally:
+            reader.close()
+        if len(chunks) != count or len({chunk.chunk_id for chunk in chunks}) != count:
+            raise ValueError("Incomplete collection snapshot")
+        return chunks
+
+    def use_chunk_snapshot(self, chunks: list[Chunk]) -> None:
+        if not chunks or len({chunk.chunk_id for chunk in chunks}) != len(chunks):
+            raise ValueError("Need a nonempty unique chunk snapshot")
+        self._chunk_snapshot = {chunk.chunk_id: chunk.model_copy(deep=True) for chunk in chunks}
 
     def _assert_owned(self) -> None:
         description = self.client.describe_collection(
@@ -189,19 +232,23 @@ class MilvusStore:
             anns_field=field,
             limit=limit,
             search_params={"metric_type": metric, "params": params},
-            output_fields=[
-                "chunk_id",
-                "doc_id",
-                "section_id",
-                "title",
-                "heading_path",
-                "text",
-                "n_tokens",
-            ],
+            output_fields=["chunk_id"]
+            if self._chunk_snapshot is not None
+            else list(Chunk.model_fields),
             consistency_level="Strong",
             timeout=self.config.timeout_s,
         )
-        return [SearchHit(**hit["entity"], score=float(hit["distance"])) for hit in response[0]]
+        results: list[SearchHit] = []
+        for hit in response[0]:
+            if self._chunk_snapshot is None:
+                fields = hit["entity"]
+            else:
+                chunk_id = str(hit["entity"]["chunk_id"])
+                if chunk_id not in self._chunk_snapshot:
+                    raise ValueError("Search result is absent from the verified chunk snapshot")
+                fields = self._chunk_snapshot[chunk_id].model_dump()
+            results.append(SearchHit(**fields, score=float(hit["distance"])))
+        return results
 
     def search_dense(self, vector: list[float], limit: int | None = None) -> list[SearchHit]:
         return self._search(

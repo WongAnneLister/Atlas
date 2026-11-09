@@ -52,3 +52,9 @@ def test_invalid_retrieval_limits_rejected(
     monkeypatch.setenv(f"SUPPORT_AGENT__RETRIEVAL__{key.upper()}", str(value))
     with pytest.raises(ValidationError, match=key):
         get_settings()
+
+
+def test_retrieval_eval_requires_prd_cutoffs(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SUPPORT_AGENT__RETRIEVAL_EVAL__METRIC_KS", "[1,3]")
+    with pytest.raises(ValidationError, match="metric_ks"):
+        get_settings()

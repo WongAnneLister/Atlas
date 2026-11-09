@@ -46,6 +46,12 @@ def test_dense_and_bm25_roundtrip_in_temporary_collection() -> None:
         assert lexical[0].section_id == chunks[1].section_id
         assert lexical[0].title == chunks[1].title
         assert lexical[0].n_tokens == chunks[1].n_tokens
+        assert sorted(store.read_chunks(), key=lambda c: c.chunk_id) == sorted(
+            chunks, key=lambda c: c.chunk_id
+        )
+        store.use_chunk_snapshot(chunks)
+        hydrated = store.search_bm25("violet", limit=len(texts))
+        assert hydrated == lexical
         retriever = build_retriever(
             "hybrid",
             settings=settings,

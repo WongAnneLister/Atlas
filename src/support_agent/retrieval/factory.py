@@ -8,6 +8,7 @@ from support_agent.retrieval.dense import DenseRetriever
 from support_agent.retrieval.embed import BgeM3Embedder, Embedder
 from support_agent.retrieval.hybrid import HybridRetriever
 from support_agent.retrieval.milvus_store import MilvusStore, SearchStore
+from support_agent.retrieval.rerank import BgeReranker, Reranker, RerankingRetriever
 from support_agent.retrieval.types import Retriever
 
 RetrievalMode = Literal["dense", "bm25", "hybrid", "hybrid_rerank"]
@@ -19,10 +20,9 @@ def build_retriever(
     settings: Settings | None = None,
     store: SearchStore | None = None,
     embedder: Embedder | None = None,
+    reranker: Reranker | None = None,
 ) -> Retriever:
-    if mode == "hybrid_rerank":
-        raise NotImplementedError("hybrid_rerank is introduced in commit 08")
-    if mode not in ("dense", "bm25", "hybrid"):
+    if mode not in ("dense", "bm25", "hybrid", "hybrid_rerank"):
         raise ValueError(f"Unknown retrieval mode: {mode}")
     settings = settings or get_settings()
     store = store if store is not None else MilvusStore(settings)
@@ -33,4 +33,12 @@ def build_retriever(
     )
     if mode == "dense":
         return dense
-    return HybridRetriever(dense, Bm25Retriever(store, settings.retrieval), settings.retrieval)
+    hybrid = HybridRetriever(dense, Bm25Retriever(store, settings.retrieval), settings.retrieval)
+    if mode == "hybrid":
+        return hybrid
+    return RerankingRetriever(
+        hybrid,
+        reranker if reranker is not None else BgeReranker(settings.retrieval),
+        settings.retrieval.rerank_candidates_k,
+        settings.retrieval.rerank_top_k,
+    )

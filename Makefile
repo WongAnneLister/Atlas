@@ -4,6 +4,8 @@
 UV ?= uv
 RUN := $(UV) run
 MODE ?= hybrid
+SPLIT ?= test
+EVAL_RETRIEVAL_ARGS ?=
 export Q
 COMPOSE_PYTHON ?= $(RUN) python
 
@@ -11,7 +13,8 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-docs eval-orders \
         eval-build eval-validate eval-review eval-review-import eval-set-report \
         ingest ingest-chunks embedding-cache eval-ingest test-milvus eval-retrieval eval-intent eval-e2e sweep serve \
-        lint format typecheck test check notes-check notes minio-image-local search
+        lint format typecheck test check notes-check notes minio-image-local search reranker-cache \
+        eval-retrieval-index eval-failures
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -86,6 +89,12 @@ ingest-chunks:
 embedding-cache:
 	$(RUN) python -m support_agent.retrieval.embed
 
+reranker-cache:
+	$(RUN) python -m support_agent.retrieval.rerank
+
+eval-retrieval-index:
+	$(RUN) python -m eval.retrieval_index
+
 eval-ingest:
 	$(RUN) python -m eval.ingestion
 
@@ -93,7 +102,12 @@ test-milvus:
 	$(RUN) pytest -m integration tests/test_milvus_integration.py --junitxml=data/processed/milvus_integration.xml
 
 eval-retrieval:
-	$(call todo,08)
+	$(RUN) python -m eval.retrieval_eval --split "$(SPLIT)" $(EVAL_RETRIEVAL_ARGS)
+
+eval-failures: MODE = hybrid_rerank
+eval-failures: SPLIT = dev
+eval-failures:
+	$(RUN) python -m eval.failures --mode "$(MODE)" --split "$(SPLIT)"
 
 search:
 	$(RUN) python scripts/search.py --mode "$(MODE)"
@@ -115,8 +129,8 @@ lint:
 	$(RUN) ruff format --check .
 
 format:
-	$(RUN) ruff check --fix .
 	$(RUN) ruff format .
+	$(RUN) ruff check --fix .
 
 typecheck:
 	$(RUN) mypy

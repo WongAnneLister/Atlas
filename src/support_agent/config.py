@@ -73,17 +73,45 @@ class RetrievalSettings(BaseModel):
     embedding_max_tokens: int = Field(gt=2)
     embedding_window_tokens: int = Field(gt=2)
     reranker_model: str
+    reranker_revision: str
+    reranker_cache_dir: str
+    reranker_device: str
+    reranker_use_fp16: bool
+    reranker_batch_size: int = Field(gt=0)
+    reranker_max_tokens: int = Field(gt=0)
+    reranker_cpu_threads: int = Field(gt=0)
+    rerank_candidates_k: int = Field(gt=0)
     dense_top_k: int = Field(gt=0)
     bm25_top_k: int = Field(gt=0)
     search_top_k: int = Field(gt=0)
     bm25_normalise_model_numbers: bool
     rrf_k: int = Field(ge=0)
-    rerank_top_k: int
+    rerank_top_k: int = Field(gt=0)
 
     @model_validator(mode="after")
     def _valid_embedding_window(self) -> RetrievalSettings:
         if self.embedding_window_tokens > self.embedding_max_tokens:
             raise ValueError("embedding_window_tokens exceeds model context limit")
+        if self.rerank_top_k > self.rerank_candidates_k:
+            raise ValueError("rerank_top_k exceeds rerank_candidates_k")
+        return self
+
+
+class RetrievalEvalSettings(BaseModel):
+    metric_ks: list[int]
+    target_recall_at_5: float = Field(ge=0, le=1)
+    cache_dir: str
+    heading_ablation_collection: str
+    baseline_collection: str
+    run_ablations: bool
+    local_chunk_text: bool
+
+    @model_validator(mode="after")
+    def _positive_cutoffs(self) -> RetrievalEvalSettings:
+        if not {1, 3, 5}.issubset(self.metric_ks) or any(k <= 0 for k in self.metric_ks):
+            raise ValueError("metric_ks must include the positive PRD cutoffs 1, 3 and 5")
+        if self.baseline_collection == self.heading_ablation_collection:
+            raise ValueError("Experiment collections must be distinct")
         return self
 
 
@@ -156,6 +184,7 @@ class MilvusSettings(BaseModel):
     collection: str
     timeout_s: float = Field(gt=0)
     upsert_batch_size: int = Field(gt=0)
+    query_batch_size: int = Field(gt=0)
     id_max_bytes: int = Field(gt=0)
     section_max_bytes: int = Field(gt=0)
     heading_max_bytes: int = Field(gt=0)
@@ -235,6 +264,7 @@ class Settings(BaseSettings):
     data: DataSettings
     llm: LLMSettings
     retrieval: RetrievalSettings
+    retrieval_eval: RetrievalEvalSettings
     chunk: ChunkSettings
     gate: GateSettings
     agent: AgentSettings

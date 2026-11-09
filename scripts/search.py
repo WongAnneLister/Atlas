@@ -25,8 +25,6 @@ def main(argv: list[str] | None = None) -> int:
     logging.getLogger("httpx").setLevel(logging.WARNING)
     store: MilvusStore | None = None
     try:
-        if args.mode == "hybrid_rerank":
-            build_retriever(args.mode)  # Fail before opening a connection or loading a model.
         settings = get_settings()
         store = MilvusStore(settings)
         store.server_version()  # Check connectivity before loading model weights.

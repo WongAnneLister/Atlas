@@ -7,8 +7,9 @@ from support_agent.config import get_settings
 from test_retrieval import item
 
 
+@pytest.mark.parametrize("mode", ["hybrid", "hybrid_rerank"])
 def test_search_prints_provenance_and_closes_store(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], mode: str
 ) -> None:
     calls: list[object] = []
 
@@ -30,7 +31,7 @@ def test_search_prints_provenance_and_closes_store(
     monkeypatch.setattr(search, "MilvusStore", Store)
     monkeypatch.setattr(search, "build_retriever", lambda *args, **kwargs: Retriever())
     monkeypatch.setenv("Q", "Does W40 have a charger?")
-    assert search.main(["--mode", "hybrid"]) == 0
+    assert search.main(["--mode", mode]) == 0
     output = capsys.readouterr().out
     assert "product.a [a]" in output
     assert 'ranks={"dense": 1}' in output
@@ -58,10 +59,9 @@ def test_search_dependency_error_returns_failure_and_closes_store(
     assert closed == [True]
 
 
-def test_search_rejects_missing_query_and_unimplemented_mode_before_io(
+def test_search_rejects_missing_query_before_io(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv("Q", raising=False)
     with pytest.raises(SystemExit, match="2"):
         search.main([])
-    assert search.main(["--query", "W40", "--mode", "hybrid_rerank"]) == 1

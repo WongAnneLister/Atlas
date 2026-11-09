@@ -124,3 +124,55 @@ def test_bad_embedding_keeps_the_previous_collection() -> None:
     with pytest.raises(ValueError, match="Invalid dense vector"):
         ingest_chunks([chunk()], BadEmbedder(), MilvusStore(settings, client), settings)
     assert client.drops == 0 and client.exists
+
+
+def test_index_snapshot_returns_complete_chunk_fields_and_collection_identity() -> None:
+    class SnapshotClient(Client):
+        def describe_collection(self, **kwargs: object) -> dict[str, object]:
+            return {"description": DESCRIPTION, "collection_id": 123}
+
+        def query(self, **kwargs: object) -> list[dict[str, object]]:
+            assert kwargs["output_fields"] == ["count(*)"]
+            return [{"count(*)": 1}]
+
+        def query_iterator(self, **kwargs: object) -> object:
+            assert set(kwargs["output_fields"]) == set(Chunk.model_fields)
+            assert kwargs["batch_size"] == get_settings().milvus.query_batch_size
+            return Iterator()
+
+    class Iterator:
+        read = False
+
+        def next(self) -> list[dict[str, object]]:
+            if self.read:
+                return []
+            self.read = True
+            return [chunk().model_dump()]
+
+        def close(self) -> None:
+            closed.append(True)
+
+    closed: list[bool] = []
+    store = MilvusStore(get_settings(), SnapshotClient())
+    assert store.read_chunks() == [chunk()]
+    assert store.collection_identity() == "123"
+    assert closed == [True]
+
+
+def test_verified_local_chunk_hydration_preserves_fields_and_rejects_unknown_ids() -> None:
+    class IdClient(Client):
+        chunk_id = "fixture"
+
+        def search(self, **kwargs: object) -> list[list[dict[str, object]]]:
+            assert kwargs["output_fields"] == ["chunk_id"]
+            return [[{"entity": {"chunk_id": self.chunk_id}, "distance": 0.9}]]
+
+    client = IdClient()
+    store = MilvusStore(get_settings(), client)
+    store.use_chunk_snapshot([chunk()])
+    result = store.search_bm25("returns")
+    assert result[0].model_dump(exclude={"score"}) == chunk().model_dump()
+    assert result[0].score == 0.9
+    client.chunk_id = "unknown"
+    with pytest.raises(ValueError, match="snapshot"):
+        store.search_bm25("returns")

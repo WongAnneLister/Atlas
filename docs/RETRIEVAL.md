@@ -52,7 +52,7 @@ MinIO build context: [upstream distribution change](https://github.com/minio/min
 ## Hybrid + RRF
 
 Run `make search Q="Does the W40 come with a charger?" MODE=hybrid` to inspect results.
-Modes are `dense`, `bm25`, and `hybrid`; `hybrid_rerank` raises until commit 08.
+Modes are `dense`, `bm25`, `hybrid`, and `hybrid_rerank`.
 The command prints section ids, chunk ids, heading paths, source ranks and scores.
 It only retrieves evidence; it does not write a customer answer or bypass the future gate.
 Use a model present in the rebuilt catalog, such as `BHD340/10`, for product checks.
@@ -86,6 +86,92 @@ It preserves suffixes such as `/00`, amounts such as `30`, and ordinary hyphenat
 Dense queries, indexed source text, model facts and frozen eval labels remain unchanged.
 Disable this flag to compare with raw BM25 queries in commit 08.
 The normaliser does not claim to fix every catalog spelling or establish a quality gain.
+
+## Cross-encoder reranking and evaluation
+
+`hybrid_rerank` scores the configured fused candidate pool with the pinned BGE cross-encoder.
+The model reads the original query together with each chunk body, in configured batches.
+The wrapper returns at most `retrieval.rerank_top_k`, retaining component scores and ranks.
+`scores.rerank_logit` is the raw model output; `scores.rerank` is its sigmoid transform.
+A sigmoid score is not a calibrated probability that an answer is supported.
+Invalid/nonfinite outputs or dependency errors propagate; there is no partial fallback.
+The future evidence gate remains responsible for deciding whether an answer may be generated.
+
+Model revision, device, precision, batch size, token limit and candidate/output depths live in YAML.
+`make reranker-cache` prefetches the pinned model; `HF_HUB_OFFLINE=1` uses local files afterward.
+The cross-encoder uses only the configured query/passage token budget.
+Long manuals remain whole source chunks, but the model truncates their scored input.
+This limitation is recorded in the report and can cause missed evidence later in a manual.
+See the [upstream model card](https://huggingface.co/BAAI/bge-reranker-v2-m3) for raw-logit scoring.
+
+After `make data-docs`, `make eval-build`, and `make ingest`, run `make eval-retrieval`.
+The default test run also measures dev. Use `SPLIT=dev` for development or `SPLIT=all` for both.
+`EVAL_RETRIEVAL_ARGS=--no-ablations` skips the optional ablations; both run by default.
+The experiment builds verified heading-on and heading-off copies in independent collections.
+Both copies use identical chunks, model revision, encoder settings and index configuration.
+The demo collection is preserved. Model-number cleanup is disabled only for its own row.
+Both ablations compare against hybrid without reranking, holding the remaining settings fixed.
+`make eval-retrieval-index` can prepare both experiment collections ahead of the experiment.
+Verified vector caches survive interrupted database writes without repeating model encoding.
+Index fingerprints bind the source chunks, heading flag, model settings, index settings and runtime.
+Only a matching collection identity and complete matching chunk snapshot can reuse an index.
+Snapshot validation reads bounded pages to keep large manual responses within the RPC deadline.
+
+The runner validates the frozen eval manifest and compares index metadata/text with local chunks.
+Only answerable items contribute to retrieval metrics; no-answer safety is measured in later commits.
+Recall measures the fraction of unique gold sections in the first k chunks.
+Repeated chunks from one section consume ranking slots. MRR uses the same output cutoff for all modes.
+Cross-document hit_all separately checks that every required section appears.
+The frozen draft benchmark is still awaiting human review; scores do not establish answer reliability.
+
+Results are cached by mode, configuration, question, execution code, runtime, eval file and index identity.
+Local cache files retain source text; committed CSVs contain ids/ranks/metrics without questions or text.
+Latency sums original sequential component times, excluding model loading and index construction.
+Cache hits preserve those measured times; cached lookup speed is never presented as model speed.
+The evaluator reuses fully verified local chunk text after loading each index snapshot.
+Milvus still computes every changed ranking; it returns ids and scores for local text hydration.
+An unknown returned id raises an error. The default interactive search still fetches text from Milvus.
+Reported latency excludes the initial snapshot load and describes this warm evaluation setup.
+The heading ablation holds BM25 fixed; the normaliser ablation holds dense results fixed.
+`make eval-failures MODE=hybrid_rerank` prints dev misses with questions, gold and retrieved headings.
+Inspect dev failures when the target is missed. Keep test labels and settings frozen.
+`make eval-retrieval EVAL_RETRIEVAL_ARGS=--report-only` regenerates reports from the local saved run.
+The local measured run uses MPS for reranking and CPU for query/document embeddings.
+The default remains CPU for portability; select an available device with an environment override.
+To reproduce that execution setup, forward local port 19531 to Milvus port 19530.
+The measured connection used SSH compression (`ssh -C`) with the server's configured SSH port.
+
+```bash
+HF_HUB_OFFLINE=1 \
+SUPPORT_AGENT__MILVUS__URI=http://127.0.0.1:19531 \
+SUPPORT_AGENT__RETRIEVAL__RERANKER_DEVICE=mps \
+make eval-retrieval
+```
+
+## Retrieval experiment
+
+Source: eval/reports/retrieval.md
+
+| Mode | Group | n | Recall@1 | Recall@3 | Recall@5 | MRR@5 | cross_doc hit_all@5 | mean latency (s) |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| dense | overall | 120 | 0.7375 | 0.9292 | 0.9667 | 0.9125 | 0.7333 | 2.2001 |
+| bm25 | overall | 120 | 0.6958 | 0.9667 | 0.9875 | 0.9069 | 0.9000 | 1.5659 |
+| hybrid | overall | 120 | 0.7792 | 0.9667 | 0.9958 | 0.9458 | 0.9667 | 3.7754 |
+| hybrid_rerank | overall | 120 | 0.8667 | 0.9833 | 1.0000 | 0.9938 | 1.0000 | 9.4737 |
+| hybrid_heading_off | overall | 120 | 0.7667 | 0.9542 | 0.9875 | 0.9378 | 0.9000 | 3.5782 |
+| hybrid_normaliser_off | overall | 120 | 0.7792 | 0.9667 | 0.9958 | 0.9458 | 0.9667 | 3.6986 |
+
+## What this means
+
+Recall measures gold-section coverage; MRR measures the first useful result.
+Hybrid + rerank test Recall@5 meets the configured 95% target; results are reported unchanged.
+No-answer items are excluded; this experiment does not establish answer safety.
+
+## Dev failure patterns
+
+- Cross-document questions recover only part of the required evidence: 2 dev misses; example `cross_doc-02fb4ef75dd609300f08f3052872346051d9d67ef719353e5762ea90bd46bf53`.
+
+These draft-set results are not evidence of safe answer acceptance.
 
 ## Measured ingestion
 

@@ -13,7 +13,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 05 | Eval set | done | `eval/reports/eval_set.md`: 300 questions, 5 groups, 30 dev + 30 test per group; 240 answerable; validator failures 0. reviewed: 0/300 — waiting for human review. Local review CSV exported; questions and labels frozen before retrieval. |
 | 06 | Chunking + ingestion | done | `eval/reports/ingestion.md`: 206 chunks, 122 sections; 206 real BGE-M3 rows stored in Milvus 2.5.10; 244 encoder windows. Average 491.43 tokens; maximum 12,331 (whole manual), policy maximum 512. Database integration: 1/1 passed with fake vectors. |
 | 07 | Hybrid retrieval + RRF | done | Dense/BM25 adapters, deterministic RRF, query-only model normaliser, factory and `make search`. Offline checks and real Milvus integration passed. Real BGE-M3 hybrid search and normalised BM25 both retrieved BHD340/10. No retrieval quality metrics yet. |
-| 08 | Rerank + retrieval eval | todo | |
+| 08 | Rerank + retrieval eval | done | `eval/reports/retrieval.md`, test Recall@5 / MRR@5: dense 0.9667 / 0.9125; BM25 0.9875 / 0.9069; hybrid 0.9958 / 0.9458; hybrid + rerank 1.0000 / 0.9938. Both ablations measured on dev/test. Offline checks and real Milvus integration passed. |
 | 09 | Graph skeleton + intents | todo | |
 | 10 | Tool, complaint, fixed paths | todo | |
 | 11 | Evidence gate + knowledge path | todo | |
@@ -50,13 +50,19 @@ Agents: update this file in every commit. Keep it short and factual.
 - 05: Eval construction: 300 items, 240 answerable; 30 dev/30 test per group; validation failures 0; reviewed: 0/300 — waiting for human review (`eval/reports/eval_set.md`). No retrieval or answer-quality measurements yet.
 - 06: Real-model ingestion integrity: 206 chunks from 122 sections stored in Milvus 2.5.10, using 244 encoder windows (`eval/reports/ingestion.md`). The separate database integration fixture passed 1/1 with fake vectors. These checks do not measure retrieval quality.
 - 07: Real-index smoke checks passed via SSH forwarding: BGE-M3 hybrid search for BHD340/10 and BM25 for BHD-340/10 retrieved the matching product. These are manual acceptance checks, not frozen-set quality metrics; retrieval comparison remains in commit 08.
+- 08: `eval/reports/retrieval.md`: all four modes and both ablations measured on 120 dev and 120 test answerable questions. Reranked test Recall@5 is 1.0000, MRR@5 is 0.9938, and cross-document hit_all@5 is 1.0000. Mean warm-process latency is 9.4737 seconds versus hybrid's 3.7754 seconds. These are unreviewed draft-set retrieval results, not answer-safety measurements.
 
 ## Checkpoints
 
 - **Checkpoint 1 — Week 1 gate passed.** Commits 02, 03 and 04 are done. Policy documents and mock order data can be rebuilt with Makefile targets.
+- **Checkpoint 2 — Week 2 gate passed — 4 configs measured.** Commit 08 includes real dev/test results and both ablations. The draft benchmark meets the retrieval target; human review and the evidence gate remain required.
 
 ## Known issues / follow-ups
 
+- 08: All 300 evaluation questions remain unreviewed. Two reranked dev misses recover only part of combined questions; repeated SuperCoins chunks crowd out the other required section. `make eval-failures` exposes their questions, gold sections and headings locally. Only one failure pattern was observed; no extra patterns were invented. Test settings and labels were not tuned.
+- 08: The heading-prefix ablation lowers hybrid test Recall@5 to 0.9875. Disabling model-number normalisation leaves measured quality unchanged on this draft set (`eval/reports/retrieval.md`); it has no demonstrated quality gain here.
+- 08: Real measurements used CPU embeddings, MPS reranking and compressed SSH forwarding. Separate fingerprinted experiment indexes preserve the demo index. Verified local chunk text avoids remote full-text transfer timeouts; warm-process timings exclude initial snapshot loading. Long manuals are truncated by the configured reranker input limit. MRR uses the same top-five cutoff for every mode. Models, text and full prediction caches stay local; committed CSVs contain ids and metrics only.
+- 08: Generated retrieval CSVs use Git LF normalization. The pre-commit Ruff pin matches the existing lockfile, preventing conflicting lint rules between commit hooks and `make check`.
 - 07: The task's W40 example is absent from the indexed catalog. Its live query returned charger-related electric-vehicle FAQs, not evidence for W40. Acceptance also used BHD340/10, confirmed from the real index; no synthetic product or eval label was added. Reranking and frozen-set quality comparisons remain in commit 08. The pinned model is cached locally; the existing VPS index remains unchanged.
 - 07: `make eval-ingest` now replaces only the measured section of `docs/RETRIEVAL.md`, preserving the handwritten guide. An offline regression test covers repeated regeneration.
 

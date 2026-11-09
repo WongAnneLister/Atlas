@@ -1,0 +1,2 @@
+# Normalize generated CSV records across platforms.
+eval/reports/retrieval_*.csv text eol=lf

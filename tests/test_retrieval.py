@@ -162,9 +162,7 @@ def test_factory_selects_mode_with_injected_dependencies(mode: str) -> None:
     }[mode]
 
 
-def test_factory_rejects_rerank_before_initialising_dependencies() -> None:
-    with pytest.raises(NotImplementedError, match="08"):
-        build_retriever("hybrid_rerank")
+def test_factory_rejects_unknown_mode_before_initialising_dependencies() -> None:
     with pytest.raises(ValueError, match="mode"):
         build_retriever("invalid")
 
