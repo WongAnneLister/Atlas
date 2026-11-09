@@ -1,0 +1,54 @@
+# Every threshold, weight, model name and top-k lives here (AGENTS.md §5.4).
+# Override any key with env vars, e.g. SUPPORT_AGENT__RETRIEVAL__RRF_K=30.
+
+llm:
+  provider: null        # env LLM_PROVIDER wins, e.g. "openai", "anthropic"
+  fast_model: null      # env LLM_FAST_MODEL wins; used for rewrite + intent
+  main_model: null      # env LLM_MAIN_MODEL wins; used for answers
+  temperature: 0.0
+  timeout_s: 30
+
+retrieval:
+  embedding_model: BAAI/bge-m3
+  embedding_dim: 1024
+  reranker_model: BAAI/bge-reranker-v2-m3
+  dense_top_k: 50
+  bm25_top_k: 50
+  rrf_k: 60
+  rerank_top_k: 5
+
+gate:
+  weights:
+    top_score: 0.5
+    good_count: 0.2
+    margin: 0.15
+    key_hit: 0.15
+  good_evidence_min: 0.5   # placeholder; revisited in commit 11
+  good_count_cap: 3
+  threshold: null          # set by `make sweep` (commit 13); never by hand
+
+agent:
+  max_steps: 5
+
+intent:
+  min_confidence: 0.6      # placeholder; revisited in commit 09
+
+milvus:
+  uri: http://localhost:19530
+  collection: support_chunks
+
+orders:
+  db_path: data/orders.sqlite
+  seed: 42
+  n_orders: 300
+
+memory:                    # P1 placeholders
+  recent_turns: 6
+  summary_max_tokens: 400
+
+tracing:
+  enabled: false
+
+api:
+  host: 127.0.0.1
+  port: 8000
