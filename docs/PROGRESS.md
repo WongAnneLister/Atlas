@@ -7,7 +7,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | # | Commit | Status | Key numbers / notes |
 |---|---|---|---|
 | 01 | Scaffold | done | Skeleton, typed config, LLM factory, Milvus compose, CI, note checker. No metrics yet. |
-| 02 | Data download + licenses | todo | |
+| 02 | Data download + licenses | done | PRD main KB `qgyd2021/e_commerce_customer_service` is gone from the Hub; replaced by `NebulaByte/E-Commerce_FAQs` + `InfiniFlow` Philips PDFs. Rows (`data/raw/MANIFEST.json`): flipkart_faqs 659, philips_manuals 6 PDFs, maktek_faqs 200 (~89 unique), bitext 26,872 / 27 intents. Licenses (`docs/LICENSES.md`): flipkart + philips **unclear** (third-party text) → scripts only; maktek apache-2.0 and bitext cdla-sharing-1.0 → **yes**. |
 | 03 | Policy documents | todo | |
 | 04 | Mock orders + OrderService | todo | |
 | 05 | Eval set | todo | |
@@ -50,4 +50,7 @@ _none yet_
 ## Known issues / follow-ups
 
 - 01: `docker compose up -d` not verified — the dev machine has the Docker engine but no Compose plugin. The compose file parses; Milvus health is unchecked.
+- 02: Data sources changed from the PRD (see `docs/DATA_NOTES.md`). `docs/PRD.md` → Data still lists the old dataset; update it in a docs commit.
+- 02: Only 6 products (Philips PDFs). Commit 03/05 must decide if that covers 60 `model_number` questions or needs a synthetic catalog.
+- 02: Flipkart and Philips text is "unclear" → commit 03 must not commit processed docs built from them.
 - 01: Config `gate.good_evidence_min` and `intent.min_confidence` are placeholders to revisit in commits 11 and 09.

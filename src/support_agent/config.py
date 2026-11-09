@@ -24,6 +24,20 @@ DEFAULT_CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
 CONFIG_PATH_ENV = "SUPPORT_AGENT_CONFIG"
 
 
+class DataSource(BaseModel):
+    name: str
+    repo_id: str
+    revision: str
+    role: str
+    files: list[str]
+    third_party_note: str | None = None
+
+
+class DataSettings(BaseModel):
+    raw_dir: str
+    sources: list[DataSource]
+
+
 class LLMSettings(BaseModel):
     provider: str | None
     fast_model: str | None
@@ -103,6 +117,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    data: DataSettings
     llm: LLMSettings
     retrieval: RetrievalSettings
     gate: GateSettings

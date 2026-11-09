@@ -1,6 +1,39 @@
 # Every threshold, weight, model name and top-k lives here (AGENTS.md §5.4).
 # Override any key with env vars, e.g. SUPPORT_AGENT__RETRIEVAL__RRF_K=30.
 
+data:
+  raw_dir: data/raw
+  # Pinned to a commit hash; bump the revision on purpose, never float on "main".
+  # The PRD's qgyd2021/e_commerce_customer_service was removed from the Hub (see docs/DATA_NOTES.md).
+  sources:
+    - name: flipkart_faqs
+      repo_id: NebulaByte/E-Commerce_FAQs
+      revision: 66a7c3105e6001ce7a314f113597b27a7b2e6228
+      role: main knowledge base (FAQ question/answer by category)
+      files: [FAQs.csv]
+      # Set when the card license may not come from the copyright owner. Forces "unclear".
+      third_party_note: >-
+        Answers are copied from flipkart.com help pages (faq_url column). The uploader
+        is not Flipkart, so the card's license may not cover the text.
+    - name: philips_manuals
+      repo_id: InfiniFlow/Ecommerce-Customer-Service-Workflow
+      revision: 563e41c016e3d27a4501785e76cc0f3e6fd3fc84
+      role: product info and manuals (model-number questions)
+      files: [product_infomation.zip, user_guide.zip]
+      third_party_note: >-
+        The PDFs are Philips product leaflets and user manuals. The uploader is not
+        Philips, so the card's license may not cover the documents.
+    - name: maktek_faqs
+      repo_id: MakTek/Customer_support_faqs_dataset
+      revision: 858a539411eaeb97cc2c78e3262d067abe8fa240
+      role: extra generic FAQs
+      files: [train_expanded.json]
+    - name: bitext
+      repo_id: bitext/Bitext-customer-support-llm-chatbot-training-dataset
+      revision: 430d1a89bd93bd1fa23c16f29dd53e73f0087443
+      role: intent labels and colloquial utterances
+      files: [Bitext_Sample_Customer_Support_Training_Dataset_27K_responses-v11.csv]
+
 llm:
   provider: null        # env LLM_PROVIDER wins, e.g. "openai", "anthropic"
   fast_model: null      # env LLM_FAST_MODEL wins; used for rewrite + intent
