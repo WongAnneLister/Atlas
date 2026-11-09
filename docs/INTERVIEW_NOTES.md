@@ -21,3 +21,107 @@ I spent a full commit on tooling before any feature. I also wrote a checker for 
 **Likely follow-up question**
 Q: Why check the notes with a script?
 A: I want every number I say to be real. The script looks for each number in the cited report. If a number is missing there, the build fails.
+
+---
+
+# 02 — Download datasets and check licenses
+
+**What**
+I built a script that downloads four public datasets. Each one is pinned to an exact commit hash. A manifest file records every file hash, row count and column. I also built a license report that reads each dataset card.
+
+**Why**
+If data floats on the latest version, my results can change without warning. Pinning makes every later number repeatable. The license report tells me what I may publish. Breaking a license would be worse than a bad metric.
+
+**Number**
+No number yet. I will measure retrieval quality in commit 08.
+
+**Trade-off**
+The main dataset in my plan was deleted from Hugging Face. I switched to Flipkart help FAQs and a few Philips manuals. That gives me very few products for model-number questions. Two sources are "unclear", so reviewers must download them themselves.
+
+**Likely follow-up question**
+Q: Why mark a dataset "unclear" if its card says Apache?
+A: The uploader did not write that text. Flipkart and Philips own it. A license only counts if the owner gave it. So I chose the safe default.
+
+---
+
+# 03 — Policy documents and product catalog
+
+**What**
+I merged FAQs into topic documents with stable section names. I built a product catalog from manual cover models. I added source mappings, cached topic choices, and checks for changed facts.
+
+**Why**
+Single FAQs make search tests too easy. Long documents make later chunking tests more useful. Keeping each store's scope helps avoid mixing conflicting policies.
+
+**Number**
+I built 12 documents with 122 sections. FAQ coverage reached 99.65%. I kept 7 product models.
+Source: eval/reports/docs_build.md
+
+**Trade-off**
+I kept source wording instead of asking a model to rewrite policies. The text is less polished, but facts stay intact. Without a configured model, unmatched FAQs stay under other. Unclear licenses mean generated text stays local.
+
+**Likely follow-up question**
+Q: How did you check that merging preserved the facts?
+A: I checked every covered question and answer against its source section. I also rejected new numbers and any extra prose. Cached choices and stable dates kept repeated builds identical.
+
+---
+
+# 04 — Mock orders and an ownership-checked service
+
+**What**
+I added demo orders and a small order service. I checked each order's owner before reads or writes. Refund calls only create requests for human review.
+
+**Why**
+Public datasets do not contain the orders my demo needs. Fixed dates and a fixed seed keep those facts repeatable. Owner checks prevent customers from accessing another customer's order.
+
+**Number**
+I seeded 300 orders for 50 fake customers. The audit blocked 900 attempts to access another customer's orders. I covered 14 named edge cases.
+Source: eval/reports/orders_seed.md
+
+**Trade-off**
+I chose SQLite, a small database stored in a local file. That keeps the demo easy to run. It does not model a real payment system. Prices are made up even when products come from the catalog.
+
+**Likely follow-up question**
+Q: How did you prevent one customer from seeing another customer's order?
+A: I included the customer id in every order lookup. Missing orders and foreign orders return the same error. I also checked each refund item's order before saving the request.
+
+---
+
+# 05 — A fixed question set and human review
+
+**What**
+I built a question set before adding search code. I linked expected answers to source sections. I added checks and a human review sheet.
+
+**Why**
+A search system needs fixed questions before I tune it. I kept similar questions on the same side of the split. That helps keep test results separate from tuning.
+
+**Number**
+I built 300 questions with 240 answerable cases. Each group has 30 tuning questions and 30 separate test questions. Human review remains at 0/300.
+Source: eval/reports/eval_set.md
+
+**Trade-off**
+No external drafting model was configured. I used fixed question templates and real source text. Similar model questions cover only a small product family. I kept every question unreviewed.
+
+**Likely follow-up question**
+Q: Does passing the validator mean the questions are correct?
+A: No, the checks only catch clear data problems. A human must check meaning and source support. I left every review flag false.
+
+---
+
+# 06 — Section chunks and a searchable index
+
+**What**
+I built section-based chunks for policies and products. I added BGE-M3, a model that changes text into lists of numbers. I wrote Milvus word search and vector search code.
+
+**Why**
+I needed stable source links before comparing search methods. I kept each chunk inside its source section. Without this link, I could not score retrieved evidence against expected sections.
+
+**Number**
+I built 206 chunks from 122 sections. Policy chunks use at most 512 tokens. I kept each of the 7 product sections whole.
+Source: eval/reports/ingestion.md
+
+**Trade-off**
+I kept full manuals together for clear source links. My encoder averages smaller text windows to limit memory. This can blur exact facts in long manuals. Live ingestion remains blocked by missing runtime dependencies.
+
+**Likely follow-up question**
+Q: How will you check retrieval quality?
+A: I still need to complete live database and model checks. Then I will compare both search methods in commit 08. I will keep the frozen questions and labels unchanged. Chunk counts alone do not prove search quality.

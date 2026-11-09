@@ -62,12 +62,39 @@ class LLMSettings(BaseModel):
 
 class RetrievalSettings(BaseModel):
     embedding_model: str
-    embedding_dim: int
+    embedding_revision: str
+    embedding_dim: int = Field(gt=0)
+    embedding_cache_dir: str
+    embedding_device: str
+    embedding_batch_size: int = Field(gt=0)
+    embedding_normalize: bool
+    embedding_use_fp16: bool
+    embedding_cpu_threads: int = Field(gt=0)
+    embedding_max_tokens: int = Field(gt=2)
+    embedding_window_tokens: int = Field(gt=2)
     reranker_model: str
     dense_top_k: int
     bm25_top_k: int
     rrf_k: int
     rerank_top_k: int
+
+    @model_validator(mode="after")
+    def _valid_embedding_window(self) -> RetrievalSettings:
+        if self.embedding_window_tokens > self.embedding_max_tokens:
+            raise ValueError("embedding_window_tokens exceeds model context limit")
+        return self
+
+
+class ChunkSettings(BaseModel):
+    max_tokens: int = Field(gt=0)
+    overlap_tokens: int = Field(ge=0)
+    prepend_heading: bool
+
+    @model_validator(mode="after")
+    def _valid_overlap(self) -> ChunkSettings:
+        if self.overlap_tokens >= self.max_tokens:
+            raise ValueError("chunk.overlap_tokens must be smaller than max_tokens")
+        return self
 
 
 class GateWeights(BaseModel):
@@ -125,6 +152,19 @@ class EvalSettings(BaseModel):
 class MilvusSettings(BaseModel):
     uri: str
     collection: str
+    timeout_s: float = Field(gt=0)
+    upsert_batch_size: int = Field(gt=0)
+    id_max_bytes: int = Field(gt=0)
+    section_max_bytes: int = Field(gt=0)
+    heading_max_bytes: int = Field(gt=0)
+    text_max_bytes: int = Field(gt=0, le=65535)
+    hnsw_m: int = Field(gt=0)
+    hnsw_ef_construction: int = Field(gt=0)
+    hnsw_ef_search: int = Field(gt=0)
+    sparse_algorithm: str
+    bm25_k1: float = Field(gt=0)
+    bm25_b: float = Field(ge=0, le=1)
+    analyzer: dict[str, object]
 
 
 class SeedProduct(BaseModel):
@@ -193,6 +233,7 @@ class Settings(BaseSettings):
     data: DataSettings
     llm: LLMSettings
     retrieval: RetrievalSettings
+    chunk: ChunkSettings
     gate: GateSettings
     agent: AgentSettings
     intent: IntentSettings

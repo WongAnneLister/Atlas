@@ -63,12 +63,27 @@ llm:
 
 retrieval:
   embedding_model: BAAI/bge-m3
+  embedding_revision: 5617a9f61b028005a4858fdac845db406aefb181
   embedding_dim: 1024
+  embedding_cache_dir: .cache/embeddings
+  embedding_device: cpu
+  embedding_batch_size: 1
+  embedding_normalize: true
+  embedding_use_fp16: false
+  embedding_cpu_threads: 2
+  embedding_max_tokens: 8192
+  # Whole product manuals use weighted, non-overlapping encoder windows; no text is truncated.
+  embedding_window_tokens: 1024
   reranker_model: BAAI/bge-reranker-v2-m3
   dense_top_k: 50
   bm25_top_k: 50
   rrf_k: 60
   rerank_top_k: 5
+
+chunk:
+  max_tokens: 512
+  overlap_tokens: 64
+  prepend_heading: true
 
 gate:
   weights:
@@ -118,6 +133,19 @@ evaluation:
 milvus:
   uri: http://localhost:19530
   collection: support_chunks
+  timeout_s: 60
+  upsert_batch_size: 64
+  id_max_bytes: 256
+  section_max_bytes: 512
+  heading_max_bytes: 2048
+  text_max_bytes: 65535
+  hnsw_m: 16
+  hnsw_ef_construction: 200
+  hnsw_ef_search: 64
+  sparse_algorithm: DAAT_MAXSCORE
+  bm25_k1: 1.2
+  bm25_b: 0.75
+  analyzer: {tokenizer: standard, filter: [lowercase]}
 
 orders:
   db_path: data/orders.sqlite

@@ -7,8 +7,8 @@ RUN := $(UV) run
 .PHONY: setup up down data data-download data-licenses data-docs data-validate-docs data-orders \
         eval-docs eval-orders \
         eval-build eval-validate eval-review eval-review-import eval-set-report \
-        ingest eval-retrieval eval-intent eval-e2e sweep serve \
-        lint format typecheck test check notes-check notes
+        ingest ingest-chunks embedding-cache eval-ingest test-milvus eval-retrieval eval-intent eval-e2e sweep serve \
+        lint format typecheck test check notes-check notes minio-image-local
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -19,10 +19,13 @@ setup:
 	$(RUN) pre-commit install
 
 up:
-	docker compose up -d
+	$(RUN) python scripts/compose.py up -d
 
 down:
-	docker compose down
+	$(RUN) python scripts/compose.py down
+
+minio-image-local:
+	$(RUN) python scripts/build_minio.py
 
 data: data-download data-licenses data-docs
 	$(MAKE) data-orders
@@ -70,7 +73,21 @@ eval-set-report:
 	$(RUN) python -m eval.report_set
 
 ingest:
-	$(call todo,06)
+	$(RUN) python -m support_agent.ingest
+	$(RUN) python -m eval.ingestion
+
+ingest-chunks:
+	$(RUN) python -m support_agent.ingest --chunks-only
+	$(RUN) python -m eval.ingestion
+
+embedding-cache:
+	$(RUN) python -m support_agent.retrieval.embed
+
+eval-ingest:
+	$(RUN) python -m eval.ingestion
+
+test-milvus:
+	$(RUN) pytest -m integration tests/test_milvus_integration.py --junitxml=data/processed/milvus_integration.xml
 
 eval-retrieval:
 	$(call todo,08)

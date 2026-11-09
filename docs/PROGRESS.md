@@ -11,7 +11,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 03 | Policy documents | done | `eval/reports/docs_build.md`: 12 docs, 122 sections, 7 product models; FAQ coverage 856/859 (99.65%). Extractive prose, source-scoped sections, cached topics, strict fact/provenance checks, byte-identical rebuild. Processed text stays local. |
 | 04 | Mock orders + OrderService | done | `eval/reports/orders_seed.md`: 50 customers, 300 orders, 749 items, 8 statuses, 14 named edge cases; 900 cross-customer operations blocked. Deterministic transactional reseed; ownership-scoped service; refund requests stay pending_review. |
 | 05 | Eval set | done | `eval/reports/eval_set.md`: 300 questions, 5 groups, 30 dev + 30 test per group; 240 answerable; validator failures 0. reviewed: 0/300 — waiting for human review. Local review CSV exported; questions and labels frozen before retrieval. |
-| 06 | Chunking + ingestion | todo | |
+| 06 | Chunking + ingestion | implemented; acceptance blocked | `eval/reports/ingestion.md`: 206 chunks, 122 sections; average 491.43 tokens; maximum 12,331 (whole product manual), policy maximum 512. Offline checks pass. Real Milvus/BGE ingestion is not verified; see follow-ups. |
 | 07 | Hybrid retrieval + RRF | todo | |
 | 08 | Rerank + retrieval eval | todo | |
 | 09 | Graph skeleton + intents | todo | |
@@ -55,13 +55,13 @@ Agents: update this file in every commit. Keep it short and factual.
 
 ## Known issues / follow-ups
 
-- 01: `docker compose up -d` not verified — the dev machine has the Docker engine but no Compose plugin. The compose file parses; Milvus health is unchecked.
+- 01/06: Official Compose is now installed locally; `make up` supports plugin and standalone CLIs. The remote Docker host lacks disk space for the MinIO source build. No support-agent containers were started; Milvus health remains unchecked.
 - 02: Data sources changed from the original PRD (see `docs/DATA_NOTES.md`); `docs/PRD.md` → Data updated to match.
 - 05: Model-number questions use differing attributes of the 3 look-alike hair dryers; the remaining catalog models lack suitable comparable attributes. No synthetic products added. The 60 questions are attribute combinations, not independent product families (`docs/EVAL_SET.md`).
 - 03: Flipkart and Philips text is "unclear"; all mixed `data/processed/` output is gitignored. Reviewers rebuild it locally.
 - 03: Empty source questions/answers leave 3 FAQ rows uncovered; raw rows and labels were not edited (`eval/reports/docs_build.md`).
 - 03: No fast model was configured for this build; unmatched topic groups use cached `other` decisions. Clear the topic cache to reclassify with a configured model.
-- 03: Source scopes, conflicting store policies and off-topic categories remain explicit. PDF layout is lossy; retrieval must respect scope and chunk manuals in commit 06.
+- 03/06: Source scopes, conflicting store policies and off-topic categories remain explicit. PDF layout is lossy. Product sections remain whole; bounded encoder windows retain their text without silent truncation. Window pooling quality remains unmeasured.
 - 04: Local database `data/orders.sqlite` is gitignored. `make data-orders` resets all mock facts and pending requests; `make eval-orders` audits without changing that database (`docs/ORDERS.md`).
 - 04: Product metadata comes from the local catalog when present; prices are synthetic. A missing catalog uses built-in demo products; the catalog hash records which input was used.
 - 04: The service expects a trusted customer id. Authentication, policy eligibility and retry idempotency belong to later commits; refund creation only records pending human review.
@@ -69,3 +69,5 @@ Agents: update this file in every commit. Keep it short and factual.
 - 05: No external LLM was configured; authored templates draft cross-document/absent-topic questions. Optional fast-model question drafting is cached. Colloquial questions use real Bitext prefixes with explicit FAQ context.
 - 05: Lexical support and absent-key-phrase checks cannot prove meaning or absence. Human review is still required before treating this draft set as a trusted benchmark.
 - 01: Config `gate.good_evidence_min` and `intent.min_confidence` are placeholders to revisit in commits 11 and 09.
+- 06: MinIO community images were withdrawn upstream. Compose now builds the original fixed source release with a checked archive hash. This runtime image has not been built successfully here. Use a Docker host with build space, or `make minio-image-local` with the official pinned Go toolchain on the client PATH. Only this task's failed build container and build images were cleaned up.
+- 06: Official model/toolchain downloads repeatedly stalled or failed. Partial downloads stay gitignored and are not used. Real-model ingestion and the manual Milvus test are acceptance blockers, not successful measurements. After preparing dependencies, run `make up`, `make test-milvus`, `make ingest`, then `make eval-ingest`.
