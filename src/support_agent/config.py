@@ -11,7 +11,7 @@ import os
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -33,8 +33,19 @@ class DataSource(BaseModel):
     third_party_note: str | None = None
 
 
+class DocsSettings(BaseModel):
+    near_duplicate_threshold: float = Field(ge=0, le=1)
+    minimum_coverage: float = Field(ge=0, le=1)
+    classify_leftovers: bool
+    model_pattern: str
+    product_categories: dict[str, str]
+    topic_rules: dict[str, str]
+
+
 class DataSettings(BaseModel):
     raw_dir: str
+    processed_dir: str
+    docs: DocsSettings
     sources: list[DataSource]
 
 

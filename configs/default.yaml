@@ -3,6 +3,26 @@
 
 data:
   raw_dir: data/raw
+  processed_dir: data/processed
+  docs:
+    near_duplicate_threshold: 0.94
+    minimum_coverage: 0.98
+    # A missing fast model assigns leftovers to 'other'; configured models are cached.
+    classify_leftovers: true
+    model_pattern: '\b(?:BHD\d+/\d+|HD\d+X|TAH\d+|\d+E\d+N\d+A)\b'
+    product_categories:
+      BHD: hair_dryers
+      HD: air_fryers
+      TAH: headphones
+      monitor: monitors
+    topic_rules:
+      refunds: '\b(refund\w*|reimburse\w*)\b'
+      returns: '\b(return\w*|exchange\w*|replacement\w*|replac\w*)\b'
+      warranty: '\b(warrant\w*|guarantee\w*|repair\w*|installation)\b'
+      shipping: '\b(ship\w*|deliver\w*|tracking|track|package|courier|pickup)\b'
+      membership: '\b(account|login|log in|password|sign up|register|membership|member|plus|supercoins|loyalty|subscription)\b'
+      payments: '\b(pay\w*|card\w*|emi|wallet|invoice|billing|gst|tax|fee\w*|financ\w*|loan\w*)\b'
+      orders: '\b(order\w*|cancel\w*|checkout|shopping|purchase\w*|buy\w*|stock|cart)\b'
   # Pinned to a commit hash; bump the revision on purpose, never float on "main".
   # The PRD's qgyd2021/e_commerce_customer_service was removed from the Hub (see docs/DATA_NOTES.md).
   sources:

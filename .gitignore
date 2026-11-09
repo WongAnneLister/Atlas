@@ -1,5 +1,7 @@
 # Data and generated databases (AGENTS.md §5.3)
 data/raw/
+# Mixed Flipkart/Philips outputs have unclear redistribution rights (docs/LICENSES.md).
+data/processed/
 *.sqlite
 *.sqlite3
 *.db
