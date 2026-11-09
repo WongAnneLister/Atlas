@@ -12,6 +12,7 @@ from datetime import date
 from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import (
@@ -98,6 +99,29 @@ class IntentSettings(BaseModel):
     min_confidence: float
 
 
+class EvalSettings(BaseModel):
+    sets_dir: str
+    seed: int
+    per_group: int = Field(gt=0)
+    dev_per_group: int = Field(gt=0)
+    phrase_overlap: float = Field(gt=0, le=1)
+    near_duplicate_threshold: float = Field(gt=0, le=1)
+    token_duplicate_threshold: float = Field(gt=0, le=1)
+    split_search_attempts: int = Field(gt=0)
+    max_model_attributes: int = Field(gt=0)
+    cross_doc_candidates: int = Field(gt=0)
+    draft_mode: Literal["template", "fast"]
+    no_answer_drafts: str
+    policy_topics: list[str]
+    faq_categories: list[str]
+
+    @model_validator(mode="after")
+    def _valid_split(self) -> EvalSettings:
+        if self.dev_per_group >= self.per_group:
+            raise ValueError("evaluation.dev_per_group must be smaller than per_group")
+        return self
+
+
 class MilvusSettings(BaseModel):
     uri: str
     collection: str
@@ -172,6 +196,7 @@ class Settings(BaseSettings):
     gate: GateSettings
     agent: AgentSettings
     intent: IntentSettings
+    evaluation: EvalSettings
     milvus: MilvusSettings
     orders: OrdersSettings
     memory: MemorySettings

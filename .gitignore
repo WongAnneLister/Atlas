@@ -2,6 +2,11 @@
 data/raw/
 # Mixed Flipkart/Philips outputs have unclear redistribution rights (docs/LICENSES.md).
 data/processed/
+# Derived FAQ/manual/Bitext text inherits the mixed source redistribution limits.
+eval/sets/*.jsonl
+eval/sets/*.csv
+eval/sets/manifest.json
+eval/sets/draft_cache.json
 *.sqlite
 *.sqlite3
 *.db

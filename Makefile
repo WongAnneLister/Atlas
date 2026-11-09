@@ -6,6 +6,7 @@ RUN := $(UV) run
 
 .PHONY: setup up down data data-download data-licenses data-docs data-validate-docs data-orders \
         eval-docs eval-orders \
+        eval-build eval-validate eval-review eval-review-import eval-set-report \
         ingest eval-retrieval eval-intent eval-e2e sweep serve \
         lint format typecheck test check notes-check notes
 
@@ -49,6 +50,24 @@ data-orders:
 
 eval-orders:
 	$(RUN) python eval/orders_seed.py
+
+eval-build:
+	$(RUN) python -m eval.build_set
+	$(RUN) python -m eval.review
+	$(RUN) python -m eval.report_set
+
+eval-validate:
+	$(RUN) python -m eval.validate_set
+
+eval-review:
+	$(RUN) python -m eval.review
+
+eval-review-import:
+	$(RUN) python -m eval.review --import-csv "$(REVIEW_CSV)"
+	$(RUN) python -m eval.report_set
+
+eval-set-report:
+	$(RUN) python -m eval.report_set
 
 ingest:
 	$(call todo,06)

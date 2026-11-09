@@ -86,6 +86,35 @@ agent:
 intent:
   min_confidence: 0.6      # placeholder; revisited in commit 09
 
+evaluation:
+  sets_dir: eval/sets
+  seed: 42
+  per_group: 60
+  dev_per_group: 30
+  phrase_overlap: 0.65
+  near_duplicate_threshold: 0.92
+  token_duplicate_threshold: 0.90
+  split_search_attempts: 2000
+  max_model_attributes: 3
+  cross_doc_candidates: 240
+  draft_mode: template   # fast requires LLM_PROVIDER and LLM_FAST_MODEL; decisions are cached
+  no_answer_drafts: eval/drafts/no_answer.yaml
+  policy_topics: [returns, refunds, shipping, payments, membership, orders, warranty]
+  # Exclude travel, loans, insurance and electric-vehicle FAQs from policy questions.
+  faq_categories:
+    - Cancellations and Returns
+    - Order
+    - Payment
+    - Shipping
+    - Shopping
+    - Warranty
+    - Login & My Account
+    - Flipkart Plus
+    - Flipkart First
+    - SuperCoins
+    - Gift Cards
+    - Privacy & Security
+
 milvus:
   uri: http://localhost:19530
   collection: support_chunks

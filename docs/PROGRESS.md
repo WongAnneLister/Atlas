@@ -10,7 +10,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 02 | Data download + licenses | done | PRD main KB `qgyd2021/e_commerce_customer_service` is gone from the Hub; replaced by `NebulaByte/E-Commerce_FAQs` + `InfiniFlow` Philips PDFs. Rows (`data/raw/MANIFEST.json`): flipkart_faqs 659, philips_manuals 6 PDFs, maktek_faqs 200 (~89 unique), bitext 26,872 / 27 intents. Licenses (`docs/LICENSES.md`): flipkart + philips **unclear** (third-party text) → scripts only; maktek apache-2.0 and bitext cdla-sharing-1.0 → **yes**. |
 | 03 | Policy documents | done | `eval/reports/docs_build.md`: 12 docs, 122 sections, 7 product models; FAQ coverage 856/859 (99.65%). Extractive prose, source-scoped sections, cached topics, strict fact/provenance checks, byte-identical rebuild. Processed text stays local. |
 | 04 | Mock orders + OrderService | done | `eval/reports/orders_seed.md`: 50 customers, 300 orders, 749 items, 8 statuses, 14 named edge cases; 900 cross-customer operations blocked. Deterministic transactional reseed; ownership-scoped service; refund requests stay pending_review. |
-| 05 | Eval set | todo | |
+| 05 | Eval set | done | `eval/reports/eval_set.md`: 300 questions, 5 groups, 30 dev + 30 test per group; 240 answerable; validator failures 0. reviewed: 0/300 — waiting for human review. Local review CSV exported; questions and labels frozen before retrieval. |
 | 06 | Chunking + ingestion | todo | |
 | 07 | Hybrid retrieval + RRF | todo | |
 | 08 | Rerank + retrieval eval | todo | |
@@ -47,6 +47,7 @@ Agents: update this file in every commit. Keep it short and factual.
 
 - 03: Document build integrity: 856/859 FAQ rows covered (99.65%), 12 docs, 122 sections, 7 models (`eval/reports/docs_build.md`). No retrieval or answer-quality metrics yet.
 - 04: Mock order integrity: 50 customers, 300 orders, 749 items, 192 shipments, 8 statuses, 14 named edge cases; 900 cross-customer operations blocked (`eval/reports/orders_seed.md`). These are fixture checks, not agent-quality metrics.
+- 05: Eval construction: 300 items, 240 answerable; 30 dev/30 test per group; validation failures 0; reviewed: 0/300 — waiting for human review (`eval/reports/eval_set.md`). No retrieval or answer-quality measurements yet.
 
 ## Checkpoints
 
@@ -56,7 +57,7 @@ Agents: update this file in every commit. Keep it short and factual.
 
 - 01: `docker compose up -d` not verified — the dev machine has the Docker engine but no Compose plugin. The compose file parses; Milvus health is unchecked.
 - 02: Data sources changed from the original PRD (see `docs/DATA_NOTES.md`); `docs/PRD.md` → Data updated to match.
-- 03: The 6 Philips PDFs yield 7 models, including both monitor models. No synthetic products added; commit 05 must review model-question diversity (`docs/DOCS_BUILD.md`).
+- 05: Model-number questions use differing attributes of the 3 look-alike hair dryers; the remaining catalog models lack suitable comparable attributes. No synthetic products added. The 60 questions are attribute combinations, not independent product families (`docs/EVAL_SET.md`).
 - 03: Flipkart and Philips text is "unclear"; all mixed `data/processed/` output is gitignored. Reviewers rebuild it locally.
 - 03: Empty source questions/answers leave 3 FAQ rows uncovered; raw rows and labels were not edited (`eval/reports/docs_build.md`).
 - 03: No fast model was configured for this build; unmatched topic groups use cached `other` decisions. Clear the topic cache to reclassify with a configured model.
@@ -64,4 +65,7 @@ Agents: update this file in every commit. Keep it short and factual.
 - 04: Local database `data/orders.sqlite` is gitignored. `make data-orders` resets all mock facts and pending requests; `make eval-orders` audits without changing that database (`docs/ORDERS.md`).
 - 04: Product metadata comes from the local catalog when present; prices are synthetic. A missing catalog uses built-in demo products; the catalog hash records which input was used.
 - 04: The service expects a trusted customer id. Authentication, policy eligibility and retry idempotency belong to later commits; refund creation only records pending human review.
+- 05: All generated eval/review text stays local due mixed-source licenses. Review `eval/sets/review.csv`; only explicit human ok decisions may change review flags. The agent marked no actual questions reviewed.
+- 05: No external LLM was configured; authored templates draft cross-document/absent-topic questions. Optional fast-model question drafting is cached. Colloquial questions use real Bitext prefixes with explicit FAQ context.
+- 05: Lexical support and absent-key-phrase checks cannot prove meaning or absence. Human review is still required before treating this draft set as a trusted benchmark.
 - 01: Config `gate.good_evidence_min` and `intent.min_confidence` are placeholders to revisit in commits 11 and 09.

@@ -1,0 +1,15 @@
+# Agent-authored draft subjects. The builder rejects any present key phrase.
+# These are unsupported-topic questions, not claims about store inventory or policy.
+groups:
+  - template: 'What are the opening hours of your {term} showroom?'
+    terms: [Reykjavik, Tallinn, Ljubljana, Bratislava, Vilnius, Zagreb, Porto, Bergen, Tromso, Uppsala, Lucerne, Innsbruck, Split, Ghent, Maastricht, Ulaanbaatar, Quito, Cusco, Suva, Apia]
+  - template: 'Can I use {term} to pay for a purchase at this store?'
+    terms: [Monero, Zcash, Dashcoin, Dogecoin, Litecoin, Solana Pay, Alipay Plus, WeChat Pay, Venmo, Cash App Pay, Zelle, Klarna, Afterpay, Affirm, Sezzle, Zip Pay, Clearpay, Bancontact, iDEAL, Przelewy24]
+  - template: 'What warranty does this store offer for the {term}?'
+    terms: [Sonos Era 300, Garmin Venu 3, Kobo Clara BW, Remarkable Paper Pro, Elgato Stream Deck Plus, Teenage Engineering OP-1, Fairphone 5, Ricoh GR III, Insta360 X4, DJI Osmo Pocket 3, Rode Wireless Pro, Yubikey 5C NFC, Oura Ring 4, Framework Laptop 16, Flipper Zero, Fujifilm X100VI, Steam Deck OLED, Anbernic RG35XX, Retroid Pocket 4, Raspberry Pi 5]
+  - template: 'How does your {term} service work for online orders?'
+    terms: [Braille invoice printing, carbon-neutral courier upgrades, diplomatic-pouch delivery, drone landing-pad delivery, wheelchair installation visits, oxygen-concentrator rentals, circular-packaging deposits, on-site solar-panel commissioning, embroidery monogramming, wedding-registry aggregation, hearing-loop installation, refrigerated biologics delivery, furniture upholstery restoration, airport airside collection, parcel forwarding to Antarctic stations]
+  - template: 'What is the store policy for {term}?'
+    terms: [trade sanctions on dual-use lasers, export permits for thermal cameras, VAT recovery for diplomats, battery recycling credits, earthquake insurance riders, biometric data retention, customs seizure compensation, marine salvage returns, spaceflight damage coverage, cryptocurrency chargeback arbitration, minimum advertised pricing disputes, inheritance of loyalty balances, probate access to gift vouchers, military deployment pauses, disaster-relief purchase grants]
+  - template: 'Which {term} options does this store provide at checkout?'
+    terms: [Carbon Trust offset certificates, disability tax exemption verification, FIDO2 hardware-key authentication, purchase-order EDI integration, municipal grant reimbursement, multilingual Braille receipts, Sharia-compliant financing certificates, blockchain escrow settlement, reusable-crate pickup scheduling, university procurement approval routing, embassy diplomatic exemption, hazardous-goods permit upload, ocean-freight container booking, reservation of serial-number batches, corporate cost-center validation]
