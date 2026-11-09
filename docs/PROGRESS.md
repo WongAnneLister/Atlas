@@ -11,7 +11,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 03 | Policy documents | done | `eval/reports/docs_build.md`: 12 docs, 122 sections, 7 product models; FAQ coverage 856/859 (99.65%). Extractive prose, source-scoped sections, cached topics, strict fact/provenance checks, byte-identical rebuild. Processed text stays local. |
 | 04 | Mock orders + OrderService | done | `eval/reports/orders_seed.md`: 50 customers, 300 orders, 749 items, 8 statuses, 14 named edge cases; 900 cross-customer operations blocked. Deterministic transactional reseed; ownership-scoped service; refund requests stay pending_review. |
 | 05 | Eval set | done | `eval/reports/eval_set.md`: 300 questions, 5 groups, 30 dev + 30 test per group; 240 answerable; validator failures 0. reviewed: 0/300 — waiting for human review. Local review CSV exported; questions and labels frozen before retrieval. |
-| 06 | Chunking + ingestion | implemented; full model ingestion pending | `eval/reports/ingestion.md`: 206 chunks, 122 sections; average 491.43 tokens; maximum 12,331 (whole product manual), policy maximum 512. Real Milvus integration: 1/1 passed with fake vectors. Full BGE ingestion still needs the local main weight file. |
+| 06 | Chunking + ingestion | done | `eval/reports/ingestion.md`: 206 chunks, 122 sections; 206 real BGE-M3 rows stored in Milvus 2.5.10; 244 encoder windows. Average 491.43 tokens; maximum 12,331 (whole manual), policy maximum 512. Database integration: 1/1 passed with fake vectors. |
 | 07 | Hybrid retrieval + RRF | todo | |
 | 08 | Rerank + retrieval eval | todo | |
 | 09 | Graph skeleton + intents | todo | |
@@ -48,6 +48,7 @@ Agents: update this file in every commit. Keep it short and factual.
 - 03: Document build integrity: 856/859 FAQ rows covered (99.65%), 12 docs, 122 sections, 7 models (`eval/reports/docs_build.md`). No retrieval or answer-quality metrics yet.
 - 04: Mock order integrity: 50 customers, 300 orders, 749 items, 192 shipments, 8 statuses, 14 named edge cases; 900 cross-customer operations blocked (`eval/reports/orders_seed.md`). These are fixture checks, not agent-quality metrics.
 - 05: Eval construction: 300 items, 240 answerable; 30 dev/30 test per group; validation failures 0; reviewed: 0/300 — waiting for human review (`eval/reports/eval_set.md`). No retrieval or answer-quality measurements yet.
+- 06: Real-model ingestion integrity: 206 chunks from 122 sections stored in Milvus 2.5.10, using 244 encoder windows (`eval/reports/ingestion.md`). The separate database integration fixture passed 1/1 with fake vectors. These checks do not measure retrieval quality.
 
 ## Checkpoints
 
@@ -70,4 +71,4 @@ Agents: update this file in every commit. Keep it short and factual.
 - 05: Lexical support and absent-key-phrase checks cannot prove meaning or absence. Human review is still required before treating this draft set as a trusted benchmark.
 - 01: Config `gate.good_evidence_min` and `intent.min_confidence` are placeholders to revisit in commits 11 and 09.
 - 06: The pinned MinIO source image now builds successfully on the VPS. Compose passes the server subcommand to the image entrypoint without duplicating the executable. A regression test failed before this fix. Go build/module caches are removed inside the build step to reduce retained disk use.
-- 06: All pinned BGE-M3 runtime files were downloaded and hash-verified on the VPS under `/opt/atlas-cache/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/`. Client transfers remain slow; partial files stay gitignored and unused. Loading the full encoder alongside existing services on the small VPS was avoided. The client still lacks its main weight file. `make ingest` reaches Milvus 2.5.10 but stops before encoding or replacing the collection. Complete the client cache, then rerun `make ingest` and `make eval-ingest`.
+- 06: The pinned BGE-M3 cache is complete and SHA-256 verified on the client. `make ingest` ran offline with the real model and stored 206 rows in the project Milvus collection. `make eval-ingest` records model revision, runtime, timings and corpus hashes. Retrieval and answer quality remain unmeasured; those require the later frozen-set experiments.
