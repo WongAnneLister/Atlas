@@ -146,6 +146,7 @@ The pipeline checks server connectivity before downloading weights; it embeds be
 Index promotion and transactional incremental updates belong to the later production phase.
 
 Compose works with either the Docker plugin or official standalone docker-compose CLI.
+On a host without the app environment, use `make up COMPOSE_PYTHON=python3` for Compose only.
 MinIO is built from its original fixed source commit because community images were withdrawn.
 The first build needs network access; later starts reuse the local image and build cache.
 The source build keeps the upstream license and credits inside the image.

@@ -5,7 +5,8 @@ WORKDIR /source
 ADD https://codeload.github.com/minio/minio/tar.gz/e1f26f7c8e7f06abfe1bc6c4023f6012e1d0aa9f /tmp/source.tar.gz
 RUN echo "b33290f7078d81a029a62aebe10a07aeb005ae349f5854fd52c656c324a6de3e  /tmp/source.tar.gz" | sha256sum -c - \
     && tar -xzf /tmp/source.tar.gz --strip-components=1 \
-    && go build -p 1 -trimpath -ldflags="-s -w" -o /out/minio .
+    && go build -p 1 -trimpath -ldflags="-s -w" -o /out/minio . \
+    && go clean -cache -modcache
 
 FROM alpine:3.21.3
 COPY --from=build /out/minio /usr/local/bin/minio

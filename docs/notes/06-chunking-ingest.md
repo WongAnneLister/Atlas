@@ -1,18 +1,18 @@
-# 06 — Section chunks and a searchable index
+# 06 — Fix service startup and verify database access
 
 **What**
-I built section-based chunks for policies and products. I added BGE-M3, a model that changes text into lists of numbers. I wrote Milvus word search and vector search code.
+I fixed MinIO startup arguments and reduced build cache space. I made service startup work without installing the model tools.
 
 **Why**
-I needed stable source links before comparing search methods. I kept each chunk inside its source section. Without this link, I could not score retrieved evidence against expected sections.
+I found a repeated command that stopped the storage service. I needed healthy storage before checking the real database.
 
 **Number**
-I built 206 chunks from 122 sections. Policy chunks use at most 512 tokens. I kept each of the 7 product sections whole.
+I passed 1 real database integration test. I checked word search and vector search with fake vectors. I still lack a full model ingestion result.
 Source: eval/reports/ingestion.md
 
 **Trade-off**
-I kept full manuals together for clear source links. My encoder averages smaller text windows to limit memory. This can blur exact facts in long manuals. Live ingestion remains blocked by missing runtime dependencies.
+I cached the verified model on the server. I avoided loading it beside existing services with little free memory. My client still needs the large weight file.
 
 **Likely follow-up question**
-Q: How will you check retrieval quality?
-A: I still need to complete live database and model checks. Then I will compare both search methods in commit 08. I will keep the frozen questions and labels unchanged. Chunk counts alone do not prove search quality.
+Q: Does this prove retrieval quality?
+A: I only checked database behavior. I still need real embeddings for every chunk. Then I will compare search quality with the frozen questions.

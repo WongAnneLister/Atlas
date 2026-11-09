@@ -3,6 +3,7 @@
 
 UV ?= uv
 RUN := $(UV) run
+COMPOSE_PYTHON ?= $(RUN) python
 
 .PHONY: setup up down data data-download data-licenses data-docs data-validate-docs data-orders \
         eval-docs eval-orders \
@@ -19,10 +20,10 @@ setup:
 	$(RUN) pre-commit install
 
 up:
-	$(RUN) python scripts/compose.py up -d
+	$(COMPOSE_PYTHON) scripts/compose.py up -d
 
 down:
-	$(RUN) python scripts/compose.py down
+	$(COMPOSE_PYTHON) scripts/compose.py down
 
 minio-image-local:
 	$(RUN) python scripts/build_minio.py
