@@ -50,7 +50,7 @@ _none yet_
 ## Known issues / follow-ups
 
 - 01: `docker compose up -d` not verified — the dev machine has the Docker engine but no Compose plugin. The compose file parses; Milvus health is unchecked.
-- 02: Data sources changed from the PRD (see `docs/DATA_NOTES.md`). `docs/PRD.md` → Data still lists the old dataset; update it in a docs commit.
+- 02: Data sources changed from the original PRD (see `docs/DATA_NOTES.md`); `docs/PRD.md` → Data updated to match.
 - 02: Only 6 products (Philips PDFs). Commit 03/05 must decide if that covers 60 `model_number` questions or needs a synthetic catalog.
 - 02: Flipkart and Philips text is "unclear" → commit 03 must not commit processed docs built from them.
 - 01: Config `gate.good_evidence_min` and `intent.min_confidence` are placeholders to revisit in commits 11 and 09.

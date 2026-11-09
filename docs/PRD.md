@@ -49,9 +49,15 @@ Success means:
 ## Data
 | Dataset | Use | Note |
 |---|---|---|
-| `qgyd2021/e_commerce_customer_service` | Main knowledge base: FAQ + product info | Product info → model-number questions |
-| `MakTek/Customer_support_faqs_dataset` | Extra knowledge: ~200 FAQs | Synthetic, generic |
+| `NebulaByte/E-Commerce_FAQs` | Main knowledge base: FAQ (659 Flipkart help-centre Q&As, 34 categories) | Off-topic categories (EV, insurance, travel) serve as distractors and no-answer seeds |
+| `InfiniFlow/Ecommerce-Customer-Service-Workflow` | Product info: 6 Philips leaflets and user manuals (PDF) | Model codes → model-number questions; only 6 products |
+| `MakTek/Customer_support_faqs_dataset` | Extra knowledge: 200 FAQs (~89 unique) | Synthetic, generic |
 | `bitext/Bitext-customer-support-llm-chatbot-training-dataset` | Intent + colloquial phrasing: 27 intents, ~27k utterances | Map 27 intents → our 9 |
+
+The original main knowledge base, `qgyd2021/e_commerce_customer_service`, was removed from the Hub.
+It was replaced in commit 02. Pinned revisions are in `configs/default.yaml`, findings in
+`docs/DATA_NOTES.md`, licenses in `docs/LICENSES.md`. The Flipkart and Philips text is
+third-party, so it is marked "unclear" and only download scripts are published.
 
 Gaps we fill ourselves:
 1. **Policy documents** — merge related FAQs into long docs (Returns, Shipping, Payments, Membership) so chunking and cross-doc retrieval are actually tested.
