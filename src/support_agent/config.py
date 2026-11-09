@@ -73,9 +73,11 @@ class RetrievalSettings(BaseModel):
     embedding_max_tokens: int = Field(gt=2)
     embedding_window_tokens: int = Field(gt=2)
     reranker_model: str
-    dense_top_k: int
-    bm25_top_k: int
-    rrf_k: int
+    dense_top_k: int = Field(gt=0)
+    bm25_top_k: int = Field(gt=0)
+    search_top_k: int = Field(gt=0)
+    bm25_normalise_model_numbers: bool
+    rrf_k: int = Field(ge=0)
     rerank_top_k: int
 
     @model_validator(mode="after")

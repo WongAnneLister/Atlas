@@ -77,6 +77,8 @@ retrieval:
   reranker_model: BAAI/bge-reranker-v2-m3
   dense_top_k: 50
   bm25_top_k: 50
+  search_top_k: 5
+  bm25_normalise_model_numbers: true
   rrf_k: 60
   rerank_top_k: 5
 

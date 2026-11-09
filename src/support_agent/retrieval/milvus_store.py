@@ -5,8 +5,6 @@ from __future__ import annotations
 import math
 from typing import Any, Protocol
 
-from pydantic import BaseModel
-
 from support_agent.config import Settings
 from support_agent.retrieval.chunking import Chunk
 
@@ -21,13 +19,14 @@ class ChunkStore(Protocol):
     def count(self) -> int: ...
 
 
-class SearchHit(BaseModel):
-    chunk_id: str
-    doc_id: str
-    section_id: str
-    heading_path: str
-    text: str
+class SearchHit(Chunk):
     score: float
+
+
+class SearchStore(Protocol):
+    def search_dense(self, vector: list[float], limit: int) -> list[SearchHit]: ...
+
+    def search_bm25(self, text: str, limit: int) -> list[SearchHit]: ...
 
 
 class MilvusStore:
@@ -190,7 +189,15 @@ class MilvusStore:
             anns_field=field,
             limit=limit,
             search_params={"metric_type": metric, "params": params},
-            output_fields=["chunk_id", "doc_id", "section_id", "heading_path", "text"],
+            output_fields=[
+                "chunk_id",
+                "doc_id",
+                "section_id",
+                "title",
+                "heading_path",
+                "text",
+                "n_tokens",
+            ],
             consistency_level="Strong",
             timeout=self.config.timeout_s,
         )

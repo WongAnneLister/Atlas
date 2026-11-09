@@ -111,61 +111,9 @@ def main() -> None:
     ]
     report = "\n".join(lines)
     write_text(REPO_ROOT / "eval/reports/ingestion.md", report)
-    guide = """# Retrieval
-
-## Chunking & index
-
-Run `make up`, then `make ingest`. Inspect `data/processed/chunks.jsonl` locally.
-`make ingest-chunks` runs the real pinned BGE tokenizer without loading model weights or Milvus.
-Optional `make embedding-cache` prefetches model files without loading the encoder.
-`make test-milvus` runs the integration test explicitly; normal unit tests remain offline.
-`make eval-ingest` regenerates the counts and records the actual ingestion/integration status.
-
-Documents split at section markers first; policy chunks never cross a section boundary.
-Within a long section, paragraph endings are preferred, then sentence endings, then token offsets.
-Overlapping source windows retain the configured number of tokens within each section.
-Token counts use the pinned BGE fast tokenizer, excluding special tokens and heading prefixes.
-Product sections always remain a single chunk, even when an entire manual exceeds the policy budget.
-Source text and section ids remain unchanged; the frozen evaluation set is not rewritten.
-Chunk ids hash section id and its local chunk index. Full rebuilds remove obsolete rows.
-Heading paths are prepended only to encoder input when enabled; displayed and BM25 text stay raw.
-
-Model files are cached under the configured gitignored cache directory at a pinned revision.
-If Xet downloads stall, set `HF_HUB_DISABLE_XET=1` before running `make embedding-cache`.
-For long encoder inputs, bounded source windows cover all tokens without truncation.
-Their dense vectors are averaged by window token count and then normalised when configured.
-This keeps long products intact while bounding encoder memory; quality must be measured later.
-Batch size, device, precision, thread count and window size are configuration values.
-
-The collection uses HNSW/COSINE dense vectors and a sparse BM25 function generated from text.
-The text analyzer is enabled; callers never send hand-built sparse vectors.
-All Milvus SDK imports are isolated in `milvus_store.py`.
-UTF-8 byte lengths, vector shape and finite values are checked before collection replacement.
-Reset refuses a collection lacking this project's description marker.
-The pipeline checks server connectivity before downloading weights; it embeds before resetting data.
-Index promotion and transactional incremental updates belong to the later production phase.
-
-Compose works with either the Docker plugin or official standalone docker-compose CLI.
-On a host without the app environment, use `make up COMPOSE_PYTHON=python3` for Compose only.
-MinIO is built from its original fixed source commit because community images were withdrawn.
-The first build needs network access; later starts reuse the local image and build cache.
-The source build keeps the upstream license and credits inside the image.
-If a remote daemon lacks build space, put official Go 1.23.4 on the client PATH.
-Run `make minio-image-local` there, then `make up`; only the small runtime image is sent.
-Set `MINIO_TARGET_ARCH` to match the Docker server; the local build defaults to amd64.
-The core containers have configurable memory limits in `docker-compose.yml`.
-Published Milvus ports bind to loopback. For a remote Docker context, forward the ports over SSH.
-The client URI remains configurable; never assume a remote Docker daemon is the local host.
-No unrelated containers are stopped. Only the configured project collection is reset by ingestion.
-
-References: [Milvus full text search](https://milvus.io/docs/v2.5.x/full-text-search.md),
-[BGE-M3 model card](https://huggingface.co/BAAI/bge-m3).
-MinIO build context: [upstream distribution change](https://github.com/minio/minio#source-only-distribution).
-
-## Measured ingestion
-
-"""
-    write_text(REPO_ROOT / "docs/RETRIEVAL.md", guide + report)
+    guide_path = REPO_ROOT / "docs/RETRIEVAL.md"
+    guide = guide_path.read_text(encoding="utf-8").split("## Measured ingestion", 1)[0]
+    write_text(guide_path, guide.rstrip() + "\n\n## Measured ingestion\n\n" + report)
 
 
 if __name__ == "__main__":

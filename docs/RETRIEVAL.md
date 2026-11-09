@@ -49,6 +49,44 @@ References: [Milvus full text search](https://milvus.io/docs/v2.5.x/full-text-se
 [BGE-M3 model card](https://huggingface.co/BAAI/bge-m3).
 MinIO build context: [upstream distribution change](https://github.com/minio/minio#source-only-distribution).
 
+## Hybrid + RRF
+
+Run `make search Q="Does the W40 come with a charger?" MODE=hybrid` to inspect results.
+Modes are `dense`, `bm25`, and `hybrid`; `hybrid_rerank` raises until commit 08.
+The command prints section ids, chunk ids, heading paths, source ranks and scores.
+It only retrieves evidence; it does not write a customer answer or bypass the future gate.
+Use a model present in the rebuilt catalog, such as `BHD340/10`, for product checks.
+W40 is the task's example spelling, not a product added to this corpus.
+A returned chunk alone does not prove that an absent product or attribute is supported.
+
+`RetrievedChunk` retains every indexed chunk field, plus separate `scores` and `ranks` maps.
+Dense retrieval embeds the original query using the same pinned BGE-M3 encoder as ingestion.
+BM25 sends query text to Milvus's existing full-text function; it never builds sparse vectors locally.
+The factory accepts an injected store and embedder for offline tests or shared connections.
+Applications should own an injected `MilvusStore` and close it when finished, as the CLI does.
+
+Hybrid retrieval requests `retrieval.dense_top_k` and `retrieval.bm25_top_k` candidates independently.
+Both default to 50. Retrieval is sequential; either dependency failure propagates without partial results.
+Reciprocal Rank Fusion (RRF) adds `1 / (rrf_k + rank)` for each occurrence across sources.
+Ranks begin at one; an absent source contributes nothing. Raw scores are not mixed.
+Equal fusion scores use the best single source rank, then chunk id, for deterministic ordering.
+Duplicate ids within one source ranking are rejected instead of counted twice.
+The merged results retain both source ranks and raw scores, with the fused score under `scores.rrf`.
+The caller supplies its output limit; the debug CLI uses `retrieval.search_top_k` from YAML.
+
+RRF avoids comparing cosine similarity with BM25 scores on different scales.
+The configured `rrf_k` is 60, following the pilot choice in the
+[original RRF paper](https://cormack.uwaterloo.ca/cormack/cormacksigir09-rrf.pdf).
+This is a starting default, not a measured optimum for this corpus.
+Any later sweep must tune on dev and report on test; commit 08 measures retrieval quality.
+
+`retrieval.bm25_normalise_model_numbers` enables query-only spelling cleanup by default.
+It case-folds text and joins a letter prefix to digits across a hyphen: `W-40` becomes `w40`.
+It preserves suffixes such as `/00`, amounts such as `30`, and ordinary hyphenated words.
+Dense queries, indexed source text, model facts and frozen eval labels remain unchanged.
+Disable this flag to compare with raw BM25 queries in commit 08.
+The normaliser does not claim to fix every catalog spelling or establish a quality gain.
+
 ## Measured ingestion
 
 # Chunking and ingestion report

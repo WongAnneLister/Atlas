@@ -12,7 +12,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 04 | Mock orders + OrderService | done | `eval/reports/orders_seed.md`: 50 customers, 300 orders, 749 items, 8 statuses, 14 named edge cases; 900 cross-customer operations blocked. Deterministic transactional reseed; ownership-scoped service; refund requests stay pending_review. |
 | 05 | Eval set | done | `eval/reports/eval_set.md`: 300 questions, 5 groups, 30 dev + 30 test per group; 240 answerable; validator failures 0. reviewed: 0/300 — waiting for human review. Local review CSV exported; questions and labels frozen before retrieval. |
 | 06 | Chunking + ingestion | done | `eval/reports/ingestion.md`: 206 chunks, 122 sections; 206 real BGE-M3 rows stored in Milvus 2.5.10; 244 encoder windows. Average 491.43 tokens; maximum 12,331 (whole manual), policy maximum 512. Database integration: 1/1 passed with fake vectors. |
-| 07 | Hybrid retrieval + RRF | todo | |
+| 07 | Hybrid retrieval + RRF | done | Dense/BM25 adapters, deterministic RRF, query-only model normaliser, factory and `make search`. Offline checks and real Milvus integration passed. Real BGE-M3 hybrid search and normalised BM25 both retrieved BHD340/10. No retrieval quality metrics yet. |
 | 08 | Rerank + retrieval eval | todo | |
 | 09 | Graph skeleton + intents | todo | |
 | 10 | Tool, complaint, fixed paths | todo | |
@@ -49,12 +49,16 @@ Agents: update this file in every commit. Keep it short and factual.
 - 04: Mock order integrity: 50 customers, 300 orders, 749 items, 192 shipments, 8 statuses, 14 named edge cases; 900 cross-customer operations blocked (`eval/reports/orders_seed.md`). These are fixture checks, not agent-quality metrics.
 - 05: Eval construction: 300 items, 240 answerable; 30 dev/30 test per group; validation failures 0; reviewed: 0/300 — waiting for human review (`eval/reports/eval_set.md`). No retrieval or answer-quality measurements yet.
 - 06: Real-model ingestion integrity: 206 chunks from 122 sections stored in Milvus 2.5.10, using 244 encoder windows (`eval/reports/ingestion.md`). The separate database integration fixture passed 1/1 with fake vectors. These checks do not measure retrieval quality.
+- 07: Real-index smoke checks passed via SSH forwarding: BGE-M3 hybrid search for BHD340/10 and BM25 for BHD-340/10 retrieved the matching product. These are manual acceptance checks, not frozen-set quality metrics; retrieval comparison remains in commit 08.
 
 ## Checkpoints
 
 - **Checkpoint 1 — Week 1 gate passed.** Commits 02, 03 and 04 are done. Policy documents and mock order data can be rebuilt with Makefile targets.
 
 ## Known issues / follow-ups
+
+- 07: The task's W40 example is absent from the indexed catalog. Its live query returned charger-related electric-vehicle FAQs, not evidence for W40. Acceptance also used BHD340/10, confirmed from the real index; no synthetic product or eval label was added. Reranking and frozen-set quality comparisons remain in commit 08. The pinned model is cached locally; the existing VPS index remains unchanged.
+- 07: `make eval-ingest` now replaces only the measured section of `docs/RETRIEVAL.md`, preserving the handwritten guide. An offline regression test covers repeated regeneration.
 
 - 01/06: The VPS now runs healthy project Milvus, MinIO and etcd containers. Milvus ports bind to loopback and the client connects through SSH forwarding. Existing services remain running. `make up COMPOSE_PYTHON=python3` supports a Docker host without the app environment.
 - 02: Data sources changed from the original PRD (see `docs/DATA_NOTES.md`); `docs/PRD.md` → Data updated to match.

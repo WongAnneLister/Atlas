@@ -3,13 +3,15 @@
 
 UV ?= uv
 RUN := $(UV) run
+MODE ?= hybrid
+export Q
 COMPOSE_PYTHON ?= $(RUN) python
 
 .PHONY: setup up down data data-download data-licenses data-docs data-validate-docs data-orders \
         eval-docs eval-orders \
         eval-build eval-validate eval-review eval-review-import eval-set-report \
         ingest ingest-chunks embedding-cache eval-ingest test-milvus eval-retrieval eval-intent eval-e2e sweep serve \
-        lint format typecheck test check notes-check notes minio-image-local
+        lint format typecheck test check notes-check notes minio-image-local search
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -93,6 +95,9 @@ test-milvus:
 eval-retrieval:
 	$(call todo,08)
 
+search:
+	$(RUN) python scripts/search.py --mode "$(MODE)"
+
 eval-intent:
 	$(call todo,09)
 
@@ -117,7 +122,7 @@ typecheck:
 	$(RUN) mypy
 
 test:
-	$(RUN) pytest
+	$(RUN) pytest $(TEST_ARGS)
 
 notes-check:
 	$(RUN) python scripts/check_notes.py

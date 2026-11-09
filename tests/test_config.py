@@ -40,3 +40,15 @@ def test_bad_gate_weights_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     monkeypatch.setenv(CONFIG_PATH_ENV, str(bad))
     with pytest.raises(ValidationError, match=r"sum to 1\.0"):
         get_settings()
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [("dense_top_k", 0), ("bm25_top_k", -1), ("search_top_k", 0), ("rrf_k", -1)],
+)
+def test_invalid_retrieval_limits_rejected(
+    key: str, value: int, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(f"SUPPORT_AGENT__RETRIEVAL__{key.upper()}", str(value))
+    with pytest.raises(ValidationError, match=key):
+        get_settings()
