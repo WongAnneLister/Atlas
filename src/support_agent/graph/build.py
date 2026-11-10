@@ -14,6 +14,7 @@ from support_agent.graph.nodes.classify import Classifier
 from support_agent.graph.nodes.complaint import ComplaintPath
 from support_agent.graph.nodes.fixed import fixed_reply
 from support_agent.graph.nodes.knowledge import KnowledgePath, route_after_gate
+from support_agent.graph.nodes.refund import RefundPath
 from support_agent.graph.nodes.rewrite import make_rewrite_node
 from support_agent.graph.nodes.tools_path import ToolsPath
 from support_agent.graph.state import ConversationState
@@ -26,6 +27,14 @@ def route_by_path(state: ConversationState) -> str:
     if state.path == Path.KNOWLEDGE:
         return "retrieve"
     return PATH_NODES[state.path]
+
+
+def route_refund_identify(state: ConversationState) -> str:
+    return "refund_load" if state.refund_order_id else END
+
+
+def route_refund_policy(state: ConversationState) -> str:
+    return "refund_decide" if state.gate is not None and state.gate.passed else END
 
 
 def _stub(path: Path, name: str) -> Callable[[ConversationState], dict[str, Any]]:
@@ -59,6 +68,7 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
         Path.FIXED: fixed_reply,
     }
     knowledge = KnowledgePath(deps)
+    refund = RefundPath(deps)
     graph.add_node("retrieve", RunnableLambda(knowledge.retrieve))
     graph.add_node("gate", RunnableLambda(knowledge.gate))
     graph.add_node("answer", RunnableLambda(knowledge.answer))
@@ -67,8 +77,20 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
     graph.add_conditional_edges("gate", route_after_gate, ["answer", "handoff"])
     graph.add_edge("answer", END)
     graph.add_edge("handoff", END)
+    graph.add_node("refund_load", RunnableLambda(refund.load_order))
+    graph.add_node("refund_retrieve", RunnableLambda(refund.retrieve_policy))
+    graph.add_node("refund_decide", RunnableLambda(refund.decide))
+    graph.add_node("refund_act", RunnableLambda(refund.act))
+    graph.add_edge("refund_load", "refund_retrieve")
+    graph.add_conditional_edges("refund_retrieve", route_refund_policy, ["refund_decide", END])
+    graph.add_edge("refund_decide", "refund_act")
+    graph.add_edge("refund_act", END)
     for path, name in PATH_NODES.items():
         if path == Path.KNOWLEDGE:
+            continue
+        if path == Path.AFTER_SALES:
+            graph.add_node(name, RunnableLambda(lambda state: refund.identify_order(state)))
+            graph.add_conditional_edges(name, route_refund_identify, ["refund_load", END])
             continue
         graph.add_node(name, RunnableLambda(implementations.get(path, _stub(path, name))))
         graph.add_edge(name, END)

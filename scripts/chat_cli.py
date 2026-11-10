@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
+from langgraph.types import Command
 
 from support_agent.config import get_settings
 from support_agent.graph.build import build_graph
@@ -50,6 +51,19 @@ def main(argv: list[str] | None = None) -> int:
                     {"messages": [HumanMessage(content=question)], "customer_id": args.customer},
                     config,
                 )
+                while result.get("__interrupt__"):
+                    interruption = result["__interrupt__"][0]
+                    payload = interruption.value
+                    if payload.get("type") != "order_picker":
+                        raise RuntimeError("Unsupported graph interrupt")
+                    print("Choose an order:")
+                    for order in payload["orders"]:
+                        print(
+                            f"  {order['order_id']} | {order['order_date']} | "
+                            f"{order['status']} | {order['total']} {order['currency']}"
+                        )
+                    choice = input("Order id (or none): ").strip()
+                    result = graph.invoke(Command(resume=choice), config)
                 print(f"Agent: {result['answer']}")
                 print(f"Trace: {' -> '.join(result['trace'])}")
                 if result.get("handoff"):

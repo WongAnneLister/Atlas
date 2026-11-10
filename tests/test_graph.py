@@ -106,6 +106,10 @@ def test_all_intents_follow_fixed_routes_and_skip_first_rewrite(intent: Intent) 
     with knowledge_deps(Settings(), model) as deps:
         result = invoke(build_graph(deps), "A self-contained customer request")
     path = INTENT_TO_PATH[intent]
+    if path == Path.AFTER_SALES:
+        assert result["trace"] == ["rewrite", "classify"]
+        assert result["__interrupt__"][0].value["type"] == "order_picker"
+        return
     expected_trace = (
         ["rewrite", "classify", "retrieve", "gate", "handoff"]
         if path == Path.KNOWLEDGE
@@ -114,10 +118,7 @@ def test_all_intents_follow_fixed_routes_and_skip_first_rewrite(intent: Intent) 
     assert result["trace"] == expected_trace
     assert result["intent"] == intent
     assert result["path"] == path
-    if path == Path.AFTER_SALES:
-        assert result["answer"] == f"[path {path.value} not implemented]"
-    else:
-        assert result["answer"].strip()
+    assert result["answer"].strip()
     assert result["messages"][-1].content == result["answer"]
     assert result["rewritten_query"] == "A self-contained customer request"
     assert len(model.rewritten_messages) == (1 if path == Path.COMPLAINT else 0)
@@ -193,6 +194,10 @@ def test_low_confidence_flags_only_knowledge_and_after_sales(intent: Intent) -> 
         result = invoke(build_graph(deps), "request")
     path = INTENT_TO_PATH[intent]
     assert result["intent_low_confidence"] == (path in {Path.KNOWLEDGE, Path.AFTER_SALES})
+    if path == Path.AFTER_SALES:
+        assert result["trace"] == ["rewrite", "classify"]
+        assert result["__interrupt__"][0].value["type"] == "order_picker"
+        return
     assert result["trace"][-1] == ("handoff" if path == Path.KNOWLEDGE else PATH_NODES[path])
 
 

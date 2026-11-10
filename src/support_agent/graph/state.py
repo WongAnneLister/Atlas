@@ -33,6 +33,11 @@ class ConversationState(BaseModel):
     retrieval: list[RetrievedChunk] = Field(default_factory=list)
     gate: GateResult | None = None
     order_context: dict[str, Any] | None = None
+    refund_candidates: list[dict[str, Any]] = Field(default_factory=list)
+    refund_order_id: str | None = None
+    refund_policy_query: str = ""
+    refund_decision: dict[str, Any] | None = None
+    refund_request: dict[str, Any] | None = None
     handoff: HandoffPayload | None = None
     tool_errors: int = Field(default=0, ge=0)
     consecutive_tool_errors: int = Field(default=0, ge=0)

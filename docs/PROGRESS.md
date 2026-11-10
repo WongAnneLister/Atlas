@@ -17,7 +17,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 09 | Graph skeleton + intents | done | Fixed rewrite/classify/five-stub graph, typed state, memory/optional SQLite checkpoints, exhaustive Bitext mapping. `eval/reports/intent.md`: real DeepSeek intent accuracy 0.9048, path accuracy 0.9095 over 420 held-out items; parse/invocation failures 0. |
 | 10 | Tool, complaint, fixed paths | done | Customer-bound read-only tools, capped main-model loop, complaint acknowledgement, local fixed replies, typed shared handoff, and `make chat`. Real DeepSeek CLI lookup verified the seeded delayed shipment through order and tracking tools. See `docs/TOOL_PATHS.md`; task-quality measurements remain in commit 13. |
 | 11 | Evidence gate + knowledge path | implemented; dev analysis pending | Real dev analysis awaits local Milvus; threshold remains untuned. |
-| 12 | Refund sub-flow | todo | |
+| 12 | Refund sub-flow | done | Offline refund-flow tests cover picker, ownership, gate failure, code checks, and pending-review writes. |
 | 13 | E2E eval + threshold sweep | todo | |
 | 14 | API + SSE + chat page | todo | |
 | 15 | Langfuse + cost | todo | |
@@ -54,6 +54,7 @@ Agents: update this file in every commit. Keep it short and factual.
 - 09: `eval/reports/intent.md`: DeepSeek Flash non-thinking mode measured 420 intent-holdout questions. Intent accuracy 0.9048 and path accuracy 0.9095 meet the initial target; mean original classification latency 0.7728 seconds, parse/invocation failures 0. Refund recall is only 0.7200; order-status recall is 0.7800 and human-contact recall is 0.8400. All labels remain unreviewed drafts.
 - 10: No new task-quality metric yet. Offline route, identity isolation, tool failure, cap, checkpoint, and CLI checks accompany a real DeepSeek CLI smoke check against the seeded delayed shipment. Neither smoke checks nor fake-model tests establish end-to-end answer safety; that remains in commit 13.
 - 11: The knowledge route now retrieves, reranks, gates, then answers with checked citations or hands off. `--allow-untuned-gate` explicitly enables the configured 0.5 demo placeholder; the production threshold remains null. `make gate-analysis` could not connect to local Milvus at `127.0.0.1:19530`, so no signal metrics or manual chat result are recorded yet.
+- 12: Refund and return requests now verify owned orders, pause for an order picker, gate retrieved policy, and code-check structured decisions. Offline tests cover these routes; no end-to-end refund quality metric exists yet.
 
 ## Checkpoints
 
@@ -75,6 +76,7 @@ Agents: update this file in every commit. Keep it short and factual.
 - 08: Generated retrieval CSVs use Git LF normalization. The pre-commit Ruff pin matches the existing lockfile, preventing conflicting lint rules between commit hooks and `make check`.
 - 07: The task's W40 example is absent from the indexed catalog. Its live query returned charger-related electric-vehicle FAQs, not evidence for W40. Acceptance also used BHD340/10, confirmed from the real index; no synthetic product or eval label was added. Reranking and frozen-set quality comparisons remain in commit 08. The pinned model is cached locally; the existing VPS index remains unchanged.
 - 07: `make eval-ingest` now replaces only the measured section of `docs/RETRIEVAL.md`, preserving the handwritten guide. An offline regression test covers repeated regeneration.
+- 12: The refund flow records pending human review only. Real payment, idempotency, and production handoff queue behavior remain out of scope.
 
 - 01/06: The VPS now runs healthy project Milvus, MinIO and etcd containers. Milvus ports bind to loopback and the client connects through SSH forwarding. Existing services remain running. `make up COMPOSE_PYTHON=python3` supports a Docker host without the app environment.
 - 02: Data sources changed from the original PRD (see `docs/DATA_NOTES.md`); `docs/PRD.md` → Data updated to match.
