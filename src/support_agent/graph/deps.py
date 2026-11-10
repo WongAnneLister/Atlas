@@ -15,6 +15,10 @@ from langgraph.checkpoint.memory import InMemorySaver
 from support_agent.config import REPO_ROOT, Settings
 from support_agent.llm import Role, get_chat_model
 from support_agent.orders.service import OrderService
+from support_agent.retrieval.embed import BgeM3Embedder
+from support_agent.retrieval.factory import build_retriever
+from support_agent.retrieval.milvus_store import MilvusStore
+from support_agent.retrieval.rerank import BgeReranker
 from support_agent.retrieval.types import Retriever
 
 
@@ -25,6 +29,7 @@ class GraphDeps:
     retriever: Retriever | None = None
     order_service: OrderService | None = None
     main_model: BaseChatModel | None = None
+    allow_untuned_gate: bool = False
     _resources: ExitStack = field(default_factory=ExitStack, init=False, repr=False)
     _checkpointer: BaseCheckpointSaver[Any] | None = field(default=None, init=False, repr=False)
     _closed: bool = field(default=False, init=False, repr=False)
@@ -59,6 +64,21 @@ class GraphDeps:
                     SqliteSaver.from_conn_string(str(checkpoint_path))
                 )
         return self._checkpointer
+
+    def knowledge_retriever(self) -> Retriever:
+        if self._closed:
+            raise RuntimeError("GraphDeps is closed")
+        if self.retriever is None:
+            store = MilvusStore(self.settings)
+            self._resources.callback(store.close)
+            self.retriever = build_retriever(
+                "hybrid_rerank",
+                settings=self.settings,
+                store=store,
+                embedder=BgeM3Embedder(self.settings.retrieval),
+                reranker=BgeReranker(self.settings.retrieval),
+            )
+        return self.retriever
 
     def close(self) -> None:
         self._resources.close()

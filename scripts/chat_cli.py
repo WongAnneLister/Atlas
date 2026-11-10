@@ -21,13 +21,22 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--customer", required=True, help="Trusted mock customer id")
     parser.add_argument("--question", default=os.environ.get("Q", ""))
+    parser.add_argument(
+        "--allow-untuned-gate",
+        action="store_true",
+        help="Use the configured placeholder gate threshold for local demos",
+    )
     args = parser.parse_args(argv)
     if not args.customer.strip():
         parser.error("--customer must be nonempty")
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
     settings = get_settings()
-    with GraphDeps(settings, order_service=OrderService(settings=settings.orders)) as deps:
+    with GraphDeps(
+        settings,
+        order_service=OrderService(settings=settings.orders),
+        allow_untuned_gate=args.allow_untuned_gate,
+    ) as deps:
         try:
             graph = build_graph(deps)
             config = {"configurable": {"thread_id": f"{args.customer}:{uuid4().hex}"}}

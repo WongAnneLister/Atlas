@@ -16,7 +16,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-build eval-validate eval-review eval-review-import eval-set-report \
         ingest ingest-chunks embedding-cache eval-ingest test-milvus eval-retrieval eval-intent eval-e2e sweep serve \
         lint format typecheck test check notes-check notes minio-image-local search reranker-cache \
-        eval-retrieval-index eval-failures eval-intent-build eval-intent-draft chat
+        eval-retrieval-index eval-failures eval-intent-build eval-intent-draft gate-analysis chat
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -105,6 +105,9 @@ test-milvus:
 
 eval-retrieval:
 	$(RUN) python -m eval.retrieval_eval --split "$(SPLIT)" $(EVAL_RETRIEVAL_ARGS)
+
+gate-analysis:
+	$(RUN) python -m eval.gate_dev_analysis
 
 eval-failures: MODE = hybrid_rerank
 eval-failures: SPLIT = dev

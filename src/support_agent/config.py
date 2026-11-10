@@ -131,17 +131,19 @@ class ChunkSettings(BaseModel):
 
 
 class GateWeights(BaseModel):
-    top_score: float
-    good_count: float
-    margin: float
-    key_hit: float
+    top_score: float = Field(ge=0, le=1)
+    good_count: float = Field(ge=0, le=1)
+    margin: float = Field(ge=0, le=1)
+    key_hit: float = Field(ge=0, le=1)
 
 
 class GateSettings(BaseModel):
     weights: GateWeights
-    good_evidence_min: float
-    good_count_cap: int
-    threshold: float | None
+    good_evidence_min: float = Field(ge=0, le=1)
+    good_count_cap: int = Field(gt=0)
+    policy_nouns: list[str] = Field(min_length=1)
+    untuned_threshold: float = Field(ge=0, le=1)
+    threshold: float | None = Field(default=None, ge=0, le=1)
 
     @model_validator(mode="after")
     def _weights_sum_to_one(self) -> GateSettings:

@@ -58,6 +58,32 @@ def offline_main_model() -> Any:
         yield
 
 
+class FixedRetriever:
+    def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]:
+        return [
+            RetrievedChunk(
+                chunk_id="evidence",
+                doc_id="policy",
+                section_id="policy.return",
+                title="Returns",
+                heading_path="Returns",
+                text="Return items within 30 days.",
+                n_tokens=5,
+                scores={"rerank": 0.99},
+            )
+        ][:top_k]
+
+
+def knowledge_deps(settings: Settings, model: StructuredFake) -> GraphDeps:
+    settings.gate.threshold = 0.5
+    return GraphDeps(
+        settings=settings,
+        fast_model=model,
+        retriever=FixedRetriever(),
+        allow_untuned_gate=True,
+    )
+
+
 def fake(
     *intents: Intent, confidence: float = 0.9, rewrite: str = "resolved question"
 ) -> StructuredFake:
@@ -77,13 +103,18 @@ def invoke(graph: Any, question: str, thread: str = "conversation", **state: Any
 @pytest.mark.parametrize("intent", list(Intent))
 def test_all_intents_follow_fixed_routes_and_skip_first_rewrite(intent: Intent) -> None:
     model = fake(intent)
-    with GraphDeps(settings=Settings(), fast_model=model) as deps:
+    with knowledge_deps(Settings(), model) as deps:
         result = invoke(build_graph(deps), "A self-contained customer request")
     path = INTENT_TO_PATH[intent]
-    assert result["trace"] == ["rewrite", "classify", PATH_NODES[path]]
+    expected_trace = (
+        ["rewrite", "classify", "retrieve", "gate", "handoff"]
+        if path == Path.KNOWLEDGE
+        else ["rewrite", "classify", PATH_NODES[path]]
+    )
+    assert result["trace"] == expected_trace
     assert result["intent"] == intent
     assert result["path"] == path
-    if path in {Path.KNOWLEDGE, Path.AFTER_SALES}:
+    if path == Path.AFTER_SALES:
         assert result["answer"] == f"[path {path.value} not implemented]"
     else:
         assert result["answer"].strip()
@@ -98,12 +129,12 @@ def test_followup_rewrites_with_history_and_keeps_append_only_trace() -> None:
     model = fake(
         Intent.PRODUCT_QUESTION, Intent.PRODUCT_QUESTION, rewrite="Does W40 Pro have a timer?"
     )
-    with GraphDeps(settings=Settings(), fast_model=model) as deps:
+    with knowledge_deps(Settings(), model) as deps:
         graph = build_graph(deps)
         invoke(graph, "Does this model have a timer?")
         result = invoke(graph, "what about the W40 Pro?")
     assert result["rewritten_query"] == "Does W40 Pro have a timer?"
-    assert result["trace"] == ["rewrite", "classify", "knowledge"] * 2
+    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"] * 2
     history = model.rewritten_messages[0]
     assert [message.type for message in history] == ["system", "human", "ai", "human"]
     assert history[-1].content == "what about the W40 Pro?"
@@ -113,7 +144,7 @@ def test_rewrite_history_bounds_human_turns_with_following_assistant() -> None:
     settings = Settings()
     settings.intent.rewrite_history_turns = 2
     model = fake(Intent.POLICY_QUESTION)
-    with GraphDeps(settings=settings, fast_model=model) as deps:
+    with knowledge_deps(settings, model) as deps:
         messages = [
             HumanMessage(content="old question"),
             AIMessage(content="old answer"),
@@ -158,11 +189,11 @@ def test_invalid_confidence_fails_closed(confidence: float) -> None:
 @pytest.mark.parametrize("intent", list(Intent))
 def test_low_confidence_flags_only_knowledge_and_after_sales(intent: Intent) -> None:
     model = fake(intent, confidence=0.1)
-    with GraphDeps(settings=Settings(), fast_model=model) as deps:
+    with knowledge_deps(Settings(), model) as deps:
         result = invoke(build_graph(deps), "request")
     path = INTENT_TO_PATH[intent]
     assert result["intent_low_confidence"] == (path in {Path.KNOWLEDGE, Path.AFTER_SALES})
-    assert result["trace"][-1] == PATH_NODES[path]
+    assert result["trace"][-1] == ("handoff" if path == Path.KNOWLEDGE else PATH_NODES[path])
 
 
 def test_checkpoints_isolate_threads() -> None:
@@ -190,20 +221,26 @@ def test_rewrite_clears_prior_turn_fields() -> None:
                 n_tokens=2,
             )
         ],
-        "gate": {"passed": True},
+        "gate": {
+            "score": 1,
+            "signals": {"top_score": 1, "good_count": 1, "margin": 1, "key_hit": 1},
+            "passed": True,
+            "threshold": 0.5,
+            "reason": "passed",
+        },
         "order_context": {"order_id": "old"},
         "handoff": make_handoff(ConversationState(), HandoffReason.USER_REQUESTED)["handoff"],
         "tool_errors": 5,
         "consecutive_tool_errors": 2,
         "agent_steps": 5,
         "answer": "old",
-        "citations": ["old"],
+        "citations": [{"n": 1, "chunk_id": "old", "section_id": "old", "heading_path": "old"}],
         "intent_low_confidence": True,
         "classification_failed": True,
         "classification_error_type": "OldError",
         "classifier_model": "old-model",
     }
-    with GraphDeps(settings=Settings(), fast_model=model) as deps:
+    with knowledge_deps(Settings(), model) as deps:
         graph = build_graph(deps)
         invoke(graph, "previous request")
         graph.update_state({"configurable": {"thread_id": "conversation"}}, stale)
@@ -284,7 +321,7 @@ def test_structured_parser_envelope_failure_preserves_raw_model_identity(
 @pytest.mark.parametrize("rewrite", ["", "   "])
 def test_empty_rewrite_falls_back_to_original(rewrite: str) -> None:
     model = fake(Intent.POLICY_QUESTION, Intent.POLICY_QUESTION, rewrite=rewrite)
-    with GraphDeps(settings=Settings(), fast_model=model) as deps:
+    with knowledge_deps(Settings(), model) as deps:
         graph = build_graph(deps)
         invoke(graph, "first question")
         result = invoke(graph, "and for this one?")
@@ -300,7 +337,7 @@ def test_rewrite_exception_falls_back_without_logging_customer_text(
         raise RuntimeError("private provider body")
 
     monkeypatch.setattr(StructuredFake, "invoke", fail)
-    with GraphDeps(settings=Settings(), fast_model=model) as deps:
+    with knowledge_deps(Settings(), model) as deps:
         graph = build_graph(deps)
         invoke(graph, "first question")
         result = invoke(graph, "private customer question")
