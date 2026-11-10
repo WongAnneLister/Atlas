@@ -9,7 +9,14 @@ from eval.e2e_records import E2EMetadata, E2ERecord
 from eval.judge import export_csv, import_confirmations, judge_record
 from eval.metrics import outcome_rates, percentile
 from eval.schema import EvalItem
-from eval.sweep import GateScore, _write_config_threshold, rates_for_records, select_threshold
+from eval.sweep import (
+    GateScore,
+    GateScoreMetadata,
+    _write_config_threshold,
+    rates_for_records,
+    select_threshold,
+    write_report,
+)
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
 
 
@@ -35,6 +42,30 @@ def test_sweep_selects_lowest_threshold_with_zero_false_accept() -> None:
 def test_sweep_reports_no_threshold_when_no_answer_score_is_maximum() -> None:
     records = [score("answerable", True, 0.50), score("no-answer", False, 1.0)]
     assert select_threshold(records) is None
+
+
+def test_sweep_report_lists_held_out_false_accepts(tmp_path) -> None:
+    metadata = GateScoreMetadata(
+        git_sha="fixture",
+        config_hash="config",
+        eval_file_hash="eval",
+        corpus_hash="corpus",
+        split="dev",
+        date="fixture",
+        models={},
+        dataset_versions={},
+    )
+    test = score("held-out-failure", False, 0.6).model_copy(update={"split": "test"})
+    path = tmp_path / "sweep.md"
+    write_report(
+        metadata,
+        [score("dev-safe", False, 0.1)],
+        0.17,
+        metadata.model_copy(update={"split": "test"}),
+        [test],
+        path,
+    )
+    assert "held-out-failure" in path.read_text()
 
 
 def test_sweep_clears_unmeasured_threshold_and_keeps_yaml_comments(
@@ -154,3 +185,9 @@ def test_e2e_citation_validity_uses_unique_cited_sections(tmp_path) -> None:
     _write_report([record], metadata, report)
 
     assert "| Citation validity | 1.0000 |" in report.read_text(encoding="utf-8")
+
+    record.item = record.item.model_copy(
+        update={"id": "accepted-no-answer", "answerable": False, "group": "no_answer"}
+    )
+    _write_report([record], metadata, report)
+    assert "accepted-no-answer" in report.read_text(encoding="utf-8")

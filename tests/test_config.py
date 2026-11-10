@@ -14,7 +14,8 @@ def test_defaults_load() -> None:
     assert settings.retrieval.rrf_k == 60
     assert settings.retrieval.rerank_top_k == 5
     assert settings.agent.max_steps == 5
-    assert settings.gate.threshold is None
+    configured = yaml.safe_load(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
+    assert settings.gate.threshold == configured["gate"]["threshold"]
     assert settings.tracing.enabled is False
 
 

@@ -314,6 +314,22 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
             f"{sum(outputs) if outputs else 'pending'} | "
             f"{f'${sum(costs):.6f}' if costs else 'pending'} |"
         )
+    lines.extend(
+        [
+            "",
+            "## No-answer false accepts",
+            "",
+            "These outcomes are retained unchanged; test results do not tune the threshold.",
+            "",
+            "| Item | Intent | Path | Trace |",
+            "|---|---|---|---|",
+        ]
+    )
+    lines.extend(
+        f"| {record.item.id} | {record.intent} | {record.path} | {' -> '.join(record.trace)} |"
+        for record in records
+        if not record.item.answerable and record.accepted
+    )
     write_text(path, "\n".join(lines) + "\n")
 
 

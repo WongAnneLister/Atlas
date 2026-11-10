@@ -116,7 +116,7 @@ gate:
   good_count_cap: 3
   policy_nouns: [refund, return, warranty, coupon, shipping, delivery, exchange, cancellation, payment]
   untuned_threshold: 0.5   # explicit demo/test placeholder; commit 13 replaces via sweep
-  threshold: null          # set by `make sweep` (commit 13); never by hand
+  threshold: 0.17 # selected by eval/reports/threshold_sweep.md at 9ed1d576deca7c52494a51d728cc06a63d365815
 
 agent:
   max_steps: 5

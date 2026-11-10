@@ -88,6 +88,7 @@ def main() -> int:
                 text=True,
             ).strip(),
             f"- Config hash: `{digest(json_text(settings.model_dump(mode='json')))}`",
+            f"- Eval file hash: `{digest(eval_file.read_text(encoding='utf-8'))}`",
             f"- Corpus hash: `{manifest['corpus_hash']}`",
             f"- Split: dev ({len(items)} questions)",
             f"- Models: {settings.retrieval.embedding_model} / {settings.retrieval.reranker_model}",

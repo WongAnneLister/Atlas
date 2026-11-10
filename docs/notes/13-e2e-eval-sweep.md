@@ -1,25 +1,29 @@
 # 13 — End-to-end evaluation, threshold sweep and hallucination review
 
 **What**
-I built a cached evidence-score sweep for dev and test splits.
-I added resumable full-graph JSONL evaluation with outcome metrics.
-I added a judge CSV, human confirmation import, and run comparison tool.
+I ran the real gate sweep and full conversation graph.
+I added safe checkpoints so interrupted sweeps can continue.
+I added failed question IDs to the reports and exported human review rows.
 
 **Why**
-The gate threshold must protect no-answer questions without tuning on test.
-Without a full run, answer safety and latency would remain guesses.
-The review CSV separates model flags from human confirmation.
+The gate must reject questions without enough evidence.
+Without real runs, safety and speed would remain guesses.
+The lost SSH connection also showed why completed scores needed safe storage.
 
 **Number**
-No number yet. I will measure it after Milvus and an LLM are configured.
-Source: eval/reports/
+I selected 0.17 from dev scores only.
+The full graph accepted 3.33% of no-answer test questions.
+That missed the zero-false-accept safety target.
+It also rejected 26.67% of answerable test questions.
+Source: eval/reports/e2e.md
 
 **Trade-off**
-The runners keep local caches and source text for reproducible debugging.
-That uses disk space and requires careful config and dataset hash checks.
-I kept the threshold unset because the required services were unavailable.
+I kept failed outcomes instead of rerunning only the bad cases.
+Shared model resources and connection failures affected speed and missed answers.
+I kept the selected threshold despite the test failure.
 
 **Likely follow-up question**
-Q: Why did you not set a demo threshold when the sweep could not run?
-A: A placeholder would hide the real safety result and break the release rule.
-The script fails closed until dev scores and held-out test scores exist.
+Q: Why did a cited answer still fail the safety target?
+A: Relevant payment text did not cover Cash App Pay.
+The answer admitted uncertainty but still gave facts without creating a handoff.
+I will study coverage on dev before a new measured change.

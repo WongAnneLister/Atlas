@@ -97,8 +97,9 @@ def write_report(records: list[JudgeRecord], output: Path, provenance: dict[str,
         "\n".join(
             [
                 *header,
-                f"- Items judged: {len(records)}",
-                f"- Judge-flagged rate: {sum(r.flagged for r in records) / len(records):.2%}"
+                f"- Evaluation rows (including skipped rows): {len(records)}",
+                f"- Judge-flagged rate (all evaluation rows): "
+                f"{sum(r.flagged for r in records) / len(records):.2%}"
                 if records
                 else "- Judge-flagged rate: pending",
                 f"- Human-confirmed rate: {confirmed_rate:.2%}"
@@ -107,6 +108,8 @@ def write_report(records: list[JudgeRecord], output: Path, provenance: dict[str,
                 f"- Human confirmations: {len(confirmed)}/{len(records)}",
                 "",
                 "The judge is a review aid. Human confirmation remains the final label.",
+                "Only accepted answers with cited source text receive a model audit.",
+                "Other rows are skipped, not verified as supported.",
                 "",
             ]
         ),

@@ -43,7 +43,7 @@ def test_gate_signals_cover_scores_empty_lists_and_configured_terms() -> None:
 
 
 def test_gate_requires_explicit_untuned_opt_in_and_returns_reason() -> None:
-    settings = Settings().gate
+    settings = Settings().gate.model_copy(update={"threshold": None})
     with pytest.raises(ValueError, match="threshold is unset"):
         evaluate("return", [chunk("one", "Return policy", 0.9)], settings)
     result = evaluate("return", [chunk("one", "Return policy", 0.9)], settings, allow_untuned=True)

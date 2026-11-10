@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import re
 import subprocess
 from datetime import UTC, datetime
@@ -89,40 +90,28 @@ def score_config_hash(settings: Settings) -> str:
     return digest(json_text(score_settings.model_dump(mode="json")))
 
 
+def validate_score_rows(records: list[GateScore], items: list[EvalItem], split: str) -> None:
+    """Reject cached rows that could change the frozen split's denominators or labels."""
+    expected = {item.id: item for item in items}
+    ids = [record.id for record in records]
+    if len(ids) != len(set(ids)):
+        raise ValueError("Score cache contains duplicate item ids")
+    if any(
+        record.id not in expected
+        or record.split != split
+        or record.group != expected[record.id].group
+        or record.answerable != expected[record.id].answerable
+        for record in records
+    ):
+        raise ValueError("Score cache rows do not match the frozen split")
+
+
 def collect_scores(settings: Settings, split: str, output: Path) -> list[GateScore]:
     """Run retrieval once per question and cache only gate inputs and scores."""
     eval_path, items, corpus_hash = _eval_paths(settings, split)
     if not items:
         raise ValueError(f"No {split} evaluation items found")
-    try:
-        store = MilvusStore(settings)
-    except Exception as error:
-        raise RuntimeError("Milvus is unavailable; start it with `make up` and retry") from error
-    try:
-        retriever = build_retriever(
-            "hybrid_rerank",
-            settings=settings,
-            store=store,
-            embedder=BgeM3Embedder(settings.retrieval),
-            reranker=BgeReranker(settings.retrieval),
-        )
-        records = []
-        for item in items:
-            chunks = retriever.retrieve(item.question, settings.retrieval.rerank_top_k)
-            result = evaluate(item.question, chunks, settings.gate, allow_untuned=True)
-            records.append(
-                GateScore(
-                    id=item.id,
-                    group=item.group,
-                    split=item.split,
-                    answerable=item.answerable,
-                    score=result.score,
-                    signals=result.signals,
-                    ranked_section_ids=[chunk.section_id for chunk in chunks],
-                )
-            )
-    finally:
-        store.close()
+
     metadata = GateScoreMetadata(
         git_sha=_git_sha(),
         config_hash=score_config_hash(settings),
@@ -138,12 +127,61 @@ def collect_scores(settings: Settings, split: str, output: Path) -> list[GateSco
             source.name: source.repo_id + "@" + source.revision for source in settings.data.sources
         },
     )
-    write_text(
-        output,
-        "".join(
-            [metadata.model_dump_json() + "\n", *[r.model_dump_json() + "\n" for r in records]]
-        ),
-    )
+    records: list[GateScore] = []
+    if output.exists():
+        try:
+            saved, cached = load_scores(output)
+        except ValueError:
+            cached = []
+        else:
+            if all(
+                getattr(saved, name) == getattr(metadata, name)
+                for name in ("config_hash", "eval_file_hash", "corpus_hash", "split")
+            ):
+                validate_score_rows(cached, items, split)
+                records = cached
+                metadata = saved
+    completed = {record.id for record in records}
+    pending = [item for item in items if item.id not in completed]
+    if not pending:
+        return records
+    try:
+        store = MilvusStore(settings)
+    except Exception as error:
+        raise RuntimeError("Milvus is unavailable; start it with `make up` and retry") from error
+    try:
+        retriever = build_retriever(
+            "hybrid_rerank",
+            settings=settings,
+            store=store,
+            embedder=BgeM3Embedder(settings.retrieval),
+            reranker=BgeReranker(settings.retrieval),
+        )
+        for item in pending:
+            chunks = retriever.retrieve(item.question, settings.retrieval.rerank_top_k)
+            result = evaluate(item.question, chunks, settings.gate, allow_untuned=True)
+            records.append(
+                GateScore(
+                    id=item.id,
+                    group=item.group,
+                    split=item.split,
+                    answerable=item.answerable,
+                    score=result.score,
+                    signals=result.signals,
+                    ranked_section_ids=[chunk.section_id for chunk in chunks],
+                )
+            )
+            temporary = output.with_suffix(output.suffix + ".tmp")
+            write_text(
+                temporary,
+                metadata.model_dump_json()
+                + "\n"
+                + "".join(record.model_dump_json() + "\n" for record in records),
+            )
+            temporary.replace(output)
+            logging.getLogger(__name__).info("%s scores: %d/%d", split, len(records), len(items))
+    finally:
+        store.close()
     return records
 
 
@@ -275,6 +313,12 @@ def write_report(
             lines.append(
                 "- Test false accepts are reported unchanged. Test never tunes thresholds."
             )
+            lines.extend(["", "### Test false accepts", "", "| Id | Score |", "|---|---:|"])
+            lines.extend(
+                f"| {record.id} | {record.score:.4f} |"
+                for record in test
+                if not record.answerable and selected is not None and record.score >= selected
+            )
     write_text(path, "\n".join(lines) + "\n")
 
 
@@ -298,6 +342,7 @@ def write_plot(dev: list[GateScore], path: Path, selected: float | None) -> None
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dev-cache", type=Path, default=Path("eval/runs/gate_scores_dev.jsonl"))
     parser.add_argument("--test-cache", type=Path, default=Path("eval/runs/gate_scores_test.jsonl"))
@@ -313,11 +358,15 @@ def main(argv: list[str] | None = None) -> int:
         if not path.exists():
             return False
         try:
-            metadata, _ = load_scores(path)
+            metadata, records = load_scores(path)
+            _, expected_items, _ = _eval_paths(settings, split)
+            validate_score_rows(records, expected_items, split)
         except (OSError, ValueError):
             return False
         return (
-            metadata.split == split
+            len(records) == len(expected_items)
+            and {record.id for record in records} == {item.id for item in expected_items}
+            and metadata.split == split
             and metadata.config_hash == score_config_hash(settings)
             and metadata.eval_file_hash == expected_eval_hash
             and metadata.corpus_hash == corpus_hash
