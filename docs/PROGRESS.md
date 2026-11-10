@@ -15,7 +15,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 07 | Hybrid retrieval + RRF | done | Dense/BM25 adapters, deterministic RRF, query-only model normaliser, factory and `make search`. Offline checks and real Milvus integration passed. Real BGE-M3 hybrid search and normalised BM25 both retrieved BHD340/10. No retrieval quality metrics yet. |
 | 08 | Rerank + retrieval eval | done | `eval/reports/retrieval.md`, test Recall@5 / MRR@5: dense 0.9667 / 0.9125; BM25 0.9875 / 0.9069; hybrid 0.9958 / 0.9458; hybrid + rerank 1.0000 / 0.9938. Both ablations measured on dev/test. Offline checks and real Milvus integration passed. |
 | 09 | Graph skeleton + intents | done | Fixed rewrite/classify/five-stub graph, typed state, memory/optional SQLite checkpoints, exhaustive Bitext mapping. `eval/reports/intent.md`: real DeepSeek intent accuracy 0.9048, path accuracy 0.9095 over 420 held-out items; parse/invocation failures 0. |
-| 10 | Tool, complaint, fixed paths | todo | |
+| 10 | Tool, complaint, fixed paths | done | Customer-bound read-only tools, capped main-model loop, complaint acknowledgement, local fixed replies, typed shared handoff, and `make chat`. Real DeepSeek CLI lookup verified the seeded delayed shipment through order and tracking tools. See `docs/TOOL_PATHS.md`; task-quality measurements remain in commit 13. |
 | 11 | Evidence gate + knowledge path | todo | |
 | 12 | Refund sub-flow | todo | |
 | 13 | E2E eval + threshold sweep | todo | |
@@ -52,6 +52,7 @@ Agents: update this file in every commit. Keep it short and factual.
 - 07: Real-index smoke checks passed via SSH forwarding: BGE-M3 hybrid search for BHD340/10 and BM25 for BHD-340/10 retrieved the matching product. These are manual acceptance checks, not frozen-set quality metrics; retrieval comparison remains in commit 08.
 - 08: `eval/reports/retrieval.md`: all four modes and both ablations measured on 120 dev and 120 test answerable questions. Reranked test Recall@5 is 1.0000, MRR@5 is 0.9938, and cross-document hit_all@5 is 1.0000. Mean warm-process latency is 9.4737 seconds versus hybrid's 3.7754 seconds. These are unreviewed draft-set retrieval results, not answer-safety measurements.
 - 09: `eval/reports/intent.md`: DeepSeek Flash non-thinking mode measured 420 intent-holdout questions. Intent accuracy 0.9048 and path accuracy 0.9095 meet the initial target; mean original classification latency 0.7728 seconds, parse/invocation failures 0. Refund recall is only 0.7200; order-status recall is 0.7800 and human-contact recall is 0.8400. All labels remain unreviewed drafts.
+- 10: No new task-quality metric yet. Offline route, identity isolation, tool failure, cap, checkpoint, and CLI checks accompany a real DeepSeek CLI smoke check against the seeded delayed shipment. Neither smoke checks nor fake-model tests establish end-to-end answer safety; that remains in commit 13.
 
 ## Checkpoints
 
@@ -60,7 +61,10 @@ Agents: update this file in every commit. Keep it short and factual.
 
 ## Known issues / follow-ups
 
-- 09: The graph's five paths are stubs; no knowledge answer or refund decision is implemented. Low-confidence knowledge/after-sales predictions retain their route and receive a flag. The confidence cutoff is uncalibrated and is not an answer-safety threshold. The evidence gate remains required in commit 11.
+- 09/10: Order tools, complaints, and fixed replies are now connected; knowledge and after-sales remain stubs. Low-confidence knowledge/after-sales predictions retain their route and receive a flag. The confidence cutoff is uncalibrated and is not an answer-safety threshold. The evidence gate remains required in commit 11.
+- 10: Identity is injected from trusted state, but caller authentication and customer/thread ownership checks remain absent. Tool facts constrain the prompt; generated prose has no semantic faithfulness measurement yet. Complaint filtering is conservative text matching, not a safety proof. Handoffs are validated state records, not delivery to a persisted operator queue.
+- 10: Fixed replies and immediate human requests make no model call inside their path nodes; the graph still classifies turns and rewrites follow-ups with the fast model. Internal tool messages stay within the loop; trace entries and successful facts preserve lookup context. Counters and transient fields reset each turn.
+- 10: The commit prompt's order `1042` is absent from the real seed; CLI acceptance used the named delayed-tracking fixture `ORD-000009` for `CUST-0001`. Local DeepSeek credentials stay in ignored `.env`. Windows checks use `PYTHONUTF8=1` because an existing retrieval-report test reads UTF-8 output with the locale default.
 - 09: The frozen intent run has 8 human-contact requests classified as policy, 7 refund requests as order status, and 6 order requests as fixed replies (`eval/reports/intent.md`). Source labels can mix general rules with individual actions. Review these examples separately before changing mappings or prompts; this held-out run was not tuned.
 - 09: Product intent examples use retrieval dev questions; return examples were drafted by the same provider used for classification. Exact duplicates, prompt examples and previously used Bitext utterances are excluded, but near-paraphrases can cross the reserved partition. Source-balanced sampling differs from live traffic. These measurements do not establish multi-turn rewriting, task success, or refusal safety.
 - 09: Caller-assigned thread ids must be customer-scoped. Graph authentication and customer/thread ownership enforcement are not present yet. SQLite graph dependencies must stay open during use and be closed afterward. Credentials, selected question text and full predictions remain local.

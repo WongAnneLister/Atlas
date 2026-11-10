@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 
-from support_agent.config import get_settings
+from support_agent.config import Settings, get_settings
+from support_agent.orders.seed import seed_orders
+from support_agent.orders.service import OrderService
 
 
 @pytest.fixture(autouse=True)
@@ -15,3 +18,14 @@ def _fresh_settings() -> Iterator[None]:
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
+
+
+@pytest.fixture
+def seeded(tmp_path: Path) -> tuple[Settings, OrderService]:
+    settings = Settings()
+    settings.orders.db_path = str(tmp_path / "orders.sqlite")
+    settings.orders.n_orders = 30
+    settings.orders.n_customers = 4
+    settings.data.processed_dir = str(tmp_path / "processed")
+    seed_orders(settings)
+    return settings, OrderService(settings=settings.orders)

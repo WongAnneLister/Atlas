@@ -15,9 +15,11 @@ from pydantic import Field, ValidationError
 from support_agent.config import Settings
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
+from support_agent.graph.handoff import HandoffReason, make_handoff
 from support_agent.graph.intents import INTENT_TO_PATH, PATH_NODES, Intent, Path
 from support_agent.graph.nodes.classify import Classifier, IntentPrediction
 from support_agent.graph.state import ConversationState
+from support_agent.llm import override_chat_model
 from support_agent.retrieval.types import RetrievedChunk
 
 
@@ -50,6 +52,12 @@ class StructuredFake(FakeListChatModel):
         return super().invoke(input, config, **kwargs)
 
 
+@pytest.fixture(autouse=True)
+def offline_main_model() -> Any:
+    with override_chat_model("main", FakeListChatModel(responses=["unused"])):
+        yield
+
+
 def fake(
     *intents: Intent, confidence: float = 0.9, rewrite: str = "resolved question"
 ) -> StructuredFake:
@@ -75,10 +83,13 @@ def test_all_intents_follow_fixed_routes_and_skip_first_rewrite(intent: Intent) 
     assert result["trace"] == ["rewrite", "classify", PATH_NODES[path]]
     assert result["intent"] == intent
     assert result["path"] == path
-    assert result["answer"] == f"[path {path.value} not implemented]"
+    if path in {Path.KNOWLEDGE, Path.AFTER_SALES}:
+        assert result["answer"] == f"[path {path.value} not implemented]"
+    else:
+        assert result["answer"].strip()
     assert result["messages"][-1].content == result["answer"]
     assert result["rewritten_query"] == "A self-contained customer request"
-    assert model.rewritten_messages == []
+    assert len(model.rewritten_messages) == (1 if path == Path.COMPLAINT else 0)
     assert len(model.classified_messages) == 1
     assert result["classifier_model"] == "fake-fast"
 
@@ -181,7 +192,10 @@ def test_rewrite_clears_prior_turn_fields() -> None:
         ],
         "gate": {"passed": True},
         "order_context": {"order_id": "old"},
-        "handoff": {"reason": "old"},
+        "handoff": make_handoff(ConversationState(), HandoffReason.USER_REQUESTED)["handoff"],
+        "tool_errors": 5,
+        "consecutive_tool_errors": 2,
+        "agent_steps": 5,
         "answer": "old",
         "citations": ["old"],
         "intent_low_confidence": True,
@@ -198,6 +212,9 @@ def test_rewrite_clears_prior_turn_fields() -> None:
     assert result["gate"] is None
     assert result["order_context"] is None
     assert result["handoff"] is None
+    assert result["tool_errors"] == 0
+    assert result["consecutive_tool_errors"] == 0
+    assert result["agent_steps"] == 0
     assert result["citations"] == []
     assert not result["intent_low_confidence"]
     assert not result["classification_failed"]

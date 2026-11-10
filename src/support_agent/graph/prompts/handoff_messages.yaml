@@ -1,0 +1,7 @@
+user_requested: "I'll pass your request to a human support agent."
+complaint: "I'll pass your complaint to a human support agent."
+low_evidence: "I don't have enough verified information. I'll pass your question to a human support agent."
+agent_step_cap: "I couldn't complete the order lookup within the allowed steps. I'll pass it to a human support agent."
+tool_error: "I couldn't verify your order information. I'll pass your request to a human support agent."
+order_not_found: "I couldn't find that order for your account. I'll pass your request to a human support agent."
+policy_requires_human: "Your request needs a human review. I'll pass it to a human support agent."

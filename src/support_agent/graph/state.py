@@ -6,6 +6,7 @@ from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
 
+from support_agent.graph.handoff import HandoffPayload
 from support_agent.graph.intents import Intent, Path
 from support_agent.retrieval.types import RetrievedChunk
 
@@ -24,7 +25,10 @@ class ConversationState(BaseModel):
     retrieval: list[RetrievedChunk] = Field(default_factory=list)
     gate: dict[str, Any] | None = None
     order_context: dict[str, Any] | None = None
-    handoff: dict[str, Any] | None = None
+    handoff: HandoffPayload | None = None
+    tool_errors: int = Field(default=0, ge=0)
+    consecutive_tool_errors: int = Field(default=0, ge=0)
+    agent_steps: int = Field(default=0, ge=0)
     answer: str = ""
     citations: list[str] = Field(default_factory=list)
     trace: list[str] = Field(default_factory=list)

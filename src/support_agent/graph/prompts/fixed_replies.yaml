@@ -1,0 +1,6 @@
+greeting: "Hello! I can help with orders, deliveries, products, and after-sales questions."
+thanks: "You're welcome! Let me know if you need more help with your order."
+goodbye: "Goodbye! You can return here for help with your order."
+capabilities: "I can help with order status, delivery tracking, product questions, returns, and refund requests."
+fallback: "I can help with shopping and after-sales questions. Please describe what you need help with."
+complaint_acknowledgement: "I'm sorry this experience has been frustrating."

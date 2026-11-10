@@ -4,6 +4,7 @@
 UV ?= uv
 RUN := $(UV) run
 MODE ?= hybrid
+CUSTOMER ?= CUST-0001
 SPLIT ?= test
 EVAL_RETRIEVAL_ARGS ?=
 EVAL_INTENT_ARGS ?=
@@ -15,7 +16,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-build eval-validate eval-review eval-review-import eval-set-report \
         ingest ingest-chunks embedding-cache eval-ingest test-milvus eval-retrieval eval-intent eval-e2e sweep serve \
         lint format typecheck test check notes-check notes minio-image-local search reranker-cache \
-        eval-retrieval-index eval-failures eval-intent-build eval-intent-draft
+        eval-retrieval-index eval-failures eval-intent-build eval-intent-draft chat
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -112,6 +113,9 @@ eval-failures:
 
 search:
 	$(RUN) python scripts/search.py --mode "$(MODE)"
+
+chat:
+	$(RUN) python scripts/chat_cli.py --customer "$(CUSTOMER)"
 
 eval-intent:
 	$(RUN) python -m eval.intent_eval $(EVAL_INTENT_ARGS)

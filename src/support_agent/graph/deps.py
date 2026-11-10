@@ -13,7 +13,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 
 from support_agent.config import REPO_ROOT, Settings
-from support_agent.llm import get_chat_model
+from support_agent.llm import Role, get_chat_model
 from support_agent.orders.service import OrderService
 from support_agent.retrieval.types import Retriever
 
@@ -24,13 +24,18 @@ class GraphDeps:
     fast_model: BaseChatModel | None = None
     retriever: Retriever | None = None
     order_service: OrderService | None = None
+    main_model: BaseChatModel | None = None
     _resources: ExitStack = field(default_factory=ExitStack, init=False, repr=False)
     _checkpointer: BaseCheckpointSaver[Any] | None = field(default=None, init=False, repr=False)
     _closed: bool = field(default=False, init=False, repr=False)
 
-    def model(self) -> BaseChatModel:
+    def model(self, role: Role = "fast") -> BaseChatModel:
         if self._closed:
             raise RuntimeError("GraphDeps is closed")
+        if role == "main":
+            if self.main_model is None:
+                self.main_model = get_chat_model("main", self.settings)
+            return self.main_model
         if self.fast_model is None:
             self.fast_model = get_chat_model("fast", self.settings)
         return self.fast_model

@@ -152,7 +152,11 @@ class GateSettings(BaseModel):
 
 
 class AgentSettings(BaseModel):
-    max_steps: int
+    max_steps: int = Field(gt=0)
+    max_consecutive_tool_errors: int = Field(gt=0)
+    max_tool_calls_per_step: int = Field(gt=0)
+    trace_max_chars: int = Field(gt=0)
+    complaint_max_sentences: int = Field(gt=0, le=2)
 
 
 class EvalSettings(BaseModel):
