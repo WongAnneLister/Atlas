@@ -3,6 +3,15 @@
 This file records measurements produced by repository scripts.
 Numbers are never copied from other projects.
 
+## Frozen full-graph baseline
+
+`e2e-001` is the first complete real-model test-split full-graph run.
+Its reports, charts, configuration, artifact checksums, and comparison instructions are frozen in
+[`eval/reports/baselines/e2e-001/`](../eval/reports/baselines/e2e-001/README.md).
+The original complete per-item run also has a separate local, gitignored baseline copy.
+Later default reports may change; use the archived baseline for optimization comparisons.
+This baseline includes the observed failures and does not establish answer accuracy.
+
 ## Retrieval baseline
 
 | Experiment | Split | Recall@5 | MRR@5 | Source |

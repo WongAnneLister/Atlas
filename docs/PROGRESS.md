@@ -45,6 +45,7 @@ Agents: update this file in every commit. Keep it short and factual.
 
 ## Latest numbers (copied from eval/reports by script or by hand with the report path)
 
+- Baseline `e2e-001`: first complete real-model test-split full-graph run registered on 2026-11-11 (Asia/Tokyo). Reports, charts, config, checksums, comparison commands, and execution limits are frozen in `eval/reports/baselines/e2e-001/`. Complete per-item results and frozen labels have separate local gitignored copies; future runs use new output paths.
 - 03: Document build integrity: 856/859 FAQ rows covered (99.65%), 12 docs, 122 sections, 7 models (`eval/reports/docs_build.md`). No retrieval or answer-quality metrics yet.
 - 04: Mock order integrity: 50 customers, 300 orders, 749 items, 192 shipments, 8 statuses, 14 named edge cases; 900 cross-customer operations blocked (`eval/reports/orders_seed.md`). These are fixture checks, not agent-quality metrics.
 - 05: Eval construction: 300 items, 240 answerable; 30 dev/30 test per group; validation failures 0; reviewed: 0/300 — waiting for human review (`eval/reports/eval_set.md`). No retrieval or answer-quality measurements yet.

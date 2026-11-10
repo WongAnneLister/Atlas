@@ -1,0 +1,126 @@
+{
+  "baseline_id": "e2e-001",
+  "scope": "First complete real-model test-split full-graph evaluation; dev gate analysis and sweep are accompanying experiments.",
+  "registered_local_date": "2026-11-11",
+  "timezone": "Asia/Tokyo",
+  "recorded_run_metadata": {
+    "record_type": "metadata",
+    "git_sha": "9ed1d576deca7c52494a51d728cc06a63d365815",
+    "config_hash": "7aa735a01dfeaa3c3b419d3c433f1da05cd30b60361e80fc0cb5433dfdf4f845",
+    "eval_file_hash": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9",
+    "corpus_hash": "60e259f600ed4ae895106d14385edcb6cfcf12071ec0219a32a936a209c5c6fd",
+    "models": {
+      "fast": "deepseek-flash",
+      "main": "deepseek-flash"
+    },
+    "dataset_versions": {
+      "flipkart_faqs": "NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228",
+      "philips_manuals": "InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84",
+      "maktek_faqs": "MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240",
+      "bitext": "bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443"
+    },
+    "split": "test",
+    "date": "2026-11-10T15:11:06.756261+00:00",
+    "customer_id": "CUST-0001",
+    "threshold": 0.17
+  },
+  "report_archive_source_commit": "d45f5381488a17eb2918ed5cf23c8ebf058bb89b",
+  "effective_environment": {
+    "LLM_PROVIDER": "deepseek",
+    "LLM_FAST_MODEL": "deepseek-flash",
+    "LLM_MAIN_MODEL": "deepseek-flash",
+    "SUPPORT_AGENT__RETRIEVAL__RERANKER_DEVICE": "mps",
+    "generation_mode": "non-thinking",
+    "embedding_device": "cpu",
+    "milvus_connection": "existing VPS index through SSH loopback forwarding"
+  },
+  "limitations": [
+    "Draft labels have not been reviewed by a human.",
+    "Sweep and e2e shared local compute resources.",
+    "SSH outages caused fail-closed outcomes retained in this run.",
+    "First-token latency unavailable; verified pricing and human-confirmed hallucination rate pending.",
+    "Accepted outcomes do not establish answer accuracy.",
+    "Raw rows contain source text and remain local under existing redistribution restrictions.",
+    "Report refresh timestamp differs from original run metadata; measured rows were unchanged."
+  ],
+  "artifacts": [
+    {
+      "source": "eval/reports/e2e.md",
+      "snapshot": "eval/reports/baselines/e2e-001/e2e.md",
+      "sha256": "00018821643bde1a48f9d6546002bb27c2853eee69b499a48b9e71254f910b51",
+      "visibility": "committed"
+    },
+    {
+      "source": "eval/reports/threshold_sweep.md",
+      "snapshot": "eval/reports/baselines/e2e-001/threshold_sweep.md",
+      "sha256": "548de0998dac476151d03877f292865b33c204f1e51eb645a4b7a1ac8471d475",
+      "visibility": "committed"
+    },
+    {
+      "source": "eval/reports/threshold_sweep.png",
+      "snapshot": "eval/reports/baselines/e2e-001/threshold_sweep.png",
+      "sha256": "7b1b76eb982bee57184241dbe61bcd754687d4456ff659ccefb31e3a10ba5b9d",
+      "visibility": "committed"
+    },
+    {
+      "source": "eval/reports/gate_signals_dev.md",
+      "snapshot": "eval/reports/baselines/e2e-001/gate_signals_dev.md",
+      "sha256": "60720358d504a3cd613c9774b56cd182ac23510b005dc833b72fa680a2ec2f83",
+      "visibility": "committed"
+    },
+    {
+      "source": "eval/reports/gate_signals_dev.png",
+      "snapshot": "eval/reports/baselines/e2e-001/gate_signals_dev.png",
+      "sha256": "5f0bd4a7b0680417b2285a4649f06d213422876dba091995b8fd28240e4cc9fd",
+      "visibility": "committed"
+    },
+    {
+      "source": "eval/reports/hallucination_review.md",
+      "snapshot": "eval/reports/baselines/e2e-001/hallucination_review.md",
+      "sha256": "074c728601d98927e637cfd6ee73c66a8ebf52376292e71686a1b04017ca4317",
+      "visibility": "committed"
+    },
+    {
+      "source": "eval/reports/orders_seed.md",
+      "snapshot": "eval/reports/baselines/e2e-001/orders_seed.md",
+      "sha256": "cc5ad1311fe62d48d0bcea4b7e8d8ae72766199a15c95825b1d730c8484c6536",
+      "visibility": "committed"
+    },
+    {
+      "source": "configs/default.yaml",
+      "snapshot": "eval/reports/baselines/e2e-001/config.yaml",
+      "sha256": "a6e100b09574e6a0ff6c785288c08e5e335b366156627c1452677b4e49c4947a",
+      "visibility": "committed"
+    },
+    {
+      "source": "eval/runs/e2e_test.jsonl",
+      "snapshot": "eval/runs/baseline-001-e2e-test.jsonl",
+      "sha256": "3cf1e69975a7a7f3ba45861052503342db43168ed71e95acb650bc4a325c6dcc",
+      "visibility": "local_only_gitignored"
+    },
+    {
+      "source": "eval/runs/gate_scores_dev.jsonl",
+      "snapshot": "eval/runs/baseline-001-gate-dev.jsonl",
+      "sha256": "8fd940cc26caceb6008f13cc0014e14bd4f3ff2ae8246842c7cfdd8b5e98a3ae",
+      "visibility": "local_only_gitignored"
+    },
+    {
+      "source": "eval/runs/gate_scores_test.jsonl",
+      "snapshot": "eval/runs/baseline-001-gate-test.jsonl",
+      "sha256": "1883d851b5e18ea8d096748baf07b769d9665d77b7a1fc44d004e1b52e330528",
+      "visibility": "local_only_gitignored"
+    },
+    {
+      "source": "eval/sets/eval_v1.jsonl",
+      "snapshot": "eval/runs/baseline-001-eval-set.jsonl",
+      "sha256": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9",
+      "visibility": "local_only_gitignored"
+    },
+    {
+      "source": "eval/sets/hallucination_review.csv",
+      "snapshot": "eval/sets/baseline-001-hallucination-review.csv",
+      "sha256": "ac49af93eff5e059431d78f114204c6e60039b96bd922dbd95d79cc3f6b76ef6",
+      "visibility": "local_only_gitignored"
+    }
+  ]
+}
