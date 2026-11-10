@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Literal
+from typing import Literal, cast
 
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models import BaseChatModel
@@ -40,11 +40,15 @@ def get_chat_model(role: Role, settings: Settings | None = None) -> BaseChatMode
             f"No model configured for role '{role}'. "
             f"Set {ENV_PROVIDER} and {ENV_MODEL[role]} (see .env.example)."
         )
-    return init_chat_model(
-        model,
-        model_provider=provider,
-        temperature=cfg.temperature,
-        timeout=cfg.timeout_s,
+    return cast(
+        BaseChatModel,
+        init_chat_model(
+            model,
+            model_provider=provider,
+            temperature=cfg.temperature,
+            timeout=cfg.timeout_s,
+            **cfg.model_kwargs,
+        ),
     )
 
 

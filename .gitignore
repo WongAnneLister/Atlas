@@ -6,6 +6,7 @@ data/processed/
 eval/sets/*.jsonl
 eval/sets/*.csv
 eval/sets/manifest.json
+eval/sets/intent_manifest.json
 eval/sets/draft_cache.json
 *.sqlite
 *.sqlite3

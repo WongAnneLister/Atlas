@@ -12,7 +12,7 @@ from datetime import date
 from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import (
@@ -21,6 +21,8 @@ from pydantic_settings import (
     SettingsConfigDict,
     YamlConfigSettingsSource,
 )
+
+from support_agent.graph.settings import GraphSettings, IntentEvalSettings, IntentSettings
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
@@ -58,6 +60,7 @@ class LLMSettings(BaseModel):
     main_model: str | None
     temperature: float
     timeout_s: float
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
 
 
 class RetrievalSettings(BaseModel):
@@ -150,10 +153,6 @@ class GateSettings(BaseModel):
 
 class AgentSettings(BaseModel):
     max_steps: int
-
-
-class IntentSettings(BaseModel):
-    min_confidence: float
 
 
 class EvalSettings(BaseModel):
@@ -269,6 +268,8 @@ class Settings(BaseSettings):
     gate: GateSettings
     agent: AgentSettings
     intent: IntentSettings
+    graph: GraphSettings
+    intent_eval: IntentEvalSettings
     evaluation: EvalSettings
     milvus: MilvusSettings
     orders: OrdersSettings

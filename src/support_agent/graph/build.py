@@ -1,0 +1,49 @@
+"""Compile the fixed rewrite → classify → path workflow with checkpointing."""
+
+from collections.abc import Callable
+from typing import Any
+
+from langchain_core.messages import AIMessage
+from langchain_core.runnables import RunnableLambda
+from langgraph.graph import END, START, StateGraph
+from langgraph.graph.state import CompiledStateGraph
+
+from support_agent.graph.deps import GraphDeps
+from support_agent.graph.intents import PATH_NODES, Path
+from support_agent.graph.nodes.classify import Classifier
+from support_agent.graph.nodes.rewrite import make_rewrite_node
+from support_agent.graph.state import ConversationState
+
+
+def route_by_path(state: ConversationState) -> str:
+    """Select the fixed path after classification without adding a trace node."""
+    if state.path is None:
+        raise ValueError("Classification must set a path before routing")
+    return PATH_NODES[state.path]
+
+
+def _stub(path: Path, name: str) -> Callable[[ConversationState], dict[str, Any]]:
+    def run(state: ConversationState) -> dict[str, Any]:
+        answer = f"[path {path.value} not implemented]"
+        return {
+            "answer": answer,
+            "messages": [AIMessage(content=answer)],
+            "trace": [*state.trace, name],
+        }
+
+    return run
+
+
+def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, Any, Any]:
+    """The dependency owner must remain open for the graph's entire lifetime."""
+    model = deps.model()
+    graph = StateGraph(ConversationState)
+    graph.add_node("rewrite", RunnableLambda(make_rewrite_node(model, deps.settings)))
+    graph.add_node("classify", Classifier(model, deps.settings))
+    graph.add_edge(START, "rewrite")
+    graph.add_edge("rewrite", "classify")
+    graph.add_conditional_edges("classify", route_by_path, list(PATH_NODES.values()))
+    for path, name in PATH_NODES.items():
+        graph.add_node(name, RunnableLambda(_stub(path, name)))
+        graph.add_edge(name, END)
+    return graph.compile(checkpointer=deps.checkpointer())

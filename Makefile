@@ -6,6 +6,7 @@ RUN := $(UV) run
 MODE ?= hybrid
 SPLIT ?= test
 EVAL_RETRIEVAL_ARGS ?=
+EVAL_INTENT_ARGS ?=
 export Q
 COMPOSE_PYTHON ?= $(RUN) python
 
@@ -14,7 +15,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-build eval-validate eval-review eval-review-import eval-set-report \
         ingest ingest-chunks embedding-cache eval-ingest test-milvus eval-retrieval eval-intent eval-e2e sweep serve \
         lint format typecheck test check notes-check notes minio-image-local search reranker-cache \
-        eval-retrieval-index eval-failures
+        eval-retrieval-index eval-failures eval-intent-build eval-intent-draft
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -113,7 +114,13 @@ search:
 	$(RUN) python scripts/search.py --mode "$(MODE)"
 
 eval-intent:
-	$(call todo,09)
+	$(RUN) python -m eval.intent_eval $(EVAL_INTENT_ARGS)
+
+eval-intent-build:
+	$(RUN) python -m eval.intent_data
+
+eval-intent-draft:
+	$(RUN) python -m eval.intent_draft
 
 eval-e2e:
 	$(call todo,13)

@@ -14,7 +14,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 06 | Chunking + ingestion | done | `eval/reports/ingestion.md`: 206 chunks, 122 sections; 206 real BGE-M3 rows stored in Milvus 2.5.10; 244 encoder windows. Average 491.43 tokens; maximum 12,331 (whole manual), policy maximum 512. Database integration: 1/1 passed with fake vectors. |
 | 07 | Hybrid retrieval + RRF | done | Dense/BM25 adapters, deterministic RRF, query-only model normaliser, factory and `make search`. Offline checks and real Milvus integration passed. Real BGE-M3 hybrid search and normalised BM25 both retrieved BHD340/10. No retrieval quality metrics yet. |
 | 08 | Rerank + retrieval eval | done | `eval/reports/retrieval.md`, test Recall@5 / MRR@5: dense 0.9667 / 0.9125; BM25 0.9875 / 0.9069; hybrid 0.9958 / 0.9458; hybrid + rerank 1.0000 / 0.9938. Both ablations measured on dev/test. Offline checks and real Milvus integration passed. |
-| 09 | Graph skeleton + intents | todo | |
+| 09 | Graph skeleton + intents | done | Fixed rewrite/classify/five-stub graph, typed state, memory/optional SQLite checkpoints, exhaustive Bitext mapping. `eval/reports/intent.md`: real DeepSeek intent accuracy 0.9048, path accuracy 0.9095 over 420 held-out items; parse/invocation failures 0. |
 | 10 | Tool, complaint, fixed paths | todo | |
 | 11 | Evidence gate + knowledge path | todo | |
 | 12 | Refund sub-flow | todo | |
@@ -51,6 +51,7 @@ Agents: update this file in every commit. Keep it short and factual.
 - 06: Real-model ingestion integrity: 206 chunks from 122 sections stored in Milvus 2.5.10, using 244 encoder windows (`eval/reports/ingestion.md`). The separate database integration fixture passed 1/1 with fake vectors. These checks do not measure retrieval quality.
 - 07: Real-index smoke checks passed via SSH forwarding: BGE-M3 hybrid search for BHD340/10 and BM25 for BHD-340/10 retrieved the matching product. These are manual acceptance checks, not frozen-set quality metrics; retrieval comparison remains in commit 08.
 - 08: `eval/reports/retrieval.md`: all four modes and both ablations measured on 120 dev and 120 test answerable questions. Reranked test Recall@5 is 1.0000, MRR@5 is 0.9938, and cross-document hit_all@5 is 1.0000. Mean warm-process latency is 9.4737 seconds versus hybrid's 3.7754 seconds. These are unreviewed draft-set retrieval results, not answer-safety measurements.
+- 09: `eval/reports/intent.md`: DeepSeek Flash non-thinking mode measured 420 intent-holdout questions. Intent accuracy 0.9048 and path accuracy 0.9095 meet the initial target; mean original classification latency 0.7728 seconds, parse/invocation failures 0. Refund recall is only 0.7200; order-status recall is 0.7800 and human-contact recall is 0.8400. All labels remain unreviewed drafts.
 
 ## Checkpoints
 
@@ -59,6 +60,10 @@ Agents: update this file in every commit. Keep it short and factual.
 
 ## Known issues / follow-ups
 
+- 09: The graph's five paths are stubs; no knowledge answer or refund decision is implemented. Low-confidence knowledge/after-sales predictions retain their route and receive a flag. The confidence cutoff is uncalibrated and is not an answer-safety threshold. The evidence gate remains required in commit 11.
+- 09: The frozen intent run has 8 human-contact requests classified as policy, 7 refund requests as order status, and 6 order requests as fixed replies (`eval/reports/intent.md`). Source labels can mix general rules with individual actions. Review these examples separately before changing mappings or prompts; this held-out run was not tuned.
+- 09: Product intent examples use retrieval dev questions; return examples were drafted by the same provider used for classification. Exact duplicates, prompt examples and previously used Bitext utterances are excluded, but near-paraphrases can cross the reserved partition. Source-balanced sampling differs from live traffic. These measurements do not establish multi-turn rewriting, task success, or refusal safety.
+- 09: Caller-assigned thread ids must be customer-scoped. Graph authentication and customer/thread ownership enforcement are not present yet. SQLite graph dependencies must stay open during use and be closed afterward. Credentials, selected question text and full predictions remain local.
 - 08: All 300 evaluation questions remain unreviewed. Two reranked dev misses recover only part of combined questions; repeated SuperCoins chunks crowd out the other required section. `make eval-failures` exposes their questions, gold sections and headings locally. Only one failure pattern was observed; no extra patterns were invented. Test settings and labels were not tuned.
 - 08: The heading-prefix ablation lowers hybrid test Recall@5 to 0.9875. Disabling model-number normalisation leaves measured quality unchanged on this draft set (`eval/reports/retrieval.md`); it has no demonstrated quality gain here.
 - 08: Real measurements used CPU embeddings, MPS reranking and compressed SSH forwarding. Separate fingerprinted experiment indexes preserve the demo index. Verified local chunk text avoids remote full-text transfer timeouts; warm-process timings exclude initial snapshot loading. Long manuals are truncated by the configured reranker input limit. MRR uses the same top-five cutoff for every mode. Models, text and full prediction caches stay local; committed CSVs contain ids and metrics only.
@@ -79,6 +84,6 @@ Agents: update this file in every commit. Keep it short and factual.
 - 05: All generated eval/review text stays local due mixed-source licenses. Review `eval/sets/review.csv`; only explicit human ok decisions may change review flags. The agent marked no actual questions reviewed.
 - 05: No external LLM was configured; authored templates draft cross-document/absent-topic questions. Optional fast-model question drafting is cached. Colloquial questions use real Bitext prefixes with explicit FAQ context.
 - 05: Lexical support and absent-key-phrase checks cannot prove meaning or absence. Human review is still required before treating this draft set as a trusted benchmark.
-- 01: Config `gate.good_evidence_min` and `intent.min_confidence` are placeholders to revisit in commits 11 and 09.
+- 01/09: Config `gate.good_evidence_min` remains a placeholder for commit 11. `intent.min_confidence` now only flags uncertain knowledge/after-sales routing; it remains uncalibrated.
 - 06: The pinned MinIO source image now builds successfully on the VPS. Compose passes the server subcommand to the image entrypoint without duplicating the executable. A regression test failed before this fix. Go build/module caches are removed inside the build step to reduce retained disk use.
 - 06: The pinned BGE-M3 cache is complete and SHA-256 verified on the client. `make ingest` ran offline with the real model and stored 206 rows in the project Milvus collection. `make eval-ingest` records model revision, runtime, timings and corpus hashes. Retrieval and answer quality remain unmeasured; those require the later frozen-set experiments.

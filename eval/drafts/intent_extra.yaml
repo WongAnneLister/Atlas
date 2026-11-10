@@ -1,0 +1,84 @@
+greetings:
+- Hello there, support team.
+- Good morning to everyone here.
+- Good afternoon, hope your day is going well.
+- Good evening, are you having a nice day?
+- Hey there, nice to meet you.
+- Hiya, I just wanted to say hello.
+- Greetings from my little corner of the world.
+- Thanks for being available today.
+- Thank you for the help earlier.
+- That was kind of you, cheers.
+- I appreciate your patience with me.
+- Have a lovely rest of your day.
+- Goodbye for now, take care.
+- See you next time, bye.
+- No more questions from me today.
+- Everything is clear now, many thanks.
+- How has your day been so far?
+- Are you a person or a computer program?
+- What should I call you during this chat?
+- Can you tell me a silly joke about cats?
+- Write a short poem about the ocean.
+- What is the capital city of France?
+- Help me understand the rules of chess.
+- Recommend a movie for a rainy evening.
+- Give me ideas for a birthday party.
+- Can you help solve my algebra homework?
+- Who won the football match last night?
+- What will the weather be like tomorrow?
+- Explain why the sky looks blue.
+- Suggest something simple to cook for dinner.
+- Translate good night into Spanish for me.
+- I am just checking whether this chat works.
+- Sorry, I opened the wrong chat window.
+- Please ignore that last message I sent.
+- I have nothing to ask right now.
+- Just browsing around, no help needed yet.
+- You have been very helpful, thank you.
+- I wish you a pleasant weekend.
+- Happy holidays to your whole team.
+- All sorted, I will close the chat now.
+returns:
+- I need to send back these shoes, they don't fit.
+- Can I swap this jacket for a bigger size?
+- The lamp I got is broken, I want a replacement.
+- How do I return this blender?
+- I'd like to exchange this shirt for another color.
+- My mug arrived cracked, can you send a new one?
+- Wrong item showed up in my box, need to send it back.
+- Can I return these headphones?
+- This toaster is faulty, I'd like to exchange it.
+- I want to send this dress back and get a different one.
+- The sneakers came apart after one wear, can I get them replaced?
+- Please help me exchange this backpack, the zipper is broken.
+- I got the wrong size sheets, can I return them?
+- Would it be possible to return this kettle?
+- The chair leg is snapped, I need a replacement please.
+- Can I swap these jeans for a smaller size?
+- I'd like to send back the tablet case, it's the wrong model.
+- My plates arrived chipped, how do I get them replaced?
+- Can I exchange this watch for a different style?
+- I need to return this coat, it's not what I expected.
+- The blender I received is damaged, can you replace it?
+- How can I exchange this rug for a larger one?
+- I want to return these curtains and pick another set.
+- The toy came broken, can I get a new one sent?
+- Can I send this sweater back for an exchange?
+- I'd like to swap this monitor for the same model, mine has dead pixels.
+- The wrong book was delivered, can I return it?
+- My headphones stopped working, I'd like a replacement.
+- Can I return this handbag, the strap is torn?
+- I need to exchange this lamp for a working one.
+- The shoes I ordered are the wrong size, can I swap them?
+- Please send a replacement for this cracked vase.
+- I want to return this keyboard and get a different layout.
+- Can I exchange these towels for a different color?
+- The jacket I got has a broken zipper, can I replace it?
+- I'd like to send back this pan, it's scratched.
+- Wrong color phone case arrived, can I return it?
+- Can I swap this desk lamp for another model?
+- The boots I received are damaged, I need an exchange.
+- I want to return this duvet cover and get the right size.
+returns_source: model:deepseek-flash
+returns_model: deepseek-flash

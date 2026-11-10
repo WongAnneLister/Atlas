@@ -60,6 +60,7 @@ llm:
   main_model: null      # env LLM_MAIN_MODEL wins; used for answers
   temperature: 0.0
   timeout_s: 30
+  model_kwargs: {}      # provider-specific options; credentials still come only from env
 
 retrieval:
   embedding_model: BAAI/bge-m3
@@ -119,7 +120,22 @@ agent:
   max_steps: 5
 
 intent:
-  min_confidence: 0.6      # placeholder; revisited in commit 09
+  min_confidence: 0.6      # flag only; not calibrated as an answer-safety threshold
+  rewrite_history_turns: 6
+
+graph:
+  checkpoint_backend: memory
+  checkpoint_path: data/checkpoints.sqlite
+
+intent_eval:
+  seed: 42
+  per_intent: 50
+  extra_per_kind: 40
+  bitext_holdout_fraction: 0.2
+  extra_drafts: eval/drafts/intent_extra.yaml
+  cache_dir: .cache/intent
+  max_concurrency: 4
+  target_accuracy: 0.9
 
 evaluation:
   sets_dir: eval/sets

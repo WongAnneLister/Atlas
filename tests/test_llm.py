@@ -30,3 +30,23 @@ def test_model_without_provider_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LLM_FAST_MODEL", "some-model")
     with pytest.raises(LLMConfigError, match="LLM_PROVIDER"):
         get_chat_model("fast")
+
+
+def test_factory_passes_configured_provider_options(monkeypatch: pytest.MonkeyPatch) -> None:
+    from support_agent.config import get_settings
+
+    settings = get_settings().model_copy(deep=True)
+    settings.llm.provider = "deepseek"
+    settings.llm.fast_model = "configured-model"
+    settings.llm.model_kwargs = {"extra_body": {"thinking": {"type": "disabled"}}}
+    calls = []
+    fake = FakeListChatModel(responses=["unused"])
+
+    def capture(model, **kwargs):
+        calls.append((model, kwargs))
+        return fake
+
+    monkeypatch.setattr(llm, "init_chat_model", capture)
+    assert get_chat_model("fast", settings) is fake
+    assert calls[0][0] == "configured-model"
+    assert calls[0][1]["extra_body"] == {"thinking": {"type": "disabled"}}
