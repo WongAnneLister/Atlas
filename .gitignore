@@ -8,6 +8,7 @@ eval/sets/*.csv
 eval/sets/manifest.json
 eval/sets/intent_manifest.json
 eval/sets/draft_cache.json
+eval/runs/*.jsonl
 *.sqlite
 *.sqlite3
 *.db

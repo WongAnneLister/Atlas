@@ -16,7 +16,8 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-build eval-validate eval-review eval-review-import eval-set-report \
         ingest ingest-chunks embedding-cache eval-ingest test-milvus eval-retrieval eval-intent eval-e2e sweep serve \
         lint format typecheck test check notes-check notes minio-image-local search reranker-cache \
-        eval-retrieval-index eval-failures eval-intent-build eval-intent-draft gate-analysis chat
+        eval-retrieval-index eval-failures eval-intent-build eval-intent-draft gate-analysis chat \
+        eval-judge eval-judge-import eval-compare
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -130,10 +131,19 @@ eval-intent-draft:
 	$(RUN) python -m eval.intent_draft
 
 eval-e2e:
-	$(call todo,13)
+	$(RUN) python -m eval.e2e_eval $(EVAL_E2E_ARGS)
 
 sweep:
-	$(call todo,13)
+	$(RUN) python -m eval.sweep $(SWEEP_ARGS)
+
+eval-judge:
+	$(RUN) python -m eval.judge $(EVAL_JUDGE_ARGS)
+
+eval-judge-import:
+	$(RUN) python -m eval.judge --import-csv "$(CONFIRMATIONS)"
+
+eval-compare:
+	$(RUN) python -m eval.compare "$(A)" "$(B)" $(EVAL_COMPARE_ARGS)
 
 serve:
 	$(call todo,14)

@@ -18,7 +18,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 10 | Tool, complaint, fixed paths | done | Customer-bound read-only tools, capped main-model loop, complaint acknowledgement, local fixed replies, typed shared handoff, and `make chat`. Real DeepSeek CLI lookup verified the seeded delayed shipment through order and tracking tools. See `docs/TOOL_PATHS.md`; task-quality measurements remain in commit 13. |
 | 11 | Evidence gate + knowledge path | implemented; dev analysis pending | Real dev analysis awaits local Milvus; threshold remains untuned. |
 | 12 | Refund sub-flow | done | Offline refund-flow tests cover picker, ownership, gate failure, code checks, and pending-review writes. |
-| 13 | E2E eval + threshold sweep | todo | |
+| 13 | E2E eval + threshold sweep | implemented; runtime pending | Sweep, resumable e2e runner, judge review, and run compare are implemented. Milvus and LLM were unavailable, so no threshold or safety metric was claimed. |
 | 14 | API + SSE + chat page | todo | |
 | 15 | Langfuse + cost | todo | |
 | 16 | README + demo script | todo | |
@@ -55,11 +55,13 @@ Agents: update this file in every commit. Keep it short and factual.
 - 10: No new task-quality metric yet. Offline route, identity isolation, tool failure, cap, checkpoint, and CLI checks accompany a real DeepSeek CLI smoke check against the seeded delayed shipment. Neither smoke checks nor fake-model tests establish end-to-end answer safety; that remains in commit 13.
 - 11: The knowledge route now retrieves, reranks, gates, then answers with checked citations or hands off. `--allow-untuned-gate` explicitly enables the configured 0.5 demo placeholder; the production threshold remains null. `make gate-analysis` could not connect to local Milvus at `127.0.0.1:19530`, so no signal metrics or manual chat result are recorded yet.
 - 12: Refund and return requests now verify owned orders, pause for an order picker, gate retrieved policy, and code-check structured decisions. Offline tests cover these routes; no end-to-end refund quality metric exists yet.
+- 13: Added cached gate-score sweeps, full-graph JSONL evaluation, hallucination review CSVs, and run comparison. `make sweep` stopped because Milvus was unavailable at `127.0.0.1:19530`; `gate.threshold` remains null and the Week 3 checkpoint is not passed.
 
 ## Checkpoints
 
 - **Checkpoint 1 — Week 1 gate passed.** Commits 02, 03 and 04 are done. Policy documents and mock order data can be rebuilt with Makefile targets.
 - **Checkpoint 2 — Week 2 gate passed — 4 configs measured.** Commit 08 includes real dev/test results and both ablations. The draft benchmark meets the retrieval target; human review and the evidence gate remain required.
+- **Checkpoint 3 — NOT passed.** Commit 13 evaluation tooling is ready, but Milvus was unavailable. No-answer false-accept is unmeasured and `gate.threshold` remains null.
 
 ## Known issues / follow-ups
 
@@ -77,6 +79,7 @@ Agents: update this file in every commit. Keep it short and factual.
 - 07: The task's W40 example is absent from the indexed catalog. Its live query returned charger-related electric-vehicle FAQs, not evidence for W40. Acceptance also used BHD340/10, confirmed from the real index; no synthetic product or eval label was added. Reranking and frozen-set quality comparisons remain in commit 08. The pinned model is cached locally; the existing VPS index remains unchanged.
 - 07: `make eval-ingest` now replaces only the measured section of `docs/RETRIEVAL.md`, preserving the handwritten guide. An offline regression test covers repeated regeneration.
 - 12: The refund flow records pending human review only. Real payment, idempotency, and production handoff queue behavior remain out of scope.
+- 13: Real safety, latency, token, cost, and hallucination numbers require a running Milvus service and configured `LLM_*` variables. The new scripts fail closed instead of creating placeholder metrics.
 
 - 01/06: The VPS now runs healthy project Milvus, MinIO and etcd containers. Milvus ports bind to loopback and the client connects through SSH forwarding. Existing services remain running. `make up COMPOSE_PYTHON=python3` supports a Docker host without the app environment.
 - 02: Data sources changed from the original PRD (see `docs/DATA_NOTES.md`); `docs/PRD.md` → Data updated to match.

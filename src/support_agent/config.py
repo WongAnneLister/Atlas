@@ -176,6 +176,9 @@ class EvalSettings(BaseModel):
     no_answer_drafts: str
     policy_topics: list[str]
     faq_categories: list[str]
+    customer_id: str = Field(min_length=1)
+    input_cost_per_million_usd: dict[str, float | None] = Field(default_factory=dict)
+    output_cost_per_million_usd: dict[str, float | None] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _valid_split(self) -> EvalSettings:

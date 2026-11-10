@@ -171,6 +171,10 @@ evaluation:
     - SuperCoins
     - Gift Cards
     - Privacy & Security
+  customer_id: CUST-0001
+  # Set rates from the active provider's published price table before cost reporting.
+  input_cost_per_million_usd: {fast: null, main: null}
+  output_cost_per_million_usd: {fast: null, main: null}
 
 milvus:
   uri: http://localhost:19530
