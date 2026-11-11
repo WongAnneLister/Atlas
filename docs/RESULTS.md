@@ -89,6 +89,54 @@ for target in ('sweep', 'eval-e2e', 'eval-judge'):
 PY
 ```
 
+## Routing optimization round one
+
+The application change is limited to the classification prompt.
+It separates general rules and self-service guidance from personal order lookups and actions.
+Models, retrieval, tools, gate weights, threshold, questions, and labels remain unchanged.
+
+| Dev routing check | Original prompt | Candidate prompt | Source |
+|---|---:|---:|---|
+| Answerable questions targeting knowledge path | 96/120 (80.00%) | 118/120 (98.33%) | `eval/reports/routing_round1.md` |
+| Authored policy/action controls | 20/22 (90.91%) | 22/22 (100.00%) | `eval/reports/routing_round1.md` |
+| Answerable pairs with successful calls in both runs | 96/117 (82.05%) | 116/117 (99.15%) | `eval/reports/routing_round1.md` |
+
+The primary comparison retains failed model calls.
+The original prompt had three invocation failures; the candidate had none.
+The successful-pair view also shows improvement without those availability differences.
+Knowledge-route expectations follow benchmark construction, not human-reviewed intent labels.
+Controls were authored before collection and are not representative held-out traffic.
+No-answer questions have no invented intent gold; only route distributions are reported.
+Neither comparison measures correct answers or evidence safety.
+
+The candidate was frozen before full-graph test inference.
+See `eval/reports/routing_round1_manifest.json` for its fingerprint and frozen inputs.
+Methodology, saved prompt paths, reproduction commands, and limitations are in
+[`docs/ROUTING_ROUND1.md`](ROUTING_ROUND1.md).
+
+| Full-test outcome | Frozen baseline | Routing candidate | Source |
+|---|---:|---:|---|
+| False reject | 26.67% | 8.33% | `eval/reports/routing_round1_compare.md` |
+| No-answer false accept | 3.33% | 3.33% | `eval/reports/routing_round1_compare.md` |
+| Accepted outcomes | 89/150 (59.33%) | 111/150 (74.00%) | Baseline archive and `eval/reports/routing_round1_test.md` |
+| Graph Recall@5 | 0.6917 | 0.9083 | Baseline archive and `eval/reports/routing_round1_test.md` |
+| Citation overlap | 0.5938 | 0.7607 | Baseline archive and `eval/reports/routing_round1_test.md` |
+| Full-answer latency P95 | 38.6971s | 36.2299s | Baseline archive and `eval/reports/routing_round1_test.md` |
+
+The candidate completed the same frozen test questions with identical labels and effective settings.
+Its prompt fingerprint was checked before and after inference.
+The same Cash App Pay item remains a false accept; the safety target still fails.
+The candidate was not revised using these results.
+Improved acceptance does not prove answer accuracy, complete answers, or factual grounding.
+Candidate judge flags and human-confirmed answer accuracy were not measured this round.
+
+The candidate ran alone; the baseline shared compute and experienced SSH outages.
+Both runs retain dependency failures, so the complete outcome delta is not solely a prompt effect.
+The candidate log also records classification and answer-generation connection errors.
+Fixed fallback outcomes must not all be described as semantic misclassifications.
+Some knowledge handoffs have a passing gate; answer failures share the `low_evidence` reason.
+More precise failure records are a follow-up, not a change to this frozen experiment.
+
 ## Manual acceptance observations
 
 These checks are separate from frozen-set quality metrics.
@@ -125,4 +173,4 @@ The judge reviews accepted answers with cited text; it does not audit uncited to
 Its flags are review suggestions, not human-confirmed hallucination labels.
 The current judge-flagged denominator includes every evaluation row, including skipped rows.
 An unflagged row without cited text is not evidence of a successful claim audit.
-There is no comparable earlier end-to-end baseline, so no improvement delta is claimed.
+The original run has no earlier complete baseline; round one now compares against its frozen archive.

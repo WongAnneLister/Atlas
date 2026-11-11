@@ -1,0 +1,80 @@
+{
+  "experiment": "routing-round1",
+  "phase": "candidate frozen before test",
+  "base_git_sha": "5da6301e9b80487c248e211a7fce535c8ffc31eb",
+  "candidate_prompt_sha256": "78ca91e112748ff514897753636fb03f0209c571ad7a6a547a3f58815203b36b",
+  "effective_config_hash": "7aa735a01dfeaa3c3b419d3c433f1da05cd30b60361e80fc0cb5433dfdf4f845",
+  "eval_file_sha256": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9",
+  "candidate_output": "eval/runs/routing-round1-test.jsonl",
+  "baseline_output": "eval/runs/baseline-001-e2e-test.jsonl",
+  "single_change": "Classification prompt only; unchanged models, gate, labels, retrieval and tools.",
+  "test_policy": "One held-out run; do not revise the prompt using test outcomes.",
+  "execution": "Standalone local evaluation; SSH reconnect supervisor; failures retained. Earlier baseline shared compute and had outages.",
+  "completion": {
+    "status": "Full test collection and paired comparison completed; candidate unchanged.",
+    "validation": "Identical unique frozen test items, labels, config, models, dataset versions, corpus, threshold; all baseline checksums match.",
+    "limitations": "Original baseline shared compute and had SSH outages. Candidate also retains model connection failures. Accepted outcomes are not answer accuracy. Same no-answer false accept persists.",
+    "artifacts": [
+      {
+        "path": "src/support_agent/graph/prompts/classify.md",
+        "sha256": "78ca91e112748ff514897753636fb03f0209c571ad7a6a547a3f58815203b36b",
+        "visibility": "committed"
+      },
+      {
+        "path": "eval/prompts/routing_round1_before.md",
+        "sha256": "22c7387b81f017c9212f903855d1a187ddfc0aceabc01606075155623785d5e3",
+        "visibility": "committed"
+      },
+      {
+        "path": "eval/prompts/routing_round1_after.md",
+        "sha256": "78ca91e112748ff514897753636fb03f0209c571ad7a6a547a3f58815203b36b",
+        "visibility": "committed"
+      },
+      {
+        "path": "eval/drafts/routing_controls.yaml",
+        "sha256": "7509c22638e5cc16aa1c829ebcac376304bc38911fedbc8134c6446a790bb3a4",
+        "visibility": "committed"
+      },
+      {
+        "path": "eval/runs/routing-round1-before.jsonl",
+        "sha256": "3eddcd4ec49f1e65b9c85bda7c6e4be179d7687646258636ed661d8dbfefc9e6",
+        "visibility": "local_only_gitignored"
+      },
+      {
+        "path": "eval/runs/routing-round1-after.jsonl",
+        "sha256": "c67bcdb1480fe80b51efe17ecd84e872a2c946c1685e63dbd731e003b6f38f9e",
+        "visibility": "local_only_gitignored"
+      },
+      {
+        "path": "eval/runs/routing-round1-test.jsonl",
+        "sha256": "6c2a43fd504f12661f9d2bdad9bc5f0e4ec1084ed04258e49291ecb266d24dff",
+        "visibility": "local_only_gitignored"
+      },
+      {
+        "path": "eval/reports/routing_round1_before.md",
+        "sha256": "706f5f118156b51a9039f39deda88be82144af982449cf274a23bea7dc9ea9d9",
+        "visibility": "committed"
+      },
+      {
+        "path": "eval/reports/routing_round1.md",
+        "sha256": "24047fe614c1b2791cf27568e6be579476a888a13af257fd6a26deb0c145bb0c",
+        "visibility": "committed"
+      },
+      {
+        "path": "eval/reports/routing_round1_test.md",
+        "sha256": "1b8938afd11921adad5934c2ad7b2f86965bba19dcd8ec65cdb8a54eedaba746",
+        "visibility": "committed"
+      },
+      {
+        "path": "eval/reports/routing_round1_compare.md",
+        "sha256": "88c280bb2dd3b74ff20082580034cbd9a71b27a38faba91f0216f6dc7fecd0d3",
+        "visibility": "committed"
+      },
+      {
+        "path": "/private/tmp/atlas-routing-round1-test.log",
+        "sha256": "b6092324fdd8e1667c08a11699ac3f48d59ccfe42d393d4b8c5d934fe8244264",
+        "visibility": "local_only_gitignored"
+      }
+    ]
+  }
+}

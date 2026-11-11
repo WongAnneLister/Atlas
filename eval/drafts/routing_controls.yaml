@@ -1,0 +1,23 @@
+# Authored before round-one inference. These are boundary checks, not benchmark labels.
+- {id: control-policy-delivery, text: "What delivery speeds can shoppers choose?", expected_path: B}
+- {id: control-action-tracking, text: "Track the shipment for ORD-000009.", expected_path: A}
+- {id: control-policy-refund, text: "Explain your refund eligibility rules.", expected_path: B}
+- {id: control-action-refund, text: "Send me a refund for ORD-000001.", expected_path: C}
+- {id: control-policy-returns, text: "Which categories can customers exchange?", expected_path: B}
+- {id: control-action-exchange, text: "Arrange an exchange for the damaged item in ORD-000002.", expected_path: C}
+- {id: control-policy-cancel, text: "Are there cancellation fees before dispatch?", expected_path: B}
+- {id: control-action-cancel, text: "Cancel my order ORD-000010 now.", expected_path: A}
+- {id: control-policy-invoice, text: "Where can shoppers download invoices?", expected_path: B}
+- {id: control-action-invoice, text: "Fetch the invoice for my order ORD-000009.", expected_path: A}
+- {id: control-policy-security, text: "How does card verification protect payments?", expected_path: B}
+- {id: control-action-password, text: "Reset my account password now.", expected_path: E}
+- {id: control-policy-membership, text: "What benefits come with store membership?", expected_path: B}
+- {id: control-action-account, text: "Delete my store account for me.", expected_path: E}
+- {id: control-human, text: "Transfer this chat to a real person.", expected_path: A}
+- {id: control-human-refund, text: "I want a human to discuss my refund.", expected_path: A}
+- {id: control-complaint, text: "Your support service has been terrible.", expected_path: D}
+- {id: control-payment-failure, text: "Your checkout billed me twice.", expected_path: D}
+- {id: control-greeting, text: "Hello there, good morning!", expected_path: E}
+- {id: control-unrelated, text: "Write me a poem about the moon.", expected_path: E}
+- {id: control-product, text: "Does this headphone model support Bluetooth?", expected_path: B}
+- {id: control-product-usage, text: "Explain how to clean the filter in an air fryer.", expected_path: B}

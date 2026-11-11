@@ -19,6 +19,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 11 | Evidence gate + knowledge path | dev measured; manual issue open | Dev signal report and PNG generated. Cited return-window answer passed; gold-bars example answered instead of creating a handoff. |
 | 12 | Refund sub-flow | implemented; cited-decision demo pending | Offline flow tests pass. Real picker/resume reached the decision node; shipped and delivered fixtures both required human policy review. |
 | 13 | E2E eval + threshold sweep | measured; safety gate FAILED | Dev-selected threshold 0.17. Test e2e false accept 3.33%, false reject 26.67%, full-answer P95 38.6971s. Judge flags 5.33% of all rows; human confirmation pending. See `eval/reports/`. |
+| 13a | Routing optimization round one | measured; safety gate still FAILED | Prompt-only change: dev knowledge-route match 80.00% to 98.33%; full-test false reject 26.67% to 8.33%, false accept unchanged at 3.33%. |
 | 14 | API + SSE + chat page | todo | |
 | 15 | Langfuse + cost | todo | |
 | 16 | README + demo script | todo | |
@@ -46,6 +47,8 @@ Agents: update this file in every commit. Keep it short and factual.
 ## Latest numbers (copied from eval/reports by script or by hand with the report path)
 
 - Baseline `e2e-001`: first complete real-model test-split full-graph run registered on 2026-11-11 (Asia/Tokyo). Reports, charts, config, checksums, comparison commands, and execution limits are frozen in `eval/reports/baselines/e2e-001/`. Complete per-item results and frozen labels have separate local gitignored copies; future runs use new output paths.
+- 13 routing round one: `eval/reports/routing_round1.md` compares saved prompts on identical dev questions and authored controls. Answerable knowledge-route match improved from 96/120 (80.00%) to 118/120 (98.33%); controls improved from 20/22 (90.91%) to 22/22 (100.00%). Original model failures remain in the denominator. These are draft-set routing checks, not answer accuracy.
+- 13 routing round one: `eval/reports/routing_round1_test.md` and `routing_round1_compare.md`: the frozen candidate completed all 150 test items. False reject fell from 26.67% to 8.33%; accepted outcomes rose from 89/150 to 111/150. False accept remained 3.33%, with the same Cash App Pay item. Graph Recall@5 rose from 0.6917 to 0.9083; citation overlap rose from 0.5938 to 0.7607. Full-answer P50/P95 were 19.7782s/36.2299s. These are outcomes, not human-confirmed answer accuracy; infrastructure differed from the original baseline.
 - 03: Document build integrity: 856/859 FAQ rows covered (99.65%), 12 docs, 122 sections, 7 models (`eval/reports/docs_build.md`). No retrieval or answer-quality metrics yet.
 - 04: Mock order integrity: 50 customers, 300 orders, 749 items, 192 shipments, 8 statuses, 14 named edge cases; 900 cross-customer operations blocked (`eval/reports/orders_seed.md`). These are fixture checks, not agent-quality metrics.
 - 05: Eval construction: 300 items, 240 answerable; 30 dev/30 test per group; validation failures 0; reviewed: 0/300 — waiting for human review (`eval/reports/eval_set.md`). No retrieval or answer-quality measurements yet.
@@ -65,6 +68,7 @@ Agents: update this file in every commit. Keep it short and factual.
 - **Checkpoint 1 — Week 1 gate passed.** Commits 02, 03 and 04 are done. Policy documents and mock order data can be rebuilt with Makefile targets.
 - **Checkpoint 2 — Week 2 gate passed — 4 configs measured.** Commit 08 includes real dev/test results and both ablations. The draft benchmark meets the retrieval target; human review and the evidence gate remain required.
 - **Checkpoint 3 — Week 3 gate NOT passed.** The held-out test has a no-answer false accept: Cash App Pay. Both standalone gate and full graph report 3.33%. The dev-selected threshold remains 0.17; test was not used for retuning.
+- **Routing round one does not clear Checkpoint 3.** The same no-answer item remains accepted. The candidate was frozen after dev and controls; no test result changed its prompt, labels, or threshold.
 
 ## Known issues / follow-ups
 
@@ -83,10 +87,10 @@ Agents: update this file in every commit. Keep it short and factual.
 - 07: `make eval-ingest` now replaces only the measured section of `docs/RETRIEVAL.md`, preserving the handwritten guide. An offline regression test covers repeated regeneration.
 - 12: The refund flow records pending human review only. Real payment, idempotency, and production handoff queue behavior remain out of scope.
 - 11/13: Cash App Pay passed the gate and received a partial cited payment answer without a handoff record. The PRD gold-bars manual example behaves similarly. Relevant words and valid citation numbers do not prove coverage. Review this semantic gap on dev, then run a separately versioned experiment; do not tune on the observed test failure or edit its label.
-- 13: False rejects also reflect intent routing to fixed, order-tool, and refund paths. Review general-policy versus personal-order routing on dev before changing prompts. The lower full-graph Recall@5 includes items that never reached retrieval; it is not the standalone retriever metric.
+- 13: Round one clarified general-policy versus personal-order routing using dev. Remaining full-test rejects include fixed fallbacks, tool/after-sales routes, and post-gate answer handoffs. The execution log records classification and answer-generation connection errors; fixed fallbacks must not all be called semantic misclassification. E2E records omit classification error flags, and `low_evidence` also labels answer-generation failures after a passing gate. Improve that diagnostic separation in a later change. The lower full-graph Recall@5 includes items that never reached retrieval; it is not the standalone retriever metric.
 - 13: An SSH timeout interrupted the sweep. Per-item atomic checkpoints now resume compatible rows and validate frozen IDs and labels. Offline regressions cover interrupted collection, replacement failure, duplicate rows, incomplete caches, and altered labels. Reports list failed test IDs and routes.
 - 13: E2E and sweep ran concurrently on CPU embeddings/MPS reranking; latency is not an isolated baseline. SSH interruptions produced fail-closed handoffs retained in the reported run. The judge uses the same model as generation and only audits accepted answers with cited text; human review is still required.
-- 13: No comparable earlier e2e run exists, so no before/after improvement is claimed. Run-comparison logic is checked with offline fixtures. First-token streaming and verified pricing remain follow-ups.
+- 13: The first complete run is now the frozen `e2e-001` baseline. Round one compares identical test items and settings against it; resource contention and outages limit causal interpretation. Run-comparison logic is checked with offline fixtures. First-token streaming and verified pricing remain follow-ups.
 - Local validation: `make data-orders` restored the ignored seeded database before graph checks passed. Some graph tests depend on that local database; make their order-service fixtures self-contained in a separate fix.
 - Local configuration: Milvus runs on the existing VPS through loopback SSH forwarding. Both LLM roles use DeepSeek Flash from ignored `.env`; `LLM_MAIN_MODEL` was added locally. Eval Makefile targets need `.env` loaded into the process environment; see `docs/RESULTS.md`.
 
