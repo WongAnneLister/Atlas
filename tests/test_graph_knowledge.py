@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
 from langchain_core.messages import HumanMessage
+from langchain_core.runnables import RunnableLambda
 
 from support_agent.config import Settings
 from support_agent.graph.build import build_graph
@@ -63,7 +65,9 @@ def invoke(graph: Any, question: str) -> dict[str, Any]:
 def test_high_evidence_answers_with_valid_source_metadata() -> None:
     settings = Settings()
     settings.gate.threshold = 0.7
-    main = FakeListChatModel(responses=["You have 30 days to return the item [1]."])
+    main = CoverageFake(
+        responses=["unused"], payload={"parts": [part("You have 30 days to return the item.")]}
+    )
     retriever = FixedRetriever(evidence(0.99))
     with GraphDeps(
         settings,
@@ -73,7 +77,7 @@ def test_high_evidence_answers_with_valid_source_metadata() -> None:
     ) as deps:
         result = invoke(build_graph(deps), "How long do I have to return an item?")
     assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "answer"], result["gate"]
-    assert result["answer"] == "You have 30 days to return the item [1]."
+    assert result["answer"] == "You have 30 days to return the item. [1]"
     assert result["citations"] == [
         {
             "n": 1,
@@ -116,11 +120,145 @@ def test_retrieval_failure_fails_closed_to_handoff(caplog: Any) -> None:
         result = invoke(build_graph(deps), "Can I return a gold bar?")
     assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
     assert result["gate"].reason == "empty_retrieval"
+    assert result["handoff"].reason == "retrieval_error"
     assert main.responses == ["This must never be called"]
     assert "private backend detail" not in caplog.text
 
 
-def test_invalid_citation_is_removed_and_citationless_answer_hands_off() -> None:
+def test_retrieval_error_is_distinct_from_missing_evidence() -> None:
+    settings = Settings()
+    with GraphDeps(settings, fast_model=fast_model(), retriever=BrokenRetriever()) as deps:
+        result = invoke(build_graph(deps), "Explain the return rules.")
+    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["retrieval_error_type"] == "ConnectionError"
+    assert result["handoff"].reason == "retrieval_error"
+
+
+def test_generation_connection_error_does_not_claim_low_evidence(caplog: Any) -> None:
+    class BrokenModel(FakeListChatModel):
+        def invoke(self, *args: Any, **kwargs: Any) -> Any:
+            raise ConnectionError("private provider detail")
+
+        def with_structured_output(self, *args: Any, **kwargs: Any) -> Any:
+            return RunnableLambda(self.invoke)
+
+    settings = Settings()
+    settings.gate.threshold = 0.7
+    with GraphDeps(
+        settings,
+        fast_model=fast_model(),
+        main_model=BrokenModel(responses=["unused"]),
+        retriever=FixedRetriever(evidence(0.99)),
+    ) as deps:
+        result = invoke(build_graph(deps), "Explain the return rules.")
+    assert result["gate"].passed
+    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["answer_status"] == "model_error"
+    assert result["answer_error_type"] == "ConnectionError"
+    assert result["handoff"].reason == "answer_error"
+    assert "private provider detail" not in caplog.text
+
+
+class CoverageFake(FakeListChatModel):
+    payload: dict[str, Any]
+
+    def with_structured_output(self, schema: Any, **kwargs: Any) -> Any:
+        return RunnableLambda(
+            lambda messages: {
+                "parsed": self.payload,
+                "raw": None,
+                "parsing_error": None,
+            }
+        )
+
+
+def part(answer: str = "Unused items can be returned within 30 days.", **changes: Any) -> dict:
+    return {
+        "question": "What is the return window?",
+        "supported": True,
+        "answer": answer,
+        "evidence": [{"source": 1, "quote": "Items can be returned within 30 days."}],
+        **changes,
+    }
+
+
+def coverage_graph(payload: dict) -> dict:
+    settings = Settings()
+    settings.gate.threshold = 0.7
+    with GraphDeps(
+        settings,
+        fast_model=fast_model(),
+        main_model=CoverageFake(responses=["unused"], payload=payload),
+        retriever=FixedRetriever(evidence(0.99)),
+    ) as deps:
+        return invoke(build_graph(deps), "What is the return window and refund processing time?")
+
+
+def test_partial_coverage_creates_handoff_even_with_high_gate_score() -> None:
+    result = coverage_graph(
+        {
+            "parts": [
+                part(),
+                {
+                    "question": "How long does refund processing take?",
+                    "supported": False,
+                    "answer": "",
+                    "evidence": [],
+                },
+            ]
+        }
+    )
+    assert result["gate"].passed
+    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["handoff"].reason == "incomplete_evidence"
+    assert result["answer_status"] == "insufficient_coverage"
+    assert "30 days" not in result["answer"]
+    assert result["citations"] == []
+    assert result["coverage"].parts[1].supported is False
+    assert result["handoff"].coverage.parts[1].question == "How long does refund processing take?"
+
+
+@pytest.mark.parametrize(
+    "citation",
+    [
+        {"source": 2, "quote": "Items can be returned within 30 days."},
+        {"source": 1, "quote": "Refunds are processed instantly."},
+        {"source": 1, "quote": ""},
+    ],
+)
+def test_invalid_evidence_cannot_become_a_cited_answer(citation: dict) -> None:
+    result = coverage_graph({"parts": [part(evidence=[citation])]})
+    assert result["trace"][-1] == "handoff"
+    assert result["answer_status"] in {"invalid_output", "invalid_evidence"}
+    assert result["citations"] == []
+
+
+def test_supported_parts_get_code_generated_citations() -> None:
+    result = coverage_graph({"parts": [part()]})
+    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "answer"]
+    assert result["answer"] == "Unused items can be returned within 30 days. [1]"
+    assert result["citations"][0]["section_id"] == "returns.window"
+    assert result["answer_status"] == "answered"
+
+
+def test_direct_answer_without_passing_gate_never_invokes_model() -> None:
+    path = KnowledgePath(GraphDeps(Settings(), main_model=FakeListChatModel(responses=["unused"])))
+    result = path.answer(ConversationState(retrieval=evidence(0.99)))
+    assert result["trace"] == ["handoff"]
+    assert result["handoff"].reason == "low_evidence"
+
+
+@pytest.mark.parametrize(
+    "payload", [{"parts": []}, {"parts": [part(supported="true")]}, {"parts": [part(evidence=[])]}]
+)
+def test_malformed_or_evidenceless_decision_fails_closed(payload: dict) -> None:
+    result = coverage_graph(payload)
+    assert result["trace"][-1] == "handoff"
+    assert result["answer_status"] == "invalid_output"
+    assert result["citations"] == []
+
+
+def test_citation_renderer_removes_unknown_source_numbers() -> None:
     settings = Settings()
     settings.gate.threshold = 0.8
     path = KnowledgePath(
@@ -137,6 +275,32 @@ def test_invalid_citation_is_removed_and_citationless_answer_hands_off() -> None
     no_citation, citations = path._check_citations("The window is 30 days [7].", state.retrieval)
     assert no_citation == "The window is 30 days."
     assert citations == []
-    handoff = path.answer(state)
-    assert handoff["trace"] == ["retrieve", "gate", "handoff"]
-    assert handoff["handoff"].reason.value == "low_evidence"
+
+
+def test_next_turn_clears_coverage_and_answer_failure_fields() -> None:
+    from test_graph import fake
+
+    settings = Settings()
+    model = fake(Intent.POLICY_QUESTION, Intent.CHITCHAT_OTHER)
+    with GraphDeps(
+        settings,
+        fast_model=model,
+        main_model=CoverageFake(responses=["unused"], payload={"parts": [part()]}),
+        retriever=FixedRetriever(evidence(0.99)),
+    ) as deps:
+        graph = build_graph(deps)
+        first = invoke(graph, "What is the return window?")
+        assert first["coverage"] is not None
+        graph.update_state(
+            {"configurable": {"thread_id": "knowledge-test"}},
+            {
+                "answer_status": "model_error",
+                "answer_error_type": "ConnectionError",
+                "retrieval_error_type": "TimeoutError",
+            },
+        )
+        second = invoke(graph, "hello")
+    assert second["coverage"] is None
+    assert second["answer_status"] == "not_attempted"
+    assert second["answer_error_type"] is None
+    assert second["retrieval_error_type"] is None

@@ -137,6 +137,71 @@ Fixed fallback outcomes must not all be described as semantic misclassifications
 Some knowledge handoffs have a passing gate; answer failures share the `low_evidence` reason.
 More precise failure records are a follow-up, not a change to this frozen experiment.
 
+## Evidence coverage optimization round two
+
+The knowledge answer call now returns requested parts and direct source quotes.
+Code validates source numbers and quote membership, then builds citations.
+An unsupported part causes a real handoff instead of a partial customer answer.
+The existing evidence gate, threshold, classification, model roles, and retrieval remain unchanged.
+Failure diagnostics now separate dependency errors, invalid output, and incomplete coverage.
+See [`docs/COVERAGE_ROUND2.md`](COVERAGE_ROUND2.md) for scope and reproduction.
+
+The paired answer-stage dev experiment uses identical frozen retrieval contexts.
+It excludes routing and live retrieval time; it is not a full-graph measurement.
+The authored control test uses preassigned fictional topics not used for dev selection.
+
+| Answer-stage check | Original | Candidate | Source |
+|---|---:|---:|---|
+| Dev control false accept | 100.00% | 0.00% | `eval/reports/coverage_round2_dev.md` |
+| Dev control false reject | 0.00% | 0.00% | `eval/reports/coverage_round2_dev.md` |
+| Original dev knowledge-question rejection | 0.00% | 5.83% | `eval/reports/coverage_round2_dev.md` |
+| Control test false accept | 100.00% | 0.00% | `eval/reports/coverage_round2_controls_test.md` |
+| Control test false reject | 0.00% | 0.00% | `eval/reports/coverage_round2_controls_test.md` |
+| Control test answer-stage P95 | 1.6139s | 2.3034s | `eval/reports/coverage_round2_controls_test.md` |
+
+Original dev accepted all 120 knowledge questions; the candidate accepted 113.
+These original labels describe corpus answerability, not complete coverage by supplied context.
+Several colloquial questions include extra requests outside the FAQ target.
+No labels were changed to hide that disagreement.
+Controls have authored labels and need human review before serving as a trusted benchmark.
+Quote presence is not proof of semantic support or complete question decomposition.
+Neither acceptance nor these rates establish human-confirmed answer accuracy.
+
+The candidate production files were frozen after dev in `coverage_round2_manifest.json`.
+The old full-test split is a regression check after that freeze, not a new blind holdout.
+Its results do not revise this candidate.
+
+### Frozen full-graph regression
+
+| Outcome | Routing round one | Coverage round two | Source |
+|---|---:|---:|---|
+| No-answer false accept | 3.33% (1/30) | 0.00% (0/30) | `eval/reports/coverage_round2_compare.md` |
+| Answerable false reject | 8.33% (10/120) | 9.17% (11/120) | `eval/reports/coverage_round2_compare.md` |
+| Accepted outcomes | 111/150 (74.00%) | 109/150 (72.67%) | `eval/reports/coverage_round2_summary.md` |
+| Graph Recall@5 | 0.9083 | 0.9417 | Round-one and round-two test reports |
+| Citation overlap | 0.7607 | 0.8597 | Round-one and round-two test reports |
+| Full-answer P50 | 19.7782s | 12.0812s | Round-one and round-two test reports |
+| Full-answer P95 | 36.2299s | 19.0082s | Round-one and round-two test reports |
+
+The same questions, labels, corpus, models, settings, and threshold were checked before comparison.
+All production file hashes still match the pre-test freeze.
+Cash App Pay still passes the evidence gate, but incomplete coverage now creates a real handoff.
+The net cost is one more rejected answerable question, alongside the removed no-answer acceptance.
+This is an aggregate difference: several individual outcomes and routes changed in both directions.
+Eight answerable rejects are incomplete-coverage handoffs; two lack orders; one reports a tool error.
+There were no recorded classification, retrieval, or knowledge-generation call failures this round.
+The earlier run had connection errors, and identical classifier code can still yield different routes.
+Provider aliases do not pin weights; zero temperature does not ensure identical calls.
+The full-graph latency and acceptance changes therefore are not isolated causal coverage effects.
+The reserved answer-stage control test, by contrast, showed increased P95 latency.
+
+A zero observed false-accept rate on thirty no-answer cases is not a production guarantee.
+The old test is now a regression set; a fresh human-reviewed corpus holdout remains necessary.
+No new judge audit or human-confirmed answer-accuracy measurement was collected this round.
+The script-generated summary and bar chart are `eval/reports/coverage_round2_summary.md`
+and `eval/reports/coverage_round2.png`.
+The original baseline archive and default `eval/reports/e2e.md` remain unchanged.
+
 ## Manual acceptance observations
 
 These checks are separate from frozen-set quality metrics.

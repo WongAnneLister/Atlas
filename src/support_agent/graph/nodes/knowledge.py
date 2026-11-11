@@ -9,6 +9,7 @@ from typing import Any
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from support_agent.gate.evidence import evaluate
+from support_agent.graph.coverage import CoverageAnswer, render_covered_answer
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, make_handoff
 from support_agent.graph.state import CitationRecord, ConversationState
@@ -30,14 +31,20 @@ class KnowledgePath:
         self.prompt = (PROMPTS / "answer.md").read_text(encoding="utf-8")
 
     def retrieve(self, state: ConversationState) -> dict[str, Any]:
+        error_type = None
         try:
             chunks = self.deps.knowledge_retriever().retrieve(
                 state.rewritten_query, self.deps.settings.retrieval.rerank_top_k
             )
         except Exception as error:
-            logger.warning("Knowledge retrieval failed: %s", type(error).__name__)
+            error_type = type(error).__name__
+            logger.warning("Knowledge retrieval failed: %s", error_type)
             chunks = []
-        return {"retrieval": chunks, "trace": [*state.trace, "retrieve"]}
+        return {
+            "retrieval": chunks,
+            "retrieval_error_type": error_type,
+            "trace": [*state.trace, "retrieve"],
+        }
 
     def gate(self, state: ConversationState) -> dict[str, Any]:
         result = evaluate(
@@ -51,12 +58,21 @@ class KnowledgePath:
     def handoff(self, state: ConversationState) -> dict[str, Any]:
         current = state.model_copy(deep=True)
         current.trace.append("handoff")
-        return {**make_handoff(current, HandoffReason.LOW_EVIDENCE), "trace": current.trace}
+        reason = (
+            HandoffReason.RETRIEVAL_ERROR
+            if state.retrieval_error_type
+            else HandoffReason.LOW_EVIDENCE
+        )
+        return {**make_handoff(current, reason), "trace": current.trace}
 
     def answer(self, state: ConversationState) -> dict[str, Any]:
-        sources = self._sources(state.retrieval[: self.deps.settings.retrieval.rerank_top_k])
+        if state.gate is None or not state.gate.passed:
+            return self.handoff(state)
+        chunks = state.retrieval[: self.deps.settings.retrieval.rerank_top_k]
+        sources = self._sources(chunks)
         try:
-            response = self.deps.model("main").invoke(
+            model = self.deps.model("main").with_structured_output(CoverageAnswer, include_raw=True)
+            response = model.invoke(
                 [
                     SystemMessage(content=self.prompt),
                     HumanMessage(
@@ -64,29 +80,50 @@ class KnowledgePath:
                     ),
                 ]
             )
-            text = response.content
-            if not isinstance(text, str) or not text.strip():
-                return self._answer_handoff(state)
-            cleaned, citations = self._check_citations(text.strip(), state.retrieval)
-            if not citations:
-                return self._answer_handoff(state)
-            return {
-                "answer": cleaned,
-                "messages": [AIMessage(content=cleaned)],
-                "citations": [item.model_dump() for item in citations],
-                "trace": [*state.trace, "answer"],
-            }
         except Exception as error:
             logger.warning("Knowledge answer failed: %s", type(error).__name__)
-            return self._answer_handoff(state)
+            return {
+                **self._answer_handoff(state, "model_error"),
+                "answer_error_type": type(error).__name__,
+            }
+        try:
+            if not isinstance(response, dict) or response.get("parsing_error"):
+                raise ValueError("Invalid structured answer envelope")
+            coverage = CoverageAnswer.model_validate(response.get("parsed"))
+        except Exception as error:
+            return {
+                **self._answer_handoff(state, "invalid_output"),
+                "answer_error_type": type(error).__name__,
+            }
+        status, text = render_covered_answer(coverage, chunks)
+        if status != "answered":
+            current = state.model_copy(update={"coverage": coverage})
+            return {**self._answer_handoff(current, status), "coverage": coverage}
+        cleaned, citations = self._check_citations(text, chunks)
+        return {
+            "answer": cleaned,
+            "messages": [AIMessage(content=cleaned)],
+            "citations": [item.model_dump() for item in citations],
+            "trace": [*state.trace, "answer"],
+            "answer_status": "answered",
+            "coverage": coverage,
+        }
 
-    def _answer_handoff(self, state: ConversationState) -> dict[str, Any]:
+    def _answer_handoff(self, state: ConversationState, status: str) -> dict[str, Any]:
         current = state.model_copy(deep=True)
         current.trace.append("handoff")
         return {
-            **make_handoff(current, HandoffReason.LOW_EVIDENCE),
+            **make_handoff(
+                current,
+                HandoffReason.ANSWER_ERROR
+                if status == "model_error"
+                else HandoffReason.INCOMPLETE_EVIDENCE
+                if status == "insufficient_coverage"
+                else HandoffReason.INVALID_ANSWER,
+            ),
             "trace": current.trace,
             "citations": [],
+            "answer_status": status,
         }
 
     @staticmethod

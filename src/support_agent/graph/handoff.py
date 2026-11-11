@@ -12,6 +12,7 @@ from langchain_core.messages import AIMessage, AnyMessage
 from pydantic import BaseModel, Field
 
 from support_agent.gate.evidence import GateResult
+from support_agent.graph.coverage import CoverageAnswer
 from support_agent.graph.intents import Intent
 from support_agent.retrieval.types import RetrievedChunk
 
@@ -25,6 +26,10 @@ class HandoffReason(StrEnum):
     USER_REQUESTED = "user_requested"
     COMPLAINT = "complaint"
     LOW_EVIDENCE = "low_evidence"
+    RETRIEVAL_ERROR = "retrieval_error"
+    ANSWER_ERROR = "answer_error"
+    INVALID_ANSWER = "invalid_answer"
+    INCOMPLETE_EVIDENCE = "incomplete_evidence"
     AGENT_STEP_CAP = "agent_step_cap"
     TOOL_ERROR = "tool_error"
     ORDER_NOT_FOUND = "order_not_found"
@@ -38,6 +43,7 @@ class HandoffPayload(BaseModel):
     intent: Intent | None
     retrieval_snapshot: list[RetrievedChunk] = Field(default_factory=list)
     gate: GateResult | None = None
+    coverage: CoverageAnswer | None = None
     order_context: dict[str, Any] | None = None
     created_at: datetime
 
@@ -62,6 +68,7 @@ def make_handoff(state: ConversationState, reason: HandoffReason) -> dict[str, A
         intent=state.intent,
         retrieval_snapshot=state.retrieval,
         gate=state.gate,
+        coverage=state.coverage,
         order_context=state.order_context,
         created_at=datetime.now(UTC),
     )

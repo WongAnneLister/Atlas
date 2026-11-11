@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -21,6 +22,9 @@ class E2EMetadata(BaseModel):
     date: str
     customer_id: str
     threshold: float
+    code_hash: str | None = None
+    prompt_hash: str | None = None
+    runtime: dict[str, str] | None = None
 
 
 class E2ERecord(BaseModel):
@@ -30,6 +34,12 @@ class E2ERecord(BaseModel):
     path: str | None = None
     trace: list[str] = Field(default_factory=list)
     gate: dict[str, Any] | None = None
+    classification_failed: bool | None = None
+    classification_error_type: str | None = None
+    retrieval_error_type: str | None = None
+    answer_status: str | None = None
+    answer_error_type: str | None = None
+    coverage: dict[str, Any] | None = None
     answer: str = ""
     citations: list[dict[str, Any]] = Field(default_factory=list)
     cited_sources: list[dict[str, str]] = Field(default_factory=list)
@@ -48,3 +58,33 @@ class JudgeRecord(BaseModel):
     flagged: bool
     claims: list[str] = Field(default_factory=list)
     confirmed: Literal["", "yes", "no"] = ""
+
+
+def load_cached_run(
+    path: Path, metadata: E2EMetadata, items: list[EvalItem]
+) -> tuple[E2EMetadata, dict[str, E2ERecord]]:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    saved = E2EMetadata.model_validate_json(lines[0])
+    for key in (
+        "config_hash",
+        "eval_file_hash",
+        "corpus_hash",
+        "split",
+        "models",
+        "dataset_versions",
+        "customer_id",
+        "threshold",
+        "code_hash",
+        "prompt_hash",
+        "runtime",
+    ):
+        if getattr(saved, key) != getattr(metadata, key):
+            raise ValueError(f"E2E cache changed {key}; choose a fresh output")
+    rows = [E2ERecord.model_validate_json(line) for line in lines[1:] if line.strip()]
+    records = {r.item.id: r for r in rows}
+    if len(records) != len(rows):
+        raise ValueError("E2E cache has duplicate items")
+    expected = {i.id: i.model_dump() for i in items}
+    if any(expected.get(r.item.id) != r.item.model_dump() for r in rows):
+        raise ValueError("E2E cache items changed")
+    return saved, records

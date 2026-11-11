@@ -17,7 +17,9 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.types import Command
 
 from eval.common import load_items
-from eval.e2e_records import E2EMetadata, E2ERecord
+from eval.e2e_diagnostics import diagnostic_lines
+from eval.e2e_records import E2EMetadata, E2ERecord, load_cached_run
+from eval.intent_eval import runtime_versions, source_hash
 from eval.metrics import accepted, mrr, outcome_rates, percentile, recall_at_k
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
@@ -166,6 +168,14 @@ def _record(
         intent=getattr(result.get("intent"), "value", result.get("intent")),
         path=getattr(result.get("path"), "value", result.get("path")),
         trace=list(result.get("trace", [])),
+        classification_failed=result.get("classification_failed"),
+        classification_error_type=result.get("classification_error_type"),
+        retrieval_error_type=result.get("retrieval_error_type"),
+        answer_status=result.get("answer_status"),
+        answer_error_type=result.get("answer_error_type"),
+        coverage=result["coverage"].model_dump()
+        if hasattr(result.get("coverage"), "model_dump")
+        else result.get("coverage"),
         gate=result["gate"].model_dump()
         if hasattr(result.get("gate"), "model_dump")
         else result.get("gate"),
@@ -203,6 +213,15 @@ def _metadata(settings: Settings, split: str, eval_text: str, corpus_hash: str) 
         threshold=settings.gate.threshold
         if settings.gate.threshold is not None
         else settings.gate.untuned_threshold,
+        code_hash=source_hash(
+            [
+                *list((REPO_ROOT / "src/support_agent").rglob("*.py")),
+                REPO_ROOT / "eval/e2e_eval.py",
+                REPO_ROOT / "eval/e2e_records.py",
+            ]
+        ),
+        prompt_hash=source_hash(list((REPO_ROOT / "src/support_agent/graph/prompts").glob("*"))),
+        runtime=runtime_versions(),
     )
 
 
@@ -254,6 +273,9 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
         f"- Dataset versions: {json.dumps(metadata.dataset_versions, sort_keys=True)}",
         f"- Customer fixture: `{metadata.customer_id}`",
         f"- Gate threshold: {metadata.threshold:.2f}",
+        f"- Collection code hash: `{metadata.code_hash or 'not recorded in legacy run'}`",
+        f"- Prompt hash: `{metadata.prompt_hash or 'not recorded in legacy run'}`",
+        f"- Model runtime: `{metadata.runtime}`",
         "- First-token latency uses model streaming callbacks when available.",
         "- Providers without streaming callbacks report first-token latency as unavailable.",
         "- Recall@5 uses retrieved sections.",
@@ -330,6 +352,7 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
         for record in records
         if not record.item.answerable and record.accepted
     )
+    lines.extend(diagnostic_lines(records))
     write_text(path, "\n".join(lines) + "\n")
 
 
@@ -338,6 +361,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--split", choices=["dev", "test", "all"], default="test")
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--allow-untuned", action="store_true")
+    parser.add_argument("--report", type=Path, default=Path("eval/reports/e2e.md"))
     args = parser.parse_args(argv)
     settings = get_settings().model_copy(deep=True)
     if settings.gate.threshold is None and not args.allow_untuned:
@@ -353,24 +377,7 @@ def main(argv: list[str] | None = None) -> int:
     metadata = _metadata(settings, args.split, eval_text, manifest["corpus_hash"])
     existing: dict[str, E2ERecord] = {}
     if output.exists():
-        lines = output.read_text(encoding="utf-8").splitlines()
-        if lines:
-            saved = E2EMetadata.model_validate_json(lines[0])
-            if (
-                saved.config_hash != metadata.config_hash
-                or saved.eval_file_hash != metadata.eval_file_hash
-                or saved.corpus_hash != metadata.corpus_hash
-                or saved.split != metadata.split
-            ):
-                raise RuntimeError(
-                    "Existing e2e output belongs to a different config, eval set, corpus, or split"
-                )
-            existing = {
-                record.item.id: record
-                for line in lines[1:]
-                if line.strip()
-                for record in [E2ERecord.model_validate_json(line)]
-            }
+        metadata, existing = load_cached_run(output, metadata, items)
     pending = [item for item in items if item.id not in existing]
     with GraphDeps(
         settings,
@@ -385,8 +392,9 @@ def main(argv: list[str] | None = None) -> int:
             record = _record(item, result, latency, first_token_latency, token_usage)
             record.estimated_cost_usd = _cost(settings, record.input_tokens, record.output_tokens)
             existing[item.id] = record
+            temporary = output.with_suffix(output.suffix + ".tmp")
             write_text(
-                output,
+                temporary,
                 "\n".join(
                     [
                         metadata.model_dump_json(),
@@ -395,8 +403,9 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 + "\n",
             )
+            temporary.replace(output)
     records = [existing[item.id] for item in items]
-    report = REPO_ROOT / "eval/reports/e2e.md"
+    report = REPO_ROOT / args.report
     _write_report(records, metadata, report)
     return 0
 

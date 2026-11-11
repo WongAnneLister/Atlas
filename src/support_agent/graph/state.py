@@ -1,12 +1,13 @@
 """Validated conversation state shared by the fixed workflow nodes."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
 
 from support_agent.gate.evidence import GateResult
+from support_agent.graph.coverage import CoverageAnswer
 from support_agent.graph.handoff import HandoffPayload
 from support_agent.graph.intents import Intent, Path
 from support_agent.retrieval.types import RetrievedChunk
@@ -32,6 +33,18 @@ class ConversationState(BaseModel):
     classifier_model: str | None = None
     retrieval: list[RetrievedChunk] = Field(default_factory=list)
     gate: GateResult | None = None
+    retrieval_error_type: str | None = None
+    answer_status: Literal[
+        "not_attempted",
+        "answered",
+        "model_error",
+        "invalid_output",
+        "invalid_citation",
+        "insufficient_coverage",
+        "invalid_evidence",
+    ] = "not_attempted"
+    answer_error_type: str | None = None
+    coverage: CoverageAnswer | None = None
     order_context: dict[str, Any] | None = None
     refund_candidates: list[dict[str, Any]] = Field(default_factory=list)
     refund_order_id: str | None = None

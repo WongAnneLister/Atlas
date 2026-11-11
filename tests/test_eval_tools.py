@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from eval.compare import compare_runs
-from eval.e2e_eval import _write_report
+from eval.e2e_eval import _record, _write_report
 from eval.e2e_records import E2EMetadata, E2ERecord
 from eval.judge import export_csv, import_confirmations, judge_record
 from eval.metrics import outcome_rates, percentile
@@ -141,6 +141,30 @@ def test_compare_reports_changed_outcomes() -> None:
     ]
 
 
+def test_e2e_retains_failure_fields_without_inventing_legacy_diagnostics() -> None:
+    record = _record(
+        eval_item("failed"),
+        {
+            "classification_failed": True,
+            "classification_error_type": "ConnectionError",
+            "retrieval_error_type": "TimeoutError",
+            "answer_status": "model_error",
+            "answer_error_type": "ConnectionError",
+        },
+        0.1,
+        None,
+        (None, None),
+    )
+    assert record.classification_failed is True
+    assert record.classification_error_type == "ConnectionError"
+    assert record.retrieval_error_type == "TimeoutError"
+    assert record.answer_status == "model_error"
+    assert record.answer_error_type == "ConnectionError"
+    legacy = E2ERecord.model_validate(e2e_record("legacy", False).model_dump())
+    assert legacy.classification_failed is None
+    assert legacy.answer_status is None
+
+
 def test_judge_exports_claims_and_imports_human_confirmation(tmp_path) -> None:
     record = e2e_record("one", True)
     record.cited_sources = [
@@ -191,3 +215,32 @@ def test_e2e_citation_validity_uses_unique_cited_sections(tmp_path) -> None:
     )
     _write_report([record], metadata, report)
     assert "accepted-no-answer" in report.read_text(encoding="utf-8")
+
+
+def test_e2e_diagnostics_report_keeps_legacy_status_unknown(tmp_path) -> None:
+    metadata = E2EMetadata(
+        git_sha="fixture",
+        config_hash="config",
+        eval_file_hash="eval",
+        corpus_hash="corpus",
+        models={},
+        dataset_versions={},
+        split="test",
+        date="fixture",
+        customer_id="fixture",
+        threshold=0.17,
+    )
+    legacy = e2e_record("legacy", False).model_copy(update={"gate": {"passed": False}})
+    failed = e2e_record("failed", False).model_copy(
+        update={
+            "classification_failed": True,
+            "classification_error_type": "ConnectionError",
+            "answer_status": "not_attempted",
+        }
+    )
+    path = tmp_path / "report.md"
+    _write_report([legacy, failed], metadata, path)
+    report = path.read_text()
+    assert "| Classification call failed | 1 |" in report
+    assert "| Diagnostic fields unavailable | 1 |" in report
+    assert "| Gate rejected without retrieval error | 0 |" in report

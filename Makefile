@@ -17,7 +17,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         ingest ingest-chunks embedding-cache eval-ingest test-milvus eval-retrieval eval-intent eval-e2e sweep serve \
         lint format typecheck test check notes-check notes minio-image-local search reranker-cache \
         eval-retrieval-index eval-failures eval-intent-build eval-intent-draft gate-analysis chat \
-        eval-judge eval-judge-import eval-compare eval-routing
+        eval-judge eval-judge-import eval-compare eval-routing eval-coverage eval-coverage-summary
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -126,6 +126,12 @@ eval-intent:
 
 eval-routing:
 	$(RUN) python -m eval.routing_eval $(EVAL_ROUTING_ARGS)
+
+eval-coverage:
+	$(RUN) python -m eval.coverage_eval $(EVAL_COVERAGE_ARGS)
+
+eval-coverage-summary:
+	$(RUN) python -m eval.coverage_summary $(EVAL_COVERAGE_SUMMARY_ARGS)
 
 eval-intent-build:
 	$(RUN) python -m eval.intent_data
