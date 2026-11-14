@@ -362,13 +362,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--allow-untuned", action="store_true")
     parser.add_argument("--report", type=Path, default=Path("eval/reports/e2e.md"))
+    parser.add_argument(
+        "--eval-file",
+        type=Path,
+        default=None,
+        help="frozen item file to run instead of eval_v1 (e.g. the near-miss holdout)",
+    )
     args = parser.parse_args(argv)
     settings = get_settings().model_copy(deep=True)
     if settings.gate.threshold is None and not args.allow_untuned:
         raise RuntimeError("gate.threshold is unset; run `make sweep` before e2e evaluation")
-    eval_path = REPO_ROOT / settings.evaluation.sets_dir / "eval_v1.jsonl"
+    sets_dir = REPO_ROOT / settings.evaluation.sets_dir
+    eval_path = REPO_ROOT / args.eval_file if args.eval_file else sets_dir / "eval_v1.jsonl"
     eval_text = eval_path.read_text(encoding="utf-8")
-    manifest = json.loads((eval_path.parent / "manifest.json").read_text(encoding="utf-8"))
+    # Every frozen file is built from the same corpus recorded in the main manifest.
+    manifest = json.loads((sets_dir / "manifest.json").read_text(encoding="utf-8"))
     items = load_items(eval_path)
     if args.split != "all":
         items = [item for item in items if item.split == args.split]

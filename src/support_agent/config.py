@@ -144,6 +144,19 @@ class GateSettings(BaseModel):
     policy_nouns: list[str] = Field(min_length=1)
     untuned_threshold: float = Field(ge=0, le=1)
     threshold: float | None = Field(default=None, ge=0, le=1)
+    # "neutral" scores key_hit 1.0 without key terms; "exclude" drops it and renormalises.
+    key_hit_without_terms: Literal["neutral", "exclude"] = "neutral"
+    # Capitalised names in the query (e.g. "Cash App Pay") count as key terms.
+    entity_terms: bool = False
+    # Fail when the query names models or entities and none appear in the top chunks.
+    require_specific_term_hit: bool = False
+    key_hit_top_chunks: int = Field(default=3, gt=0)
+    # Store names that scope a question rather than name the asked-about thing.
+    scope_terms: list[str] = Field(default_factory=list)
+    # Capitalised words that are not names (question words, pronouns, fillers).
+    entity_stopwords: list[str] = Field(default_factory=list)
+    # "lowest": first zero-dev-false-accept threshold; "midpoint": centre of the dev gap.
+    threshold_rule: Literal["lowest", "midpoint"] = "lowest"
 
     @model_validator(mode="after")
     def _weights_sum_to_one(self) -> GateSettings:

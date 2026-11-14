@@ -39,6 +39,25 @@ def test_sweep_selects_lowest_threshold_with_zero_false_accept() -> None:
     assert rates.false_reject == 1.0
 
 
+def test_sweep_midpoint_rule_centres_the_dev_gap() -> None:
+    records = [
+        score("no-answer", False, 0.10),
+        score("answerable-low", True, 0.50),
+        score("answerable-high", True, 0.90),
+    ]
+    assert select_threshold(records, "lowest") == 0.11
+    assert select_threshold(records, "midpoint") == 0.30
+    assert rates_for_records(records, 0.30).false_reject == 0
+
+
+def test_sweep_never_passes_a_vetoed_record() -> None:
+    vetoed = score("no-answer", False, 0.95).model_copy(update={"vetoed": True})
+    records = [vetoed, score("answerable", True, 0.60)]
+    assert rates_for_records(records, 0.05).false_accept == 0
+    assert select_threshold(records, "lowest") == 0.05
+    assert select_threshold(records, "midpoint") == 0.30
+
+
 def test_sweep_reports_no_threshold_when_no_answer_score_is_maximum() -> None:
     records = [score("answerable", True, 0.50), score("no-answer", False, 1.0)]
     assert select_threshold(records) is None

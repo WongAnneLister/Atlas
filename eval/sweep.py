@@ -15,15 +15,24 @@ import yaml
 from pydantic import BaseModel, Field
 
 from eval.common import load_items
-from eval.metrics import Rates, sweep_rates
+from eval.metrics import Rates, outcome_rates, sweep_rates
 from eval.schema import EvalItem
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.gate.evidence import evaluate
+from support_agent.retrieval.chunking import Chunk
 from support_agent.retrieval.embed import BgeM3Embedder
 from support_agent.retrieval.factory import build_retriever
 from support_agent.retrieval.milvus_store import MilvusStore
 from support_agent.retrieval.rerank import BgeReranker
+from support_agent.retrieval.types import RetrievedChunk
+
+
+class ChunkScore(BaseModel):
+    """A retrieved chunk id and its rerank score; text is re-read from local chunks."""
+
+    chunk_id: str
+    rerank: float
 
 
 class GateScore(BaseModel):
@@ -35,6 +44,8 @@ class GateScore(BaseModel):
     score: float = Field(ge=0, le=1)
     signals: dict[str, float]
     ranked_section_ids: list[str] = Field(default_factory=list)
+    chunks: list[ChunkScore] = Field(default_factory=list)
+    vetoed: bool = False
 
 
 class GateScoreMetadata(BaseModel):
@@ -53,20 +64,72 @@ def thresholds() -> list[float]:
     return [round(index / 100, 2) for index in range(5, 96)]
 
 
+def effective_score(record: GateScore) -> float:
+    """A vetoed record never passes, whatever the threshold."""
+    return -1.0 if record.vetoed else record.score
+
+
 def rates_for_records(records: list[GateScore], threshold: float) -> Rates:
-    return sweep_rates(
+    sweep_rates([r.answerable for r in records], [r.score for r in records], threshold)
+    return outcome_rates(
         [record.answerable for record in records],
-        [record.score for record in records],
-        threshold,
+        [not record.vetoed and record.score >= threshold for record in records],
     )
 
 
-def select_threshold(records: list[GateScore]) -> float | None:
-    """Pick the lowest configured threshold with zero dev false accepts."""
-    for threshold in thresholds():
-        if rates_for_records(records, threshold).false_accept == 0:
-            return threshold
-    return None
+def select_threshold(records: list[GateScore], rule: str = "lowest") -> float | None:
+    """Pick a grid threshold with zero dev false accepts.
+
+    "lowest" takes the first such threshold. "midpoint" takes the grid value nearest the
+    centre of the gap between the highest no-answer score and the next answerable score.
+    """
+    safe = [t for t in thresholds() if rates_for_records(records, t).false_accept == 0]
+    if not safe:
+        return None
+    if rule == "lowest":
+        return safe[0]
+    if rule != "midpoint":
+        raise ValueError(f"Unknown threshold rule: {rule}")
+    highest_no_answer = max([0.0, *(effective_score(r) for r in records if not r.answerable)])
+    above = [effective_score(r) for r in records if r.answerable]
+    above = [value for value in above if value > highest_no_answer]
+    if not above:
+        return safe[0]
+    centre = (highest_no_answer + min(above)) / 2
+    return min(safe, key=lambda t: (abs(t - centre), t))
+
+
+def load_local_chunks(settings: Settings) -> dict[str, Chunk]:
+    path = REPO_ROOT / settings.data.processed_dir / "chunks.jsonl"
+    chunks = [
+        Chunk.model_validate_json(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+    return {chunk.chunk_id: chunk for chunk in chunks}
+
+
+def rescore(records: list[GateScore], items: list[EvalItem], settings: Settings) -> list[GateScore]:
+    """Recompute gate scores from cached retrieval snapshots with the current gate code."""
+    questions = {item.id: item.question for item in items}
+    texts = load_local_chunks(settings) if any(r.chunks for r in records) else {}
+    rescored = []
+    for record in records:
+        chunks = [
+            RetrievedChunk(**texts[c.chunk_id].model_dump(), scores={"rerank": c.rerank})
+            for c in record.chunks
+        ]
+        result = evaluate(questions[record.id], chunks, settings.gate, allow_untuned=True)
+        rescored.append(
+            record.model_copy(
+                update={
+                    "score": result.score,
+                    "signals": result.signals,
+                    "vetoed": result.reason == "key_terms_absent",
+                }
+            )
+        )
+    return rescored
 
 
 def _git_sha() -> str:
@@ -85,9 +148,10 @@ def _eval_paths(settings: Settings, split: str) -> tuple[Path, list[EvalItem], s
 
 
 def score_config_hash(settings: Settings) -> str:
-    score_settings = settings.model_copy(deep=True)
-    score_settings.gate.threshold = None
-    return digest(json_text(score_settings.model_dump(mode="json")))
+    """Hash every setting that can change retrieval; gate settings are rescored offline."""
+    dumped = settings.model_dump(mode="json")
+    dumped.pop("gate", None)
+    return digest(json_text(dumped))
 
 
 def validate_score_rows(records: list[GateScore], items: list[EvalItem], split: str) -> None:
@@ -98,7 +162,7 @@ def validate_score_rows(records: list[GateScore], items: list[EvalItem], split: 
         raise ValueError("Score cache contains duplicate item ids")
     if any(
         record.id not in expected
-        or record.split != split
+        or record.split != expected[record.id].split
         or record.group != expected[record.id].group
         or record.answerable != expected[record.id].answerable
         for record in records
@@ -106,9 +170,14 @@ def validate_score_rows(records: list[GateScore], items: list[EvalItem], split: 
         raise ValueError("Score cache rows do not match the frozen split")
 
 
-def collect_scores(settings: Settings, split: str, output: Path) -> list[GateScore]:
-    """Run retrieval once per question and cache only gate inputs and scores."""
-    eval_path, items, corpus_hash = _eval_paths(settings, split)
+def collect_scores(
+    settings: Settings,
+    split: str,
+    output: Path,
+    selection: tuple[Path, list[EvalItem], str] | None = None,
+) -> list[GateScore]:
+    """Run retrieval once per question and cache the reranked snapshot and gate scores."""
+    eval_path, items, corpus_hash = selection or _eval_paths(settings, split)
     if not items:
         raise ValueError(f"No {split} evaluation items found")
 
@@ -169,6 +238,11 @@ def collect_scores(settings: Settings, split: str, output: Path) -> list[GateSco
                     score=result.score,
                     signals=result.signals,
                     ranked_section_ids=[chunk.section_id for chunk in chunks],
+                    chunks=[
+                        ChunkScore(chunk_id=chunk.chunk_id, rerank=chunk.scores.get("rerank", 0.0))
+                        for chunk in chunks
+                    ],
+                    vetoed=result.reason == "key_terms_absent",
                 )
             )
             temporary = output.with_suffix(output.suffix + ".tmp")
@@ -245,8 +319,9 @@ def write_report(
     test_meta: GateScoreMetadata | None,
     test: list[GateScore] | None,
     path: Path,
+    rule: str = "lowest",
 ) -> None:
-    highest_no_answer = max((record.score for record in dev if not record.answerable), default=0.0)
+    highest_no_answer = max([0.0, *(effective_score(r) for r in dev if not r.answerable)])
     gap = selected - highest_no_answer if selected is not None else None
     lines = [
         "# Evidence threshold sweep",
@@ -264,6 +339,9 @@ def write_report(
         "",
         "## Selection",
         "",
+        f"- Threshold rule: `{rule}`",
+        f"- Dev items vetoed for absent named terms: {sum(r.vetoed for r in dev)} "
+        f"(no-answer {sum(r.vetoed for r in dev if not r.answerable)})",
         f"- Selected threshold: **{selected:.2f}**"
         if selected is not None
         else "- Selected threshold: **none**",
@@ -317,7 +395,10 @@ def write_report(
             lines.extend(
                 f"| {record.id} | {record.score:.4f} |"
                 for record in test
-                if not record.answerable and selected is not None and record.score >= selected
+                if not record.answerable
+                and not record.vetoed
+                and selected is not None
+                and record.score >= selected
             )
     write_text(path, "\n".join(lines) + "\n")
 
@@ -381,14 +462,18 @@ def main(argv: list[str] | None = None) -> int:
             collect_scores(settings, "test", test_cache)
     elif not cache_matches(dev_cache, "dev"):
         raise ValueError("No current dev cache matches this evaluation, corpus, and score config")
+    every_item = load_items(eval_path)
     dev_meta, dev = load_scores(dev_cache)
+    dev = rescore(dev, every_item, settings)
     if args.no_collect and not cache_matches(test_cache, "test"):
         test_meta, test = None, None
     else:
         test_meta, test = load_scores(test_cache) if test_cache.exists() else (None, None)
-    selected = select_threshold(dev)
+    if test is not None:
+        test = rescore(test, every_item, settings)
+    selected = select_threshold(dev, settings.gate.threshold_rule)
     report = REPO_ROOT / "eval/reports/threshold_sweep.md"
-    write_report(dev_meta, dev, selected, test_meta, test, report)
+    write_report(dev_meta, dev, selected, test_meta, test, report, settings.gate.threshold_rule)
     write_plot(dev, REPO_ROOT / "eval/reports/threshold_sweep.png", selected)
     if test is not None:
         _write_config_threshold(selected, report.relative_to(REPO_ROOT), _git_sha())

@@ -116,7 +116,18 @@ gate:
   good_count_cap: 3
   policy_nouns: [refund, return, warranty, coupon, shipping, delivery, exchange, cancellation, payment]
   untuned_threshold: 0.5   # explicit demo/test placeholder; commit 13 replaces via sweep
-  threshold: 0.17 # selected by eval/reports/threshold_sweep.md at 9ed1d576deca7c52494a51d728cc06a63d365815
+  threshold: 0.15 # selected by eval/reports/threshold_sweep.md at 9d9ee8ea72ebeefb3eeb557bce8d31d179c23d13
+  # Round three (eval/reports/gate_round3.md). Earlier behaviour: neutral, false, false, lowest.
+  key_hit_without_terms: exclude
+  entity_terms: true
+  require_specific_term_hit: true
+  key_hit_top_chunks: 3
+  scope_terms: [flipkart, generic store]
+  entity_stopwords: [i, i'm, i've, i'd, i'll, a, an, the, for, and, or, also, but, if, so, to, of, in, "on", at, by, with, from,
+    what, why, when, where, which, who, whom, whose, how, can, could, do, does, did, is, are, was, were, will, would,
+    should, shall, may, might, must, have, has, had, be, my, me, we, our, you, your, it, its, this, that, these, those,
+    there, please, hi, hello, hey, thanks, ok, "yes", "no", not, as, any, all, some, regarding, mean, rather, than]
+  threshold_rule: midpoint
 
 agent:
   max_steps: 5

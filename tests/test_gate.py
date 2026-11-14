@@ -3,9 +3,16 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from support_agent.config import Settings
+from support_agent.config import GateSettings, Settings
 from support_agent.gate.evidence import evaluate
-from support_agent.gate.signals import good_count, key_hit, margin, top_score
+from support_agent.gate.signals import (
+    entity_terms,
+    good_count,
+    key_hit,
+    margin,
+    specific_terms,
+    top_score,
+)
 from support_agent.retrieval.types import RetrievedChunk
 
 
@@ -22,8 +29,19 @@ def chunk(chunk_id: str, text: str, score: float) -> RetrievedChunk:
     )
 
 
+def legacy_gate() -> GateSettings:
+    """The round-two gate: neutral key_hit, no entity terms, no veto."""
+    return Settings().gate.model_copy(
+        update={
+            "key_hit_without_terms": "neutral",
+            "entity_terms": False,
+            "require_specific_term_hit": False,
+        }
+    )
+
+
 def test_gate_signals_cover_scores_empty_lists_and_configured_terms() -> None:
-    settings = Settings().gate
+    settings = legacy_gate()
     chunks = [
         chunk("one", "Return window is 30 days for model BHD340/10", 0.9),
         chunk("two", "Refund requests need the original receipt", 0.7),
@@ -57,3 +75,60 @@ def test_gate_rejects_weights_that_do_not_sum_to_one() -> None:
     settings["gate"]["weights"]["top_score"] = 0.9
     with pytest.raises(ValidationError, match=r"sum to 1\.0"):
         Settings.model_validate(settings)
+
+
+def test_key_hit_without_terms_adds_no_free_score() -> None:
+    """Regression: a neutral 1.0 gave every term-free no-answer query 0.15 for free."""
+    settings = Settings().gate.model_copy(update={"key_hit_without_terms": "exclude"})
+    weak = [
+        chunk("one", "Gift wrapping is available at checkout", 0.01),
+        chunk("two", "Orders ship in 3 days", 0.005),
+    ]
+    assert key_hit("What do you think?", weak, settings) is None
+    result = evaluate("What do you think?", weak, settings, allow_untuned=True)
+    assert "key_hit" not in result.signals
+    assert result.score < 0.02
+    legacy = evaluate("What do you think?", weak, legacy_gate(), allow_untuned=True)
+    assert legacy.score >= 0.15
+
+
+def test_exclusion_renormalises_and_matches_legacy_when_terms_exist() -> None:
+    settings = Settings().gate
+    chunks = [chunk("one", "Refund requests take 7 days", 0.9), chunk("two", "Other", 0.2)]
+    query = "How long does a refund take?"
+    assert evaluate(query, chunks, settings, allow_untuned=True).score == pytest.approx(
+        evaluate(query, chunks, legacy_gate(), allow_untuned=True).score
+    )
+
+
+def test_named_entity_absent_from_evidence_vetoes_the_gate() -> None:
+    """Regression: a related payment section passed for an unlisted payment brand."""
+    settings = Settings().gate
+    payments = [chunk("one", "We accept major credit cards, debit cards, and PayPal.", 0.9)]
+    query = "Can I use Cash App Pay to pay for a purchase at this store?"
+    assert specific_terms(query, settings) == ["cash app pay"]
+    result = evaluate(query, payments, settings, allow_untuned=True)
+    assert not result.passed
+    assert result.reason == "key_terms_absent"
+    assert evaluate(query, payments, legacy_gate(), allow_untuned=True).passed
+
+
+def test_veto_needs_only_one_named_term_in_evidence() -> None:
+    settings = Settings().gate
+    evidence = [chunk("one", "BHD340/10 has a 14 mm nozzle", 0.9)]
+    query = "I mean BHD340/10, rather than BHD510/03. What is its nozzle width?"
+    assert evaluate(query, evidence, settings, allow_untuned=True).passed
+
+
+def test_entity_terms_skip_sentence_openers_scope_terms_and_stopwords() -> None:
+    settings = Settings().gate
+    assert entity_terms("Explain the return rules.", settings) == []
+    assert entity_terms("For Flipkart: What is SuperCoin Pay?", settings) == ["supercoin pay"]
+    assert entity_terms("For Flipkart, How quickly can I pay with PhonePe?", settings) == [
+        "phonepe"
+    ]
+    assert entity_terms("can i pay with venmo", settings) == []
+
+
+def test_entity_terms_are_off_in_legacy_mode() -> None:
+    assert specific_terms("Can I pay with Venmo?", legacy_gate()) == []

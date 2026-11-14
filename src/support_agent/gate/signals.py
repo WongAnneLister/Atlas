@@ -19,6 +19,8 @@ _NUMBER_UNIT = re.compile(
     re.IGNORECASE,
 )
 _WORD = re.compile(r"\w+", re.UNICODE)
+# Words joined only by spaces; any punctuation ends a name.
+_NAME_TOKEN = re.compile(r"[^\W_][\w'\u2019&+/-]*|[^\w\s]+", re.UNICODE)
 
 
 def _normalise(text: str) -> str:
@@ -47,19 +49,86 @@ def margin(chunks: list[RetrievedChunk]) -> float:
     return min(1.0, max(0.0, difference))
 
 
+def _capitalised(token: str, stopwords: set[str]) -> bool:
+    if not token[0].isalpha() and not token[0].isdigit():
+        return False
+    has_upper = token[0].isupper() or any(char.isupper() for char in token[1:])
+    return has_upper and token.casefold() not in stopwords and not token.isdigit()
+
+
+def _plain_titlecase(token: str) -> bool:
+    """'Explain' is plain title case; 'PhonePe', 'BHD340' and 'OTP' are not."""
+    return token[0].isupper() and not any(c.isupper() or c.isdigit() for c in token[1:])
+
+
+def entity_terms(query: str, settings: GateSettings) -> list[str]:
+    """Return runs of capitalised words, minus store names and non-name words.
+
+    A plain title-case word that opens a sentence is ordinary capitalisation, not a name.
+    """
+    stopwords = {word.casefold() for word in settings.entity_stopwords}
+    scope = {_normalise(term) for term in settings.scope_terms}
+    names: list[str] = []
+    current: list[str] = []
+    sentence_start = True
+    for match in _NAME_TOKEN.finditer(unicodedata.normalize("NFKC", query)):
+        token = match.group(0)
+        opens_sentence = sentence_start
+        sentence_start = not token[0].isalnum() and any(mark in token for mark in ".?!:;")
+        if (
+            token[0].isalnum()
+            and _capitalised(token, stopwords)
+            and not (opens_sentence and _plain_titlecase(token))
+        ):
+            current.append(token)
+            continue
+        if current:
+            names.append(" ".join(current))
+        current = []
+    if current:
+        names.append(" ".join(current))
+    models = {_normalise(match.group(0)) for match in _MODEL_NUMBER.finditer(query)}
+    kept = [name for name in names if _normalise(name) not in scope | models]
+    return list(dict.fromkeys(term for term in (_normalise(name) for name in kept) if term))
+
+
+def specific_terms(query: str, settings: GateSettings) -> list[str]:
+    """Model numbers and, when enabled, named entities: the things a question is about."""
+    terms = [_normalise(match.group(0)) for match in _MODEL_NUMBER.finditer(query)]
+    if settings.entity_terms:
+        terms.extend(entity_terms(query, settings))
+    return list(dict.fromkeys(term for term in terms if term))
+
+
 def key_terms(query: str, settings: GateSettings) -> list[str]:
-    terms = [match.group(0) for match in _MODEL_NUMBER.finditer(query)]
-    terms.extend(match.group(0) for match in _NUMBER_UNIT.finditer(query))
+    terms = specific_terms(query, settings)
+    terms.extend(_normalise(match.group(0)) for match in _NUMBER_UNIT.finditer(query))
     normalised_query = _normalise(query)
     terms.extend(
-        noun for noun in settings.policy_nouns if f" {_normalise(noun)} " in f" {normalised_query} "
+        _normalise(noun)
+        for noun in settings.policy_nouns
+        if f" {_normalise(noun)} " in f" {normalised_query} "
     )
-    return list(dict.fromkeys(_normalise(term) for term in terms if _normalise(term)))
+    return list(dict.fromkeys(term for term in terms if term))
 
 
-def key_hit(query: str, chunks: list[RetrievedChunk], settings: GateSettings) -> float:
+def _evidence_text(chunks: list[RetrievedChunk], settings: GateSettings) -> str:
+    return " " + _normalise(" ".join(c.text for c in chunks[: settings.key_hit_top_chunks])) + " "
+
+
+def key_hit(query: str, chunks: list[RetrievedChunk], settings: GateSettings) -> float | None:
+    """Share of key terms found in the top chunks; None when excluded for a term-free query."""
     terms = key_terms(query, settings)
     if not terms:
-        return 1.0
-    corpus = _normalise(" ".join(chunk.text for chunk in chunks[:3]))
-    return sum(f" {term} " in f" {corpus} " for term in terms) / len(terms)
+        return None if settings.key_hit_without_terms == "exclude" else 1.0
+    corpus = _evidence_text(chunks, settings)
+    return sum(f" {term} " in corpus for term in terms) / len(terms)
+
+
+def specific_term_missed(query: str, chunks: list[RetrievedChunk], settings: GateSettings) -> bool:
+    """True when the query names models or entities and none of them is in the top chunks."""
+    terms = specific_terms(query, settings)
+    if not terms:
+        return False
+    corpus = _evidence_text(chunks, settings)
+    return not any(f" {term} " in corpus for term in terms)
