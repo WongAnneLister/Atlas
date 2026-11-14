@@ -23,6 +23,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 13b | Evidence coverage round two | measured; zero observed full-graph false accepts | Same 150-item regression: no-answer false accept 3.33% to 0.00% (0/30); false reject 8.33% to 9.17% (11/120). Cash App Pay now creates a real handoff. Dev/control rejection costs and unreviewed labels remain explicit. |
 | 13c | Near-miss no-answer holdout | frozen; not yet measured | `eval/reports/holdout_near_miss.md`: 106 agent-authored no-answer items in 6 families, 21 closed-list. Absent-phrase and near-duplicate checks pass. Unreviewed. |
 | 13d | Gate round three | measured; full-graph holdout safety gate FAILED | `eval/reports/gate_round3.md`: holdout gate false accepts 81/106 (V0) to 55/106 (V3); full-graph false accepts 13/106 before and after (12.26%). Eight are cross-store fact transfers. Dev unchanged at 0/30, 0/120. Old test gate FR 0/120 to 2/120. |
+| 13e | Cross-store holdout v2 | frozen; not yet measured | `eval/reports/holdout_near_miss_v2.md`: 35 agent-authored cross-store no-answer items (22 to generic, 13 to Flipkart). Frozen before the store-scope check. |
 | 14 | API + SSE + chat page | todo | |
 | 15 | Langfuse + cost | todo | |
 | 16 | README + demo script | todo | |

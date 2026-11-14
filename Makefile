@@ -80,7 +80,7 @@ eval-review-import:
 	$(RUN) python -m eval.report_set
 
 eval-holdout-build:
-	$(RUN) python -m eval.build_holdout
+	$(RUN) python -m eval.build_holdout --version $(or $(HOLDOUT),v1)
 
 eval-set-report:
 	$(RUN) python -m eval.report_set

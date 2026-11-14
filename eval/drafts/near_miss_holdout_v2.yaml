@@ -1,0 +1,50 @@
+# Near-miss no-answer holdout (v2): cross-store transfers. Agent-authored; unreviewed.
+#
+# Each question names one store and asks for a fact that only the other store's
+# documents state. A correct agent hands off; answering with the other store's fact
+# is a false accept. `absent` phrases must not occur in the named store's sections.
+# Lexical absence is not semantic proof; human review is still required.
+#
+# Frozen before the store-scope check was written. Never tune on this file.
+families:
+  to_generic:
+    note: Generic-store questions whose facts exist only in Flipkart documents.
+    items:
+      - {q: "For the generic store: What is the minimum purchase amount for a Quick order?", scope: generic, absent: ["quick order", "minimum purchase"]}
+      - {q: "For the generic store: How many cards can I save on my account?", scope: generic, absent: ["save card", "saved card", "cards can i save"]}
+      - {q: "For the generic store: Do I need a 3D Secure password to pay by card?", scope: generic, absent: ["3d secure"]}
+      - {q: "For the generic store: What happens to my cashback if I return a product?", scope: generic, absent: ["cashback"]}
+      - {q: "For the generic store: What is the maximum value of gift cards I can buy at once?", scope: generic, absent: ["limits to buy", "gift card limit"]}
+      - {q: "For the generic store: Can I redeem SuperCoins for gold coins?", scope: generic, absent: ["supercoin", "supercoins"]}
+      - {q: "For the generic store: How long is a payment code valid after I generate it?", scope: generic, absent: ["payment code"]}
+      - {q: "For the generic store: What does the 'Imported' tag next to a product mean?", scope: generic, absent: ["imported"]}
+      - {q: "For the generic store: How do I add my business GST number to an invoice?", scope: generic, absent: ["gst", "gstin"]}
+      - {q: "For the generic store: Will the courier try delivery again the next working day if I miss it?", scope: generic, absent: ["re-attempted", "next working day", "reattempt"]}
+      - {q: "For the generic store: Can I open the package and check it before accepting delivery?", scope: generic, absent: ["opening and checking", "open the package"]}
+      - {q: "For the generic store: Are groceries quality checked before they are delivered?", scope: generic, absent: ["grocery", "groceries"]}
+      - {q: "For the generic store: What is the annual fee on your co-branded credit card?", scope: generic, absent: ["co-branded", "annual fee"]}
+      - {q: "For the generic store: Can I foreclose my EMI plan early?", scope: generic, absent: ["foreclose", "emi"]}
+      - {q: "For the generic store: How do I report a listing that infringes my trademark?", scope: generic, absent: ["infringement", "infringes"]}
+      - {q: "For the generic store: How can I start selling my products on your marketplace?", scope: generic, absent: ["become a seller", "marketplace"]}
+      - {q: "For the generic store: Can I scan a QR code at a partner shop to pay?", scope: generic, absent: ["qr"]}
+      - {q: "For the generic store: Can a friend collect my parcel from the pick-up point for me?", scope: generic, absent: ["pick-up point", "pick-up store", "on my behalf"]}
+      - {q: "For the generic store: What does the F-Assured label on a product mean?", scope: generic, absent: ["f-assured", "assured"]}
+      - {q: "For the generic store: What delivery charge applies to orders under Rs. 500?", scope: generic, absent: ["rs.", "₹", "500"]}
+      - {q: "For the generic store: How are the prices of refurbished items decided?", scope: generic, absent: ["refurbished"]}
+      - {q: "For the generic store: What are SuperCoin Milestones and how long do they last?", scope: generic, absent: ["supercoin", "milestone"]}
+  to_flipkart:
+    note: Flipkart questions whose facts exist only in generic-store documents.
+    items:
+      - {q: "For Flipkart: Can I place an order over the phone?", scope: flipkart, absent: ["over the phone", "orders by phone", "phone order"]}
+      - {q: "For Flipkart: Do you accept custom or personalised product orders?", scope: flipkart, absent: ["custom order", "personalised product", "personalized product"]}
+      - {q: "For Flipkart: How can I apply for a job at your company?", scope: flipkart, absent: ["careers", "job opening", "job openings"]}
+      - {q: "For Flipkart: Can I request a product that is not listed on the website?", scope: flipkart, absent: ["not listed on"]}
+      - {q: "For Flipkart: Can I order an item that is marked as backordered?", scope: flipkart, absent: ["backorder", "backordered"]}
+      - {q: "For Flipkart: Can I return a product I paid for with store credit?", scope: flipkart, absent: ["store credit"]}
+      - {q: "For Flipkart: Can I return one item that came as part of a bundle?", scope: flipkart, absent: ["bundle"]}
+      - {q: "For Flipkart: If I return a gift, is the refund sent to the original purchaser?", scope: flipkart, absent: ["original purchaser"]}
+      - {q: "For Flipkart: Can I return something bought with a promotional gift card?", scope: flipkart, absent: ["promotional gift card"]}
+      - {q: "For Flipkart: Are clearance or final-sale items returnable?", scope: flipkart, absent: ["clearance", "final sale", "final-sale"]}
+      - {q: "For Flipkart: What should I do if my discount code is not working?", scope: flipkart, absent: ["discount code"]}
+      - {q: "For Flipkart: Can I mix pre-order items and in-stock items in one order?", scope: flipkart, absent: ["in-stock items", "pre-order items"]}
+      - {q: "For Flipkart: Do you offer a one-time price adjustment within 7 days of purchase?", scope: flipkart, absent: ["price adjustment", "7 days of"]}
