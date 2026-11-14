@@ -25,6 +25,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 13d | Gate round three | measured; full-graph holdout safety gate FAILED | `eval/reports/gate_round3.md`: holdout gate false accepts 81/106 (V0) to 55/106 (V3); full-graph false accepts 13/106 before and after (12.26%). Eight are cross-store fact transfers. Dev unchanged at 0/30, 0/120. Old test gate FR 0/120 to 2/120. |
 | 13e | Cross-store holdout v2 | frozen; measured in 13f | `eval/reports/holdout_near_miss_v2.md`: 35 agent-authored cross-store no-answer items (22 to generic, 13 to Flipkart). Frozen before the store-scope check. |
 | 13f | Store-scope check | measured | `eval/reports/store_scope.md`: holdout v2 full-graph false accepts 17/35 to 0/35 (95% CI 0.0%-9.9%); holdout v1 13/106 to 4/106. Old test FA 0/30 both; FR 24/120 to 33/120, with no change attributed to the filter (route changes and run-to-run noise). |
+| 13g | Answerable store controls | frozen; measured in 13h | `eval/reports/store_controls.md`: 40 agent-authored single-store answerable questions on topics both stores cover (20 per store). |
 | 14 | API + SSE + chat page | todo | |
 | 15 | Langfuse + cost | todo | |
 | 16 | README + demo script | todo | |
