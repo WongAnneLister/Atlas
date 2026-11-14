@@ -69,6 +69,7 @@ def make_rewrite_node(
             "tool_errors": 0,
             "consecutive_tool_errors": 0,
             "agent_steps": 0,
+            "fallback_to_knowledge": False,
             "answer": "",
             "citations": [],
             "trace": [*state.trace, "rewrite"],

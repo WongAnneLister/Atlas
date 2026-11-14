@@ -143,6 +143,7 @@ agent:
   max_tool_calls_per_step: 3
   trace_max_chars: 160
   complaint_max_sentences: 2
+  knowledge_fallback: true   # see eval/reports/tools_fallback.md
 
 intent:
   min_confidence: 0.6      # flag only; not calibrated as an answer-safety threshold

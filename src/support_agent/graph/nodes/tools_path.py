@@ -83,6 +83,7 @@ class ToolsPath:
     ) -> dict[str, Any]:
         cfg = self.deps.settings.agent
         had_success = False
+        called_any = False
         last_error: str | None = None
         for step in range(cfg.max_steps):
             state.agent_steps = step + 1
@@ -91,6 +92,11 @@ class ToolsPath:
                 return {**_updates(state), **make_handoff(state, HandoffReason.TOOL_ERROR)}
             messages.append(response)
             if not response.tool_calls:
+                if cfg.knowledge_fallback and not called_any:
+                    # The model judged this is not an order lookup. Its free text is
+                    # not grounded, so it is dropped; the gated knowledge path answers.
+                    state.trace.append("tools_fallback")
+                    return {**_updates(state), "fallback_to_knowledge": True}
                 answer = response.content
                 if (
                     had_success
@@ -111,6 +117,7 @@ class ToolsPath:
                 return {**_updates(state), **make_handoff(state, reason)}
             if len(response.tool_calls) > cfg.max_tool_calls_per_step:
                 return {**_updates(state), **make_handoff(state, HandoffReason.AGENT_STEP_CAP)}
+            called_any = True
             for call in response.tool_calls:
                 # Trace only the accepted public argument; never trace forged customer ids.
                 args = {key: value for key, value in call["args"].items() if key == "order_id"}

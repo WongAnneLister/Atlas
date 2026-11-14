@@ -29,6 +29,11 @@ def route_by_path(state: ConversationState) -> str:
     return PATH_NODES[state.path]
 
 
+def route_after_tools(state: ConversationState) -> str:
+    """A question the order loop did not treat as a lookup goes through retrieval."""
+    return "retrieve" if state.fallback_to_knowledge else END
+
+
 def route_refund_identify(state: ConversationState) -> str:
     return "refund_load" if state.refund_order_id else END
 
@@ -93,5 +98,8 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
             graph.add_conditional_edges(name, route_refund_identify, ["refund_load", END])
             continue
         graph.add_node(name, RunnableLambda(implementations.get(path, _stub(path, name))))
-        graph.add_edge(name, END)
+        if path == Path.TOOLS:
+            graph.add_conditional_edges(name, route_after_tools, ["retrieve", END])
+        else:
+            graph.add_edge(name, END)
     return graph.compile(checkpointer=deps.checkpointer())

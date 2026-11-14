@@ -55,6 +55,8 @@ class ConversationState(BaseModel):
     tool_errors: int = Field(default=0, ge=0)
     consecutive_tool_errors: int = Field(default=0, ge=0)
     agent_steps: int = Field(default=0, ge=0)
+    # Set by the order loop when no tool was called; routes to retrieval.
+    fallback_to_knowledge: bool = False
     answer: str = ""
     citations: list[CitationRecord] = Field(default_factory=list)
     trace: list[str] = Field(default_factory=list)

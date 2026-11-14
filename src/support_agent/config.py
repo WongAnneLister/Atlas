@@ -191,6 +191,9 @@ class AgentSettings(BaseModel):
     max_tool_calls_per_step: int = Field(gt=0)
     trace_max_chars: int = Field(gt=0)
     complaint_max_sentences: int = Field(gt=0, le=2)
+    # When the order model calls no tool, the question is not an order lookup:
+    # send it to the gated knowledge path instead of handing off.
+    knowledge_fallback: bool = False
 
 
 class EvalSettings(BaseModel):

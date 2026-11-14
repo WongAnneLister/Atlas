@@ -18,7 +18,8 @@ COMPOSE_PYTHON ?= $(RUN) python
         lint format typecheck test check notes-check notes minio-image-local search reranker-cache \
         eval-retrieval-index eval-failures eval-intent-build eval-intent-draft gate-analysis chat \
         eval-judge eval-judge-import eval-compare eval-routing eval-coverage eval-coverage-summary \
-        eval-holdout-build eval-gate-round3 eval-store-scope eval-store-controls-build eval-store-fr
+        eval-holdout-build eval-gate-round3 eval-store-scope eval-store-controls-build eval-store-fr \
+        eval-tools-fallback
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -154,6 +155,9 @@ eval-gate-round3:
 
 eval-store-controls-build:
 	$(RUN) python -m eval.build_store_controls
+
+eval-tools-fallback:
+	$(RUN) python -m eval.tools_fallback_report
 
 eval-store-fr:
 	$(RUN) python -m eval.store_fr_report

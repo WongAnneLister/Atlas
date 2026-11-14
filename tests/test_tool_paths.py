@@ -160,7 +160,6 @@ def test_success_resets_error_streak(seeded: Any) -> None:
 @pytest.mark.parametrize(
     "responses",
     [
-        [AIMessage(content="I invented your order status.")],
         [call("list_recent_orders"), AIMessage(content=" ")],
         [call("unknown"), AIMessage(content="unsupported answer")],
         [call(order_id=123), AIMessage(content="unsupported answer")],
@@ -261,3 +260,63 @@ def test_handoff_roundtrip_preserves_snapshot_and_utc_time() -> None:
     assert payload.created_at.utcoffset().total_seconds() == 0
     assert payload.conversation[0].content == original.messages[0].content
     assert payload.order_context == original.order_context
+
+
+def test_no_tool_call_falls_back_without_showing_ungrounded_text(seeded: Any) -> None:
+    settings, service = seeded
+    model = ToolFake(responses=[AIMessage(content="We ship to 40 countries.")])
+    result = ToolsPath(GraphDeps(settings, main_model=model, order_service=service))(state())
+    assert result["fallback_to_knowledge"] is True
+    assert "handoff" not in result and "answer" not in result
+    assert result["trace"][-1] == "tools_fallback"
+
+
+def test_fallback_switch_off_keeps_the_old_handoff(seeded: Any) -> None:
+    settings, service = seeded
+    settings = settings.model_copy(deep=True)
+    settings.agent.knowledge_fallback = False
+    model = ToolFake(responses=[AIMessage(content="I invented your order status.")])
+    result = ToolsPath(GraphDeps(settings, main_model=model, order_service=service))(state())
+    assert result["handoff"].reason == HandoffReason.TOOL_ERROR
+    assert "fallback_to_knowledge" not in result
+
+
+def test_failed_lookup_does_not_fall_back(seeded: Any) -> None:
+    """A real lookup that found nothing still needs a human, not a policy answer."""
+    settings, service = seeded
+    model = ToolFake(
+        responses=[call(order_id="ORD-999999"), AIMessage(content="Policy says wait.")]
+    )
+    result = ToolsPath(GraphDeps(settings, main_model=model, order_service=service))(state())
+    assert result["handoff"].reason == HandoffReason.ORDER_NOT_FOUND
+    assert "fallback_to_knowledge" not in result
+
+
+def test_graph_routes_a_general_question_from_tools_to_gated_knowledge(seeded: Any) -> None:
+    from test_graph_knowledge import FixedRetriever, evidence
+
+    settings, service = seeded
+    settings.gate.threshold = 0.5
+    tool_model = ToolFake(responses=[AIMessage(content="Not an order question.")])
+    with GraphDeps(
+        settings,
+        fast_model=fake(Intent.SHIPPING_DELIVERY),
+        main_model=tool_model,
+        order_service=service,
+        retriever=FixedRetriever(evidence(0.01)),
+    ) as deps:
+        result = build_graph(deps).invoke(
+            {"messages": [HumanMessage(content="Do you ship abroad?")], "customer_id": "CUST-0001"},
+            {"configurable": {"thread_id": "CUST-0001:fallback"}},
+        )
+    assert result["trace"] == [
+        "rewrite",
+        "classify",
+        "tools",
+        "tools_fallback",
+        "retrieve",
+        "gate",
+        "handoff",
+    ]
+    assert result["handoff"].reason == "low_evidence"
+    assert "Not an order question." not in result["answer"]
