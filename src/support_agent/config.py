@@ -63,6 +63,22 @@ class LLMSettings(BaseModel):
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
 
 
+class StoreSettings(BaseModel):
+    # Case-insensitive regex that marks a question as asking about this store.
+    query_pattern: str = Field(min_length=1)
+    # Substring of a section id that marks the section as this store's document.
+    section_marker: str = Field(min_length=1)
+
+
+class StoreScopeSettings(BaseModel):
+    """Keep other stores' sections out of the evidence for a single-store question."""
+
+    enabled: bool = False
+    # Reranked results considered before filtering; the gate still sees rerank_top_k.
+    pool_k: int = Field(default=10, gt=0)
+    stores: dict[str, StoreSettings] = Field(default_factory=dict)
+
+
 class RetrievalSettings(BaseModel):
     embedding_model: str
     embedding_revision: str
@@ -90,6 +106,7 @@ class RetrievalSettings(BaseModel):
     bm25_normalise_model_numbers: bool
     rrf_k: int = Field(ge=0)
     rerank_top_k: int = Field(gt=0)
+    store_scope: StoreScopeSettings = Field(default_factory=StoreScopeSettings)
 
     @model_validator(mode="after")
     def _valid_embedding_window(self) -> RetrievalSettings:
@@ -97,6 +114,8 @@ class RetrievalSettings(BaseModel):
             raise ValueError("embedding_window_tokens exceeds model context limit")
         if self.rerank_top_k > self.rerank_candidates_k:
             raise ValueError("rerank_top_k exceeds rerank_candidates_k")
+        if self.store_scope.pool_k > self.rerank_candidates_k:
+            raise ValueError("store_scope.pool_k exceeds rerank_candidates_k")
         return self
 
 

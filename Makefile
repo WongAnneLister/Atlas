@@ -18,7 +18,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         lint format typecheck test check notes-check notes minio-image-local search reranker-cache \
         eval-retrieval-index eval-failures eval-intent-build eval-intent-draft gate-analysis chat \
         eval-judge eval-judge-import eval-compare eval-routing eval-coverage eval-coverage-summary \
-        eval-holdout-build eval-gate-round3
+        eval-holdout-build eval-gate-round3 eval-store-scope
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -151,6 +151,9 @@ sweep:
 
 eval-gate-round3:
 	$(RUN) python -m eval.gate_round3 $(EVAL_GATE_ROUND3_ARGS)
+
+eval-store-scope:
+	$(RUN) python -m eval.store_scope_report
 
 eval-judge:
 	$(RUN) python -m eval.judge $(EVAL_JUDGE_ARGS)

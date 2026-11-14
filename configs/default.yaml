@@ -90,6 +90,14 @@ retrieval:
   bm25_normalise_model_numbers: true
   rrf_k: 60
   rerank_top_k: 5
+  # A question naming exactly one store only sees that store's sections plus
+  # store-neutral ones (product catalog). See eval/reports/store_scope.md.
+  store_scope:
+    enabled: true
+    pool_k: 10
+    stores:
+      flipkart: {query_pattern: '\bflipkart\b', section_marker: '.flipkart_faqs.'}
+      generic: {query_pattern: '\bgeneric store\b', section_marker: '.maktek_faqs.'}
 
 retrieval_eval:
   metric_ks: [1, 3, 5]

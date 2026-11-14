@@ -86,7 +86,9 @@ def test_high_evidence_answers_with_valid_source_metadata() -> None:
             "heading_path": "Returns > Window",
         }
     ]
-    assert retriever.calls == [("How long do I have to return an item?", 5)]
+    assert retriever.calls == [
+        ("How long do I have to return an item?", settings.retrieval.store_scope.pool_k)
+    ]
 
 
 def test_low_evidence_hands_off_without_calling_answer_model() -> None:
@@ -304,3 +306,47 @@ def test_next_turn_clears_coverage_and_answer_failure_fields() -> None:
     assert second["answer_status"] == "not_attempted"
     assert second["answer_error_type"] is None
     assert second["retrieval_error_type"] is None
+
+
+def store_chunk(chunk_id: str, section_id: str, text: str, score: float) -> RetrievedChunk:
+    return RetrievedChunk(
+        chunk_id=chunk_id,
+        doc_id="payments",
+        section_id=section_id,
+        title="Payments",
+        heading_path="Payments",
+        text=text,
+        n_tokens=8,
+        scores={"rerank": score},
+    )
+
+
+def test_single_store_question_never_sees_the_other_stores_policy() -> None:
+    """Regression: a generic-store question was answered with Flipkart's COD limit."""
+    settings = Settings()
+    main = FakeListChatModel(responses=["This must never be called"])
+    retriever = FixedRetriever(
+        [
+            store_chunk(
+                "fk",
+                "shipping.flipkart_faqs.payment.x",
+                "You can shop up to Rs. 49,999 using Cash on Delivery.",
+                0.99,
+            ),
+            store_chunk(
+                "gen",
+                "payments.maktek_faqs.generic-store.y",
+                "We accept major credit cards, debit cards, and PayPal.",
+                0.02,
+            ),
+        ]
+    )
+    with GraphDeps(settings, fast_model=fast_model(), main_model=main, retriever=retriever) as deps:
+        result = invoke(
+            build_graph(deps),
+            "For the generic store: What is the maximum amount I can pay with Cash on Delivery?",
+        )
+    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert [chunk.chunk_id for chunk in result["retrieval"]] == ["gen"]
+    assert result["handoff"].reason == "low_evidence"
+    assert main.responses == ["This must never be called"]

@@ -13,6 +13,7 @@ from support_agent.graph.coverage import CoverageAnswer, render_covered_answer
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, make_handoff
 from support_agent.graph.state import CitationRecord, ConversationState
+from support_agent.retrieval.scope import scope_chunks
 from support_agent.retrieval.types import RetrievedChunk
 
 logger = logging.getLogger(__name__)
@@ -32,10 +33,18 @@ class KnowledgePath:
 
     def retrieve(self, state: ConversationState) -> dict[str, Any]:
         error_type = None
+        retrieval = self.deps.settings.retrieval
+        scope = retrieval.store_scope
+        pool = (
+            max(retrieval.rerank_top_k, scope.pool_k) if scope.enabled else retrieval.rerank_top_k
+        )
         try:
-            chunks = self.deps.knowledge_retriever().retrieve(
-                state.rewritten_query, self.deps.settings.retrieval.rerank_top_k
+            ranked = self.deps.knowledge_retriever().retrieve(state.rewritten_query, pool)
+            chunks, store, dropped = scope_chunks(
+                state.rewritten_query, ranked, scope, retrieval.rerank_top_k
             )
+            if dropped:
+                logger.info("Store scope %s dropped %d other-store chunks", store, dropped)
         except Exception as error:
             error_type = type(error).__name__
             logger.warning("Knowledge retrieval failed: %s", error_type)

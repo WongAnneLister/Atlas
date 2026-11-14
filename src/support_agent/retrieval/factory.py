@@ -40,5 +40,9 @@ def build_retriever(
         hybrid,
         reranker if reranker is not None else BgeReranker(settings.retrieval),
         settings.retrieval.rerank_candidates_k,
-        settings.retrieval.rerank_top_k,
+        # The store-scope filter needs a wider pool; callers still pass their own top_k.
+        max(
+            settings.retrieval.rerank_top_k,
+            settings.retrieval.store_scope.pool_k if settings.retrieval.store_scope.enabled else 0,
+        ),
     )
