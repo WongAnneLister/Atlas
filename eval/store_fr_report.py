@@ -1,0 +1,137 @@
+"""False rejects from store scoping: answerable controls and dev, filter off vs on, two reps.
+
+Two repetitions per setting give a noise floor: how many outcomes flip when nothing
+changes. A filter-caused reject is one where the filter removed evidence, not a
+route change or a same-evidence flip.
+"""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from eval.e2e_records import E2ERecord
+from eval.gate_round3 import rate_cell
+from eval.store_scope_report import change_cause, load_run
+from support_agent.config import REPO_ROOT, StoreScopeSettings, get_settings
+from support_agent.data.doc_models import write_text
+
+REPORT = Path("eval/reports/store_false_rejects.md")
+SETS = {"controls": "Answerable store controls (fresh)", "dev": "Dev split (never used to tune)"}
+REPS = (1, 2)
+
+
+def run_path(name: str, config: str, rep: int) -> Path:
+    return Path(f"eval/runs/fr-{name}-{config}-r{rep}.jsonl")
+
+
+def recall(record: E2ERecord) -> float:
+    gold = set(record.item.gold_sections)
+    return len(gold & set(record.retrieved_section_ids)) / len(gold) if gold else 0.0
+
+
+def flips(a: dict[str, E2ERecord], b: dict[str, E2ERecord]) -> int:
+    return sum(a[i].accepted != b[i].accepted for i in a)
+
+
+def set_section(name: str, scope: StoreScopeSettings) -> list[str]:
+    paths = {(c, r): run_path(name, c, r) for c in ("off", "on") for r in REPS}
+    missing = [p for p in paths.values() if not (REPO_ROOT / p).exists()]
+    if missing:
+        return [f"## {SETS[name]}", "", f"Not measured: missing `{missing[0]}`.", ""]
+    runs = {key: load_run(REPO_ROOT / path)[1] for key, path in paths.items()}
+    ids = set(runs["off", 1])
+    if any(set(run) != ids for run in runs.values()):
+        raise ValueError(f"{name}: runs cover different items")
+    answerable = sorted(i for i in ids if runs["off", 1][i].item.answerable)
+    no_answer = sorted(i for i in ids if not runs["off", 1][i].item.answerable)
+    lines = [
+        f"## {SETS[name]}",
+        "",
+        "| Filter | Run | False reject (answerable) | False accept (no-answer) |",
+        "|---|---:|---:|---:|",
+    ]
+    for (config, rep), run in runs.items():
+        fr = rate_cell(sum(not run[i].accepted for i in answerable), len(answerable))
+        fa = (
+            rate_cell(sum(run[i].accepted for i in no_answer), len(no_answer))
+            if no_answer
+            else "n/a"
+        )
+        lines.append(f"| {config} | {rep} | {fr} | {fa} |")
+    noise_off = flips(runs["off", 1], runs["off", 2])
+    noise_on = flips(runs["on", 1], runs["on", 2])
+    lines += [
+        "",
+        f"- Noise floor: {noise_off} outcomes flip between two filter-off runs; "
+        f"{noise_on} between two filter-on runs (of {len(ids)}).",
+    ]
+    stable_off = [i for i in answerable if all(runs["off", r][i].accepted for r in REPS)]
+    lost = [i for i in stable_off if not any(runs["on", r][i].accepted for r in REPS)]
+    lines.append(
+        f"- Answerable items accepted in both off runs but rejected in both on runs: {len(lost)}"
+    )
+    causes: dict[str, int] = {}
+    for rep in REPS:
+        before, after = runs["off", rep], runs["on", rep]
+        for i in ids:
+            if before[i].accepted and not after[i].accepted and before[i].item.answerable:
+                cause = change_cause(before[i], after[i], scope)
+                causes[cause] = causes.get(cause, 0) + 1
+    lines += ["", "| Answerable accepted off, rejected on (both reps pooled) | Items |"]
+    lines += ["|---|---:|"]
+    lines += [f"| {cause} | {count} |" for cause, count in sorted(causes.items())] or [
+        "| none | 0 |"
+    ]
+    both_b = [
+        i for i in answerable if all(runs[c, r][i].path == "B" for c in ("off", "on") for r in REPS)
+    ]
+    lower = [i for i in both_b if recall(runs["on", 1][i]) < recall(runs["off", 1][i])]
+    higher = [i for i in both_b if recall(runs["on", 1][i]) > recall(runs["off", 1][i])]
+    mean_off = sum(recall(runs["off", 1][i]) for i in both_b) / max(1, len(both_b))
+    mean_on = sum(recall(runs["on", 1][i]) for i in both_b) / max(1, len(both_b))
+    lines += [
+        "",
+        f"- Gold Recall@5 on {len(both_b)} answerable items routed to knowledge in all runs: "
+        f"off {mean_off:.4f}, on {mean_on:.4f}; lower with filter {len(lower)}, "
+        f"higher {len(higher)}.",
+    ]
+    if lost:
+        lines += ["", "Consistently lost items:", ""]
+        lines += [
+            f"- `{i}` (path off {runs['off', 1][i].path}, on {runs['on', 1][i].path}; "
+            f"handoff on {runs['on', 1][i].handoff_reason or '-'}; "
+            f"{change_cause(runs['off', 1][i], runs['on', 1][i], scope)})"
+            for i in lost
+        ]
+    return [*lines, ""]
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.parse_args(argv)
+    scope = get_settings().retrieval.store_scope
+    lines = [
+        "# Store scoping: false rejects",
+        "",
+        "Generated by `make eval-store-fr`. Filter off uses",
+        "`SUPPORT_AGENT__RETRIEVAL__STORE_SCOPE__ENABLED=false`, which restores the",
+        "pre-filter retrieval (top 5, no pool). Each setting ran twice on identical items.",
+        "",
+    ]
+    for name in SETS:
+        lines += set_section(name, scope)
+    lines += [
+        "## Limits",
+        "",
+        "Store controls are agent-authored paraphrases and unreviewed.",
+        "Dev was used to choose the gate threshold, not this filter.",
+        "All runs used the relay endpoint for `deepseek-flash`; it is not deterministic.",
+        "Recall compares retrieved sections only for items routed to knowledge in all runs.",
+    ]
+    write_text(REPO_ROOT / REPORT, "\n".join(lines) + "\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
