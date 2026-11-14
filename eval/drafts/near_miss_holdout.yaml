@@ -1,0 +1,137 @@
+# Near-miss no-answer holdout (v1). Agent-authored; every item is unreviewed.
+#
+# Each question sits next to real knowledge-base content but asks for a fact the
+# corpus does not state. `absent` lists phrases that must not occur in `scope`.
+# Scopes: corpus (all sections), flipkart, generic (generic store), or product:<MODEL>.
+# closed_list marks items where a source gives a positive list that omits the asked item.
+# Those are reported separately because a reviewer may judge the list as a sufficient no.
+# The builder rejects a question when any absent phrase is found in its scope.
+# Lexical absence is not semantic proof; human review is still required.
+#
+# Frozen before any gate change was measured on it. Never tune on this file.
+families:
+  lookalike_model:
+    note: Model numbers shaped like catalog models that do not exist in the corpus.
+    items:
+      - {q: "What is the wattage of the BHD355/10 hair dryer?", scope: corpus, absent: ["BHD355"]}
+      - {q: "How many heat and speed settings does the BHD341/10 have?", scope: corpus, absent: ["BHD341"]}
+      - {q: "What nozzle width does the BHD308/20 come with?", scope: corpus, absent: ["BHD308/20"]}
+      - {q: "Which series does the BHD300/10 hair dryer belong to?", scope: corpus, absent: ["BHD300"]}
+      - {q: "What care technology does the BHD520/03 use?", scope: corpus, absent: ["BHD520"]}
+      - {q: "What is the wattage of the BHD510/05?", scope: corpus, absent: ["BHD510/05"]}
+      - {q: "Does the BHD610/03 have a cool air setting?", scope: corpus, absent: ["BHD610"]}
+      - {q: "How long is the power cord on the BHD360/10?", scope: corpus, absent: ["BHD360"]}
+      - {q: "What is the basket capacity of the HD929X air fryer?", scope: corpus, absent: ["HD929"]}
+      - {q: "Can the HD975X air fryer be controlled from the NutriU app?", scope: corpus, absent: ["HD975"]}
+      - {q: "How many cooking presets does the HD927X have?", scope: corpus, absent: ["HD927"]}
+      - {q: "What is the battery life of the TAH6207 headphones?", scope: corpus, absent: ["TAH6207"]}
+      - {q: "Do the TAH5206 headphones come with a USB dongle?", scope: corpus, absent: ["TAH5206"]}
+      - {q: "How long does a full charge take on the TAH8506?", scope: corpus, absent: ["TAH8506"]}
+      - {q: "What Bluetooth version do the TAH4206 headphones support?", scope: corpus, absent: ["TAH4206"]}
+      - {q: "What is the maximum refresh rate of the 24E1N2301A monitor?", scope: corpus, absent: ["24E1N2301A"]}
+      - {q: "Does the 27E1N2400A monitor support Adaptive Sync?", scope: corpus, absent: ["27E1N2400A"]}
+      - {q: "What is the native resolution of the 32E1N2300A?", scope: corpus, absent: ["32E1N2300A"]}
+      - {q: "What VESA mount size does the 22E1N1100A use?", scope: corpus, absent: ["22E1N1100A"]}
+      - {q: "How much power does the 27E2N2300A monitor use in standby?", scope: corpus, absent: ["27E2N2300A"]}
+  missing_attribute:
+    note: Real catalog models; the requested attribute is not in that product's document.
+    items:
+      - {q: "How much does the BHD340/10 hair dryer weigh?", scope: "product:BHD340/10", absent: ["weight", "weigh", " kg", " g "]}
+      - {q: "What colour is the BHD340/10 hair dryer?", scope: "product:BHD340/10", absent: ["colour", "color"]}
+      - {q: "How loud is the BHD340/10 in decibels?", scope: "product:BHD340/10", absent: ["dB", "decibel", "noise"]}
+      - {q: "Does the BHD340/10 have ionic care?", scope: "product:BHD340/10", absent: ["ionic", " ion"]}
+      - {q: "What is the retail price of the BHD340/10?", scope: "product:BHD340/10", absent: ["price", "USD", "$", "₹", "Rs."]}
+      - {q: "How much does the BHD308/10 weigh?", scope: "product:BHD308/10", absent: ["weight", "weigh", " kg"]}
+      - {q: "What colour is the BHD308/10?", scope: "product:BHD308/10", absent: ["colour", "color"]}
+      - {q: "Does the BHD308/10 offer an ionic care function?", scope: "product:BHD308/10", absent: ["ionic", " ion"]}
+      - {q: "What is the noise level of the BHD308/10 in decibels?", scope: "product:BHD308/10", absent: ["dB", "decibel", "noise"]}
+      - {q: "How much does the BHD510/03 hair dryer weigh?", scope: "product:BHD510/03", absent: ["weight", "weigh", " kg"]}
+      - {q: "How noisy is the BHD510/03, measured in decibels?", scope: "product:BHD510/03", absent: ["decibel", "noise", " dB"]}
+      - {q: "What is the retail price of the BHD510/03?", scope: "product:BHD510/03", absent: ["price", "USD", "$", "₹", "Rs."]}
+      - {q: "How much do the TAH6206 headphones weigh?", scope: "product:TAH6206", absent: ["weight", "weigh", "gram"]}
+      - {q: "What colour options are available for the TAH6206 headphones?", scope: "product:TAH6206", absent: ["colour", "color"]}
+      - {q: "What is the IP water-resistance rating of the TAH6206?", scope: "product:TAH6206", absent: ["IPX", "IP5", "IP6", "IP4", "water-resist", "waterproof", "water resistant"]}
+      - {q: "What size are the speaker drivers in the TAH6206 headphones?", scope: "product:TAH6206", absent: ["driver"]}
+      - {q: "What is the retail price of the TAH6206 headphones?", scope: "product:TAH6206", absent: ["price", "USD", "$", "₹", "Rs."]}
+      - {q: "What is the retail price of the HD928X air fryer?", scope: "product:HD928X", absent: ["price", "USD", "$", "₹", "Rs."]}
+      - {q: "What colour is the HD928X air fryer?", scope: "product:HD928X", absent: ["colour", "color"]}
+      - {q: "What is the retail price of the 24E1N2300A monitor?", scope: "product:24E1N2300A", absent: ["price", "USD", "₹", "Rs."]}
+  generic_specific:
+    note: Generic-store topics that exist, but the requested specific value does not.
+    items:
+      - {q: "For the generic store: What phone number should I call to reach customer support?", scope: generic, absent: ["+1", "1-800", "toll-free", "toll free"]}
+      - {q: "For the generic store: What email address does customer support use?", scope: generic, absent: ["@", "support at"]}
+      - {q: "For the generic store: What time does customer support open on Saturdays?", scope: generic, absent: ["saturday", "weekend", "a.m.", "9am", "9 am"]}
+      - {q: "For the generic store: How much does gift wrapping cost per item?", scope: generic, absent: ["$", "per item", "wrapping costs", "wrapping fee is"]}
+      - {q: "For the generic store: How many loyalty points do I earn per dollar spent?", scope: generic, absent: ["per dollar", "point per", "points per"]}
+      - {q: "For the generic store: Do my loyalty points expire?", scope: generic, absent: ["points expire", "points will expire", "expiry of points", "points do not expire"]}
+      - {q: "For the generic store: How much does express shipping cost?", scope: generic, absent: ["express shipping costs", "$", "shipping fee of"]}
+      - {q: "For the generic store: Which courier company delivers your orders?", scope: generic, absent: ["fedex", "ups", "dhl", "usps", "courier"]}
+      - {q: "For the generic store: Is there a minimum order value for free shipping?", scope: generic, absent: ["free shipping"]}
+      - {q: "For the generic store: Which specific countries do you ship to?", scope: generic, absent: ["canada", "united kingdom", "australia", "germany", "mexico"]}
+      - {q: "For the generic store: How many business days does it take for a refund to reach my card?", scope: generic, absent: ["refund will be credited within", "refunds take", "refund takes", "days for the refund"]}
+      - {q: "For the generic store: Is there a restocking fee on returned items?", scope: generic, absent: ["restocking"]}
+      - {q: "For the generic store: Do you offer a military discount?", scope: generic, absent: ["military"]}
+      - {q: "For the generic store: What is the minimum quantity to qualify for a wholesale discount?", scope: generic, absent: ["minimum quantity", "minimum order quantity", "units"]}
+      - {q: "For the generic store: Do you offer a student discount?", scope: generic, absent: ["student"]}
+      - {q: "For the generic store: Do you have a mobile shopping app?", scope: generic, absent: ["mobile app", "our app", "app store", "google play"]}
+      - {q: "For the generic store: Can I choose a delivery time slot for my order?", scope: generic, absent: ["time slot", "delivery slot", "delivery window"]}
+      - {q: "For the generic store: Do you run a trade-in program for old electronics?", scope: generic, absent: ["trade-in", "trade in"]}
+      - {q: "For the generic store: Can I pick up my online order in a physical store?", scope: generic, absent: ["pick up in store", "in-store pickup", "store pickup", "click and collect"]}
+      - {q: "For the generic store: How many days does the satisfaction guarantee last?", scope: generic, absent: ["guarantee lasts", "guarantee period", "days satisfaction"]}
+  flipkart_specific:
+    note: Flipkart topics that exist, but the requested specific value or variant does not.
+    items:
+      - {q: "For Flipkart: Can I pay for my order with PayPal?", scope: flipkart, absent: ["paypal"], closed_list: true}
+      - {q: "For Flipkart: Can I pay with a Diners Club card?", scope: flipkart, absent: ["diners"], closed_list: true}
+      - {q: "For Flipkart: Can I pay using a RuPay credit card on UPI?", scope: flipkart, absent: ["rupay credit card on upi", "rupay credit"]}
+      - {q: "For Flipkart: Can I use Apple Pay at checkout?", scope: flipkart, absent: ["apple pay"], closed_list: true}
+      - {q: "For Flipkart: Do SuperCoins earned on Shopsy orders count toward Flipkart Plus membership?", scope: flipkart, absent: ["shopsy orders count", "earned on shopsy"]}
+      - {q: "For Flipkart: Can I convert SuperCoins into cash in my bank account?", scope: flipkart, absent: ["convert supercoins into cash", "supercoins to cash", "encash"]}
+      - {q: "For Flipkart: Can I gift my Flipkart Plus membership to a family member?", scope: flipkart, absent: ["gift my flipkart plus", "gift the membership", "gift membership"]}
+      - {q: "For Flipkart: Do Flipkart Gift Cards work at physical Flipkart retail outlets?", scope: flipkart, absent: ["retail outlet", "physical store"], closed_list: true}
+      - {q: "For Flipkart: Does Flipkart offer a student discount on laptops?", scope: flipkart, absent: ["student"]}
+      - {q: "For Flipkart: What is the refund timeline to a Paytm wallet?", scope: flipkart, absent: ["paytm"]}
+      - {q: "For Flipkart: Can I pay the delivery charge with SuperCoins only?", scope: flipkart, absent: ["delivery charge with supercoins", "pay the delivery charge using supercoins"]}
+      - {q: "For Flipkart: How many SuperCoins do I earn for writing a product review?", scope: flipkart, absent: ["supercoins for writing", "review earns", "earn supercoins by writing"]}
+  cross_store:
+    note: A fact that exists for one store, asked about the other store; no fact transfer.
+    items:
+      - {q: "For the generic store: How many SuperCoins can I earn in a single order?", scope: generic, absent: ["supercoin"]}
+      - {q: "For the generic store: What is the maximum amount I can pay with Cash on Delivery?", scope: generic, absent: ["cash on delivery", "cod"]}
+      - {q: "For the generic store: Can I use SuperCoin Pay at your partner stores?", scope: generic, absent: ["supercoin"]}
+      - {q: "For the generic store: Which banks offer No Cost EMI on your products?", scope: generic, absent: ["emi", "no cost"]}
+      - {q: "For the generic store: Is there a return fee if I return items often?", scope: generic, absent: ["return fee"]}
+      - {q: "For the generic store: Can I collect my order from a pick-up store?", scope: generic, absent: ["pick-up store", "pickup store"]}
+      - {q: "For the generic store: Do you offer a PhonePe wallet refund option?", scope: generic, absent: ["phonepe"]}
+      - {q: "For the generic store: Does a GSTIN invoice option exist for business purchases?", scope: generic, absent: ["gstin", "gst"]}
+      - {q: "For the generic store: What does the Plus badge on a product mean?", scope: generic, absent: ["plus badge", "badge"]}
+      - {q: "For the generic store: Do refurbished products come with a grade label?", scope: generic, absent: ["refurbished"]}
+      - {q: "For Flipkart: Can I add a personal gift message to my order at checkout?", scope: flipkart, absent: ["gift message"]}
+      - {q: "For Flipkart: Do you offer price matching if a competitor sells the same product for less?", scope: flipkart, absent: ["price match", "competitor"]}
+      - {q: "For Flipkart: If the price drops within 7 days of purchase, do I get a price adjustment?", scope: flipkart, absent: ["price adjustment", "price drop"]}
+      - {q: "For Flipkart: Do you offer live chat support with a chat icon on the website?", scope: flipkart, absent: ["live chat", "chat icon"]}
+      - {q: "For Flipkart: How can I unsubscribe from the Flipkart newsletter?", scope: flipkart, absent: ["newsletter", "unsubscribe"]}
+      - {q: "For Flipkart: Can I order a 'limited edition' product and have it restocked later?", scope: flipkart, absent: ["limited edition"]}
+      - {q: "For Flipkart: Can I use more than one promo code on a single order?", scope: flipkart, absent: ["promo code"]}
+  near_payment:
+    note: Payment questions close to listed methods but naming unlisted ones.
+    closed_list: true  # a source lists accepted methods; absence is not an explicit no
+    items:
+      - {q: "For the generic store: Can I pay with Apple Pay?", scope: generic, absent: ["apple pay"]}
+      - {q: "For the generic store: Is Google Pay accepted as a payment method?", scope: generic, absent: ["google pay"]}
+      - {q: "For the generic store: Can I pay by bank transfer?", scope: generic, absent: ["bank transfer", "wire transfer"]}
+      - {q: "For the generic store: Can I pay in cryptocurrency such as Bitcoin?", scope: generic, absent: ["bitcoin", "crypto"]}
+      - {q: "For the generic store: Do you offer buy now, pay later financing?", scope: generic, absent: ["pay later", "financing", "installment"]}
+      - {q: "For the generic store: Can I pay with cash on pickup?", scope: generic, absent: ["cash on pickup", "cash"]}
+      - {q: "For the generic store: Can I split one payment across two credit cards?", scope: generic, absent: ["split", "two cards", "multiple cards"]}
+      - {q: "For the generic store: Do you accept PayPal Credit?", scope: generic, absent: ["paypal credit"]}
+      - {q: "For Flipkart: Can I pay with Amazon Pay balance?", scope: flipkart, absent: ["amazon pay"]}
+      - {q: "For Flipkart: Can I pay with a Sodexo meal card?", scope: flipkart, absent: ["sodexo", "meal card"]}
+      - {q: "For Flipkart: Can I pay using a cheque?", scope: flipkart, absent: ["cheque", "check payment"]}
+      - {q: "For Flipkart: Can I pay with Bitcoin?", scope: flipkart, absent: ["bitcoin", "crypto"]}
+      - {q: "For Flipkart: Can I pay with a JCB card?", scope: flipkart, absent: ["jcb"]}
+      - {q: "For Flipkart: Does Flipkart accept Mobikwik wallet payments?", scope: flipkart, absent: ["mobikwik"]}
+      - {q: "For Flipkart: Can I use an HSBC debit card for EMI?", scope: flipkart, absent: ["debit card emi", "debit card for emi", "emi on debit"]}
+      - {q: "For Flipkart: Can I pay with Klarna?", scope: flipkart, absent: ["klarna"]}
+      - {q: "For Flipkart: Can I pay with a Discover card?", scope: flipkart, absent: ["discover card"]}

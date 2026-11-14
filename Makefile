@@ -17,7 +17,8 @@ COMPOSE_PYTHON ?= $(RUN) python
         ingest ingest-chunks embedding-cache eval-ingest test-milvus eval-retrieval eval-intent eval-e2e sweep serve \
         lint format typecheck test check notes-check notes minio-image-local search reranker-cache \
         eval-retrieval-index eval-failures eval-intent-build eval-intent-draft gate-analysis chat \
-        eval-judge eval-judge-import eval-compare eval-routing eval-coverage eval-coverage-summary
+        eval-judge eval-judge-import eval-compare eval-routing eval-coverage eval-coverage-summary \
+        eval-holdout-build
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -77,6 +78,9 @@ eval-review:
 eval-review-import:
 	$(RUN) python -m eval.review --import-csv "$(REVIEW_CSV)"
 	$(RUN) python -m eval.report_set
+
+eval-holdout-build:
+	$(RUN) python -m eval.build_holdout
 
 eval-set-report:
 	$(RUN) python -m eval.report_set
