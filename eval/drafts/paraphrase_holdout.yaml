@@ -1,0 +1,68 @@
+# Paraphrase retrieval holdout (v1). Agent-authored; unreviewed.
+#
+# FAQ items: my own wording of FAQ questions not used by earlier sets; `faq` is the
+# first 12 hex chars of the SHA-256 of the source FAQ question, resolved locally.
+# Manual items: questions about content deep inside long product manuals; `anchor`
+# is a short phrase that must occur exactly once in that manual and marks the answer.
+# No source answer text is stored here.
+#
+# Frozen before the chunking change. Never tune on this file.
+families:
+  generic_paraphrase:
+    note: Generic-store FAQs asked in different words.
+    kind: faq
+    items:
+      - {q: "For the generic store: Is it possible to place my order through a phone call?", faq: 07e92582a0fc}
+      - {q: "For the generic store: Can I include a personal note with a present I'm sending?", faq: 26a76687aa21}
+      - {q: "For the generic store: Is there a lower price if I buy in large quantities?", faq: 0306af4fea96}
+      - {q: "For the generic store: Where do I look for openings to work at your company?", faq: 85d9468a3f66}
+      - {q: "For the generic store: How do I post my opinion about something I bought?", faq: 7c3b59371a9c}
+      - {q: "For the generic store: How can I stop getting your marketing emails?", faq: 4058ae57560a}
+      - {q: "For the generic store: Will you match a lower price I found at a competitor?", faq: c2f4ee2b349a}
+      - {q: "For the generic store: Can you make a product tailored just for me?", faq: 16a6a3354c7b}
+      - {q: "For the generic store: Can someone show me how a product works before I pay?", faq: 52a7fb9d1baa}
+      - {q: "For the generic store: Do you stand behind purchases if I'm not satisfied?", faq: efd347bfeea4}
+      - {q: "For the generic store: Someone gave me an item from your shop; can I take it back?", faq: 79427a14adba}
+      - {q: "For the generic store: Can I still buy an item marked limited edition?", faq: 44b95b4990b2}
+      - {q: "For the generic store: Is my card information protected when I shop with you?", faq: bd92de25af50}
+      - {q: "For the generic store: You sent a different product than the one I ordered; what now?", faq: 0a1f6c661570}
+      - {q: "For the generic store: If I broke something by misusing it, can I still return it?", faq: e61f50d44550}
+  flipkart_paraphrase:
+    note: Flipkart FAQs asked in different words.
+    kind: faq
+    items:
+      - {q: "For Flipkart: What are the collection points where I can get my parcels?", faq: 40c5a6da2041}
+      - {q: "For Flipkart: How many days will a collection point hold my parcel?", faq: 0cb4b5b7a78a}
+      - {q: "For Flipkart: I misplaced the secret code of my gift card; how do I recover it?", faq: 3929633f8df1}
+      - {q: "For Flipkart: Is there a cap on how many gift cards I can purchase?", faq: dace02215150}
+      - {q: "For Flipkart: What is the fast delivery service called Quick?", faq: fa6a2f52261c}
+      - {q: "For Flipkart: Do I need to spend a certain amount to use Quick?", faq: 8dbb8c4eb219}
+      - {q: "For Flipkart: How do I start listing my own products for sale on the site?", faq: a074f7091e0b}
+      - {q: "For Flipkart: What content is banned when I write a review?", faq: 630f85af59d1}
+      - {q: "For Flipkart: Someone is copying my brand in a listing; how do I complain?", faq: 22660f784936}
+      - {q: "For Flipkart: How can I tell whether an item is a refurbished one?", faq: b1135779379c}
+      - {q: "For Flipkart: Is there a limit on stored payment cards?", faq: 31af932fc745}
+      - {q: "For Flipkart: What is the one-time code I get when signing in?", faq: cf98939a1713}
+      - {q: "For Flipkart: Can I register with a phone number from outside India?", faq: 3dbb0fa4c63f}
+      - {q: "For Flipkart: How is an instant cashback applied to my purchase?", faq: 3e55c4016aa8}
+      - {q: "For Flipkart: Does a new TV come with a bracket for hanging it on the wall?", faq: 7eff81008d39}
+  manual_deep:
+    note: Product-manual answers located well past the first 512 tokens.
+    kind: manual
+    items:
+      - {q: "How do I factory reset the HD928X air fryer?", product: HD928X, anchor: "For a factory reset of the Airfryer"}
+      - {q: "The Wi-Fi light on my HD928X blinks with long pauses; what does that mean?", product: HD928X, anchor: "blinking with long break in between"}
+      - {q: "Can I use the HD928X pan without the basket in it?", product: HD928X, anchor: "Never use the pan without the basket"}
+      - {q: "How long does a software update take on the HD928X, and can I cook meanwhile?", product: HD928X, anchor: "This update takes up to 1 minute"}
+      - {q: "How do I start a NutriU recipe on the HD928X from my phone?", product: HD928X, anchor: "Open the recipe and start the cooking process in the App"}
+      - {q: "What should I do before using the HD928X for the first time?", product: HD928X, anchor: "Remove all packing material"}
+      - {q: "How do I reject an incoming call on the TAH6206 headphones?", product: TAH6206, anchor: "Reject call"}
+      - {q: "How do I skip to the next song on the TAH6206?", product: TAH6206, anchor: "Next track"}
+      - {q: "My TAH6206 is connected but music only plays on the phone speaker; what should I do?", product: TAH6206, anchor: "music only plays on the mobile phone speaker"}
+      - {q: "The TAH6206 sound crackles; how can I fix it?", product: TAH6206, anchor: "a crackling noise can be heard"}
+      - {q: "How should I get rid of the TAH6206 rechargeable battery?", product: TAH6206, anchor: "have a professional remove the rechargeable battery"}
+      - {q: "How do I keep USB charging on while the 24E1N2300A monitor is in standby?", product: 24E1N2300A, anchor: "keep the USB power and charging functions active"}
+      - {q: "Can wireless mice near the 24E1N2300A USB ports get interference?", product: 24E1N2300A, anchor: "USB 2.4Ghz wireless devices"}
+      - {q: "What does SmartContrast do on the 24E1N2300A?", product: 24E1N2300A, anchor: "When you activate SmartContrast"}
+      - {q: "How can I prevent burn-in on the 24E1N2300A screen?", product: 24E1N2300A, anchor: "Important information for Burn-in"}
+      - {q: "What is the best resolution to use on the 24E1N2300A?", product: 24E1N2300A, anchor: "works best at native resolution"}

@@ -29,6 +29,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 13h | Store-scope false rejects | measured | `eval/reports/store_false_rejects.md`: filter off/on, two runs each. Dev: 0 answerable items consistently lost; gold Recall@5 1.0000 both ways on 83 items. Controls: 1/40 consistently lost (a coupon paraphrase that had passed only on an unrelated Flipkart chunk). |
 | 13i | Store control label fix | done | `eval/reports/store_controls.md`: 13/40 first-person controls marked `route_ok` (order lookup, return flow, or human is also correct). Notes only; questions and answers unchanged. |
 | 13j | Tools-to-knowledge fallback | measured | `eval/reports/tools_fallback.md`: no no-answer item accepted through the fallback on dev, controls, holdout v1 or v2. Fallback rescues 2-3 answerable dev items per run; dev false rejects 20/120 and 26/120 before, 15/120 and 16/120 after (noise floor 22 flips). |
+| 13k | Paraphrase retrieval holdout | frozen; measured in 13l | `eval/reports/paraphrase_holdout.md`: 46 items: 30 reworded FAQs (15 per store) and 16 manual questions whose answers sit past token 512. |
 | 14 | API + SSE + chat page | todo | |
 | 15 | Langfuse + cost | todo | |
 | 16 | README + demo script | todo | |

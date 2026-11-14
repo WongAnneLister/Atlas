@@ -1,0 +1,188 @@
+"""Build and freeze the paraphrase retrieval holdout: reworded FAQs and deep manual content."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+from pathlib import Path
+from typing import Literal
+
+import yaml
+from pydantic import BaseModel, ConfigDict, Field
+
+from eval.build_holdout import VERSIONS as HOLDOUTS
+from eval.build_store_controls import OUTPUT as CONTROLS
+from eval.build_store_controls import faq_index
+from eval.common import load_items, load_sections, near_duplicate, save_items, set_hash
+from eval.schema import EvalItem, Section
+from support_agent.config import REPO_ROOT, EvalSettings, StoreScopeSettings, get_settings
+from support_agent.data.doc_models import digest, write_text
+from support_agent.retrieval.scope import requested_stores, section_store
+
+log = logging.getLogger(__name__)
+DRAFT = Path("eval/drafts/paraphrase_holdout.yaml")
+OUTPUT = Path("eval/sets/paraphrase_holdout_v1.jsonl")
+REPORT = Path("eval/reports/paraphrase_holdout.md")
+SOURCE_PREFIX = "holdout:paraphrase_v1"
+EVIDENCE_CHARS = 60
+ANSWER_WINDOW = 300
+
+
+class ParaphraseItem(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    q: str = Field(min_length=1)
+    faq: str | None = Field(default=None, pattern=r"^[0-9a-f]{12}$")
+    product: str | None = None
+    anchor: str | None = None
+
+
+class ParaphraseFamily(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    note: str
+    kind: Literal["faq", "manual"]
+    items: list[ParaphraseItem] = Field(min_length=1)
+
+
+class ParaphraseDraft(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    families: dict[str, ParaphraseFamily]
+
+
+def _faq_item(
+    item: ParaphraseItem, index: dict[str, list[tuple[str, str]]], scope: StoreScopeSettings
+) -> tuple[list[str], str, str]:
+    stores = requested_stores(item.q, scope)
+    if len(stores) != 1 or item.faq is None:
+        raise ValueError(f"{item.q!r}: FAQ items need one named store and a faq hash")
+    (store,) = stores
+    hits = [
+        (sid, text) for sid, text in index.get(item.faq, []) if section_store(sid, scope) == store
+    ]
+    if not hits:
+        raise ValueError(f"{item.q!r}: FAQ {item.faq} not found in {store} sections")
+    answer = hits[0][1]
+    return list(dict.fromkeys(sid for sid, _ in hits)), answer, answer[:EVIDENCE_CHARS]
+
+
+def _manual_item(item: ParaphraseItem, sections: dict[str, Section]) -> tuple[list[str], str, str]:
+    if not item.product or not item.anchor:
+        raise ValueError(f"{item.q!r}: manual items need a product and an anchor")
+    sid = f"product.{item.product}"
+    if sid not in sections:
+        raise ValueError(f"{item.q!r}: unknown product {item.product}")
+    text = " ".join(sections[sid].text.split())
+    if text.count(item.anchor) != 1:
+        raise ValueError(f"{item.q!r}: anchor must occur exactly once in {sid}")
+    start = text.index(item.anchor)
+    return [sid], text[max(0, start - 40) : start + ANSWER_WINDOW], item.anchor
+
+
+def build_paraphrases(
+    draft: ParaphraseDraft,
+    sections: dict[str, Section],
+    existing: list[EvalItem],
+    config: EvalSettings,
+    scope: StoreScopeSettings,
+) -> list[EvalItem]:
+    errors: list[str] = []
+    items: list[EvalItem] = []
+    index = faq_index(sections)
+    for family, group in draft.families.items():
+        for item in group.items:
+            try:
+                if group.kind == "faq":
+                    gold, answer, evidence = _faq_item(item, index, scope)
+                else:
+                    gold, answer, evidence = _manual_item(item, sections)
+            except ValueError as error:
+                errors.append(str(error))
+                continue
+            for other in [*existing, *items]:
+                if near_duplicate(item.q, other.question, config):
+                    errors.append(f"{item.q!r}: near duplicate of {other.id}")
+            items.append(
+                EvalItem(
+                    id="paraphrase-" + digest(item.q),
+                    group="basic_policy" if group.kind == "faq" else "model_number",
+                    split="test",
+                    question=item.q,
+                    gold_sections=gold,
+                    answer_points=[answer],
+                    answerable=True,
+                    source=f"{SOURCE_PREFIX}:{family}",
+                    notes=json.dumps(
+                        {"evidence": evidence, "family": family, "kind": group.kind},
+                        sort_keys=True,
+                    ),
+                )
+            )
+    if errors:
+        raise ValueError("Paraphrase holdout validation failed:\n" + "\n".join(errors))
+    return items
+
+
+def write_report(items: list[EvalItem], draft_hash: str, path: Path) -> None:
+    families: dict[str, int] = {}
+    for item in items:
+        name = json.loads(item.notes)["family"]
+        families[name] = families.get(name, 0) + 1
+    lines = [
+        "# Paraphrase retrieval holdout",
+        "",
+        "Generated by `make eval-paraphrase-build`. Frozen before the chunking change.",
+        "",
+        f"- Draft file: `{DRAFT.as_posix()}`",
+        f"- Draft hash: `{draft_hash}`",
+        f"- Frozen set hash: `{set_hash(items)}`",
+        f"- Items: {len(items)} (all answerable, all unreviewed)",
+        "- Each item stores an evidence string: the start of the FAQ answer, or the manual",
+        "  anchor. Evidence hit means a retrieved chunk contains it.",
+        "",
+        "| Family | Items |",
+        "|---|---:|",
+        *[f"| {name} | {count} |" for name, count in families.items()],
+        "",
+        "## Limits",
+        "",
+        "Questions are agent-authored; manual answers are a text window around the anchor.",
+        "Section-level recall is weak for manuals (one section each); use evidence hit.",
+    ]
+    write_text(path, "\n".join(lines) + "\n")
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true", help="validate without writing files")
+    args = parser.parse_args(argv)
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    settings = get_settings()
+    try:
+        raw = (REPO_ROOT / DRAFT).read_text(encoding="utf-8")
+        draft = ParaphraseDraft.model_validate(yaml.safe_load(raw))
+        existing = load_items(REPO_ROOT / settings.evaluation.sets_dir / "eval_v1.jsonl")
+        for path in [*(spec.output for spec in HOLDOUTS.values()), CONTROLS]:
+            existing += load_items(REPO_ROOT / path)
+        items = build_paraphrases(
+            draft,
+            load_sections(settings),
+            existing,
+            settings.evaluation,
+            settings.retrieval.store_scope,
+        )
+    except (OSError, ValueError) as error:
+        log.error("paraphrase holdout build failed: %s", error)
+        return 1
+    if not args.check:
+        output = REPO_ROOT / OUTPUT
+        if output.exists() and set_hash(load_items(output)) != set_hash(items):
+            log.error("%s exists with different content; the holdout is frozen", OUTPUT)
+            return 1
+        save_items(output, items)
+        write_report(items, digest(raw), REPO_ROOT / REPORT)
+    log.info("paraphrase holdout items: %d", len(items))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
