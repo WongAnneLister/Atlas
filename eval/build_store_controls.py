@@ -30,6 +30,8 @@ class ControlItem(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     q: str = Field(min_length=1)
     faq: str = Field(pattern=r"^[0-9a-f]{12}$")
+    # Order lookup, return flow, or human contact is also a correct route for it.
+    route_ok: bool = False
 
 
 class ControlFamily(BaseModel):
@@ -89,7 +91,10 @@ def build_controls(
                     answer_points=[answer],
                     answerable=True,
                     source=f"{SOURCE_PREFIX}:{family}:faq:{control.faq}",
-                    notes=json.dumps({"family": family, "store": store}, sort_keys=True),
+                    notes=json.dumps(
+                        {"family": family, "route_ok": control.route_ok, "store": store},
+                        sort_keys=True,
+                    ),
                 )
             )
     if errors:
@@ -111,6 +116,8 @@ def write_report(items: list[EvalItem], draft_hash: str, path: Path) -> None:
         f"- Draft hash: `{draft_hash}`",
         f"- Frozen set hash: `{set_hash(items)}`",
         f"- Items: {len(items)} (all answerable, all unreviewed)",
+        "- Items where an order, return, or human route is also correct: "
+        f"{sum(json.loads(item.notes).get('route_ok', False) for item in items)}",
         "- Validation: each question names exactly one store; its FAQ exists in that",
         "  store's sections; no near duplicates of eval_v1, holdouts, or each other.",
         "",
@@ -130,6 +137,11 @@ def write_report(items: list[EvalItem], draft_hash: str, path: Path) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="validate without writing files")
+    parser.add_argument(
+        "--relabel",
+        action="store_true",
+        help="allow a notes-only change to the frozen set (a label fix with its own commit)",
+    )
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     settings = get_settings()
@@ -152,8 +164,12 @@ def main(argv: list[str] | None = None) -> int:
     if not args.check:
         output = REPO_ROOT / OUTPUT
         if output.exists() and set_hash(load_items(output)) != set_hash(items):
-            log.error("%s exists with different content; the controls are frozen", OUTPUT)
-            return 1
+            frozen = [i.model_dump(exclude={"notes", "reviewed"}) for i in load_items(output)]
+            fresh = [i.model_dump(exclude={"notes", "reviewed"}) for i in items]
+            if not args.relabel or frozen != fresh:
+                log.error("%s exists with different content; the controls are frozen", OUTPUT)
+                return 1
+            log.info("relabel: only notes changed")
         save_items(output, items)
         write_report(items, digest(raw), REPO_ROOT / REPORT)
     log.info("store controls: %d", len(items))

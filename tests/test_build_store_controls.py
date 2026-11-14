@@ -39,6 +39,7 @@ def test_gold_is_limited_to_the_named_store() -> None:
     assert item.gold_sections == ["orders.maktek_faqs.generic-store.a"]
     assert item.answer_points == ["Yes, before it ships."]
     assert item.answerable
+    assert '"route_ok": false' in item.notes
 
 
 @pytest.mark.parametrize("question", ["Can my order be called off?", "Flipkart or generic store?"])

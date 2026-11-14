@@ -6,6 +6,8 @@
 # source FAQ question; the builder resolves it locally, so no source text is stored.
 #
 # Frozen before the filter-on/filter-off runs. Never tune on this file.
+# Label fix (after 13h): route_ok marks first-person items where an order lookup,
+# return flow, or human contact is also a correct route. Questions and answers unchanged.
 families:
   generic_answerable:
     note: Generic-store answers on topics Flipkart also covers.
@@ -14,42 +16,42 @@ families:
       - {q: "For the generic store: How many days after buying do I have to send something back for a full refund?", faq: 4ee2f4c1315a}
       - {q: "For the generic store: How long will standard delivery take to reach me?", faq: 5f9ea64614c6}
       - {q: "For the generic store: Will you send orders abroad?", faq: cc968b7c9057}
-      - {q: "For the generic store: Is it possible to call off my order before it ships?", faq: edfa5e27c38a}
-      - {q: "For the generic store: I typed the wrong delivery address; can it be fixed after checkout?", faq: 584ef6aa6aa2}
+      - {q: "For the generic store: Is it possible to call off my order before it ships?", faq: edfa5e27c38a, route_ok: true}
+      - {q: "For the generic store: I typed the wrong delivery address; can it be fixed after checkout?", faq: 584ef6aa6aa2, route_ok: true}
       - {q: "For the generic store: Where do I see the progress of my shipment?", faq: ffdfc7212b73}
       - {q: "For the generic store: Can my purchase be wrapped as a present?", faq: 1419144c6c69}
       - {q: "For the generic store: Where can I find the warranty details for an item?", faq: de53a860189e}
-      - {q: "For the generic store: My item arrived broken from transit; what now?", faq: ee7b166c6b76}
+      - {q: "For the generic store: My item arrived broken from transit; what now?", faq: ee7b166c6b76, route_ok: true}
       - {q: "For the generic store: If something I bought goes on sale a few days later, do I get the difference?", faq: 8047093a0bfd}
       - {q: "For the generic store: Can I stack two coupon codes on one purchase?", faq: 3fe6a8052228}
       - {q: "For the generic store: I forgot my login password; how do I get back in?", faq: c77cd3980a04}
-      - {q: "For the generic store: Can I get a bill for my purchase?", faq: d51485fa1941}
+      - {q: "For the generic store: Can I get a bill for my purchase?", faq: d51485fa1941, route_ok: true}
       - {q: "For the generic store: Something I want is out of stock right now; can I still get it?", faq: 34aca30eadfa}
       - {q: "For the generic store: Do I collect reward points when I shop with you?", faq: cae68d700087}
-      - {q: "For the generic store: Can I chat with an agent on the website?", faq: b6b7804a624f}
-      - {q: "For the generic store: I no longer want something I bought; can I send it back?", faq: d3fe6d812173}
+      - {q: "For the generic store: Can I chat with an agent on the website?", faq: b6b7804a624f, route_ok: true}
+      - {q: "For the generic store: I no longer want something I bought; can I send it back?", faq: d3fe6d812173, route_ok: true}
       - {q: "For the generic store: I lost my proof of purchase; can I still return an item?", faq: 4351ff7a1ed2}
       - {q: "For the generic store: How do I register for a new customer account?", faq: 38124ca3cd93}
   flipkart_answerable:
     note: Flipkart answers on topics the generic store also covers.
     items:
       - {q: "For Flipkart: Which payment options can I choose at checkout?", faq: b67ae4fd95bd}
-      - {q: "For Flipkart: How long until my money comes back after I cancel?", faq: 74190f1e4d4d}
+      - {q: "For Flipkart: How long until my money comes back after I cancel?", faq: 74190f1e4d4d, route_ok: true}
       - {q: "For Flipkart: How quickly is an order cancellation processed?", faq: b4d9179a762c}
       - {q: "For Flipkart: Can I get items delivered outside India?", faq: 4fc72dd221a0}
       - {q: "For Flipkart: How do I save another shipping address on my account?", faq: 8eda3e0e192e}
-      - {q: "For Flipkart: My parcel says it is out for delivery but has not arrived; when will it come?", faq: b8c1ad3e534b}
+      - {q: "For Flipkart: My parcel says it is out for delivery but has not arrived; when will it come?", faq: b8c1ad3e534b, route_ok: true}
       - {q: "For Flipkart: I want a new login password; what are the steps?", faq: 6559c31464ac}
-      - {q: "For Flipkart: My bill never came with the order; how do I get it?", faq: 2339c228273e}
+      - {q: "For Flipkart: My bill never came with the order; how do I get it?", faq: 2339c228273e, route_ok: true}
       - {q: "For Flipkart: My guarantee card is missing; can I still claim repairs?", faq: f67165d88ee7}
-      - {q: "For Flipkart: Why was a shipping fee added to my order?", faq: 3d3ac74bfe6c}
+      - {q: "For Flipkart: Why was a shipping fee added to my order?", faq: 3d3ac74bfe6c, route_ok: true}
       - {q: "For Flipkart: What does it mean when an item is shown as out of stock?", faq: 3f2488af89b8}
-      - {q: "For Flipkart: The box was already opened when it reached me; what should I do?", faq: a6d51e199f39}
-      - {q: "For Flipkart: Why am I being charged to send an item back?", faq: d26980cfe050}
+      - {q: "For Flipkart: The box was already opened when it reached me; what should I do?", faq: a6d51e199f39, route_ok: true}
+      - {q: "For Flipkart: Why am I being charged to send an item back?", faq: d26980cfe050, route_ok: true}
       - {q: "For Flipkart: Is there an expiry date on gift cards?", faq: 901657492e1a}
       - {q: "For Flipkart: Is pay-on-delivery available for every item?", faq: 91ecca10364b}
       - {q: "For Flipkart: How do I swap the email address on my profile?", faq: ef09b8bb7bb5}
       - {q: "For Flipkart: How do I close my account for good?", faq: 9237e041455a}
       - {q: "For Flipkart: Am I allowed to inspect the parcel contents before accepting it?", faq: b7fa87e83680}
-      - {q: "For Flipkart: I was not home when the courier came; what happens now?", faq: b26cdea6bde1}
+      - {q: "For Flipkart: I was not home when the courier came; what happens now?", faq: b26cdea6bde1, route_ok: true}
       - {q: "For Flipkart: Can items from different sellers arrive in one package?", faq: 6dfd74328ddf}

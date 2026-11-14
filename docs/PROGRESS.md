@@ -27,6 +27,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 13f | Store-scope check | measured | `eval/reports/store_scope.md`: holdout v2 full-graph false accepts 17/35 to 0/35 (95% CI 0.0%-9.9%); holdout v1 13/106 to 4/106. Old test FA 0/30 both; FR 24/120 to 33/120, with no change attributed to the filter (route changes and run-to-run noise). |
 | 13g | Answerable store controls | frozen; measured in 13h | `eval/reports/store_controls.md`: 40 agent-authored single-store answerable questions on topics both stores cover (20 per store). |
 | 13h | Store-scope false rejects | measured | `eval/reports/store_false_rejects.md`: filter off/on, two runs each. Dev: 0 answerable items consistently lost; gold Recall@5 1.0000 both ways on 83 items. Controls: 1/40 consistently lost (a coupon paraphrase that had passed only on an unrelated Flipkart chunk). |
+| 13i | Store control label fix | done | `eval/reports/store_controls.md`: 13/40 first-person controls marked `route_ok` (order lookup, return flow, or human is also correct). Notes only; questions and answers unchanged. |
 | 14 | API + SSE + chat page | todo | |
 | 15 | Langfuse + cost | todo | |
 | 16 | README + demo script | todo | |
