@@ -1,0 +1,16 @@
+# Order replies are rendered by code from tool data; the model never writes them.
+# Placeholders are filled only with values from this turn's successful tool results.
+order: "Order {order_id} (placed {order_date}): {status}. Total {total} {currency}."
+delivered: "Delivered on {delivered_at}."
+coupon: "Coupon used: {coupon_code}."
+items_header: "Items:"
+item: "- {quantity} x {name} ({model}), {unit_price} {currency} each"
+item_refunded: ", {refunded_quantity} refunded"
+item_final_sale: ", final sale"
+tracking: "Shipment for {order_id}: {carrier}, tracking number {tracking_number}. Status: {status}. Shipped on {shipped_at}."
+tracking_estimate: "Estimated delivery: {expected_delivery}. This is the carrier's estimate, not a promise."
+tracking_last_event: "Last update on {last_event_date}: {last_event}"
+no_tracking: "There is no shipment tracking for {order_id} yet."
+recent_header: "Your recent orders:"
+recent_item: "- {order_id} (placed {order_date}): {status}, total {total} {currency}"
+recent_pick: "Tell me the order id if you want details for one of these orders."

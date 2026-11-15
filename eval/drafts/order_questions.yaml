@@ -1,0 +1,28 @@
+# Authored before any grounding-retry inference, for the demo customer CUST-0001.
+# Each question is answerable from order tools alone; these are not benchmark labels.
+# `expect`: facts the reply must contain (case-insensitive; `|` separates accepted forms;
+# `_` reads as a space). Added before the templated-reply code existed.
+- {id: order-where-13, text: "Where is my order ORD-000013?", expect: ["in transit"]}
+- {id: order-tracking-12, text: "What's the tracking number for ORD-000012?", expect: ["MOCK-000012"]}
+- {id: order-eta-9, text: "When will ORD-000009 arrive?", expect: ["2026-11-06|november 6|nov 6"]}
+- {id: order-delivered-1, text: "Has ORD-000001 been delivered?", expect: ["delivered"]}
+- {id: order-carrier-13, text: "Which carrier is shipping ORD-000013?", expect: ["mock carrier"]}
+- {id: order-status-14, text: "What is the status of order ORD-000014?", expect: ["refunded"]}
+- {id: order-recent, text: "Show me my recent orders.", expect: ["ORD-000115", "ORD-000012"]}
+- {id: order-discount-6, text: "Did my order ORD-000006 use a discount code?", expect: ["DEMO10"]}
+- {id: order-items-7, text: "What did I buy in ORD-000007?", expect: ["BHD340/10", "24E1N2300A"]}
+- {id: order-total-5, text: "How much did I pay for ORD-000005?", expect: ["967.68"]}
+- {id: order-stuck-9, text: "Why hasn't ORD-000009 moved?", expect: ["delayed"]}
+- {id: order-delivered-date-15, text: "When was ORD-000015 delivered?", expect: ["2026-11-04|november 4|nov 4"]}
+- {id: order-refunded-65, text: "Is ORD-000065 refunded?", expect: ["partially refunded"]}
+- {id: order-last-event-12, text: "What was the last tracking update for ORD-000012?", expect: ["shipment accepted by the mock carrier"]}
+- {id: order-shipped-date-13, text: "When did ORD-000013 ship?", expect: ["2026-11-02|november 2|nov 2"]}
+- {id: order-on-the-way, text: "Which of my orders are still on the way?", expect: ["ORD-000012", "ORD-000013"]}
+- {id: order-expected-12, text: "What's the expected delivery date for ORD-000012?", expect: ["2026-11-12|november 12|nov 12"]}
+- {id: order-late-9, text: "my package ORD-000009 is late, whats going on", expect: ["delayed"]}
+- {id: order-check-115, text: "Can you check ORD-000115 for me?", expect: ["cancelled|canceled"]}
+- {id: order-latest-shipped, text: "Has my most recent order shipped yet?", expect: ["ORD-000115", "cancelled|canceled"]}
+- {id: order-count-6, text: "how many items were in ORD-000006", expect: ["BHD308/10", "TAH6206"]}
+- {id: order-total-10, text: "What's the total for ORD-000010?", expect: ["1638.92|1,638.92"]}
+- {id: order-delivered-2, text: "Is ORD-000002 delivered yet?", expect: ["delivered"]}
+- {id: order-latest-tracking, text: "Tracking number for my latest order please.", expect: ["MOCK-000012"]}

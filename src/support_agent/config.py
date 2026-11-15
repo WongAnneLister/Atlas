@@ -209,6 +209,11 @@ class AgentSettings(BaseModel):
     # Every factual claim in an order-tool answer must quote this turn's tool data;
     # otherwise the free text is dropped and the gated knowledge path answers.
     order_grounding: bool = False
+    # "template": the order model only picks lookups and decides whether the order data
+    # answers the question; code renders the reply. "free_text": the model writes it.
+    order_replies: Literal["free_text", "template"] = "free_text"
+    # Tries per grounding check; only a reply without a valid structured call is retried.
+    grounding_attempts: int = Field(default=1, ge=1)
 
 
 class EvalSettings(BaseModel):

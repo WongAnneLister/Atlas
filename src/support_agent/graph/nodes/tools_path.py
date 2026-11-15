@@ -11,9 +11,10 @@ from langchain_core.tools import BaseTool
 from pydantic import ValidationError
 
 from support_agent.graph.deps import GraphDeps
-from support_agent.graph.handoff import PROMPTS, HandoffReason, make_handoff
+from support_agent.graph.handoff import PROMPTS, HandoffReason, load_templates, make_handoff
 from support_agent.graph.intents import Intent
-from support_agent.graph.order_grounding import OrderGrounding, tool_data_text, ungrounded_claims
+from support_agent.graph.order_grounding import check_order_answer
+from support_agent.graph.order_replies import REPLY_TOOL, Lookup, render_order_reply, reply_tool
 from support_agent.graph.state import ConversationState
 from support_agent.graph.tools import ToolResult, build_order_tools
 from support_agent.orders.models import OrderNotFound
@@ -37,6 +38,12 @@ def execute_tool(tools: dict[str, BaseTool], name: str, arguments: dict[str, Any
         return ToolResult(ok=False, error="order_service_unavailable")
 
 
+def _lookup_failed(last_error: str | None) -> HandoffReason:
+    if last_error == "order_not_found":
+        return HandoffReason.ORDER_NOT_FOUND
+    return HandoffReason.TOOL_ERROR
+
+
 def _updates(state: ConversationState) -> dict[str, Any]:
     return {
         "trace": state.trace,
@@ -50,8 +57,12 @@ def _updates(state: ConversationState) -> dict[str, Any]:
 class ToolsPath:
     def __init__(self, deps: GraphDeps) -> None:
         self.deps = deps
-        self.prompt = (PROMPTS / "tools_path.md").read_text(encoding="utf-8")
         self.grounding_prompt = (PROMPTS / "order_grounding.md").read_text(encoding="utf-8")
+        template = deps.settings.agent.order_replies == "template"
+        prompt_file = "tools_path_template.md" if template else "tools_path.md"
+        self.prompt = (PROMPTS / prompt_file).read_text(encoding="utf-8")
+        self.reminder = "Finish now by calling the reply tool; do not write the reply yourself."
+        self.templates = load_templates("order_replies.yaml") if template else {}
 
     def __call__(self, state: ConversationState) -> dict[str, Any]:
         current = state.model_copy(deep=True)
@@ -70,7 +81,10 @@ class ToolsPath:
             HumanMessage(content=state.rewritten_query),
         ]
         try:
-            model = self.deps.model("main").bind_tools(tools)
+            bound: list[Any] = list(tools)
+            if settings.agent.order_replies == "template":
+                bound.append(reply_tool())
+            model = self.deps.model("main").bind_tools(bound)
             return self._loop(current, model, by_name, messages)
         except Exception as error:
             logger.warning("Order loop failed: %s", type(error).__name__)
@@ -84,9 +98,12 @@ class ToolsPath:
         messages: list[BaseMessage],
     ) -> dict[str, Any]:
         cfg = self.deps.settings.agent
+        template = cfg.order_replies == "template"
         had_success = False
         called_any = False
+        reminded = False
         last_error: str | None = None
+        lookups: list[Lookup] = []
         for step in range(cfg.max_steps):
             state.agent_steps = step + 1
             response = model.invoke(messages)
@@ -99,6 +116,14 @@ class ToolsPath:
                     # not grounded, so it is dropped; the gated knowledge path answers.
                     state.trace.append("tools_fallback")
                     return {**_updates(state), "fallback_to_knowledge": True}
+                if template:
+                    if reminded:
+                        return self._to_knowledge(state)
+                    # Free text is never released in template mode; ask for the decision.
+                    reminded = True
+                    state.trace.append("reply_reminder")
+                    messages.append(HumanMessage(content=self.reminder))
+                    continue
                 answer = response.content
                 if (
                     had_success
@@ -107,22 +132,18 @@ class ToolsPath:
                     and answer.strip()
                 ):
                     if cfg.order_grounding and not self._grounded(state, answer.strip()):
-                        return self._ungrounded(state)
+                        return self._to_knowledge(state)
                     return {
                         **_updates(state),
                         "answer": answer.strip(),
                         "messages": [AIMessage(content=answer.strip())],
                     }
-                reason = (
-                    HandoffReason.ORDER_NOT_FOUND
-                    if last_error == "order_not_found"
-                    else HandoffReason.TOOL_ERROR
-                )
-                return {**_updates(state), **make_handoff(state, reason)}
-            if len(response.tool_calls) > cfg.max_tool_calls_per_step:
+                return {**_updates(state), **make_handoff(state, _lookup_failed(last_error))}
+            lookups_called = [c for c in response.tool_calls if c["name"] != REPLY_TOOL]
+            if len(lookups_called) > cfg.max_tool_calls_per_step:
                 return {**_updates(state), **make_handoff(state, HandoffReason.AGENT_STEP_CAP)}
             called_any = True
-            for call in response.tool_calls:
+            for call in lookups_called:
                 # Trace only the accepted public argument; never trace forged customer ids.
                 args = {key: value for key, value in call["args"].items() if key == "order_id"}
                 short = json.dumps(args, sort_keys=True, ensure_ascii=True)[: cfg.trace_max_chars]
@@ -135,6 +156,8 @@ class ToolsPath:
                     context = dict(state.order_context or {})
                     context[call["name"]] = result.data
                     state.order_context = context
+                    order_id = args.get("order_id")
+                    lookups.append((call["name"], str(order_id) if order_id else None, result.data))
                 else:
                     state.tool_errors += 1
                     state.consecutive_tool_errors += 1
@@ -145,33 +168,47 @@ class ToolsPath:
                 )
                 if state.consecutive_tool_errors >= cfg.max_consecutive_tool_errors:
                     return {**_updates(state), **make_handoff(state, HandoffReason.TOOL_ERROR)}
+            decision = next((c for c in response.tool_calls if c["name"] == REPLY_TOOL), None)
+            if template and decision is not None:
+                return self._reply(state, decision["args"], lookups, last_error)
         return {**_updates(state), **make_handoff(state, HandoffReason.AGENT_STEP_CAP)}
+
+    def _reply(
+        self,
+        state: ConversationState,
+        args: dict[str, Any],
+        lookups: list[Lookup],
+        last_error: str | None,
+    ) -> dict[str, Any]:
+        """The model only decides; code writes the reply from this turn's lookups."""
+        if args.get("answer_from_order_data") is not True:
+            state.trace.append("reply:not_order_data")
+            return self._to_knowledge(state)
+        if not lookups or state.consecutive_tool_errors:
+            return {**_updates(state), **make_handoff(state, _lookup_failed(last_error))}
+        answer = render_order_reply(lookups, self.templates)
+        state.trace.append("reply:order_data")
+        return {**_updates(state), "answer": answer, "messages": [AIMessage(content=answer)]}
 
     def _grounded(self, state: ConversationState, answer: str) -> bool:
         """Fails closed: a checker error counts as ungrounded."""
-        data = tool_data_text(state.order_context)
-        try:
-            model = self.deps.model("main").with_structured_output(OrderGrounding, include_raw=True)
-            response = model.invoke(
-                [
-                    SystemMessage(content=self.grounding_prompt),
-                    HumanMessage(content=f"Order data:\n{data}\n\nAnswer:\n{answer}"),
-                ]
-            )
-            if not isinstance(response, dict) or response.get("parsing_error"):
-                raise ValueError("Invalid grounding envelope")
-            decision = OrderGrounding.model_validate(response.get("parsed"))
-        except Exception as error:
-            logger.warning("Order grounding check failed: %s", type(error).__name__)
+        result = check_order_answer(
+            self.deps.model("main"),
+            self.grounding_prompt,
+            state.order_context,
+            answer,
+            self.deps.settings.agent.grounding_attempts,
+        )
+        if result.attempts > 1:
+            state.trace.append(f"grounding_retry:{result.attempts - 1}")
+        if result.status == "error":
             state.trace.append("grounding_error")
-            return False
-        missing = ungrounded_claims(decision, data)
-        if missing:
-            state.trace.append(f"ungrounded:{len(missing)}")
-        return not missing
+        elif result.missing:
+            state.trace.append(f"ungrounded:{len(result.missing)}")
+        return result.status == "grounded"
 
-    def _ungrounded(self, state: ConversationState) -> dict[str, Any]:
-        """The free text is dropped; the gated knowledge path answers or hands off."""
+    def _to_knowledge(self, state: ConversationState) -> dict[str, Any]:
+        """Nothing from the order model is released; the gated knowledge path answers."""
         if self.deps.settings.agent.knowledge_fallback:
             state.trace.append("tools_fallback")
             return {**_updates(state), "fallback_to_knowledge": True}

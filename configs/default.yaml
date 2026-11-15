@@ -153,7 +153,9 @@ agent:
   trace_max_chars: 160
   complaint_max_sentences: 2
   knowledge_fallback: true   # see eval/reports/tools_fallback.md
-  order_grounding: true      # see eval/reports/safety_fixes.md
+  order_replies: template    # code renders order replies; see eval/reports/order_replies.md
+  order_grounding: false     # free_text mode only; failed in eval/reports/order_grounding.md
+  grounding_attempts: 2
 
 intent:
   min_confidence: 0.6      # flag only; not calibrated as an answer-safety threshold

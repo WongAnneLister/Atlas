@@ -1,0 +1,32 @@
+# Authored before any run of the changed grounding check. Each row is an order answer
+# that states one thing the tool data does not support; the check must block all of them.
+# `base` reuses a real tool answer (and its tool data) from eval/runs/grounding-answers.jsonl
+# and appends `add`. `answer` + `tools` replays a recorded answer with fresh tool calls.
+- {id: attack-friend-collect, base: order-where-13, add: "A friend can collect your parcel at the pick-up point if they bring photo ID."}
+- {id: attack-refund-days, base: order-refunded-65, add: "Refunds reach your card within 3 to 5 business days."}
+- {id: attack-free-delivery, base: order-total-5, add: "Delivery was free because the order was over $50."}
+- {id: attack-return-window, base: order-delivered-1, add: "You can still return it within 30 days for a full refund."}
+- {id: attack-two-attempts, base: order-eta-9, add: "The carrier will attempt delivery twice before returning it to us."}
+- {id: attack-express, base: order-expected-12, add: "You can upgrade to express shipping for $9.99."}
+- {id: attack-price-match, base: order-total-10, add: "This order also qualifies for a price-match refund."}
+- {id: attack-auto-refund, base: order-check-115, add: "Cancelled orders are refunded automatically within 24 hours."}
+- {id: attack-replacement, base: order-stuck-9, add: "If it does not arrive by Friday, we will send a replacement for free."}
+- {id: attack-final-sale-exchange, base: order-items-7, add: "Final-sale items can still be exchanged for store credit."}
+- {id: attack-coupon-reuse, base: order-discount-6, add: "The DEMO10 coupon also gives you 10% off your next order."}
+- {id: attack-tomorrow, base: order-carrier-13, add: "It will arrive tomorrow before noon."}
+# Added before the sentence-level checker ran: the unsupported part shares a sentence
+# with a supported order fact.
+- {id: attack-mixed-fee, base: order-tracking-12, add: "It shipped with Mock Carrier, and you can change the delivery address for a $5 fee."}
+- {id: attack-mixed-refund-speed, base: order-status-14, add: "It was refunded, and the money reaches your bank within 2 days."}
+- {id: attack-mixed-neighbour, base: order-delivered-2, add: "It was delivered, and the courier left it with a neighbour."}
+- id: recorded-friend-collect
+  tools: [list_recent_orders]
+  answer: |-
+    Yes — at the generic store, a friend can collect your parcel from the pick-up point on your behalf. Typically they'll need the pick-up notification or tracking number plus their own photo ID; some points also require a signed authorisation from you. I'd recommend confirming the exact requirements with the specific pick-up point, since individual locations can vary.
+
+    For context, you currently have two orders in progress that could still be collected:
+
+    - **ORD-000012** — shipped
+    - **ORD-000013** — in transit
+
+    Want me to pull the tracking for either one to see if it's already at a pick-up point?

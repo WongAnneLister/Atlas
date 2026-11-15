@@ -23,19 +23,45 @@ from support_agent.graph.tools import build_order_tools
 from test_graph import fake
 
 
+@pytest.fixture(autouse=True)
+def _free_text_mode(seeded: Any) -> None:
+    """These tests cover the free-text order reply mode (template mode: test_order_replies)."""
+    seeded[0].agent.order_replies = "free_text"
+
+
+def sentence_count(messages: Any) -> int:
+    text = str(messages[-1].content).split("Answer sentences:\n", 1)[-1]
+    return len([line for line in text.splitlines() if line.strip()])
+
+
+def pass_all(messages: Any) -> dict[str, Any]:
+    count = sentence_count(messages)
+    return {"sentences": [{"index": i, "kind": "other", "quotes": []} for i in range(1, count + 1)]}
+
+
 class ToolFake(FakeMessagesListChatModel):
     seen: list[Any] = Field(default_factory=list)
     schemas: list[Any] = Field(default_factory=list)
-    # Grounding-check reply; the default (no factual claims) passes the check.
-    grounding: Any = Field(default_factory=lambda: {"claims": []})
+    # Grounding-check reply; the default marks every sentence "other", so it passes.
+    # A list gives one reply per call (the last repeats); None means no structured call;
+    # a callable builds the reply from the numbered sentences.
+    grounding: Any = None
+    grounding_default: bool = True
     grounding_seen: list[Any] = Field(default_factory=list)
 
     def with_structured_output(self, schema: Any, **kwargs: Any) -> Any:
         def invoke(messages: Any) -> Any:
             self.grounding_seen.append(list(messages))
-            if isinstance(self.grounding, Exception):
-                raise self.grounding
-            return {"parsed": self.grounding, "raw": None, "parsing_error": None}
+            reply = self.grounding
+            if reply is None and self.grounding_default:
+                reply = pass_all
+            if isinstance(reply, list):
+                reply = reply[min(len(self.grounding_seen), len(reply)) - 1]
+            if isinstance(reply, Exception):
+                raise reply
+            if callable(reply):
+                reply = reply(messages)
+            return {"parsed": reply, "raw": None, "parsing_error": None}
 
         return RunnableLambda(invoke)
 

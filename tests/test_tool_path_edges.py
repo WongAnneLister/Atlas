@@ -19,6 +19,12 @@ from test_graph import fake
 from test_tool_paths import ToolFake, call, state
 
 
+@pytest.fixture(autouse=True)
+def _free_text_mode(seeded: Any) -> None:
+    """These tests cover the free-text order reply mode (template mode: test_order_replies)."""
+    seeded[0].agent.order_replies = "free_text"
+
+
 def test_provider_failure_hands_off_without_private_body(
     seeded: Any, monkeypatch: Any, caplog: Any
 ) -> None:
