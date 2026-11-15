@@ -61,6 +61,47 @@ def split_text(text: str, tokenizer: Tokenizer, maximum: int, overlap: int) -> l
     return result
 
 
+_FAQ_START = re.compile(r"(?=^Regarding “)", re.M)
+
+
+def faq_units(prose: str) -> list[str]:
+    """Split a section into its FAQ blocks; text before the first block stays a unit."""
+    return [unit.strip() for unit in _FAQ_START.split(prose) if unit.strip()]
+
+
+def section_pieces(
+    sid: str, prose: str, config: ChunkSettings, tokenizer: Tokenizer, heading: str = ""
+) -> list[str]:
+    """Cut one section according to the configured strategy."""
+    is_product = sid.startswith("product.")
+    if config.strategy == "token":
+        if is_product:
+            return [prose]
+        return split_text(prose, tokenizer, config.max_tokens, config.overlap_tokens)
+    if is_product:
+        header = heading if config.product_window_header and heading else ""
+        budget = config.product_window_tokens - (tokenizer.count(header) + 2 if header else 0)
+        if budget <= config.product_overlap_tokens:
+            raise ValueError("A product heading leaves no room for its manual window")
+        windows = split_text(prose, tokenizer, budget, config.product_overlap_tokens)
+        return [f"{header}\n\n{window}" if header else window for window in windows]
+    pieces: list[str] = []
+    for unit in faq_units(prose):
+        if tokenizer.count(unit) <= config.max_tokens:
+            pieces.append(unit)
+            continue
+        # A long answer is split; every part repeats the question line so it stays findable.
+        question, _, body = (
+            unit.partition("\n") if unit.startswith("Regarding “") else ("", "", unit)
+        )
+        budget = config.max_tokens - (tokenizer.count(question) + 2 if question else 0)
+        if budget <= config.overlap_tokens:
+            raise ValueError("A FAQ question line leaves no room for its answer in one chunk")
+        for part in split_text(body.strip(), tokenizer, budget, config.overlap_tokens):
+            pieces.append(f"{question}\n\n{part}" if question else part)
+    return pieces
+
+
 def chunk_document(text: str, config: ChunkSettings, tokenizer: Tokenizer) -> list[Chunk]:
     sections, header = parse_document(text)
     headings = {
@@ -73,16 +114,7 @@ def chunk_document(text: str, config: ChunkSettings, tokenizer: Tokenizer) -> li
     }
     chunks: list[Chunk] = []
     for sid, prose in sections.items():
-        pieces = (
-            [prose]
-            if sid.startswith("product.")
-            else split_text(
-                prose,
-                tokenizer,
-                config.max_tokens,
-                config.overlap_tokens,
-            )
-        )
+        pieces = section_pieces(sid, prose, config, tokenizer, headings[sid])
         for index, piece in enumerate(pieces):
             chunks.append(
                 Chunk(

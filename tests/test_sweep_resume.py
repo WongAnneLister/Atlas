@@ -116,3 +116,34 @@ def test_score_collection_resumes_after_dependency_failure(tmp_path, monkeypatch
     output.write_text("\n".join(lines) + "\n")
     with pytest.raises(ValueError, match="No current dev cache"):
         sweep.main(["--dev-cache", str(output), "--no-collect"])
+
+
+def test_sweep_collects_what_the_knowledge_path_sees():
+    """Regression: the sweep scored the raw top 5 while production applies the store scope."""
+    from support_agent.retrieval.types import RetrievedChunk
+
+    def chunk(cid, sid):
+        return RetrievedChunk(
+            chunk_id=cid,
+            doc_id="d",
+            section_id=sid,
+            title="t",
+            heading_path="h",
+            text="x",
+            n_tokens=1,
+            scores={"rerank": 0.5},
+        )
+
+    class Retriever:
+        def __init__(self):
+            self.calls = []
+
+        def retrieve(self, query, top_k):
+            self.calls.append(top_k)
+            return [chunk("fk", "a.flipkart_faqs.b"), chunk("gen", "a.maktek_faqs.c")][:top_k]
+
+    retriever = Retriever()
+    settings = Settings()
+    kept = sweep.production_chunks(retriever, "For the generic store: refunds?", settings)
+    assert [c.chunk_id for c in kept] == ["gen"]
+    assert retriever.calls == [settings.retrieval.store_scope.pool_k]

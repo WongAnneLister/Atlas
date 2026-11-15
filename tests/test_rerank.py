@@ -95,3 +95,20 @@ def test_rerank_limits_and_ties() -> None:
     assert retriever.retrieve("q", 5) == []
     result = FakeReranker().rerank("q", [item("z"), item("a")])
     assert [chunk.chunk_id for chunk in result] == ["a", "z"]
+
+
+def test_text_dedupe_keeps_the_best_copy_and_frees_the_slot() -> None:
+    chunks = [item(key) for key in ["a", "b", "c"]]
+    chunks[0].text = "Same FAQ  text."
+    chunks[1].text = "Same FAQ text."
+    chunks[2].text = "Other text."
+
+    class Base:
+        def retrieve(self, query: str, top_k: int) -> list:
+            return chunks
+
+    reranker = FakeReranker({"a": 2, "b": 3, "c": 1})
+    plain = RerankingRetriever(Base(), reranker, 50, 2)
+    assert [c.chunk_id for c in plain.retrieve("q")] == ["b", "a"]
+    deduped = RerankingRetriever(Base(), reranker, 50, 2, dedupe_text=True)
+    assert [c.chunk_id for c in deduped.retrieve("q")] == ["b", "c"]

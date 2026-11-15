@@ -45,4 +45,5 @@ def build_retriever(
             settings.retrieval.rerank_top_k,
             settings.retrieval.store_scope.pool_k if settings.retrieval.store_scope.enabled else 0,
         ),
+        dedupe_text=settings.retrieval.dedupe_text,
     )

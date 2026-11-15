@@ -106,6 +106,8 @@ class RetrievalSettings(BaseModel):
     bm25_normalise_model_numbers: bool
     rrf_k: int = Field(ge=0)
     rerank_top_k: int = Field(gt=0)
+    # Drop a reranked chunk whose text repeats a higher-ranked one (same FAQ filed twice).
+    dedupe_text: bool = False
     store_scope: StoreScopeSettings = Field(default_factory=StoreScopeSettings)
 
     @model_validator(mode="after")
@@ -141,11 +143,21 @@ class ChunkSettings(BaseModel):
     max_tokens: int = Field(gt=0)
     overlap_tokens: int = Field(ge=0)
     prepend_heading: bool
+    # "token": fixed token windows inside each section, whole product manuals.
+    # "faq_unit": one FAQ question and answer per chunk, product manuals in windows.
+    strategy: Literal["token", "faq_unit"] = "token"
+    product_window_tokens: int = Field(default=400, gt=0)
+    product_overlap_tokens: int = Field(default=50, ge=0)
+    # Start every manual window with the product heading, so the reranker and the gate
+    # see which product a deep window belongs to.
+    product_window_header: bool = False
 
     @model_validator(mode="after")
     def _valid_overlap(self) -> ChunkSettings:
         if self.overlap_tokens >= self.max_tokens:
             raise ValueError("chunk.overlap_tokens must be smaller than max_tokens")
+        if self.product_overlap_tokens >= self.product_window_tokens:
+            raise ValueError("chunk.product_overlap_tokens must be smaller than the window")
         return self
 
 

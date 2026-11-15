@@ -90,6 +90,9 @@ retrieval:
   bm25_normalise_model_numbers: true
   rrf_k: 60
   rerank_top_k: 5
+  # The same FAQ is filed under two topics; identical text must not take two slots.
+  # On for the faq_unit index only; see eval/reports/chunking.md.
+  dedupe_text: false
   # A question naming exactly one store only sees that store's sections plus
   # store-neutral ones (product catalog). See eval/reports/store_scope.md.
   store_scope:
@@ -113,6 +116,12 @@ chunk:
   max_tokens: 512
   overlap_tokens: 64
   prepend_heading: true
+  # faq_unit: one FAQ per chunk, headed manual windows. It is not the default yet:
+  # it raised no-answer false accepts end to end (eval/reports/chunking_e2e.md).
+  strategy: token
+  product_window_tokens: 400
+  product_overlap_tokens: 50
+  product_window_header: true
 
 gate:
   weights:
@@ -198,7 +207,7 @@ evaluation:
 
 milvus:
   uri: http://localhost:19530
-  collection: support_chunks
+  collection: support_chunks   # faq_unit index: support_chunks_faq_v1
   timeout_s: 60
   upsert_batch_size: 64
   query_batch_size: 16

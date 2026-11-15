@@ -19,7 +19,8 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-retrieval-index eval-failures eval-intent-build eval-intent-draft gate-analysis chat \
         eval-judge eval-judge-import eval-compare eval-routing eval-coverage eval-coverage-summary \
         eval-holdout-build eval-gate-round3 eval-store-scope eval-store-controls-build eval-store-fr \
-        eval-tools-fallback eval-paraphrase-build
+        eval-tools-fallback eval-paraphrase-build eval-chunking-ab \
+        eval-chunking-e2e
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -153,6 +154,9 @@ sweep:
 eval-gate-round3:
 	$(RUN) python -m eval.gate_round3 $(EVAL_GATE_ROUND3_ARGS)
 
+eval-chunking-ab:
+	$(RUN) python -m eval.chunking_ab $(EVAL_CHUNKING_AB_ARGS)
+
 eval-paraphrase-build:
 	$(RUN) python -m eval.build_paraphrase_holdout
 
@@ -161,6 +165,9 @@ eval-store-controls-build:
 
 eval-tools-fallback:
 	$(RUN) python -m eval.tools_fallback_report
+
+eval-chunking-e2e:
+	$(RUN) python -m eval.chunking_e2e_report
 
 eval-store-fr:
 	$(RUN) python -m eval.store_fr_report

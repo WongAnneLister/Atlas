@@ -62,7 +62,7 @@ def test_variants_share_snapshots_and_only_v3_vetoes_unlisted_brands(monkeypatch
         )
         for cid, text in texts.items()
     }
-    monkeypatch.setattr(sweep, "load_local_chunks", lambda settings: chunks)
+    monkeypatch.setattr(sweep, "load_local_chunks", lambda settings, path=None: chunks)
     items = [
         item("ok", "What payment methods do you accept?", True),
         item("far", "What are the opening hours of your showroom?", False),

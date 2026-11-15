@@ -50,8 +50,10 @@ def test_paragraph_then_sentence_splitting_keeps_all_source_words() -> None:
     assert all(len(piece.split()) <= 6 for piece in pieces)
 
 
-def test_products_stay_whole_despite_policy_budget() -> None:
-    config = get_settings().chunk.model_copy(update={"max_tokens": 2, "overlap_tokens": 1})
+def test_token_strategy_keeps_products_whole_despite_policy_budget() -> None:
+    config = get_settings().chunk.model_copy(
+        update={"max_tokens": 2, "overlap_tokens": 1, "strategy": "token"}
+    )
     body = "one two three four five six seven"
     text = document(
         "catalog",
@@ -109,3 +111,65 @@ def test_bad_encoder_shape_fails_instead_of_becoming_a_vector() -> None:
     config = get_settings().retrieval.model_copy(update={"embedding_dim": 2})
     with pytest.raises(ValueError, match="wrong vector dimension"):
         BgeM3Embedder(config, WhitespaceTokenizer(), Backend(bad=True)).embed(["test"])
+
+
+FAQ_SECTION = (
+    "## Orders\n<!-- section: orders.maktek_faqs.generic-store.x -->\n\n"
+    "Regarding “Can I cancel?”:\n\nYes before shipping.\n\n"
+    "Regarding “Can I order by phone?”:\n\nNo phone orders."
+)
+
+
+def faq_config(**update: object):
+    return get_settings().chunk.model_copy(update={"strategy": "faq_unit", **update})
+
+
+def test_faq_unit_strategy_gives_one_question_per_chunk() -> None:
+    text = document("orders", ["fixture"], "2026-11-09", [FAQ_SECTION])
+    chunks = chunk_document(text, faq_config(), WhitespaceTokenizer())
+    assert [c.text for c in chunks] == [
+        "Regarding “Can I cancel?”:\n\nYes before shipping.",
+        "Regarding “Can I order by phone?”:\n\nNo phone orders.",
+    ]
+    assert len({c.chunk_id for c in chunks}) == 2
+
+
+def test_long_faq_parts_repeat_the_question_line() -> None:
+    answer = " ".join(f"w{i}" for i in range(30))
+    section = (
+        "## Returns\n<!-- section: returns.flipkart_faqs.x -->\n\n"
+        f"Regarding “Which items cannot be returned?”:\n\n{answer}"
+    )
+    text = document("returns", ["fixture"], "2026-11-09", [section])
+    config = faq_config(max_tokens=12, overlap_tokens=2)
+    chunks = chunk_document(text, config, WhitespaceTokenizer())
+    assert len(chunks) > 1
+    assert all(c.text.startswith("Regarding “Which items cannot be returned?”") for c in chunks)
+    assert all(c.n_tokens <= config.max_tokens for c in chunks)
+    assert {w for c in chunks for w in c.text.split()} >= set(answer.split())
+
+
+def test_faq_unit_strategy_windows_long_product_manuals() -> None:
+    body = " ".join(f"m{i}" for i in range(25))
+    section = "## Model A\n<!-- section: product.A -->\n\n" + body
+    text = document("catalog", ["fixture"], "2026-11-09", [section])
+    config = faq_config(
+        product_window_tokens=10, product_overlap_tokens=2, product_window_header=False
+    )
+    chunks = chunk_document(text, config, WhitespaceTokenizer())
+    assert len(chunks) > 1
+    assert all(c.section_id == "product.A" and c.n_tokens <= 10 for c in chunks)
+    assert {w for c in chunks for w in c.text.split()} == set(body.split())
+
+
+def test_manual_windows_start_with_the_product_heading() -> None:
+    body = " ".join(f"m{i}" for i in range(25))
+    section = "## Philips XY100\n<!-- section: product.XY100 -->\n\n" + body
+    text = document("catalog", ["fixture"], "2026-11-09", [section])
+    config = faq_config(
+        product_window_tokens=10, product_overlap_tokens=2, product_window_header=True
+    )
+    chunks = chunk_document(text, config, WhitespaceTokenizer())
+    assert len(chunks) > 1
+    assert all(c.text.startswith("Philips XY100\n\n") and c.n_tokens <= 10 for c in chunks)
+    assert {w for c in chunks for w in c.text.split()} - {"Philips", "XY100"} == set(body.split())

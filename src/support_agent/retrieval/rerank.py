@@ -86,18 +86,39 @@ class FakeReranker:
 
 
 class RerankingRetriever:
-    def __init__(self, base: Retriever, reranker: Reranker, candidates_k: int, top_k: int) -> None:
+    def __init__(
+        self,
+        base: Retriever,
+        reranker: Reranker,
+        candidates_k: int,
+        top_k: int,
+        dedupe_text: bool = False,
+    ) -> None:
         if not 0 < top_k <= candidates_k:
             raise ValueError("Need a positive top_k no larger than candidates_k")
         self.base, self.reranker = base, reranker
         self.candidates_k, self.top_k = candidates_k, top_k
+        self.dedupe_text = dedupe_text
 
     def retrieve(self, query: str, top_k: int | None = None) -> list[RetrievedChunk]:
         limit = self.top_k if top_k is None else min(top_k, self.top_k)
         if limit <= 0:
             raise ValueError("top_k must be positive")
         candidates = self.base.retrieve(query, self.candidates_k)
-        return self.reranker.rerank(query, candidates)[:limit]
+        ranked = self.reranker.rerank(query, candidates)
+        return (unique_text(ranked) if self.dedupe_text else ranked)[:limit]
+
+
+def unique_text(chunks: list[RetrievedChunk]) -> list[RetrievedChunk]:
+    """Keep the first chunk of each distinct text (whitespace-insensitive), in rank order."""
+    seen: set[str] = set()
+    kept: list[RetrievedChunk] = []
+    for chunk in chunks:
+        key = " ".join(chunk.text.split())
+        if key not in seen:
+            seen.add(key)
+            kept.append(chunk)
+    return kept
 
 
 if __name__ == "__main__":

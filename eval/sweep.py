@@ -25,6 +25,7 @@ from support_agent.retrieval.embed import BgeM3Embedder
 from support_agent.retrieval.factory import build_retriever
 from support_agent.retrieval.milvus_store import MilvusStore
 from support_agent.retrieval.rerank import BgeReranker
+from support_agent.retrieval.scope import scope_chunks
 from support_agent.retrieval.types import RetrievedChunk
 
 
@@ -99,8 +100,17 @@ def select_threshold(records: list[GateScore], rule: str = "lowest") -> float | 
     return min(safe, key=lambda t: (abs(t - centre), t))
 
 
-def load_local_chunks(settings: Settings) -> dict[str, Chunk]:
-    path = REPO_ROOT / settings.data.processed_dir / "chunks.jsonl"
+def production_chunks(retriever: Any, question: str, settings: Settings) -> list[RetrievedChunk]:
+    """Retrieve exactly what the knowledge path sees: pool, store scope, then top k."""
+    retrieval = settings.retrieval
+    scope = retrieval.store_scope
+    pool = max(retrieval.rerank_top_k, scope.pool_k) if scope.enabled else retrieval.rerank_top_k
+    ranked = retriever.retrieve(question, pool)
+    return scope_chunks(question, ranked, scope, retrieval.rerank_top_k)[0]
+
+
+def load_local_chunks(settings: Settings, path: Path | None = None) -> dict[str, Chunk]:
+    path = path or REPO_ROOT / settings.data.processed_dir / "chunks.jsonl"
     chunks = [
         Chunk.model_validate_json(line)
         for line in path.read_text(encoding="utf-8").splitlines()
@@ -109,10 +119,15 @@ def load_local_chunks(settings: Settings) -> dict[str, Chunk]:
     return {chunk.chunk_id: chunk for chunk in chunks}
 
 
-def rescore(records: list[GateScore], items: list[EvalItem], settings: Settings) -> list[GateScore]:
+def rescore(
+    records: list[GateScore],
+    items: list[EvalItem],
+    settings: Settings,
+    chunk_file: Path | None = None,
+) -> list[GateScore]:
     """Recompute gate scores from cached retrieval snapshots with the current gate code."""
     questions = {item.id: item.question for item in items}
-    texts = load_local_chunks(settings) if any(r.chunks for r in records) else {}
+    texts = load_local_chunks(settings, chunk_file) if any(r.chunks for r in records) else {}
     rescored = []
     for record in records:
         chunks = [
@@ -227,7 +242,7 @@ def collect_scores(
             reranker=BgeReranker(settings.retrieval),
         )
         for item in pending:
-            chunks = retriever.retrieve(item.question, settings.retrieval.rerank_top_k)
+            chunks = production_chunks(retriever, item.question, settings)
             result = evaluate(item.question, chunks, settings.gate, allow_untuned=True)
             records.append(
                 GateScore(
