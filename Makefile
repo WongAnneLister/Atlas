@@ -20,7 +20,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-judge eval-judge-import eval-compare eval-routing eval-coverage eval-coverage-summary \
         eval-holdout-build eval-gate-round3 eval-store-scope eval-store-controls-build eval-store-fr \
         eval-tools-fallback eval-paraphrase-build eval-chunking-ab \
-        eval-chunking-e2e
+        eval-chunking-e2e eval-safety-fixes
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -168,6 +168,9 @@ eval-tools-fallback:
 
 eval-chunking-e2e:
 	$(RUN) python -m eval.chunking_e2e_report
+
+eval-safety-fixes:
+	$(RUN) python -m eval.safety_fixes_report
 
 eval-store-fr:
 	$(RUN) python -m eval.store_fr_report

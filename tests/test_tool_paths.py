@@ -26,6 +26,18 @@ from test_graph import fake
 class ToolFake(FakeMessagesListChatModel):
     seen: list[Any] = Field(default_factory=list)
     schemas: list[Any] = Field(default_factory=list)
+    # Grounding-check reply; the default (no factual claims) passes the check.
+    grounding: Any = Field(default_factory=lambda: {"claims": []})
+    grounding_seen: list[Any] = Field(default_factory=list)
+
+    def with_structured_output(self, schema: Any, **kwargs: Any) -> Any:
+        def invoke(messages: Any) -> Any:
+            self.grounding_seen.append(list(messages))
+            if isinstance(self.grounding, Exception):
+                raise self.grounding
+            return {"parsed": self.grounding, "raw": None, "parsing_error": None}
+
+        return RunnableLambda(invoke)
 
     def bind_tools(self, tools: Any, **kwargs: Any) -> Any:
         self.schemas = tools

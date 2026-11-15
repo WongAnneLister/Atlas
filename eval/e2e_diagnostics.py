@@ -19,6 +19,9 @@ def diagnostic_lines(records: list[E2ERecord]) -> list[str]:
             for r in records
         ),
         "Coverage incomplete": sum(r.answer_status == "insufficient_coverage" for r in records),
+        "Answer only implied by absence": sum(
+            r.answer_status == "implied_by_absence" for r in records
+        ),
         "Invalid answer output": sum(r.answer_status == "invalid_output" for r in records),
         "Invalid evidence quotes": sum(r.answer_status == "invalid_evidence" for r in records),
         "Invalid citations": sum(r.answer_status == "invalid_citation" for r in records),

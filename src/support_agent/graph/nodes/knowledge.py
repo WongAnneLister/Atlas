@@ -127,7 +127,7 @@ class KnowledgePath:
                 HandoffReason.ANSWER_ERROR
                 if status == "model_error"
                 else HandoffReason.INCOMPLETE_EVIDENCE
-                if status == "insufficient_coverage"
+                if status in {"insufficient_coverage", "implied_by_absence"}
                 else HandoffReason.INVALID_ANSWER,
             ),
             "trace": current.trace,

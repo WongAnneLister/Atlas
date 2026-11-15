@@ -178,6 +178,7 @@ def part(answer: str = "Unused items can be returned within 30 days.", **changes
     return {
         "question": "What is the return window?",
         "supported": True,
+        "explicit": True,
         "answer": answer,
         "evidence": [{"source": 1, "quote": "Items can be returned within 30 days."}],
         **changes,
@@ -204,6 +205,7 @@ def test_partial_coverage_creates_handoff_even_with_high_gate_score() -> None:
                 {
                     "question": "How long does refund processing take?",
                     "supported": False,
+                    "explicit": False,
                     "answer": "",
                     "evidence": [],
                 },
@@ -350,3 +352,20 @@ def test_single_store_question_never_sees_the_other_stores_policy() -> None:
     assert [chunk.chunk_id for chunk in result["retrieval"]] == ["gen"]
     assert result["handoff"].reason == "low_evidence"
     assert main.responses == ["This must never be called"]
+
+
+def test_answer_from_absence_hands_off_even_with_valid_quotes() -> None:
+    no = "No, a cheque is not listed among the accepted methods."
+    result = coverage_graph({"parts": [part(answer=no, explicit=False)]})
+    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["handoff"].reason == "incomplete_evidence"
+    assert result["answer_status"] == "implied_by_absence"
+    assert "cheque" not in result["answer"]
+    assert result["citations"] == []
+
+
+def test_coverage_part_requires_the_explicit_flag() -> None:
+    payload = part()
+    del payload["explicit"]
+    result = coverage_graph({"parts": [payload]})
+    assert result["answer_status"] == "invalid_output"

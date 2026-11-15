@@ -41,6 +41,7 @@ class ConversationState(BaseModel):
         "invalid_output",
         "invalid_citation",
         "insufficient_coverage",
+        "implied_by_absence",
         "invalid_evidence",
     ] = "not_attempted"
     answer_error_type: str | None = None

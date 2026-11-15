@@ -19,6 +19,10 @@ class CoveredPart(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     question: str = Field(min_length=1)
     supported: bool = Field(strict=True)
+    # True only when a quote states the answer itself. An answer that rests on the
+    # sources not mentioning something (an absent feature, a method missing from a
+    # list) is not explicit and is never released.
+    explicit: bool = Field(strict=True)
     answer: str
     evidence: list[SourceQuote]
 
@@ -34,6 +38,8 @@ def render_covered_answer(
     """Quote membership checks provenance, not semantic entailment or query completeness."""
     if any(not part.supported for part in decision.parts):
         return "insufficient_coverage", ""
+    if any(not part.explicit for part in decision.parts):
+        return "implied_by_absence", ""
     paragraphs = []
     for part in decision.parts:
         if not part.answer.strip() or not part.evidence or re.search(r"\[\d+\]", part.answer):

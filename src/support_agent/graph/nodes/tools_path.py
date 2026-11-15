@@ -13,6 +13,7 @@ from pydantic import ValidationError
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, make_handoff
 from support_agent.graph.intents import Intent
+from support_agent.graph.order_grounding import OrderGrounding, tool_data_text, ungrounded_claims
 from support_agent.graph.state import ConversationState
 from support_agent.graph.tools import ToolResult, build_order_tools
 from support_agent.orders.models import OrderNotFound
@@ -50,6 +51,7 @@ class ToolsPath:
     def __init__(self, deps: GraphDeps) -> None:
         self.deps = deps
         self.prompt = (PROMPTS / "tools_path.md").read_text(encoding="utf-8")
+        self.grounding_prompt = (PROMPTS / "order_grounding.md").read_text(encoding="utf-8")
 
     def __call__(self, state: ConversationState) -> dict[str, Any]:
         current = state.model_copy(deep=True)
@@ -104,6 +106,8 @@ class ToolsPath:
                     and isinstance(answer, str)
                     and answer.strip()
                 ):
+                    if cfg.order_grounding and not self._grounded(state, answer.strip()):
+                        return self._ungrounded(state)
                     return {
                         **_updates(state),
                         "answer": answer.strip(),
@@ -142,3 +146,33 @@ class ToolsPath:
                 if state.consecutive_tool_errors >= cfg.max_consecutive_tool_errors:
                     return {**_updates(state), **make_handoff(state, HandoffReason.TOOL_ERROR)}
         return {**_updates(state), **make_handoff(state, HandoffReason.AGENT_STEP_CAP)}
+
+    def _grounded(self, state: ConversationState, answer: str) -> bool:
+        """Fails closed: a checker error counts as ungrounded."""
+        data = tool_data_text(state.order_context)
+        try:
+            model = self.deps.model("main").with_structured_output(OrderGrounding, include_raw=True)
+            response = model.invoke(
+                [
+                    SystemMessage(content=self.grounding_prompt),
+                    HumanMessage(content=f"Order data:\n{data}\n\nAnswer:\n{answer}"),
+                ]
+            )
+            if not isinstance(response, dict) or response.get("parsing_error"):
+                raise ValueError("Invalid grounding envelope")
+            decision = OrderGrounding.model_validate(response.get("parsed"))
+        except Exception as error:
+            logger.warning("Order grounding check failed: %s", type(error).__name__)
+            state.trace.append("grounding_error")
+            return False
+        missing = ungrounded_claims(decision, data)
+        if missing:
+            state.trace.append(f"ungrounded:{len(missing)}")
+        return not missing
+
+    def _ungrounded(self, state: ConversationState) -> dict[str, Any]:
+        """The free text is dropped; the gated knowledge path answers or hands off."""
+        if self.deps.settings.agent.knowledge_fallback:
+            state.trace.append("tools_fallback")
+            return {**_updates(state), "fallback_to_knowledge": True}
+        return {**_updates(state), **make_handoff(state, HandoffReason.INVALID_ANSWER)}

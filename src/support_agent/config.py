@@ -206,6 +206,9 @@ class AgentSettings(BaseModel):
     # When the order model calls no tool, the question is not an order lookup:
     # send it to the gated knowledge path instead of handing off.
     knowledge_fallback: bool = False
+    # Every factual claim in an order-tool answer must quote this turn's tool data;
+    # otherwise the free text is dropped and the gated knowledge path answers.
+    order_grounding: bool = False
 
 
 class EvalSettings(BaseModel):
