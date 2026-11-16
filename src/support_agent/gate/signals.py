@@ -132,3 +132,17 @@ def specific_term_missed(query: str, chunks: list[RetrievedChunk], settings: Gat
         return False
     corpus = _evidence_text(chunks, settings)
     return not any(f" {term} " in corpus for term in terms)
+
+
+def model_number_missed(query: str, chunks: list[RetrievedChunk], settings: GateSettings) -> bool:
+    """True when the query names model numbers and none of them is in the top chunks.
+
+    Stricter than specific_term_missed: a hit on another name (e.g. "USB") does not
+    stand in for the model. One model is enough, so "X, rather than Y" still passes.
+    """
+    models = [_normalise(match.group(0)) for match in _MODEL_NUMBER.finditer(query)]
+    models = [model for model in dict.fromkeys(models) if model]
+    if not models:
+        return False
+    corpus = _evidence_text(chunks, settings)
+    return not any(f" {model} " in corpus for model in models)

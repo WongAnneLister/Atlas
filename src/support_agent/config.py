@@ -181,6 +181,9 @@ class GateSettings(BaseModel):
     entity_terms: bool = False
     # Fail when the query names models or entities and none appear in the top chunks.
     require_specific_term_hit: bool = False
+    # Fail when the query names model numbers and none is in the top chunks; other
+    # names (e.g. "USB") do not count, unlike require_specific_term_hit.
+    require_model_number_hit: bool = False
     key_hit_top_chunks: int = Field(default=3, gt=0)
     # Store names that scope a question rather than name the asked-about thing.
     scope_terms: list[str] = Field(default_factory=list)

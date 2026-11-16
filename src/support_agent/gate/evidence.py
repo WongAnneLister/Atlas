@@ -10,10 +10,14 @@ from support_agent.gate.signals import (
     key_hit,
     key_terms,
     margin,
+    model_number_missed,
     specific_term_missed,
     top_score,
 )
 from support_agent.retrieval.types import RetrievedChunk
+
+# Gate reasons that are vetoes (a named thing is missing), not low scores.
+VETO_REASONS = frozenset({"key_terms_absent", "model_number_absent"})
 
 
 class GateResult(BaseModel):
@@ -56,13 +60,18 @@ def evaluate(
         signals["key_hit"] = hit
     score = weighted_score(signals, settings)
     missed = settings.require_specific_term_hit and specific_term_missed(query, chunks, settings)
-    passed = bool(chunks) and not missed and score >= threshold
+    model_missed = settings.require_model_number_hit and model_number_missed(
+        query, chunks, settings
+    )
+    passed = bool(chunks) and not missed and not model_missed and score >= threshold
     if passed:
         reason = "passed"
     elif not chunks:
         reason = "empty_retrieval"
     elif missed:
         reason = "key_terms_absent"
+    elif model_missed:
+        reason = "model_number_absent"
     else:
         reason = "below_threshold"
     return GateResult(

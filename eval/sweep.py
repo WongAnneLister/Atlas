@@ -19,7 +19,7 @@ from eval.metrics import Rates, outcome_rates, sweep_rates
 from eval.schema import EvalItem
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
-from support_agent.gate.evidence import evaluate
+from support_agent.gate.evidence import VETO_REASONS, evaluate
 from support_agent.retrieval.chunking import Chunk
 from support_agent.retrieval.embed import BgeM3Embedder
 from support_agent.retrieval.factory import build_retriever
@@ -140,7 +140,7 @@ def rescore(
                 update={
                     "score": result.score,
                     "signals": result.signals,
-                    "vetoed": result.reason == "key_terms_absent",
+                    "vetoed": result.reason in VETO_REASONS,
                 }
             )
         )
@@ -257,7 +257,7 @@ def collect_scores(
                         ChunkScore(chunk_id=chunk.chunk_id, rerank=chunk.scores.get("rerank", 0.0))
                         for chunk in chunks
                     ],
-                    vetoed=result.reason == "key_terms_absent",
+                    vetoed=result.reason in VETO_REASONS,
                 )
             )
             temporary = output.with_suffix(output.suffix + ".tmp")

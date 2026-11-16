@@ -138,6 +138,7 @@ gate:
   key_hit_without_terms: exclude
   entity_terms: true
   require_specific_term_hit: true
+  require_model_number_hit: true   # eval/reports/model_veto.md; dev thresholds unchanged
   key_hit_top_chunks: 3
   scope_terms: [flipkart, generic store]
   entity_stopwords: [i, i'm, i've, i'd, i'll, a, an, the, for, and, or, also, but, if, so, to, of, in, "on", at, by, with, from,

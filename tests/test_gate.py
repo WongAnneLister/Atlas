@@ -132,3 +132,24 @@ def test_entity_terms_skip_sentence_openers_scope_terms_and_stopwords() -> None:
 
 def test_entity_terms_are_off_in_legacy_mode() -> None:
     assert specific_terms("Can I pay with Venmo?", legacy_gate()) == []
+
+
+def test_another_named_term_does_not_stand_in_for_a_missing_model_number() -> None:
+    """Regression: TAH5206 (absent) passed because "USB" hit in the TAH6206 manual."""
+    settings = Settings().gate.model_copy(update={"require_model_number_hit": True})
+    manual = [chunk("one", "TAH6206 What's in the box: USB dongle, USB-C cable", 0.45)]
+    query = "Do the TAH5206 headphones come with a USB dongle?"
+    loose = settings.model_copy(update={"require_model_number_hit": False})
+    assert evaluate(query, manual, loose, allow_untuned=True).passed
+    result = evaluate(query, manual, settings, allow_untuned=True)
+    assert not result.passed
+    assert result.reason == "model_number_absent"
+
+
+def test_model_veto_needs_one_named_model_and_ignores_model_free_queries() -> None:
+    settings = Settings().gate.model_copy(update={"require_model_number_hit": True})
+    evidence = [chunk("one", "BHD340/10 has a 14 mm nozzle", 0.9)]
+    query = "I mean BHD340/10, rather than BHD510/03. What is its nozzle width?"
+    assert evaluate(query, evidence, settings, allow_untuned=True).passed
+    refund = [chunk("one", "Refund requests take 7 days", 0.9)]
+    assert evaluate("How long does a refund take?", refund, settings, allow_untuned=True).passed
