@@ -1,3 +1,5 @@
+![Support Agent: an after-sales AI agent that answers with citations and hands off to a human when the evidence is weak](docs/assets/cover.png)
+
 # support-agent
 
 An English e-commerce after-sales support agent.
