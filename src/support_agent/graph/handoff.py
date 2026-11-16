@@ -23,6 +23,7 @@ PROMPTS = Path(__file__).with_name("prompts")
 
 
 class HandoffReason(StrEnum):
+    SYSTEM_ERROR = "system_error"
     USER_REQUESTED = "user_requested"
     COMPLAINT = "complaint"
     LOW_EVIDENCE = "low_evidence"

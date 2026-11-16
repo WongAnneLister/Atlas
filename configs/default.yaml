@@ -265,3 +265,9 @@ tracing:
 api:
   host: 127.0.0.1
   port: 8000
+  token_chunk_words: 4
+  demo_customer_limit: 8
+  max_message_chars: 4000
+  max_resume_chars: 128
+  health_timeout_s: 2
+  warmup_retriever: false

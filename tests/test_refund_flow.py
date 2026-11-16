@@ -101,6 +101,27 @@ def yes_decision(order: Order) -> dict[str, Any]:
     }
 
 
+def test_act_returns_citations_for_refund_denial() -> None:
+    from support_agent.graph.nodes.refund import RefundPath
+    from support_agent.graph.state import CitationRecord, ConversationState
+
+    chunks = FixedRetriever().retrieve("refunds", 1)
+    state = ConversationState(
+        retrieval=chunks,
+        refund_decision={"eligible": "no", "reasons": ["Final sale [1]."], "citations": [1]},
+    )
+    result = RefundPath(GraphDeps(Settings())).act(state)
+    assert result["trace"] == ["refund_act"]
+    assert result["citations"] == [
+        CitationRecord(
+            n=1,
+            chunk_id=chunks[0].chunk_id,
+            section_id=chunks[0].section_id,
+            heading_path=chunks[0].heading_path,
+        )
+    ]
+
+
 def test_direct_order_yes_creates_one_pending_request(seeded: Any) -> None:
     settings, service = seeded
     order = service.get_order("ORD-000001", "CUST-0001")

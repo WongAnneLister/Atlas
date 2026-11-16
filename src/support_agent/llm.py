@@ -14,7 +14,7 @@ from typing import Literal, cast
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models import BaseChatModel
 
-from support_agent.config import Settings, get_settings
+from support_agent.config import LLMSettings, Settings, get_settings
 
 Role = Literal["fast", "main"]
 
@@ -28,13 +28,19 @@ class LLMConfigError(RuntimeError):
     """Raised when no model name or provider is configured for a role."""
 
 
+def resolve_model(role: Role, cfg: LLMSettings) -> tuple[str | None, str | None]:
+    configured_name = cfg.fast_model if role == "fast" else cfg.main_model
+    model = os.environ.get(ENV_MODEL[role]) or configured_name
+    provider = os.environ.get(ENV_PROVIDER) or cfg.provider
+    return model, provider
+
+
 def get_chat_model(role: Role, settings: Settings | None = None) -> BaseChatModel:
     """Return the chat model for `role`, or the injected fake if one is set."""
     if role in _overrides:
         return _overrides[role]
     cfg = (settings or get_settings()).llm
-    model = os.environ.get(ENV_MODEL[role]) or getattr(cfg, f"{role}_model")
-    provider = os.environ.get(ENV_PROVIDER) or cfg.provider
+    model, provider = resolve_model(role, cfg)
     if not model or not provider:
         raise LLMConfigError(
             f"No model configured for role '{role}'. "

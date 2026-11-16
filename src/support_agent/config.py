@@ -318,6 +318,12 @@ class TracingSettings(BaseModel):
 class APISettings(BaseModel):
     host: str
     port: int
+    token_chunk_words: int = Field(gt=0)
+    demo_customer_limit: int = Field(gt=0)
+    max_message_chars: int = Field(gt=0)
+    max_resume_chars: int = Field(gt=0)
+    health_timeout_s: float = Field(gt=0, allow_inf_nan=False)
+    warmup_retriever: bool
 
 
 class Settings(BaseSettings):

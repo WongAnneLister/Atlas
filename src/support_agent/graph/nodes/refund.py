@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from support_agent.gate.evidence import evaluate
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, make_handoff
-from support_agent.graph.state import ConversationState
+from support_agent.graph.state import CitationRecord, ConversationState
 from support_agent.orders.models import Order, OrderNotFound
 from support_agent.orders.service import OrderService
 
@@ -189,9 +189,19 @@ class RefundPath:
         decision = self._decision(state)
         if decision is None:
             return self._handoff(state, HandoffReason.POLICY_REQUIRES_HUMAN)
-        citations = " ".join(f"[{number}]" for number in decision.citations)
         if decision.eligible == "needs_human":
             return self._handoff(state, HandoffReason.POLICY_REQUIRES_HUMAN)
+        records = [
+            CitationRecord(
+                n=number,
+                chunk_id=chunk.chunk_id,
+                section_id=chunk.section_id,
+                heading_path=chunk.heading_path,
+            )
+            for number, chunk in enumerate(state.retrieval, 1)
+            if number in decision.citations
+        ]
+        citations = " ".join(f"[{record.n}]" for record in records)
         if decision.eligible == "no":
             reason = " ".join(decision.reasons) or "The policy does not support this request."
             answer = (
@@ -200,6 +210,7 @@ class RefundPath:
             ).strip()
             return {
                 "answer": answer,
+                "citations": records,
                 "messages": [AIMessage(content=answer)],
                 "trace": [*state.trace, "refund_act"],
             }
@@ -221,6 +232,7 @@ class RefundPath:
         return {
             "refund_request": request.model_dump(mode="json"),
             "answer": answer,
+            "citations": records,
             "messages": [AIMessage(content=answer)],
             "trace": [*state.trace, "refund_act"],
         }

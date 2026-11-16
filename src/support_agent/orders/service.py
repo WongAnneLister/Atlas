@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from support_agent.config import REPO_ROOT, OrdersSettings, get_settings
 from support_agent.orders.db import OrderRepository
-from support_agent.orders.models import Order, RefundRequest, Shipment
+from support_agent.orders.models import CustomerSummary, Order, RefundRequest, Shipment
 
 
 def _utc_now() -> datetime:
@@ -26,6 +26,14 @@ class OrderService:
         self.settings = settings or get_settings().orders
         self.repository = OrderRepository(db_path or REPO_ROOT / self.settings.db_path)
         self.clock = clock
+
+    def list_customers(self, limit: int) -> list[CustomerSummary]:
+        if limit <= 0:
+            raise ValueError("limit must be positive")
+        return self.repository.list_customers(limit)
+
+    def customer_exists(self, customer_id: str) -> bool:
+        return self.repository.customer_exists(customer_id)
 
     def get_order(self, order_id: str, customer_id: str) -> Order:
         return self.repository.get_order(order_id, customer_id)

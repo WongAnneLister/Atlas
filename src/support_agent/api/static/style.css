@@ -1,0 +1,52 @@
+:root {
+  color-scheme: light dark;
+  font: 1rem/1.5 "Instrument Sans", system-ui, sans-serif;
+  color: #172338;
+  background: #f5f7fb;
+}
+body { margin: 0; }
+main { max-width: 46rem; margin: auto; padding: 1.25rem; }
+h1 { margin: 0 0 .75rem; font-size: 1.7rem; }
+.controls { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+#messages {
+  display: flex;
+  flex-direction: column;
+  gap: .65rem;
+  height: clamp(14rem, 55vh, 36rem);
+  overflow: auto;
+  padding: 1rem;
+  margin: 1rem 0;
+  background: #fff;
+  border: 1px solid #d1d9e5;
+  border-radius: .7rem;
+}
+#messages > div {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: .55rem .75rem;
+  border-radius: .55rem;
+  flex: none;
+  align-self: flex-start;
+  max-width: 90%;
+}
+#messages .user { background: #1a477c; color: white; align-self: flex-end; }
+.agent, .picker { background: #eaf0f8; }
+.badge, .error { font-size: .85rem; }
+.handoff { background: #fdf0d4; border: 1px solid #dbb762; }
+.error, #status { color: #9a2626; }
+.citation { border-radius: .4rem; padding: .1rem .3rem; background: #cee3f7; }
+.picker p { margin: 0 0 .4rem; }
+.picker button { display: block; text-align: left; margin: .35rem 0; }
+button, select, input { font: inherit; }
+button, select, input[type="text"] { padding: .35rem .55rem; border-radius: .4rem; }
+button:not(:disabled) { cursor: pointer; }
+#message { flex: 1; min-width: 8rem; }
+#details { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (prefers-color-scheme: dark) {
+  :root { color: #e9eef8; background: #172338; }
+  #messages { background: #202d43; border-color: #485b76; }
+  .agent, .picker { background: #33445f; }
+  .handoff { background: #4b391f; }
+  .error, #status { color: #ffabab; }
+  .citation { background: #344e7a; }
+}

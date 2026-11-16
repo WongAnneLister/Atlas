@@ -34,7 +34,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 13m | Safety fixes: order grounding and explicit coverage | measured on the FAQ-unit index | `eval/reports/safety_fixes.md`. Order-tool answers must quote this turn's tool data per claim, or the question falls back to gated knowledge (`agent.order_grounding`, fails closed). Coverage parts carry `explicit`; a non-explicit part hands off (`implied_by_absence`). With the FAQ-unit index, no-answer false accepts fell to 0 on v1 (5/106 to 0/106) and v2 (1/35 to 0/35). |
 | 13n | Templated order replies | default on | `eval/reports/order_grounding.md` and `eval/reports/order_replies.md`. The 13m quote check blocked most real order answers and let invented claims through, so the order model no longer writes replies: it picks lookups and calls `reply(answer_from_order_data)`; code renders the reply from tool data (`agent.order_replies: template`). Real order questions: 45/48 answered with all labelled facts. |
 | 13o | Model-number veto | default on | `eval/reports/model_veto.md`. The specific-term veto passed when any named term hit, so `usb` stood in for the absent model TAH5206. `gate.require_model_number_hit` also needs one named model number in the top 3 chunks. Gate level, both indexes: v1 false accepts 44 to 42 (token) and 32 to 30 (FAQ unit) of 106; no answerable item changed in any set; dev-selected thresholds unchanged (0.16, 0.24). |
-| 14 | API + SSE + chat page | todo | |
+| 14 | API + SSE + chat page | implemented; manual acceptance pending | Offline tests cover cited replies, order selection and resume, handoffs, and health. Real policy, refund picker, and gold-bars checks are pending because Milvus is inaccessible in the sandbox. No new eval results. See commit 14 decisions below. |
 | 15 | Langfuse + cost | todo | |
 | 16 | README + demo script | todo | |
 | | **Phase 2 — production grade** | | |
@@ -96,7 +96,7 @@ Agents: update this file in every commit. Keep it short and factual.
 - **Checkpoint 2 — Week 2 gate passed — 4 configs measured.** Commit 08 includes real dev/test results and both ablations. The draft benchmark meets the retrieval target; human review and the evidence gate remain required.
 - **Checkpoint 3 — original Week 3 gate failed; renewed acceptance remains open.** The original held-out standalone gate and full graph both reported 3.33% false accept. Round two observes 0/30 full-graph false accepts on the now-known regression set. The standalone gate still permits Cash App Pay; the new answer coverage check creates its handoff. Unreviewed labels, a fresh corpus holdout, human claim review, and the manual acceptance demo remain open. The dev-selected threshold remains 0.17.
 - **Routing round one did not clear Checkpoint 3.** The same no-answer item remained accepted. Round two was frozen after dev, before reserved control tests and full-test regression. No test result changed its prompt, labels, or threshold.
-- **Checkpoint 4 — v1 not shipped.** API, tracing, and demo delivery remain unfinished. Phase-two platform work has not started.
+- **Checkpoint 4 — v1 not shipped.** API implementation is complete. Real demo acceptance, tracing, and demo delivery remain open. Phase-two platform work has not started.
 
 ## Known issues / follow-ups
 
@@ -157,3 +157,14 @@ Agents: update this file in every commit. Keep it short and factual.
 - 01/09: Config `gate.good_evidence_min` remains a placeholder for commit 11. `intent.min_confidence` now only flags uncertain knowledge/after-sales routing; it remains uncalibrated.
 - 06: The pinned MinIO source image now builds successfully on the VPS. Compose passes the server subcommand to the image entrypoint without duplicating the executable. A regression test failed before this fix. Go build/module caches are removed inside the build step to reduce retained disk use.
 - 06: The pinned BGE-M3 cache is complete and SHA-256 verified on the client. `make ingest` ran offline with the real model and stored 206 rows in the project Milvus collection. `make eval-ingest` records model revision, runtime, timings and corpus hashes. Retrieval and answer quality remain unmeasured; those require the later frozen-set experiments.
+
+
+## Commit 14 API decisions
+
+- D1. Token events carry configurable chunks of the verified final answer. The graph exposes updates only.
+- D2. Worker threads advance the synchronous graph and its checkpointer. The API bridges those updates to SSE.
+- D3. Persistence follows `graph.checkpoint_backend` and reuses its memory and SQLite options.
+- D4. Thread IDs pair the customer and conversation IDs. Resume checks for a pending interrupt on that thread.
+- D5. Refund replies include citation records for the cited policy chunks.
+- D6. Graph exceptions emit the exception class, then a `system_error` handoff, and close the stream.
+- D7. The `done` event includes the gate details and the current request's route trace with latency and usage.

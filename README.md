@@ -9,3 +9,5 @@ Status: work in progress. See `docs/PROGRESS.md`.
     make setup   # install with uv
     make up      # start Milvus (Docker)
     make check   # lint, types, tests, interview-note check
+
+Run the demo with `make serve`. The demo app has no authentication and trusts the supplied customer ID.

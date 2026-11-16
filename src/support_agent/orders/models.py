@@ -31,9 +31,12 @@ class OrderStatus(StrEnum):
     PARTIALLY_REFUNDED = "partially_refunded"
 
 
-class Customer(BaseModel):
+class CustomerSummary(BaseModel):
     customer_id: str
     name: str
+
+
+class Customer(CustomerSummary):
     email: str = Field(pattern=r"^[^@\s]+@example\.com$")
 
 

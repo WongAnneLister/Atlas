@@ -10,6 +10,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from support_agent.orders.models import (
+    CustomerSummary,
     InvalidRefundRequest,
     Order,
     OrderItem,
@@ -106,6 +107,24 @@ class OrderRepository:
         values = dict(row)
         values["total"] = Decimal(values.pop("total_cents")) / 100
         return Order.model_validate({**values, "items": items})
+
+    def list_customers(self, limit: int) -> list[CustomerSummary]:
+        with self.connection() as connection:
+            rows = connection.execute(
+                "SELECT customer_id, name FROM customers ORDER BY customer_id LIMIT ?", (limit,)
+            )
+            return [
+                CustomerSummary(customer_id=row["customer_id"], name=row["name"]) for row in rows
+            ]
+
+    def customer_exists(self, customer_id: str) -> bool:
+        with self.connection() as connection:
+            return (
+                connection.execute(
+                    "SELECT 1 FROM customers WHERE customer_id = ?", (customer_id,)
+                ).fetchone()
+                is not None
+            )
 
     def get_order(self, order_id: str, customer_id: str) -> Order:
         with self.connection() as connection:

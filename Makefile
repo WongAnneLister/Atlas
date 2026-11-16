@@ -197,7 +197,7 @@ eval-compare:
 	$(RUN) python -m eval.compare "$(A)" "$(B)" $(EVAL_COMPARE_ARGS)
 
 serve:
-	$(call todo,14)
+	$(RUN) python -m support_agent.api
 
 lint:
 	$(RUN) ruff check .

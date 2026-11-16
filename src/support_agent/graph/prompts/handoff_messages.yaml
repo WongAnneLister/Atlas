@@ -9,3 +9,4 @@ agent_step_cap: "I couldn't complete the order lookup within the allowed steps. 
 tool_error: "I couldn't verify your order information. I'll pass your request to a human support agent."
 order_not_found: "I couldn't find that order for your account. I'll pass your request to a human support agent."
 policy_requires_human: "Your request needs a human review. I'll pass it to a human support agent."
+system_error: "A system error interrupted this request. A human agent can help from here."
