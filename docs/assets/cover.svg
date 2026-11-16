@@ -1,0 +1,214 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFF7EA"/>
+      <stop offset="1" stop-color="#FDEFE3"/>
+    </linearGradient>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="3" fill="#1F2A44" opacity="0.10"/>
+    </pattern>
+    <g id="spark">
+      <path d="M0 -22 Q4 -4 22 0 Q4 4 0 22 Q-4 4 -22 0 Q-4 -4 0 -22 Z" fill="#FFD166" stroke="#1F2A44" stroke-width="4" stroke-linejoin="round"/>
+    </g>
+  </defs>
+
+  <!-- background -->
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect x="40" y="820" width="360" height="220" fill="url(#dots)"/>
+  <rect x="1640" y="40" width="250" height="180" fill="url(#dots)"/>
+  <circle cx="1380" cy="580" r="430" fill="#DDF4F1"/>
+  <circle cx="1720" cy="230" r="120" fill="#FFE1D6"/>
+  <path d="M900 930 H1880" stroke="#1F2A44" stroke-width="5" stroke-linecap="round" opacity="0.18"/>
+
+  <!-- ============ LEFT: title block ============ -->
+  <g font-family="Avenir Next, Avenir, Helvetica Neue, Arial, sans-serif">
+    <rect x="120" y="190" width="450" height="62" rx="31" fill="#FFE1D6" stroke="#1F2A44" stroke-width="3"/>
+    <text x="345" y="231" text-anchor="middle" font-size="27" font-weight="700" letter-spacing="3" fill="#E85D3F">AFTER-SALES AI AGENT</text>
+
+    <text x="110" y="398" font-size="156" font-weight="800" fill="#1F2A44">Support</text>
+    <text x="110" y="552" font-size="156" font-weight="800" fill="#FF7A59">Agent</text>
+    <path d="M122 588 Q182 568 242 588 T362 588 T482 588" stroke="#2EC4B6" stroke-width="11" fill="none" stroke-linecap="round"/>
+
+    <text font-size="44" font-weight="500" fill="#3A4560">
+      <tspan x="120" y="672">Answers with citations.</tspan>
+      <tspan x="120" y="730">Hands off to a human</tspan>
+      <tspan x="120" y="788">when the evidence is weak.</tspan>
+    </text>
+
+    <g font-size="28" font-weight="600" fill="#1F2A44">
+      <rect x="120" y="836" width="212" height="60" rx="30" fill="#FFFFFF" stroke="#1F2A44" stroke-width="3"/>
+      <text x="226" y="876" text-anchor="middle">LangGraph</text>
+      <rect x="346" y="836" width="224" height="60" rx="30" fill="#FFFFFF" stroke="#1F2A44" stroke-width="3"/>
+      <text x="458" y="876" text-anchor="middle">Hybrid RAG</text>
+      <rect x="120" y="910" width="258" height="60" rx="30" fill="#FFD166" stroke="#1F2A44" stroke-width="3"/>
+      <text x="249" y="950" text-anchor="middle">Evidence Gate</text>
+      <rect x="392" y="910" width="276" height="60" rx="30" fill="#FFFFFF" stroke="#1F2A44" stroke-width="3"/>
+      <text x="530" y="950" text-anchor="middle">Human Handoff</text>
+    </g>
+  </g>
+
+  <!-- ============ RIGHT: illustration ============ -->
+  <g stroke="#1F2A44" stroke-linejoin="round" stroke-linecap="round">
+
+    <!-- evidence gauge -->
+    <g transform="translate(1520 250)">
+      <path d="M-95 0 A95 95 0 0 1 95 0 Z" fill="#FFFFFF" stroke-width="5"/>
+      <path d="M-75 0 A75 75 0 0 1 -37.5 -65" fill="none" stroke="#FF8A80" stroke-width="18" stroke-linecap="butt"/>
+      <path d="M-37.5 -65 A75 75 0 0 1 37.5 -65" fill="none" stroke="#FFD166" stroke-width="18" stroke-linecap="butt"/>
+      <path d="M37.5 -65 A75 75 0 0 1 75 0" fill="none" stroke="#2EC4B6" stroke-width="18" stroke-linecap="butt"/>
+      <path d="M0 0 L50 -42" stroke-width="7"/>
+      <circle cx="0" cy="0" r="11" fill="#1F2A44"/>
+      <rect x="-100" y="14" width="200" height="44" rx="22" fill="#1F2A44" stroke="none"/>
+      <text x="0" y="45" text-anchor="middle" font-family="Avenir Next, Avenir, Helvetica Neue, Arial, sans-serif" font-size="23" font-weight="700" letter-spacing="2" fill="#FFFFFF" stroke="none">EVIDENCE</text>
+    </g>
+
+    <!-- speech bubble from robot -->
+    <g>
+      <path d="M912 170 H1268 Q1298 170 1298 200 V310 Q1298 340 1268 340 H1210 L1190 384 L1166 340 H912 Q882 340 882 310 V200 Q882 170 912 170 Z" fill="#FFFFFF" stroke-width="5"/>
+      <circle cx="936" cy="255" r="30" fill="#2EC4B6" stroke-width="4"/>
+      <path d="M922 255 L933 268 L952 243" fill="none" stroke="#FFFFFF" stroke-width="7"/>
+      <g font-family="Avenir Next, Avenir, Helvetica Neue, Arial, sans-serif" stroke="none">
+        <text x="984" y="240" font-size="34" font-weight="700" fill="#1F2A44">Here's the policy</text>
+        <rect x="984" y="260" width="150" height="46" rx="12" fill="#DDF4F1"/>
+        <text x="1059" y="293" text-anchor="middle" font-size="26" font-weight="700" fill="#14897E">source [1]</text>
+      </g>
+    </g>
+
+    <!-- document stack -->
+    <g transform="translate(985 780)">
+      <g transform="rotate(-14)">
+        <rect x="-78" y="-100" width="156" height="200" rx="16" fill="#E3ECFF" stroke-width="5"/>
+      </g>
+      <g transform="rotate(-3)">
+        <rect x="-78" y="-100" width="156" height="200" rx="16" fill="#FFFFFF" stroke-width="5"/>
+      </g>
+      <g transform="rotate(8)">
+        <rect x="-78" y="-100" width="156" height="200" rx="16" fill="#FFFFFF" stroke-width="5"/>
+        <rect x="-54" y="-74" width="70" height="12" rx="6" fill="#1F2A44" stroke="none"/>
+        <rect x="-54" y="-44" width="108" height="10" rx="5" fill="#C9D2E3" stroke="none"/>
+        <rect x="-58" y="-24" width="116" height="22" rx="8" fill="#FFD166" stroke="none"/>
+        <rect x="-54" y="-18" width="96" height="10" rx="5" fill="#B88A1A" stroke="none" opacity="0.55"/>
+        <rect x="-54" y="12" width="100" height="10" rx="5" fill="#C9D2E3" stroke="none"/>
+        <rect x="-54" y="32" width="84" height="10" rx="5" fill="#C9D2E3" stroke="none"/>
+        <rect x="-54" y="52" width="104" height="10" rx="5" fill="#C9D2E3" stroke="none"/>
+      </g>
+    </g>
+
+    <!-- ground shadows -->
+    <ellipse cx="1340" cy="930" rx="170" ry="20" fill="#1F2A44" opacity="0.12" stroke="none"/>
+    <ellipse cx="1745" cy="930" rx="110" ry="16" fill="#1F2A44" opacity="0.12" stroke="none"/>
+
+    <!-- robot: left arm (holds magnifier) -->
+    <path d="M1215 720 Q1140 740 1110 780" fill="none" stroke-width="42"/>
+    <path d="M1215 720 Q1140 740 1110 780" fill="none" stroke="#4D96FF" stroke-width="30"/>
+    <path d="M1092 792 L1060 772" stroke-width="14"/>
+    <circle cx="1022" cy="748" r="52" fill="#EAF6FF" fill-opacity="0.55" stroke-width="9"/>
+    <path d="M995 728 Q1005 712 1024 708" fill="none" stroke="#FFFFFF" stroke-width="7"/>
+    <circle cx="1105" cy="786" r="25" fill="#F4F7FB" stroke-width="6"/>
+
+    <!-- robot: right arm (passes handoff ticket) -->
+    <path d="M1465 720 Q1540 720 1585 760" fill="none" stroke-width="42"/>
+    <path d="M1465 720 Q1540 720 1585 760" fill="none" stroke="#4D96FF" stroke-width="30"/>
+
+    <!-- robot: legs -->
+    <rect x="1262" y="860" width="44" height="64" rx="16" fill="#9BB8E8" stroke-width="6"/>
+    <rect x="1374" y="860" width="44" height="64" rx="16" fill="#9BB8E8" stroke-width="6"/>
+
+    <!-- robot: body -->
+    <rect x="1200" y="640" width="280" height="240" rx="64" fill="#4D96FF" stroke-width="6"/>
+    <rect x="1250" y="690" width="180" height="112" rx="26" fill="#EAF6FF" stroke-width="5"/>
+    <rect x="1276" y="760" width="26" height="24" rx="5" fill="#FF8A80" stroke-width="3"/>
+    <rect x="1314" y="738" width="26" height="46" rx="5" fill="#FFD166" stroke-width="3"/>
+    <rect x="1352" y="712" width="26" height="72" rx="5" fill="#2EC4B6" stroke-width="3"/>
+    <circle cx="1402" cy="722" r="8" fill="#2EC4B6" stroke="none"/>
+
+    <!-- robot: neck -->
+    <rect x="1305" y="612" width="70" height="40" rx="10" fill="#9BB8E8" stroke-width="6"/>
+
+    <!-- robot: headset band + antenna -->
+    <path d="M1340 380 V326" fill="none" stroke-width="7"/>
+    <circle cx="1340" cy="314" r="19" fill="#FF7A59" stroke-width="6"/>
+    <path d="M1168 488 C1168 300 1512 300 1512 488" fill="none" stroke-width="22"/>
+    <path d="M1168 488 C1168 300 1512 300 1512 488" fill="none" stroke="#FF7A59" stroke-width="10"/>
+
+    <!-- robot: head -->
+    <rect x="1170" y="380" width="340" height="250" rx="92" fill="#F4F7FB" stroke-width="6"/>
+    <rect x="1206" y="428" width="268" height="164" rx="70" fill="#1F2A44" stroke-width="6"/>
+    <ellipse cx="1290" cy="498" rx="22" ry="29" fill="#6FF0E0" stroke="none"/>
+    <ellipse cx="1390" cy="498" rx="22" ry="29" fill="#6FF0E0" stroke="none"/>
+    <circle cx="1298" cy="487" r="7" fill="#FFFFFF" stroke="none"/>
+    <circle cx="1398" cy="487" r="7" fill="#FFFFFF" stroke="none"/>
+    <path d="M1310 548 Q1340 574 1370 548" fill="none" stroke="#6FF0E0" stroke-width="8"/>
+    <circle cx="1246" cy="548" r="14" fill="#FF9AA2" stroke="none" opacity="0.85"/>
+    <circle cx="1434" cy="548" r="14" fill="#FF9AA2" stroke="none" opacity="0.85"/>
+
+    <!-- robot: ear cups + mic -->
+    <rect x="1142" y="452" width="46" height="96" rx="20" fill="#FF7A59" stroke-width="6"/>
+    <rect x="1492" y="452" width="46" height="96" rx="20" fill="#FF7A59" stroke-width="6"/>
+    <path d="M1162 548 Q1170 612 1236 612" fill="none" stroke-width="7"/>
+    <circle cx="1246" cy="612" r="13" fill="#1F2A44" stroke="none"/>
+
+    <!-- human agent -->
+    <g>
+      <!-- body -->
+      <path d="M1650 925 V760 Q1650 650 1745 650 Q1840 650 1840 760 V925 Z" fill="#2EC4B6" stroke-width="6"/>
+      <path d="M1715 652 L1745 700 L1775 652" fill="#FFFFFF" stroke-width="5"/>
+      <!-- arm toward ticket -->
+      <path d="M1668 700 Q1650 760 1680 780" fill="none" stroke-width="36"/>
+      <path d="M1668 700 Q1650 760 1680 780" fill="none" stroke="#2EC4B6" stroke-width="24"/>
+      <!-- head -->
+      <rect x="1727" y="610" width="36" height="40" rx="10" fill="#F2C6A0" stroke-width="5"/>
+      <circle cx="1745" cy="560" r="62" fill="#F2C6A0" stroke-width="6"/>
+      <path d="M1684 556 Q1680 488 1745 488 Q1812 488 1808 552 Q1780 520 1730 528 Q1700 534 1684 556 Z" fill="#1F2A44" stroke-width="5"/>
+      <circle cx="1724" cy="566" r="7" fill="#1F2A44" stroke="none"/>
+      <circle cx="1768" cy="566" r="7" fill="#1F2A44" stroke="none"/>
+      <path d="M1730 592 Q1746 606 1762 592" fill="none" stroke-width="5"/>
+      <circle cx="1712" cy="588" r="9" fill="#FF9AA2" stroke="none" opacity="0.8"/>
+      <circle cx="1780" cy="588" r="9" fill="#FF9AA2" stroke="none" opacity="0.8"/>
+      <!-- headset -->
+      <path d="M1683 560 C1683 470 1807 470 1807 560" fill="none" stroke="#FF7A59" stroke-width="9"/>
+      <rect x="1672" y="544" width="22" height="40" rx="9" fill="#FF7A59" stroke-width="5"/>
+      <rect x="1796" y="544" width="22" height="40" rx="9" fill="#FF7A59" stroke-width="5"/>
+      <path d="M1683 584 Q1690 618 1722 616" fill="none" stroke-width="5"/>
+      <circle cx="1726" cy="616" r="7" fill="#1F2A44" stroke="none"/>
+    </g>
+
+    <!-- human bubble -->
+    <g>
+      <path d="M1626 366 H1866 Q1892 366 1892 392 V440 Q1892 466 1866 466 H1790 L1772 500 L1762 466 H1626 Q1600 466 1600 440 V392 Q1600 366 1626 366 Z" fill="#FFFFFF" stroke-width="5"/>
+      <text x="1746" y="428" text-anchor="middle" font-family="Avenir Next, Avenir, Helvetica Neue, Arial, sans-serif" font-size="31" font-weight="700" fill="#E85D3F" stroke="none">I've got this!</text>
+    </g>
+
+    <!-- handoff ticket -->
+    <g transform="translate(1628 712) rotate(-8)">
+      <rect x="-78" y="-48" width="156" height="96" rx="12" fill="#FFD166" stroke-width="5"/>
+      <path d="M-78 -20 H78" stroke-width="4"/>
+      <circle cx="-58" cy="-34" r="5" fill="#1F2A44" stroke="none"/>
+      <text x="0" y="18" text-anchor="middle" font-family="Avenir Next, Avenir, Helvetica Neue, Arial, sans-serif" font-size="23" font-weight="800" letter-spacing="1.5" fill="#1F2A44" stroke="none">HANDOFF</text>
+      <rect x="-48" y="28" width="96" height="7" rx="3.5" fill="#B88A1A" stroke="none" opacity="0.55"/>
+    </g>
+
+    <circle cx="1588" cy="766" r="25" fill="#F4F7FB" stroke-width="6"/>
+    <circle cx="1682" cy="780" r="22" fill="#F2C6A0" stroke-width="6"/>
+
+    <!-- parcel with return arrow -->
+    <g transform="translate(1540 880)">
+      <path d="M-56 -36 L0 -56 L56 -36 L0 -16 Z" fill="#F6C987" stroke-width="5"/>
+      <path d="M-56 -36 V30 L0 50 V-16 Z" fill="#E8A95B" stroke-width="5"/>
+      <path d="M56 -36 V30 L0 50 V-16 Z" fill="#F2B86E" stroke-width="5"/>
+      <path d="M-28 -46 L28 -26" stroke-width="4" opacity="0.6"/>
+      <path d="M38 6 Q30 -12 14 -4" fill="none" stroke="#FFFFFF" stroke-width="5"/>
+      <path d="M18 -14 L12 -3 L24 0" fill="none" stroke="#FFFFFF" stroke-width="5"/>
+    </g>
+  </g>
+
+  <!-- sparkles -->
+  <use href="#spark" transform="translate(800 120) scale(1.1)"/>
+  <use href="#spark" transform="translate(1110 130) scale(0.7)"/>
+  <use href="#spark" transform="translate(1860 640) scale(0.8)"/>
+  <use href="#spark" transform="translate(660 170) scale(0.6)"/>
+  <circle cx="1205" cy="140" r="9" fill="#FF7A59"/>
+  <circle cx="1630" cy="140" r="7" fill="#2EC4B6"/>
+  <circle cx="900" cy="560" r="8" fill="#4D96FF"/>
+  <circle cx="700" cy="160" r="7" fill="#2EC4B6"/>
+</svg>
