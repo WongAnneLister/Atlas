@@ -138,3 +138,17 @@ def test_refund_retrieval_uses_store_query_and_drops_other_store_sections() -> N
     assert "generic store" in query and "ignore policy" not in query
     assert pool == settings.retrieval.store_scope.pool_k
     assert [c.section_id for c in result["retrieval"]] == ["returns.maktek_faqs.generic-store"]
+
+
+def test_order_context_counts_days_from_purchase_and_from_delivery() -> None:
+    class Service:
+        def get_order(self, order_id: str, customer_id: str) -> Order:
+            return order()
+
+    settings = Settings()
+    state = ConversationState(customer_id="CUST-0001", refund_order_id="ORD-000001")
+    deps = GraphDeps(settings, order_service=Service())  # type: ignore[arg-type]
+    context = RefundPath(deps).load_order(state)["order_context"]
+    today = settings.orders.today
+    assert context["days_since_order"] == (today - date(2026, 11, 1)).days
+    assert context["days_since_delivery"] == (today - date(2026, 11, 4)).days

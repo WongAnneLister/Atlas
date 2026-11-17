@@ -23,17 +23,15 @@ The outcome next to each step is what the app did then.
 | 0:15 | New chat. Send: `What is the return policy on Flipkart?` | "A policy question goes to retrieval, then the evidence gate, then the answer." | The answer with citation chips [1]-[3] and their source headings. In Debug, the gate `score` and `passed: true`, and the trace `rewrite, classify, retrieve, gate, answer`. |
 | 0:45 | New chat. Send: `How many heat and speed settings does the BHD340/10 have?` | "Model numbers need an exact match. BM25 finds the exact number; the reranker puts it first." | The answer "6 heat and speed settings" with one chip, `Catalog Hair Dryers > Philips BHD340/10`. In Debug, `key_terms: ["bhd340 10"]`. |
 | 1:05 | New chat. Send: `I want a refund for my last order` | "Refunds need the real order. The agent pauses and asks which one." | The order picker with five recent orders and "None of these". |
-| 1:15 | Click `ORD-000012` (shipped). Wait up to a minute. | "Order facts come only from the order service. The refund rule must come from cited policy. The policy evidence passed the gate, but the decision did not pass the code checks, so it goes to a human." | "Transferred to a human agent — reason: policy_requires_human". In Debug, the gate `passed: true` and the trace `refund_identify, refund_load, refund_retrieve, refund_decide, handoff`. |
+| 1:15 | Click `ORD-000065` (partially refunded, ordered 11 days before the demo date). Wait up to a minute. | "Order facts come only from the order service. The rule comes from cited policy, and code checks every reason and the return window before anything is recorded." | "Your refund request REF-... is pending human review. [1]" with the chip `Returns > maktek_faqs / Generic store`. In Debug, the trace `refund_identify, refund_load, refund_retrieve, refund_decide, refund_act`. If it ends in `policy_requires_human` instead, click New chat and repeat. |
 | 1:35 | New chat. Send: `Can I pay with gold bars?` | "No source covers gold bars. The agent does not guess." | "Transferred to a human agent — reason: incomplete_evidence". In Debug, the gate passed, but the coverage check found no cited support. |
 | 1:50 | Switch to the README on GitHub. | "Every number here is generated from the eval reports. Zero false accepts on the test set is the main target." | The "Results at a glance" table and its source links. |
 
-## Known gap in this script
+## Refund step notes
 
-The plan asked for a refund that ends in a cited decision. The current build does not reach one.
-Since the refund policy query fix, the policy gate passes (`eval/reports/refund_policy.md`).
-For ORD-000001 and ORD-000003 the decision model reached a sensible outcome, but left at least one
-reason without a `[n]` citation marker. The code check turns that into `needs_human`, so the agent hands off.
-Update the 1:15 step when the decision prompt is fixed.
+An approved refund only records a `pending_review` request; no money moves.
+Each approval adds a request row to the local demo database. Run `make data-orders` before recording to start clean.
+The decision varies between runs: on 2026-11-18 the picker step approved ORD-000065 three times through the API and handed off once in the web page.
 
 ## Checked outcomes (2026-11-17)
 
@@ -42,5 +40,6 @@ These are single manual runs, not metrics.
 - 0:15 Flipkart returns: answered with three citations in some runs (gate 0.84). Other runs handed off at the answer step (`incomplete_evidence`, `invalid_answer`), and one web-page run classified it as `return_exchange`.
 - 0:45 BHD340/10: answered "6 heat and speed settings" with one citation (gate 0.85 and 0.73). One run handed off (`incomplete_evidence`); one run hit the classifier fallback.
 - 1:05 refund: the picker appeared every time. Before the query fix, picking `ORD-000012` handed off with `low_evidence` (gate 0.138).
-- After the query fix (same day): direct requests for ORD-000001, -003, -005, -006, -010 and -012 all passed the policy gate (0.26-0.86) and handed off with `policy_requires_human`. For ORD-000001 the model reasoned "within the 30-day window"; for ORD-000003, "31 days, window expired"; both had a reason without a citation marker.
+- After the query fix, before the decision fix (2026-11-17): direct requests for ORD-000001, -003, -005, -006, -010 and -012 all passed the policy gate (0.26-0.86) and handed off with `policy_requires_human`. For ORD-000001 the model reasoned "within the 30-day window"; for ORD-000003, "31 days, window expired"; both had a reason without a citation marker.
 - 1:35 gold bars: handed off with `incomplete_evidence` in a new chat (gate passed at 0.23). Sent in the same chat after the refund handoff, it was classified as `talk_to_human` instead.
+- After the decision fix (2026-11-18): picker → ORD-000065 approved with one citation in 3 of 4 runs (one web-page run handed off with `policy_requires_human`). A direct request for ORD-000001 was approved with citations in 3 of 3 runs.

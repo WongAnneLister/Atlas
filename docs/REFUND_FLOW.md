@@ -35,6 +35,16 @@ The old mode `order_fields` joined the intent, item categories and status; its g
 were too low to reach a decision. Both modes are compared in
 [`eval/reports/refund_policy.md`](../eval/reports/refund_policy.md).
 
+## Decision prompt
+
+`refund.decision_version` picks the decision prompt and schema (`src/support_agent/graph/refund_decision.py`).
+`v1` gave a bare schema; the model put all citations in the `citations` list and none in the
+reasons, so every yes/no failed the checks. `v2` (the default) adds schema field descriptions:
+every reason ends with its `[n]` marker, items are exact ids, citations are sorted and unique.
+`v3` adds date and "no needs a rule" instructions; it showed no measured gain over `v2`.
+The order facts include both `days_since_order` and `days_since_delivery`.
+Measured in [`eval/reports/refund_decisions.md`](../eval/reports/refund_decisions.md).
+
 ## Code checks
 
 - A request needs a verified owned order and a passed evidence gate.
@@ -42,6 +52,8 @@ were too low to reach a decision. Both modes are compared in
 - A `yes` decision needs valid, non-refunded item ids.
 - A final-sale `yes` decision needs cited policy text mentioning final sale.
 - Non-delivered statuses need cited policy text naming that status.
+- A `yes` decision is blocked if any retrieved policy states a window ("within N days of purchase"
+  or "of delivery") that the order has passed, or whose day count is unknown. Code counts the days.
 - Invalid citations or uncertain structured output become `needs_human`.
 - Approved requests are stored as `pending_review`; no money moves.
 

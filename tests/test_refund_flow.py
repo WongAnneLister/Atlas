@@ -13,7 +13,7 @@ from support_agent.config import Settings
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.intents import Intent
-from support_agent.graph.nodes.refund import RefundDecision
+from support_agent.graph.refund_decision import RefundDecision
 from support_agent.orders.models import Order
 from support_agent.orders.service import OrderService
 from support_agent.retrieval.types import RetrievedChunk
@@ -25,7 +25,7 @@ class DecisionFake(FakeListChatModel):
     decision_calls: int = 0
 
     def with_structured_output(self, schema: Any, **kwargs: Any) -> Any:
-        assert schema is RefundDecision
+        assert issubclass(schema, RefundDecision)
         assert kwargs == {"include_raw": True}
 
         def decide(messages: Any) -> dict[str, Any]:

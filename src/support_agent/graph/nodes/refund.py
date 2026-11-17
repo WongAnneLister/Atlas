@@ -5,15 +5,19 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Any, Literal
+from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.types import interrupt
-from pydantic import BaseModel, Field
 
 from support_agent.gate.evidence import evaluate
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, make_handoff
+from support_agent.graph.refund_decision import (
+    DECISION_VERSIONS,
+    RefundDecision,
+    check_decision,
+)
 from support_agent.graph.refund_query import policy_query
 from support_agent.graph.state import CitationRecord, ConversationState
 from support_agent.orders.models import Order, OrderNotFound
@@ -22,20 +26,13 @@ from support_agent.retrieval.scope import scope_chunks
 
 logger = logging.getLogger(__name__)
 ORDER_ID = re.compile(r"\bORD[- ]?\d{6}\b", re.IGNORECASE)
-CITATION = re.compile(r"\[(\d+)\]")
-
-
-class RefundDecision(BaseModel):
-    eligible: Literal["yes", "no", "needs_human"]
-    items: list[str] = Field(default_factory=list)
-    reasons: list[str] = Field(default_factory=list)
-    citations: list[int] = Field(default_factory=list)
 
 
 class RefundPath:
     def __init__(self, deps: GraphDeps) -> None:
         self.deps = deps
-        self.prompt = (PROMPTS / "refund_decide.md").read_text(encoding="utf-8")
+        prompt_file, self.decision_schema = DECISION_VERSIONS[deps.settings.refund.decision_version]
+        self.prompt = (PROMPTS / prompt_file).read_text(encoding="utf-8")
 
     def _service(self) -> OrderService:
         return self.deps.order_service or OrderService(settings=self.deps.settings.orders)
@@ -113,6 +110,7 @@ class RefundPath:
         days = (today - order.delivered_at).days if order.delivered_at else None
         context = {
             "order": order.model_dump(mode="json"),
+            "days_since_order": (today - order.order_date).days,
             "days_since_delivery": days,
             "today": today.isoformat(),
         }
@@ -173,7 +171,7 @@ class RefundPath:
         ]
         try:
             model = self.deps.model("main")
-            structured = model.with_structured_output(RefundDecision, include_raw=True)
+            structured = model.with_structured_output(self.decision_schema, include_raw=True)
             raw = structured.invoke(messages)
             decision = self._parse_decision(raw)
         except Exception as error:
@@ -290,58 +288,7 @@ class RefundPath:
     def _check_decision(
         decision: RefundDecision, order: Order, state: ConversationState
     ) -> RefundDecision:
-        valid_citations = sorted(
-            {number for number in decision.citations if 1 <= number <= len(state.retrieval)}
-        )
-        valid_items = {
-            item.item_id for item in order.items if item.refunded_quantity < item.quantity
-        }
-        cited_numbers = {
-            int(number) for reason in decision.reasons for number in CITATION.findall(reason)
-        }
-        cited_chunks = [
-            state.retrieval[number - 1] for number in valid_citations if number in cited_numbers
-        ]
-        reasons_cited = bool(decision.reasons) and all(
-            any(number in valid_citations for number in map(int, CITATION.findall(reason)))
-            for reason in decision.reasons
-        )
-        if decision.eligible == "yes" and (
-            not reasons_cited
-            or not valid_citations
-            or not decision.items
-            or not set(decision.items) <= valid_items
-        ):
-            return decision.model_copy(
-                update={"eligible": "needs_human", "citations": valid_citations}
-            )
-        if decision.eligible == "no" and (not reasons_cited or not valid_citations):
-            return decision.model_copy(
-                update={"eligible": "needs_human", "citations": valid_citations}
-            )
-        selected_items = set(decision.items)
-        if decision.eligible == "yes" and any(
-            item.final_sale and item.item_id in selected_items for item in order.items
-        ):
-            policy_text = " ".join(chunk.text.casefold() for chunk in cited_chunks)
-            if "final sale" not in policy_text and "final-sale" not in policy_text:
-                return decision.model_copy(
-                    update={"eligible": "needs_human", "citations": valid_citations}
-                )
-        if decision.eligible == "yes" and order.status.value not in {
-            "delivered",
-            "partially_refunded",
-        }:
-            policy_text = " ".join(chunk.text.casefold() for chunk in cited_chunks)
-            if order.status.value.replace("_", " ") not in policy_text:
-                return decision.model_copy(
-                    update={"eligible": "needs_human", "citations": valid_citations}
-                )
-        if valid_citations != decision.citations:
-            return decision.model_copy(
-                update={"eligible": "needs_human", "citations": valid_citations}
-            )
-        return decision
+        return check_decision(decision, order, state)
 
     @staticmethod
     def _handoff(state: ConversationState, reason: HandoffReason) -> dict[str, Any]:

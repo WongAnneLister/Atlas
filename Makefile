@@ -21,7 +21,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-holdout-build eval-gate-round3 eval-store-scope eval-store-controls-build eval-store-fr \
         eval-tools-fallback eval-paraphrase-build eval-chunking-ab \
         eval-chunking-e2e eval-safety-fixes eval-order-grounding eval-order-replies eval-model-veto \
-        results eval-refund-policy
+        results eval-refund-policy eval-refund-decisions
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -172,6 +172,9 @@ eval-chunking-e2e:
 
 eval-refund-policy:
 	$(RUN) python -m eval.refund_policy_eval $(EVAL_REFUND_POLICY_ARGS)
+
+eval-refund-decisions:
+	$(RUN) python -m eval.refund_decision_eval $(EVAL_REFUND_DECISIONS_ARGS)
 
 eval-model-veto:
 	$(RUN) python -m eval.model_veto
