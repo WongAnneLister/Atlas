@@ -22,6 +22,19 @@ The graph pauses before reading an unclear order choice. `Command(resume=...)` c
 The selected order must appear in the customer's recent orders.
 The service checks ownership again before loading facts.
 
+## Policy query
+
+The policy query is built from verified order facts only; customer text never enters it.
+With `refund.policy_query: store_faq` (the default), code picks one question written like the
+store's own FAQ, from `src/support_agent/graph/prompts/refund_policy_queries.yaml`:
+final sale first, then coupon, then not yet shipped, then shipped or in transit, else the
+general return question. The query names `refund.store_label`, so the store scope keeps only
+that store's sections (plus store-neutral ones) before the gate.
+The mock orders are sold by the generic store, so `refund.policy_store` is `generic`.
+The old mode `order_fields` joined the intent, item categories and status; its gate scores
+were too low to reach a decision. Both modes are compared in
+[`eval/reports/refund_policy.md`](../eval/reports/refund_policy.md).
+
 ## Code checks
 
 - A request needs a verified owned order and a passed evidence gate.

@@ -158,6 +158,11 @@ agent:
   order_grounding: false     # free_text mode only; failed in eval/reports/order_grounding.md
   grounding_attempts: 2
 
+refund:
+  policy_query: store_faq      # was order_fields; see eval/reports/refund_policy.md
+  policy_store: generic        # the mock orders are sold by the generic store (USD)
+  store_label: generic store   # must match retrieval.store_scope.stores.generic.query_pattern
+
 intent:
   min_confidence: 0.6      # flag only; not calibrated as an answer-safety threshold
   rewrite_history_turns: 6

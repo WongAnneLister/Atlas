@@ -1,0 +1,8 @@
+# Policy questions for the refund path, written like the store's own FAQ questions so
+# the reranker can match them. {store} is refund.store_label. Code picks one question
+# from the order facts, in this order: final sale, coupon, not yet delivered, default.
+final_sale: "{store}: Can I return a product if it was a final sale item?"
+coupon: "{store}: Can I return a product if it was purchased with a discount code?"
+not_shipped: "{store}: Can I cancel my order and get a refund?"
+in_transit: "{store}: Can I cancel an order that has shipped and get a refund?"
+default: "{store}: What is your return policy? Can I return a product for a refund?"

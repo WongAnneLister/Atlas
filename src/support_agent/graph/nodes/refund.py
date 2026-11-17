@@ -14,9 +14,11 @@ from pydantic import BaseModel, Field
 from support_agent.gate.evidence import evaluate
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, make_handoff
+from support_agent.graph.refund_query import policy_query
 from support_agent.graph.state import CitationRecord, ConversationState
 from support_agent.orders.models import Order, OrderNotFound
 from support_agent.orders.service import OrderService
+from support_agent.retrieval.scope import scope_chunks
 
 logger = logging.getLogger(__name__)
 ORDER_ID = re.compile(r"\bORD[- ]?\d{6}\b", re.IGNORECASE)
@@ -120,18 +122,16 @@ class RefundPath:
         order = self._order_from_state(state)
         if order is None:
             return self._handoff(state, HandoffReason.ORDER_NOT_FOUND)
-        flags = [item.category for item in order.items]
-        if any(item.final_sale for item in order.items):
-            flags.append("final sale items")
-        if order.paid_with_coupon:
-            flags.append("coupon refunds")
-        subject = ", ".join(sorted(set(flags)))
-        query = f"{state.intent.value if state.intent else 'refund'} policy for {subject}"
-        query += f"; order status {order.status.value}"
+        settings = self.deps.settings
+        query = policy_query(order, state.intent.value if state.intent else None, settings)
+        retrieval = settings.retrieval
+        scope = retrieval.store_scope
+        pool = (
+            max(retrieval.rerank_top_k, scope.pool_k) if scope.enabled else retrieval.rerank_top_k
+        )
         try:
-            chunks = self.deps.knowledge_retriever().retrieve(
-                query, self.deps.settings.retrieval.rerank_top_k
-            )
+            ranked = self.deps.knowledge_retriever().retrieve(query, pool)
+            chunks, _, _ = scope_chunks(query, ranked, scope, retrieval.rerank_top_k)
         except Exception as error:
             logger.warning("Refund policy retrieval failed: %s", type(error).__name__)
             chunks = []

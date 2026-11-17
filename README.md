@@ -148,8 +148,8 @@ Details: [`docs/INTENTS.md`](docs/INTENTS.md), [`docs/RETRIEVAL.md`](docs/RETRIE
 - Decision: order status, dates and items come only from `OrderService`. The refund rule comes only from cited policy.
 - Why: the model must never invent an order fact or a policy.
 - Evidence: [`docs/REFUND_FLOW.md`](docs/REFUND_FLOW.md) and `tests/test_refund_flow.py`.
-- Cost: today the refund policy query finds weak evidence, so refunds hand off before a decision.
-  This is the first open issue below.
+- Cost: strict citation checks. Today most decisions still go to a human (first open issue below).
+  Policy retrieval for refunds is measured in [`refund_policy.md`](eval/reports/refund_policy.md).
 
 ## Quick start
 
@@ -220,7 +220,8 @@ What is synthetic:
 
 ## Limitations and next steps
 
-- **Refunds do not reach a cited decision yet.** The refund policy query retrieves weak evidence, so the gate hands off.
+- **Refunds rarely reach a cited decision yet.** The policy evidence now passes the gate,
+  but the decision model often leaves a reason without a citation marker, so code sends it to a human.
 - **Harder no-answer questions still slip through sometimes.** The near-miss holdouts show a few false accepts
   ([`store_scope.md`](eval/reports/store_scope.md), [`tools_fallback.md`](eval/reports/tools_fallback.md)).
 - **The labels are drafts.** No human has reviewed the 300 questions or confirmed the judge's hallucination flags.

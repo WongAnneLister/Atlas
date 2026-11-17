@@ -219,6 +219,17 @@ class AgentSettings(BaseModel):
     grounding_attempts: int = Field(default=1, ge=1)
 
 
+class RefundSettings(BaseModel):
+    # "order_fields": the original query built from intent, item categories and status.
+    # "store_faq": one FAQ-style policy question for the store that sells the mock
+    # orders, picked from the order facts. See eval/reports/refund_policy.md.
+    policy_query: Literal["order_fields", "store_faq"] = "order_fields"
+    # Store (a key of retrieval.store_scope.stores) whose policy governs the mock orders.
+    policy_store: str = "generic"
+    # How the query names that store; it must match the store's query_pattern.
+    store_label: str = "generic store"
+
+
 class EvalSettings(BaseModel):
     sets_dir: str
     seed: int
@@ -360,6 +371,7 @@ class Settings(BaseSettings):
     evaluation: EvalSettings
     milvus: MilvusSettings
     orders: OrdersSettings
+    refund: RefundSettings = Field(default_factory=RefundSettings)
     memory: MemorySettings
     tracing: TracingSettings
     costs: CostSettings
