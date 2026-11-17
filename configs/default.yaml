@@ -205,9 +205,6 @@ evaluation:
     - Gift Cards
     - Privacy & Security
   customer_id: CUST-0001
-  # Set rates from the active provider's published price table before cost reporting.
-  input_cost_per_million_usd: {fast: null, main: null}
-  output_cost_per_million_usd: {fast: null, main: null}
 
 milvus:
   uri: http://localhost:19530
@@ -260,7 +257,16 @@ memory:                    # P1 placeholders
   summary_max_tokens: 400
 
 tracing:
-  enabled: false
+  enabled: false        # also needs LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY; see docs/OBSERVABILITY.md
+  redact_inputs: false  # true: customer text never leaves the process (demo default is false)
+  max_chunks: 5         # retrieval spans keep chunk ids and scores only, never chunk text
+
+costs:
+  # USD per 1M tokens, keyed by the model name the provider reports in responses.
+  # UPDATE ME: null means "price not set" and cost is reported as unknown, never guessed.
+  # Fill both rates from the provider's price page and set `checked` to that date.
+  prices:
+    deepseek-v4.1-flash: {input_per_million_usd: null, output_per_million_usd: null, checked: null}
 
 api:
   host: 127.0.0.1

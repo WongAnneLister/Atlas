@@ -235,8 +235,6 @@ class EvalSettings(BaseModel):
     policy_topics: list[str]
     faq_categories: list[str]
     customer_id: str = Field(min_length=1)
-    input_cost_per_million_usd: dict[str, float | None] = Field(default_factory=dict)
-    output_cost_per_million_usd: dict[str, float | None] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _valid_split(self) -> EvalSettings:
@@ -313,6 +311,22 @@ class MemorySettings(BaseModel):
 
 class TracingSettings(BaseModel):
     enabled: bool
+    # Replace customer text with a placeholder before it leaves the process.
+    redact_inputs: bool = False
+    # Chunks kept (id + scores only) when a span carries retrieval results.
+    max_chunks: int = Field(default=5, gt=0)
+
+
+class ModelPrice(BaseModel):
+    input_per_million_usd: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    output_per_million_usd: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    # Date the price was read from the provider's price page; null means "update me".
+    checked: date | None = None
+
+
+class CostSettings(BaseModel):
+    # Keyed by the model name the provider reports in its responses.
+    prices: dict[str, ModelPrice] = Field(default_factory=dict)
 
 
 class APISettings(BaseModel):
@@ -348,6 +362,7 @@ class Settings(BaseSettings):
     orders: OrdersSettings
     memory: MemorySettings
     tracing: TracingSettings
+    costs: CostSettings
     api: APISettings
 
     @classmethod

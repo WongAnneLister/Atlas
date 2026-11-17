@@ -30,6 +30,7 @@ from support_agent.api.schemas import (
 from support_agent.graph.build import build_graph
 from support_agent.graph.handoff import HandoffReason, load_templates
 from support_agent.llm import resolve_model
+from support_agent.observability import tracing
 from support_agent.orders.models import CustomerSummary
 
 STATIC = Path(__file__).with_name("static")
@@ -82,6 +83,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
                     logger.warning("Retriever warmup failed: %s", type(error).__name__)
             yield
         finally:
+            await to_thread.run_sync(tracing.flush)
             await to_thread.run_sync(deps.graph_deps.close)
 
     app = FastAPI(lifespan=lifespan)
@@ -119,7 +121,9 @@ def create_app(deps: ApiDeps) -> FastAPI:
             models_configured=models,
         )
 
-    async def start_turn(request: ConversationRequest, turn_input: TurnInput) -> TurnResponse:
+    async def start_turn(
+        request: ConversationRequest, turn_input: TurnInput, text: str | None
+    ) -> TurnResponse:
         try:
             exists = await to_thread.run_sync(
                 deps.order_service.customer_exists, request.customer_id
@@ -146,6 +150,13 @@ def create_app(deps: ApiDeps) -> FastAPI:
                 for event in failure_events(error, request.conversation_id, system_error):
                     yield _encode(event)
                 return
+            trace = tracing.start_turn(
+                deps.settings,
+                name="chat_turn" if text is not None else "resume_turn",
+                conversation_id=request.conversation_id,
+                customer_id=request.customer_id,
+                input_text=text,
+            )
             turn = run_turn(
                 graph,
                 turn_input,
@@ -153,6 +164,8 @@ def create_app(deps: ApiDeps) -> FastAPI:
                 chunk_words=cfg.token_chunk_words,
                 conversation_id=request.conversation_id,
                 system_error_message=system_error,
+                trace=trace,
+                costs=deps.settings.costs,
             )
             async with aclosing(turn):
                 async for event in turn:
@@ -179,12 +192,12 @@ def create_app(deps: ApiDeps) -> FastAPI:
             "messages": [HumanMessage(content=request.message)],
             "customer_id": request.customer_id,
         }
-        return await start_turn(request, payload)
+        return await start_turn(request, payload, request.message)
 
     @app.post("/api/resume")
     async def resume(request: ResumeRequest) -> TurnResponse:
         if len(request.value) > cfg.max_resume_chars:
             raise HTTPException(422, "Selection exceeds the configured length limit")
-        return await start_turn(request, Command(resume=request.value.strip()))
+        return await start_turn(request, Command(resume=request.value.strip()), None)
 
     return app

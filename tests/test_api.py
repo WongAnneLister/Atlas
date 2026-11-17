@@ -117,6 +117,9 @@ async def test_knowledge_stream(seeded: Any) -> None:
     assert second[-1][1]["trace"] == ["rewrite", "classify", "fixed"]
     assert second[-1][1]["gate"] is None
     assert "usage" in done
+    # The test fakes bypass LangChain callbacks; the ledger itself is unit-tested.
+    assert isinstance(done["llm_calls"], int)
+    assert "cost_usd" in done
 
 
 @pytest.mark.parametrize("reason", ["low_evidence", "retrieval_error"])

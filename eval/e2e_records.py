@@ -8,6 +8,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from eval.schema import EvalItem
+from support_agent.observability.cost import ModelUsage
 
 
 class E2EMetadata(BaseModel):
@@ -51,6 +52,9 @@ class E2ERecord(BaseModel):
     input_tokens: int | None = Field(default=None, ge=0)
     output_tokens: int | None = Field(default=None, ge=0)
     estimated_cost_usd: float | None = Field(default=None, ge=0)
+    # Commit 15: per reported model. None in runs recorded before it.
+    llm_calls: int | None = Field(default=None, ge=0)
+    usage_by_model: dict[str, ModelUsage] | None = None
 
 
 class JudgeRecord(BaseModel):

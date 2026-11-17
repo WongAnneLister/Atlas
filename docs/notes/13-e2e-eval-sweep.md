@@ -15,7 +15,7 @@ I selected 0.17 from dev scores only.
 The full graph accepted 3.33% of no-answer test questions.
 That missed the zero-false-accept safety target.
 It also rejected 26.67% of answerable test questions.
-Source: eval/reports/e2e.md
+Source: eval/reports/baselines/e2e-001/e2e.md
 
 **Trade-off**
 I kept failed outcomes instead of rerunning only the bad cases.

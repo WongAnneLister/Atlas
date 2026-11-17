@@ -34,7 +34,7 @@ A no-answer question answered through the tools path still counts as a false acc
 |---|---|---:|---:|---:|---|
 | Evidence gate only | dev | 0.17 | 0.00% | 0.00% | `eval/reports/threshold_sweep.md` |
 | Evidence gate only | test | 0.17 | 3.33% | 0.00% | `eval/reports/threshold_sweep.md` |
-| Full graph | test | 0.17 | 3.33% | 26.67% | `eval/reports/e2e.md` |
+| Full graph | test | 0.17 | 3.33% | 26.67% | `eval/reports/baselines/e2e-001/e2e.md` |
 
 The sweep selected the lowest dev threshold with no false accepts.
 The highest dev no-answer score was 0.1682; the gap was only 0.0018.
@@ -45,11 +45,11 @@ The threshold remains unchanged despite this test failure.
 
 | Full-graph measurement | Test value | Source |
 |---|---:|---|
-| Accepted outcomes | 89/150 (59.33%) | `eval/reports/e2e.md` |
-| Recall@5 inside graph | 0.6917 | `eval/reports/e2e.md` |
-| Citation validity (gold-section overlap) | 0.5938 | `eval/reports/e2e.md` |
-| Full-answer latency P50 | 19.9613s | `eval/reports/e2e.md` |
-| Full-answer latency P95 | 38.6971s | `eval/reports/e2e.md` |
+| Accepted outcomes | 89/150 (59.33%) | `eval/reports/baselines/e2e-001/e2e.md` |
+| Recall@5 inside graph | 0.6917 | `eval/reports/baselines/e2e-001/e2e.md` |
+| Citation validity (gold-section overlap) | 0.5938 | `eval/reports/baselines/e2e-001/e2e.md` |
+| Full-answer latency P50 | 19.9613s | `eval/reports/baselines/e2e-001/e2e.md` |
+| Full-answer latency P95 | 38.6971s | `eval/reports/baselines/e2e-001/e2e.md` |
 | Judge flags across all evaluation rows | 5.33% | `eval/reports/hallucination_review.md` |
 | Human-confirmed hallucination rate | pending | `eval/reports/hallucination_review.md` |
 
@@ -200,7 +200,7 @@ The old test is now a regression set; a fresh human-reviewed corpus holdout rema
 No new judge audit or human-confirmed answer-accuracy measurement was collected this round.
 The script-generated summary and bar chart are `eval/reports/coverage_round2_summary.md`
 and `eval/reports/coverage_round2.png`.
-The original baseline archive and default `eval/reports/e2e.md` remain unchanged.
+The original baseline archive remained unchanged by round two. Commit 15 later regenerated the default `eval/reports/e2e.md` from a new test run.
 
 ## Manual acceptance observations
 

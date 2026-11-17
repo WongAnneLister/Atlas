@@ -7,16 +7,15 @@ import json
 import os
 import subprocess
 import time
-from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.types import Command
 
 from eval.common import load_items
+from eval.cost_report import cost_lines
 from eval.e2e_diagnostics import diagnostic_lines
 from eval.e2e_records import E2EMetadata, E2ERecord, load_cached_run
 from eval.intent_eval import runtime_versions, source_hash
@@ -25,6 +24,8 @@ from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
+from support_agent.observability import tracing
+from support_agent.observability.cost import UsageLedger, cost_usd
 from support_agent.orders.service import OrderService
 
 
@@ -41,49 +42,6 @@ def _model_names(settings: Settings) -> dict[str, str]:
         "fast": os.environ.get("LLM_FAST_MODEL") or settings.llm.fast_model or "unset",
         "main": os.environ.get("LLM_MAIN_MODEL") or settings.llm.main_model or "unset",
     }
-
-
-class UsageCollector(BaseCallbackHandler):
-    def __init__(self) -> None:
-        self.first_token_at: float | None = None
-        self.input_tokens = 0
-        self.output_tokens = 0
-        self.has_usage = False
-        self.started = time.perf_counter()
-
-    def on_llm_new_token(self, token: Any, **kwargs: Any) -> None:
-        if token and self.first_token_at is None:
-            self.first_token_at = time.perf_counter() - self.started
-
-    def on_llm_end(self, response: Any, **kwargs: Any) -> None:
-        usage = getattr(response, "llm_output", None) or {}
-        usage = usage.get("token_usage", {}) if isinstance(usage, dict) else {}
-        generations = getattr(response, "generations", [])
-        for group in generations:
-            for generation in group:
-                message_usage = getattr(generation.message, "usage_metadata", None)
-                if isinstance(message_usage, dict):
-                    usage = message_usage
-                    break
-            if usage:
-                break
-        input_value = (
-            usage.get("input_tokens", usage.get("prompt_tokens"))
-            if isinstance(usage, dict)
-            else None
-        )
-        output_value = (
-            usage.get("output_tokens", usage.get("completion_tokens"))
-            if isinstance(usage, dict)
-            else None
-        )
-        if isinstance(input_value, int) and isinstance(output_value, int):
-            self.input_tokens += input_value
-            self.output_tokens += output_value
-            self.has_usage = True
-
-    def tokens(self) -> tuple[int | None, int | None]:
-        return (self.input_tokens, self.output_tokens) if self.has_usage else (None, None)
 
 
 def _usage(messages: list[Any]) -> tuple[int | None, int | None]:
@@ -105,16 +63,6 @@ def _usage(messages: list[Any]) -> tuple[int | None, int | None]:
     return (input_tokens, output_tokens) if found else (None, None)
 
 
-def _cost(settings: Settings, input_tokens: int | None, output_tokens: int | None) -> float | None:
-    if input_tokens is None or output_tokens is None:
-        return None
-    input_rate = settings.evaluation.input_cost_per_million_usd.get("main")
-    output_rate = settings.evaluation.output_cost_per_million_usd.get("main")
-    if input_rate is None or output_rate is None:
-        return None
-    return input_tokens / 1_000_000 * input_rate + output_tokens / 1_000_000 * output_rate
-
-
 def _handoff_reason(value: Any) -> str | None:
     reason = getattr(value, "reason", None)
     if reason is None and isinstance(value, dict):
@@ -123,19 +71,26 @@ def _handoff_reason(value: Any) -> str | None:
 
 
 def _run_item(
-    graph: Any, item: Any, customer_id: str, thread_id: str
-) -> tuple[dict[str, Any], float, float | None, tuple[int | None, int | None]]:
-    config: dict[str, Any] = {"configurable": {"thread_id": thread_id}}
-    usage = UsageCollector()
-    config["callbacks"] = [usage]
-    started = time.perf_counter()
-    result = graph.invoke(
-        {"messages": [HumanMessage(content=item.question)], "customer_id": customer_id},
-        config,
-    )
-    while result.get("__interrupt__"):
-        result = graph.invoke(Command(resume="none"), config)
-    return result, time.perf_counter() - started, usage.first_token_at, usage.tokens()
+    graph: Any, item: Any, customer_id: str, thread_id: str, trace: tracing.TurnTrace
+) -> tuple[dict[str, Any], float, UsageLedger]:
+    usage = UsageLedger()
+    config: dict[str, Any] = {
+        "configurable": {"thread_id": thread_id},
+        "callbacks": [usage, *trace.callbacks],
+        "metadata": trace.config_metadata,
+    }
+    try:
+        result = graph.invoke(
+            {"messages": [HumanMessage(content=item.question)], "customer_id": customer_id},
+            config,
+        )
+        while result.get("__interrupt__"):
+            result = graph.invoke(Command(resume="none"), config)
+    except Exception as error:
+        trace.finish(None, error_type=type(error).__name__)
+        raise
+    trace.finish(result)
+    return result, time.perf_counter() - usage.started, usage
 
 
 def _record(
@@ -144,6 +99,7 @@ def _record(
     latency: float,
     first_token_latency: float | None,
     token_usage: tuple[int | None, int | None],
+    usage: UsageLedger | None = None,
 ) -> E2ERecord:
     retrieval = result.get("retrieval", [])
     citations = result.get("citations", [])
@@ -194,6 +150,8 @@ def _record(
         latency_full_answer_s=latency,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
+        llm_calls=usage.calls if usage is not None else None,
+        usage_by_model=dict(usage.by_model) if usage is not None else None,
     )
 
 
@@ -250,9 +208,6 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
         mrr(record.retrieved_section_ids, record.item.gold_sections) for record in answerable
     ]
     latencies = [record.latency_full_answer_s for record in records]
-    by_intent: dict[str, list[E2ERecord]] = defaultdict(list)
-    for record in records:
-        by_intent[record.intent or "unknown"].append(record)
     first_token_values = [
         record.latency_first_token_s
         for record in records
@@ -314,28 +269,8 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
             else "| Latency P95 first token | unavailable |"
         ),
         "",
-        "## Tokens and cost by intent",
-        "",
-        "| Intent | Items | Input tokens | Output tokens | Estimated cost |",
-        "|---|---:|---:|---:|---:|",
     ]
-    for intent, intent_records in sorted(by_intent.items()):
-        inputs = [
-            record.input_tokens for record in intent_records if record.input_tokens is not None
-        ]
-        outputs = [
-            record.output_tokens for record in intent_records if record.output_tokens is not None
-        ]
-        costs = [
-            record.estimated_cost_usd
-            for record in intent_records
-            if record.estimated_cost_usd is not None
-        ]
-        lines.append(
-            f"| {intent} | {len(intent_records)} | {sum(inputs) if inputs else 'pending'} | "
-            f"{sum(outputs) if outputs else 'pending'} | "
-            f"{f'${sum(costs):.6f}' if costs else 'pending'} |"
-        )
+    lines.extend(cost_lines(records))
     lines.extend(
         [
             "",
@@ -356,6 +291,18 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
     write_text(path, "\n".join(lines) + "\n")
 
 
+def _priced_run(path: Path, settings: Settings) -> tuple[E2EMetadata, list[E2ERecord]]:
+    """Read a finished run as-is and price its recorded usage with the current table."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    metadata = E2EMetadata.model_validate_json(lines[0])
+    records = [E2ERecord.model_validate_json(line) for line in lines[1:] if line.strip()]
+    for record in records:
+        record.estimated_cost_usd = (
+            cost_usd(record.usage_by_model, settings.costs) if record.usage_by_model else None
+        )
+    return metadata, records
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--split", choices=["dev", "test", "all"], default="test")
@@ -367,6 +314,14 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=None,
         help="frozen item file to run instead of eval_v1 (e.g. the near-miss holdout)",
+    )
+    parser.add_argument(
+        "--trace", action="store_true", help="send each item to Langfuse when tracing is on"
+    )
+    parser.add_argument(
+        "--report-only",
+        action="store_true",
+        help="rewrite the report from --output with current prices; no model calls",
     )
     args = parser.parse_args(argv)
     settings = get_settings().model_copy(deep=True)
@@ -382,6 +337,10 @@ def main(argv: list[str] | None = None) -> int:
         items = [item for item in items if item.split == args.split]
     output = REPO_ROOT / (args.output or Path(f"eval/runs/e2e_{args.split}.jsonl"))
     output.parent.mkdir(parents=True, exist_ok=True)
+    if args.report_only:
+        metadata, records = _priced_run(output, settings)
+        _write_report(records, metadata, REPO_ROOT / args.report)
+        return 0
     metadata = _metadata(settings, args.split, eval_text, manifest["corpus_hash"])
     existing: dict[str, E2ERecord] = {}
     if output.exists():
@@ -394,11 +353,25 @@ def main(argv: list[str] | None = None) -> int:
     ) as deps:
         graph = build_graph(deps)
         for item in pending:
-            result, latency, first_token_latency, token_usage = _run_item(
-                graph, item, settings.evaluation.customer_id, f"e2e:{args.split}:{item.id}"
+            thread_id = f"e2e:{args.split}:{item.id}"
+            trace = (
+                tracing.start_turn(
+                    settings,
+                    name="e2e_item",
+                    conversation_id=thread_id,
+                    customer_id=settings.evaluation.customer_id,
+                    input_text=item.question,
+                )
+                if args.trace
+                else tracing.TurnTrace()
             )
-            record = _record(item, result, latency, first_token_latency, token_usage)
-            record.estimated_cost_usd = _cost(settings, record.input_tokens, record.output_tokens)
+            result, latency, usage = _run_item(
+                graph, item, settings.evaluation.customer_id, thread_id, trace
+            )
+            record = _record(item, result, latency, usage.first_token_at, usage.tokens(), usage)
+            record.estimated_cost_usd = (
+                cost_usd(record.usage_by_model, settings.costs) if record.usage_by_model else None
+            )
             existing[item.id] = record
             temporary = output.with_suffix(output.suffix + ".tmp")
             write_text(
@@ -412,6 +385,7 @@ def main(argv: list[str] | None = None) -> int:
                 + "\n",
             )
             temporary.replace(output)
+    tracing.flush()
     records = [existing[item.id] for item in items]
     report = REPO_ROOT / args.report
     _write_report(records, metadata, report)
