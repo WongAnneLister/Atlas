@@ -20,7 +20,8 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-judge eval-judge-import eval-compare eval-routing eval-coverage eval-coverage-summary \
         eval-holdout-build eval-gate-round3 eval-store-scope eval-store-controls-build eval-store-fr \
         eval-tools-fallback eval-paraphrase-build eval-chunking-ab \
-        eval-chunking-e2e eval-safety-fixes eval-order-grounding eval-order-replies eval-model-veto
+        eval-chunking-e2e eval-safety-fixes eval-order-grounding eval-order-replies eval-model-veto \
+        results
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -198,6 +199,9 @@ eval-compare:
 
 serve:
 	$(RUN) python -m support_agent.api
+
+results:
+	$(RUN) python scripts/render_results.py
 
 lint:
 	$(RUN) ruff check .
