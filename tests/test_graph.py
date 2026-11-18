@@ -101,9 +101,12 @@ def invoke(graph: Any, question: str, thread: str = "conversation", **state: Any
 
 
 @pytest.mark.parametrize("intent", list(Intent))
-def test_all_intents_follow_fixed_routes_and_skip_first_rewrite(intent: Intent) -> None:
+def test_all_intents_follow_fixed_routes_and_skip_first_rewrite(
+    intent: Intent, seeded: tuple[Settings, Any]
+) -> None:
+    # The after-sales path reads the order database; use the test's own seeded copy.
     model = fake(intent)
-    with knowledge_deps(Settings(), model) as deps:
+    with knowledge_deps(seeded[0], model) as deps:
         result = invoke(build_graph(deps), "A self-contained customer request")
     path = INTENT_TO_PATH[intent]
     if path == Path.AFTER_SALES:
@@ -188,9 +191,11 @@ def test_invalid_confidence_fails_closed(confidence: float) -> None:
 
 
 @pytest.mark.parametrize("intent", list(Intent))
-def test_low_confidence_flags_only_knowledge_and_after_sales(intent: Intent) -> None:
+def test_low_confidence_flags_only_knowledge_and_after_sales(
+    intent: Intent, seeded: tuple[Settings, Any]
+) -> None:
     model = fake(intent, confidence=0.1)
-    with knowledge_deps(Settings(), model) as deps:
+    with knowledge_deps(seeded[0], model) as deps:
         result = invoke(build_graph(deps), "request")
     path = INTENT_TO_PATH[intent]
     assert result["intent_low_confidence"] == (path in {Path.KNOWLEDGE, Path.AFTER_SALES})

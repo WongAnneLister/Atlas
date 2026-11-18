@@ -164,14 +164,13 @@ git clone https://github.com/WongAnneLister/Atlas.git
 cd Atlas
 cp .env.example .env   # fill in LLM_PROVIDER, LLM_FAST_MODEL, LLM_MAIN_MODEL and the provider key
 make setup             # install dependencies with uv
+make check             # lint, types and offline tests; no network, models or LLM calls
 make up                # start Milvus in Docker
 make data              # download the datasets, check licenses, build policy docs, seed mock orders
-make check             # lint, types and offline tests; no models or LLM calls
 make ingest            # chunk, embed and load into Milvus
 make serve             # chat page at http://127.0.0.1:8000
 ```
 
-`make check` needs the seeded order database from `make data`; some graph tests read it.
 Expect `make data` to take a few minutes. It also rewrites the run metadata (dates, hashes) in a few generated docs. `make ingest` downloads BGE-M3 and embeds every chunk on CPU.
 That took about 13 minutes on a laptop ([`ingestion.md`](eval/reports/ingestion.md)).
 The reranker downloads on first use, so the first question is slow.
