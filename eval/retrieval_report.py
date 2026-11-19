@@ -6,15 +6,18 @@ import csv
 import io
 import json
 from collections import Counter
+from collections.abc import Sequence
 from pathlib import Path
 from statistics import mean
 
 from eval.metrics import hit_all_at_k, mrr, recall_at_k
-from eval.retrieval_records import RetrievalRun, SearchRecord
+from eval.retrieval_records import RetrievalReportRun, RetrievalRun, SearchRecord, SearchReportRow
 from support_agent.data.doc_models import write_text
 
 
-def summary(records: list[SearchRecord], ks: list[int]) -> dict[str, float | int | None]:
+def summary(
+    records: Sequence[SearchRecord | SearchReportRow], ks: list[int]
+) -> dict[str, float | int | None]:
     cross = [record for record in records if record.item.group == "cross_doc"]
     cutoff = max(ks)
     values: dict[str, float | int | None] = {"n": len(records)}
@@ -37,7 +40,7 @@ def summary(records: list[SearchRecord], ks: list[int]) -> dict[str, float | int
     return values
 
 
-def table(records: list[SearchRecord], ks: list[int], *, groups: bool) -> str:
+def table(records: Sequence[SearchRecord | SearchReportRow], ks: list[int], *, groups: bool) -> str:
     cutoff = max(ks)
     columns = [
         "n",
@@ -67,7 +70,7 @@ def table(records: list[SearchRecord], ks: list[int], *, groups: bool) -> str:
     return "\n".join(lines)
 
 
-def failure_patterns(records: list[SearchRecord], cutoff: int) -> list[str]:
+def failure_patterns(records: Sequence[SearchRecord | SearchReportRow], cutoff: int) -> list[str]:
     candidates = {(r.item.id, r.mode): r for r in records}
     patterns: Counter[str] = Counter()
     examples: dict[str, str] = {}
@@ -105,7 +108,7 @@ def failure_patterns(records: list[SearchRecord], cutoff: int) -> list[str]:
     ] or ["- No dev misses observed."]
 
 
-def write_reports(run: RetrievalRun, folder: Path, guide_path: Path) -> None:
+def write_reports(run: RetrievalRun | RetrievalReportRun, folder: Path, guide_path: Path) -> None:
     if not run.records or any(not r.item.answerable for r in run.records):
         raise ValueError("Reports require nonempty answerable-only records")
     meta = run.metadata
@@ -215,7 +218,7 @@ def write_reports(run: RetrievalRun, folder: Path, guide_path: Path) -> None:
             "latency_s",
             "cache_hit",
         ]
-        writer = csv.DictWriter(stream, fieldnames=fields)
+        writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for record in run.records:
             if split != "all" and record.item.split != split:

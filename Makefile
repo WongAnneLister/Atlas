@@ -21,7 +21,8 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-holdout-build eval-gate-round3 eval-store-scope eval-store-controls-build eval-store-fr \
         eval-tools-fallback eval-paraphrase-build eval-chunking-ab \
         eval-chunking-e2e eval-safety-fixes eval-order-grounding eval-order-replies eval-model-veto \
-        results eval-refund-policy eval-refund-decisions
+        results eval-refund-policy eval-refund-decisions eval-validate-all eval-registry-bump \
+        eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-gate eval-baseline
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -203,11 +204,36 @@ eval-judge-import:
 eval-compare:
 	$(RUN) python -m eval.compare "$(A)" "$(B)" $(EVAL_COMPARE_ARGS)
 
+eval-validate-all:
+	$(RUN) python -m eval.registry validate $(EVAL_VALIDATE_ALL_ARGS)
+
+eval-registry-bump:
+	$(RUN) python -m eval.registry bump "$(NAME)" --version "$(VERSION)" --note "$(NOTE)"
+
+eval-import-legacy:
+	$(RUN) python -m eval.import_legacy $(EVAL_IMPORT_ARGS)
+
+eval-judge-calibration:
+	$(RUN) python -m eval.judge_calibration $(EVAL_JUDGE_CALIBRATION_ARGS)
+
+eval-smoke-build:
+	$(RUN) python -m eval.smoke
+
+eval-smoke: eval-smoke-build
+	$(RUN) python -m eval.e2e_eval --split test --eval-file eval/sets/smoke.jsonl \
+		--expect-dataset smoke --fresh --report eval/runs/smoke.md $(EVAL_SMOKE_ARGS)
+
+eval-gate:
+	$(UV) run python -m eval.gate check "$(RUN)" $(EVAL_GATE_ARGS)
+
+eval-baseline:
+	$(UV) run python -m eval.gate promote "$(RUN)" $(EVAL_BASELINE_ARGS)
+
 serve:
 	$(RUN) python -m support_agent.api
 
 results:
-	$(RUN) python scripts/render_results.py
+	$(RUN) python scripts/render_results.py --results-doc docs/RESULTS.md
 
 lint:
 	$(RUN) ruff check .

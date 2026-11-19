@@ -1,0 +1,31 @@
+false_accept_max: 0
+metrics:
+  false_accept:
+    direction: lower
+    test: mcnemar
+  false_reject:
+    direction: lower
+    test: mcnemar
+  pass_rate:
+    direction: higher
+    test: mcnemar
+  graph_recall_at_5:
+    direction: higher
+    test: bootstrap
+  citation_validity:
+    direction: higher
+    test: bootstrap
+  latency_p95:
+    direction: lower
+    test: bootstrap
+    statistic: p95
+redteam: []
+comparison_lower_is_better:
+  - "*false_accept"
+  - "*false_reject"
+  - "*latency*"
+  - "*token_p*"
+  - "*cost*"
+  - "*fail*"
+  - "judge_flagged"
+  - "human_confirmed"

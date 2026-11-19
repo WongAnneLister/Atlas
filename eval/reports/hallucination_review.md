@@ -10,9 +10,16 @@
 - Dataset Versions: `{'flipkart_faqs': 'NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228', 'philips_manuals': 'InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84', 'maktek_faqs': 'MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240', 'bitext': 'bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443'}`
 - Evaluation rows (including skipped rows): 150
 - Judge-flagged rate (all evaluation rows): 5.33%
+- Judge calibration: kappa: n/a (0/30 labels)
 - Human-confirmed rate: pending
 - Human confirmations: 0/150
 
 The judge is a review aid. Human confirmation remains the final label.
 Only accepted answers with cited source text receive a model audit.
 Other rows are skipped, not verified as supported.
+
+## Confidence intervals
+
+| Metric | Estimate and 95% CI |
+|---|---|
+| judge_flagged (kappa: n/a (0/30 labels)) | 8/150 · 5.33% [2.00%, 9.33%] |

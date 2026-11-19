@@ -94,3 +94,18 @@ Gate rejection without retrieval error is measured only on instrumented knowledg
 | B / low_evidence / not_attempted | 1 |
 | C / order_not_found / not_attempted | 6 |
 | E / None / not_attempted | 5 |
+
+## Confidence intervals
+
+| Metric | Estimate and 95% CI |
+|---|---|
+| citation_validity | 71.04% [63.40%, 78.34%] |
+| false_accept | 0/30 · 0.00% [0.00%, 0.00%] (upper bounds: 10.0% rule of three, 11.4% Wilson) |
+| false_reject | 26/120 · 21.67% [15.00%, 29.17%] |
+| graph_mrr_at_5 | 90.83% [85.00%, 95.83%] |
+| graph_recall_at_5 | 90.83% [85.00%, 95.83%] |
+| latency_p50 | 16.1277 [15.7116, 16.9116] |
+| latency_p95 | 28.1733 [25.3051, 32.1586] |
+| pass_rate | 94/150 · 62.67% [55.33%, 70.67%] |
+
+Judge calibration for the separate hallucination audit (kappa: n/a (0/30 labels)).

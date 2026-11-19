@@ -1,0 +1,21 @@
+{
+  "metrics": {
+    "judge_flagged": {
+      "interval": {
+        "point": 0.05333333333333334,
+        "low": 0.02,
+        "high": 0.09333333333333334
+      },
+      "n": 150,
+      "count": 8,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    }
+  },
+  "statistics": {},
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

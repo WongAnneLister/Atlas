@@ -6,10 +6,14 @@ import argparse
 import json
 import logging
 import subprocess
+import sys
 from contextlib import ExitStack
 from datetime import UTC, datetime
+from pathlib import Path
+from uuid import uuid4
 
 from eval.common import load_items, set_hash
+from eval.legacy_core import import_retrieval, render_retrieval, save_retrieval
 from eval.retrieval_experiment import Experiment
 from eval.retrieval_index import (
     collection_for_prefix,
@@ -17,7 +21,7 @@ from eval.retrieval_index import (
     prepare_experiment_index,
 )
 from eval.retrieval_records import RetrievalRun, RunMetadata
-from eval.retrieval_report import write_reports
+from eval.run_record import is_dirty
 from eval.schema import EvalItem
 from eval.validate_set import validate_current
 from support_agent.config import REPO_ROOT, get_settings
@@ -66,6 +70,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--split", choices=["dev", "test", "all"], default="test")
     parser.add_argument("--ablations", action=argparse.BooleanOptionalAction, default=None)
     parser.add_argument("--report-only", action="store_true")
+    parser.add_argument("--run-dir", type=Path, help="render an existing retrieval run")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -74,10 +79,20 @@ def main(argv: list[str] | None = None) -> int:
         settings.retrieval_eval.run_ablations = args.ablations
     cache = REPO_ROOT / settings.retrieval_eval.cache_dir
     latest = cache / "latest_run.json"
-    if args.report_only:
-        run = RetrievalRun.model_validate_json(latest.read_text())
-        write_reports(run, REPO_ROOT / "eval/reports", REPO_ROOT / "docs/RETRIEVAL.md")
+    pointer = cache / "latest_run_path.txt"
+    if args.report_only or args.run_dir:
+        if args.run_dir:
+            run_path = REPO_ROOT / args.run_dir
+        elif pointer.exists():
+            run_path = REPO_ROOT / Path(pointer.read_text().strip())
+        else:
+            run_path = import_retrieval(latest, suffix=uuid4().hex[:8])
+            write_text(pointer, run_path.relative_to(REPO_ROOT).as_posix() + "\n")
+        render_retrieval(run_path, REPO_ROOT / "eval/reports", REPO_ROOT / "docs/RETRIEVAL.md")
         return 0
+    started_at = datetime.now(UTC)
+    dirty = is_dirty()
+    command = ["python", "-m", "eval.retrieval_eval", *(sys.argv[1:] if argv is None else argv)]
     failures = validate_current()
     if failures:
         raise ValueError("Frozen evaluation validation failed: " + "; ".join(failures))
@@ -105,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
         eval_file_hash=digest(eval_text),
         frozen_set_hash=set_hash(all_items),
         corpus_hash=manifest["corpus_hash"],
-        date=datetime.now(UTC).isoformat(),
+        date=started_at.isoformat(),
         dataset_versions=manifest["dataset_versions"],
         models={
             "embedding": settings.retrieval.embedding_model
@@ -209,7 +224,9 @@ def main(argv: list[str] | None = None) -> int:
                 )
         run = RetrievalRun(metadata=meta, requested_split=args.split, records=records)
         write_text(latest, run.model_dump_json() + "\n")
-        write_reports(run, REPO_ROOT / "eval/reports", REPO_ROOT / "docs/RETRIEVAL.md")
+        run_path = save_retrieval(run, command, dirty=dirty, suffix=started_at.strftime("%H%M%S%f"))
+        write_text(pointer, run_path.relative_to(REPO_ROOT).as_posix() + "\n")
+        render_retrieval(run_path, REPO_ROOT / "eval/reports", REPO_ROOT / "docs/RETRIEVAL.md")
     return 0
 
 

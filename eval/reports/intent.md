@@ -133,3 +133,32 @@ Mapped Bitext labels sometimes hide ambiguity between general rules and individu
 Unsupported account/review requests use the fixed path under this project's declared scope.
 All five graph paths are stubs; this measures classification, not answers or refusal safety.
 The provider alias and response model names do not pin immutable model weights.
+
+## Bootstrap intervals (95%)
+
+| Metric | Estimate and interval |
+|---|---:|
+| accuracy | 380/420 · 90.48% [87.61%, 93.10%] |
+| path_accuracy | 382/420 · 90.95% [88.10%, 93.57%] |
+| macro_precision | 91.68% [89.09%, 94.07%] |
+| macro_recall | 91.11% [88.56%, 93.44%] |
+| parse_failure_rate | 0/420 · 0.00% [0.00%, 0.00%] (upper bounds: 0.7% rule of three, 0.9% Wilson) |
+| mean_latency_s | 0.7728 [0.7550, 0.7915] |
+| order_status.precision | 39/48 · 81.25% [68.75%, 91.67%] |
+| order_status.recall | 39/50 · 78.00% [66.00%, 90.00%] |
+| shipping_delivery.precision | 48/48 · 100.00% [100.00%, 100.00%] |
+| shipping_delivery.recall | 48/50 · 96.00% [90.00%, 100.00%] |
+| talk_to_human.precision | 42/42 · 100.00% [100.00%, 100.00%] |
+| talk_to_human.recall | 42/50 · 84.00% [74.00%, 92.00%] |
+| product_question.precision | 30/32 · 93.75% [84.38%, 100.00%] |
+| product_question.recall | 30/30 · 100.00% [100.00%, 100.00%] |
+| policy_question.precision | 50/66 · 75.76% [65.15%, 86.36%] |
+| policy_question.recall | 50/50 · 100.00% [100.00%, 100.00%] |
+| refund_request.precision | 36/36 · 100.00% [100.00%, 100.00%] |
+| refund_request.recall | 36/50 · 72.00% [60.00%, 84.00%] |
+| return_exchange.precision | 40/43 · 93.02% [83.72%, 100.00%] |
+| return_exchange.recall | 40/40 · 100.00% [100.00%, 100.00%] |
+| complaint.precision | 46/49 · 93.88% [85.71%, 100.00%] |
+| complaint.recall | 46/50 · 92.00% [84.00%, 98.00%] |
+| chitchat_other.precision | 49/56 · 87.50% [78.57%, 96.43%] |
+| chitchat_other.recall | 49/50 · 98.00% [94.00%, 100.00%] |

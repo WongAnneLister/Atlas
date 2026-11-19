@@ -1,0 +1,90 @@
+datasets:
+- name: eval_v1
+  version: v1
+  path: eval/sets/eval_v1.jsonl
+  sha256: fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9
+  items: 300
+  splits:
+    dev: 150
+    test: 150
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Register the frozen v1 policy and product benchmark
+- name: intent_holdout
+  version: v1
+  path: eval/sets/intent_holdout.jsonl
+  sha256: db0cf6d259add8fcead8d63947e5ba51e8346c3cd72e91c8ca3b1706875c0dae
+  items: 420
+  splits:
+    intent_holdout: 420
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Register the frozen nine-intent benchmark
+- name: intent_extra
+  version: v1
+  path: eval/sets/intent_extra.jsonl
+  sha256: 35d580aafca414ede6f456cd427d5b9b846fa143756bf716710f8493ce2d27ee
+  items: 110
+  splits:
+    intent_holdout: 110
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Register the extra intent evaluation set
+- name: holdout_near_miss_v1
+  version: v1
+  path: eval/sets/holdout_near_miss_v1.jsonl
+  sha256: de3f6ebc58c4553618ca129301effe9ee9398d2420d9e717bcb067675bdba8ae
+  items: 106
+  splits:
+    test: 106
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Register the first frozen near-miss holdout
+- name: holdout_near_miss_v2
+  version: v2
+  path: eval/sets/holdout_near_miss_v2.jsonl
+  sha256: 05f1e000f94e5a844fb909ad2066b173ff58aa2f26d530b895274ca2d82317f9
+  items: 35
+  splits:
+    test: 35
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Register the frozen cross-store near-miss holdout
+- name: store_controls_v1
+  version: v1
+  path: eval/sets/store_controls_v1.jsonl
+  sha256: 9d390c682d31fb2a36f3dc337e82dae7ee9d3127d2db2308cec3d159e490e767
+  items: 40
+  splits:
+    test: 40
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Register the frozen answerable store controls
+- name: paraphrase_holdout_v1
+  version: v1
+  path: eval/sets/paraphrase_holdout_v1.jsonl
+  sha256: a8feb0a23cb73f1699996d78907b37e623265387d1881767dbb8a6f4611f3115
+  items: 46
+  splits:
+    test: 46
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Register the frozen paraphrase retrieval holdout
+- name: smoke
+  version: v1
+  path: eval/sets/smoke.jsonl
+  sha256: 9ed7c618bd6e57767c81da67e106a90dee701ae576ab83102d1485a9bb051424
+  items: 70
+  splits:
+    test: 70
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Freeze stratified v1 test smoke selection

@@ -1,0 +1,3574 @@
+{
+  "metrics": {
+    "dev.bm25.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 1.4888867583331982,
+        "low": 1.2941036338405745,
+        "high": 1.7090821663705538
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9733333333333333,
+        "low": 0.9199999999999999,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.basic_policy.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 1.5681977264670421,
+        "low": 1.3243973464129764,
+        "high": 1.8769631003492877
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9444444444444444,
+        "low": 0.8777777777777778,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.7666666666666667,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": 23,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 1.3998081069995048,
+        "low": 1.1827996925914008,
+        "high": 1.6312690168953
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8166666666666667,
+        "low": 0.7333333333333333,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.8833333333333333,
+        "low": 0.8,
+        "high": 0.95
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.model_number.mean_latency_s": {
+      "interval": {
+        "point": 1.9208127542002331,
+        "low": 1.582287079219262,
+        "high": 2.292484336228805
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.model_number.mrr@5": {
+      "interval": {
+        "point": 0.65,
+        "low": 0.5666666666666667,
+        "high": 0.7333333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.model_number.recall@1": {
+      "interval": {
+        "point": 0.3,
+        "low": 0.13333333333333333,
+        "high": 0.4666666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": 23,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.overall.mean_latency_s": {
+      "interval": {
+        "point": 1.5944263364999947,
+        "low": 1.4559527628559514,
+        "high": 1.7433289990107943
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.overall.mrr@5": {
+      "interval": {
+        "point": 0.8919444444444444,
+        "low": 0.8533263888888889,
+        "high": 0.9283541666666666
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.overall.recall@1": {
+      "interval": {
+        "point": 0.6666666666666666,
+        "low": 0.5916666666666667,
+        "high": 0.7375
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.overall.recall@3": {
+      "interval": {
+        "point": 0.9458333333333333,
+        "low": 0.9165625,
+        "high": 0.975
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.overall.recall@5": {
+      "interval": {
+        "point": 0.9708333333333333,
+        "low": 0.95,
+        "high": 0.9916666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 2.010031388933567,
+        "low": 1.758608263104088,
+        "high": 2.2984008296759173
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 2.042299113866344,
+        "low": 1.791296800080478,
+        "high": 2.310189449369621
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.8955555555555554,
+        "low": 0.8044166666666667,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.colloquial.recall@1": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.7,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.colloquial.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.6666666666666666,
+        "low": 0.5,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": 20,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 2.1041270347669827,
+        "low": 1.900400856730994,
+        "high": 2.3242163007732293
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.cross_doc.mrr@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.4666666666666667,
+        "low": 0.4166666666666667,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.75,
+        "low": 0.6666666666666666,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.75,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.model_number.mean_latency_s": {
+      "interval": {
+        "point": 2.0495003416668625,
+        "low": 1.8069962374128408,
+        "high": 2.3519657471604813
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.model_number.mrr@5": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6833333333333333,
+        "high": 0.85
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.model_number.recall@1": {
+      "interval": {
+        "point": 0.5333333333333333,
+        "low": 0.36666666666666664,
+        "high": 0.7
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.6666666666666666,
+        "low": 0.5,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": 20,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.overall.mean_latency_s": {
+      "interval": {
+        "point": 2.051489469808439,
+        "low": 1.929888571251426,
+        "high": 2.1762163805133823
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.overall.mrr@5": {
+      "interval": {
+        "point": 0.8947222222222222,
+        "low": 0.855548611111111,
+        "high": 0.9311319444444444
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.overall.recall@1": {
+      "interval": {
+        "point": 0.6833333333333333,
+        "low": 0.6083333333333333,
+        "high": 0.7541666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.overall.recall@3": {
+      "interval": {
+        "point": 0.9291666666666667,
+        "low": 0.8958333333333334,
+        "high": 0.9583333333333334
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.overall.recall@5": {
+      "interval": {
+        "point": 0.9583333333333334,
+        "low": 0.9333333333333333,
+        "high": 0.9833333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 3.4995299416337122,
+        "low": 3.1626482623918277,
+        "high": 3.8440102868427912
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9777777777777777,
+        "low": 0.9333333333333332,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 3.611005166800169,
+        "low": 3.211540154364726,
+        "high": 4.0597877575316605
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9444444444444444,
+        "low": 0.8777777777777778,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.6333333333333333,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 3.504803314166808,
+        "low": 3.159249593862784,
+        "high": 3.8696473001603833
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.75,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8166666666666667,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.model_number.mean_latency_s": {
+      "interval": {
+        "point": 3.9711108195337146,
+        "low": 3.5410850482100096,
+        "high": 4.402373072606537
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.model_number.mrr@5": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6833333333333333,
+        "high": 0.85
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.model_number.recall@1": {
+      "interval": {
+        "point": 0.5333333333333333,
+        "low": 0.36666666666666664,
+        "high": 0.7
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.6333333333333333,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.overall.mean_latency_s": {
+      "interval": {
+        "point": 3.646612310533601,
+        "low": 3.4504876383821967,
+        "high": 3.8475109978251782
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.overall.mrr@5": {
+      "interval": {
+        "point": 0.9222222222222222,
+        "low": 0.8875,
+        "high": 0.9528124999999998
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.overall.recall@1": {
+      "interval": {
+        "point": 0.725,
+        "low": 0.6583333333333333,
+        "high": 0.7875
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.overall.recall@3": {
+      "interval": {
+        "point": 0.9583333333333334,
+        "low": 0.9333333333333333,
+        "high": 0.9792708333333328
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.overall.recall@5": {
+      "interval": {
+        "point": 0.975,
+        "low": 0.9541666666666667,
+        "high": 0.9916666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 3.1353482984994723,
+        "low": 2.8274708195535823,
+        "high": 3.445072594837102
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.basic_policy.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.basic_policy.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 3.322779405733187,
+        "low": 2.8893577443654217,
+        "high": 3.819838690339101
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9344444444444444,
+        "low": 0.8577499999999999,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.colloquial.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.6666666666666666,
+        "low": 0.5,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": 20,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 2.955939668032685,
+        "low": 2.676502797937301,
+        "high": 3.2292355716669254
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6833333333333333,
+        "high": 0.85
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.75,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.model_number.mean_latency_s": {
+      "interval": {
+        "point": 3.377405598799669,
+        "low": 2.987586014217789,
+        "high": 3.7814959595642597
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.model_number.mrr@5": {
+      "interval": {
+        "point": 0.7333333333333333,
+        "low": 0.65,
+        "high": 0.8166666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.model_number.recall@1": {
+      "interval": {
+        "point": 0.4666666666666667,
+        "low": 0.3,
+        "high": 0.6333333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.6666666666666666,
+        "low": 0.5,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": 20,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.overall.mean_latency_s": {
+      "interval": {
+        "point": 3.1978682427662535,
+        "low": 3.0172647192846007,
+        "high": 3.390812285810612
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.overall.mrr@5": {
+      "interval": {
+        "point": 0.9169444444444445,
+        "low": 0.8808333333333334,
+        "high": 0.95
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.overall.recall@1": {
+      "interval": {
+        "point": 0.7166666666666667,
+        "low": 0.6458333333333334,
+        "high": 0.7833333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.overall.recall@3": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.9,
+        "high": 0.9666666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.overall.recall@5": {
+      "interval": {
+        "point": 0.9583333333333334,
+        "low": 0.9333333333333333,
+        "high": 0.9833333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 3.773198520866693,
+        "low": 3.4141771836334014,
+        "high": 4.156365400668492
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9777777777777777,
+        "low": 0.9333333333333332,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 3.7482334649662032,
+        "low": 3.3276430005857005,
+        "high": 4.175741756860313
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9444444444444444,
+        "low": 0.8777777777777778,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.6333333333333333,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 3.668011677700027,
+        "low": 3.353992509245985,
+        "high": 4.00134939205913
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.75,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8166666666666667,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.model_number.mean_latency_s": {
+      "interval": {
+        "point": 3.572247965233449,
+        "low": 3.23038678174558,
+        "high": 4.0085351395810775
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.model_number.mrr@5": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6833333333333333,
+        "high": 0.85
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.model_number.recall@1": {
+      "interval": {
+        "point": 0.5333333333333333,
+        "low": 0.36666666666666664,
+        "high": 0.7
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.6333333333333333,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.overall.mean_latency_s": {
+      "interval": {
+        "point": 3.6904229071915933,
+        "low": 3.511799232568975,
+        "high": 3.884819594572401
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.overall.mrr@5": {
+      "interval": {
+        "point": 0.9222222222222222,
+        "low": 0.8875,
+        "high": 0.9528124999999998
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.overall.recall@1": {
+      "interval": {
+        "point": 0.725,
+        "low": 0.6583333333333333,
+        "high": 0.7875
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.overall.recall@3": {
+      "interval": {
+        "point": 0.9583333333333334,
+        "low": 0.9333333333333333,
+        "high": 0.9792708333333328
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.overall.recall@5": {
+      "interval": {
+        "point": 0.975,
+        "low": 0.9541666666666667,
+        "high": 0.9916666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 8.777405895800014,
+        "low": 8.238714036792693,
+        "high": 9.390098465190936
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.basic_policy.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.basic_policy.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 9.470749282100345,
+        "low": 8.945560329013237,
+        "high": 10.024210007159128
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 8.874706980733269,
+        "low": 8.441188831185867,
+        "high": 9.286850641512485
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8666666666666667,
+        "high": 0.9833333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.model_number.mean_latency_s": {
+      "interval": {
+        "point": 9.468236883333763,
+        "low": 9.044557393445569,
+        "high": 9.89125647089524
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.model_number.mrr@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.model_number.recall@1": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.overall.mean_latency_s": {
+      "interval": {
+        "point": 9.147774760491847,
+        "low": 8.893593093077046,
+        "high": 9.406956139262142
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.overall.mrr@5": {
+      "interval": {
+        "point": 0.9875,
+        "low": 0.9708333333333333,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.overall.recall@1": {
+      "interval": {
+        "point": 0.85,
+        "low": 0.8041666666666667,
+        "high": 0.8916666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.overall.recall@3": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9666666666666667,
+        "high": 0.9958333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.overall.recall@5": {
+      "interval": {
+        "point": 0.9916666666666667,
+        "low": 0.9791666666666666,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 1.6466077777998482,
+        "low": 1.3795345152906309,
+        "high": 1.9266182276255466
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 1.5330573638336016,
+        "low": 1.2968530036560029,
+        "high": 1.8230655490229946
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.7666666666666667,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 27,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 1.6014060554999257,
+        "low": 1.3821041292716503,
+        "high": 1.8295543754879844
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.cross_doc.mrr@5": {
+      "interval": {
+        "point": 0.9777777777777777,
+        "low": 0.9333333333333332,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.48333333333333334,
+        "low": 0.45,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.7833333333333333,
+        "high": 0.95
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.8833333333333333,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.model_number.mean_latency_s": {
+      "interval": {
+        "point": 1.482588095866595,
+        "low": 1.2666085031388412,
+        "high": 1.705605712064859
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.model_number.mrr@5": {
+      "interval": {
+        "point": 0.7166666666666667,
+        "low": 0.6333333333333333,
+        "high": 0.8
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.model_number.recall@1": {
+      "interval": {
+        "point": 0.43333333333333335,
+        "low": 0.26666666666666666,
+        "high": 0.6
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.7666666666666667,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 27,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.overall.mean_latency_s": {
+      "interval": {
+        "point": 1.5659148232499926,
+        "low": 1.4449075224267367,
+        "high": 1.6946265743825035
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.overall.mrr@5": {
+      "interval": {
+        "point": 0.9069444444444446,
+        "low": 0.8694444444444444,
+        "high": 0.9416666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.overall.recall@1": {
+      "interval": {
+        "point": 0.6958333333333333,
+        "low": 0.6208333333333333,
+        "high": 0.7625
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.overall.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9416666666666667,
+        "high": 0.9875
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.overall.recall@5": {
+      "interval": {
+        "point": 0.9875,
+        "low": 0.9708333333333333,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 1.8575577833661858,
+        "low": 1.6977805868009606,
+        "high": 2.0117640142628836
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.8833333333333333,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.7666666666666667,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 2.284707420833729,
+        "low": 1.9316291346222199,
+        "high": 2.715545155259054
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.7333333333333333,
+        "low": 0.5666666666666667,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": 22,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 2.300874466700043,
+        "low": 2.04121368889254,
+        "high": 2.5886722515019085
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.cross_doc.mrr@5": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.7833333333333332,
+        "high": 0.95
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.38333333333333336,
+        "low": 0.31625000000000003,
+        "high": 0.45
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.7166666666666667,
+        "low": 0.6333333333333333,
+        "high": 0.8
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.7833333333333333,
+        "high": 0.95
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.model_number.mean_latency_s": {
+      "interval": {
+        "point": 2.357136230566054,
+        "low": 2.014498443804787,
+        "high": 2.8090776420783303
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.model_number.mrr@5": {
+      "interval": {
+        "point": 0.85,
+        "low": 0.7666666666666667,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.model_number.recall@1": {
+      "interval": {
+        "point": 0.7,
+        "low": 0.5333333333333333,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.7333333333333333,
+        "low": 0.5666666666666667,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": 22,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.overall.mean_latency_s": {
+      "interval": {
+        "point": 2.200068975366503,
+        "low": 2.043013035940797,
+        "high": 2.3674373976881298
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.overall.mrr@5": {
+      "interval": {
+        "point": 0.9125,
+        "low": 0.875,
+        "high": 0.9458333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.overall.recall@1": {
+      "interval": {
+        "point": 0.7375,
+        "low": 0.6666666666666666,
+        "high": 0.8041666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.overall.recall@3": {
+      "interval": {
+        "point": 0.9291666666666667,
+        "low": 0.8958333333333334,
+        "high": 0.9583333333333334
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.overall.recall@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9416666666666667,
+        "high": 0.9875
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 3.504920125032489,
+        "low": 3.156272843827537,
+        "high": 3.856396122014342
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 3.852835367967297,
+        "low": 3.3897620752087154,
+        "high": 4.386803423233818
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.colloquial.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.colloquial.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 29,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 3.902877933266791,
+        "low": 3.5404497350115736,
+        "high": 4.271371277521017
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.cross_doc.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.8833333333333333,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.45,
+        "low": 0.38333333333333336,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.7833333333333333,
+        "high": 0.95
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.model_number.mean_latency_s": {
+      "interval": {
+        "point": 3.8410244041660917,
+        "low": 3.3800209025742727,
+        "high": 4.35053032933218
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.model_number.mrr@5": {
+      "interval": {
+        "point": 0.85,
+        "low": 0.7666666666666667,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.model_number.recall@1": {
+      "interval": {
+        "point": 0.7,
+        "low": 0.5333333333333333,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 29,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.overall.mean_latency_s": {
+      "interval": {
+        "point": 3.775414457608167,
+        "low": 3.5650305582737967,
+        "high": 4.00037397841505
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.overall.mrr@5": {
+      "interval": {
+        "point": 0.9458333333333333,
+        "low": 0.9166666666666666,
+        "high": 0.9708333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.overall.recall@1": {
+      "interval": {
+        "point": 0.7791666666666667,
+        "low": 0.7166666666666667,
+        "high": 0.8416666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.overall.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9457291666666666,
+        "high": 0.9875
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.overall.recall@5": {
+      "interval": {
+        "point": 0.9958333333333333,
+        "low": 0.9875,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 3.5254104806663236,
+        "low": 3.143798530806386,
+        "high": 3.9142072467792848
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 3.0136797542671654,
+        "low": 2.7206803049279524,
+        "high": 3.319134453278493
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.961111111111111,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 27,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 3.401473123667529,
+        "low": 3.100070433073479,
+        "high": 3.711959923336059
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.cross_doc.mrr@5": {
+      "interval": {
+        "point": 0.9566666666666667,
+        "low": 0.8866666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.4666666666666667,
+        "low": 0.4166666666666667,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8166666666666667,
+        "low": 0.7166666666666667,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.model_number.mean_latency_s": {
+      "interval": {
+        "point": 4.37234588759978,
+        "low": 3.6810523530896386,
+        "high": 5.174197712084027
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.model_number.mrr@5": {
+      "interval": {
+        "point": 0.8833333333333333,
+        "low": 0.8,
+        "high": 0.95
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.model_number.recall@1": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 27,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.overall.mean_latency_s": {
+      "interval": {
+        "point": 3.5782273115501995,
+        "low": 3.3378700635256813,
+        "high": 3.841608198142264
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.overall.mrr@5": {
+      "interval": {
+        "point": 0.9377777777777777,
+        "low": 0.9061041666666665,
+        "high": 0.9666666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.overall.recall@1": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.7041666666666667,
+        "high": 0.8291666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.overall.recall@3": {
+      "interval": {
+        "point": 0.9541666666666667,
+        "low": 0.925,
+        "high": 0.9791666666666666
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.overall.recall@5": {
+      "interval": {
+        "point": 0.9875,
+        "low": 0.9708333333333333,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 3.5310952487330116,
+        "low": 3.1618249334787047,
+        "high": 3.903334118885753
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 3.7083787569004927,
+        "low": 3.325462635781417,
+        "high": 4.1301607515605845
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.colloquial.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.colloquial.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 29,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 3.682887501433773,
+        "low": 3.3908527742820116,
+        "high": 4.006726694095984
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.cross_doc.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.8833333333333333,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.45,
+        "low": 0.38333333333333336,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.7833333333333333,
+        "high": 0.95
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.model_number.mean_latency_s": {
+      "interval": {
+        "point": 3.8722001013664946,
+        "low": 3.4938306696000776,
+        "high": 4.304110818676878
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.model_number.mrr@5": {
+      "interval": {
+        "point": 0.85,
+        "low": 0.7666666666666667,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.model_number.recall@1": {
+      "interval": {
+        "point": 0.7,
+        "low": 0.5333333333333333,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 29,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.overall.mean_latency_s": {
+      "interval": {
+        "point": 3.698640402108443,
+        "low": 3.51246836338094,
+        "high": 3.8905903991115793
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.overall.mrr@5": {
+      "interval": {
+        "point": 0.9458333333333333,
+        "low": 0.9166666666666666,
+        "high": 0.9708333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.overall.recall@1": {
+      "interval": {
+        "point": 0.7791666666666667,
+        "low": 0.7166666666666667,
+        "high": 0.8416666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.overall.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9457291666666666,
+        "high": 0.9875
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.overall.recall@5": {
+      "interval": {
+        "point": 0.9958333333333333,
+        "low": 0.9875,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 8.770738252865947,
+        "low": 8.366545343639793,
+        "high": 9.190499499015843
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.basic_policy.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.basic_policy.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 9.076528969433882,
+        "low": 8.56555434022858,
+        "high": 9.659006455044217
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.975,
+        "low": 0.925,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.colloquial.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 9.580984518066543,
+        "low": 9.195882930242151,
+        "high": 9.980574990660834
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.cross_doc.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.model_number.mean_latency_s": {
+      "interval": {
+        "point": 10.466635649899157,
+        "low": 9.92939819775372,
+        "high": 11.047601495608557
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.model_number.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.model_number.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.overall.mean_latency_s": {
+      "interval": {
+        "point": 9.473721847566383,
+        "low": 9.204353205135154,
+        "high": 9.75324171672693
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.overall.mrr@5": {
+      "interval": {
+        "point": 0.99375,
+        "low": 0.98125,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.overall.recall@1": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.825,
+        "high": 0.9083333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.overall.recall@3": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9625,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.overall.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    }
+  },
+  "statistics": {},
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

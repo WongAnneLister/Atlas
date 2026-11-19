@@ -9,6 +9,10 @@ eval/sets/manifest.json
 eval/sets/intent_manifest.json
 eval/sets/draft_cache.json
 eval/runs/*.jsonl
+eval/runs/*/items.jsonl
+# Smoke artifacts remain local so promotion can start with clean main.
+eval/runs/smoke-test-*/
+eval/runs/smoke.md
 *.sqlite
 *.sqlite3
 *.db

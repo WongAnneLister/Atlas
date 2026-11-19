@@ -1,0 +1,277 @@
+{
+  "metrics": {
+    "accuracy": {
+      "interval": {
+        "point": 0.9047619047619048,
+        "low": 0.8761309523809524,
+        "high": 0.930952380952381
+      },
+      "n": 420,
+      "count": 380,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "chitchat_other.precision": {
+      "interval": {
+        "point": 0.875,
+        "low": 0.7857142857142857,
+        "high": 0.9642857142857143
+      },
+      "n": 56,
+      "count": 49,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "chitchat_other.recall": {
+      "interval": {
+        "point": 0.98,
+        "low": 0.94,
+        "high": 1.0
+      },
+      "n": 50,
+      "count": 49,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "complaint.precision": {
+      "interval": {
+        "point": 0.9387755102040817,
+        "low": 0.8571428571428571,
+        "high": 1.0
+      },
+      "n": 49,
+      "count": 46,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "complaint.recall": {
+      "interval": {
+        "point": 0.92,
+        "low": 0.84,
+        "high": 0.98
+      },
+      "n": 50,
+      "count": 46,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "macro_precision": {
+      "interval": {
+        "point": 0.9168426473243749,
+        "low": 0.8908541097300514,
+        "high": 0.9406568390282842
+      },
+      "n": 420,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "macro_recall": {
+      "interval": {
+        "point": 0.911111111111111,
+        "low": 0.8855774177120337,
+        "high": 0.9343645516921721
+      },
+      "n": 420,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "mean_latency_s": {
+      "interval": {
+        "point": 0.7728255848404972,
+        "low": 0.7549700109121512,
+        "high": 0.7914945250416695
+      },
+      "n": 420,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "order_status.precision": {
+      "interval": {
+        "point": 0.8125,
+        "low": 0.6875,
+        "high": 0.9166666666666666
+      },
+      "n": 48,
+      "count": 39,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "order_status.recall": {
+      "interval": {
+        "point": 0.78,
+        "low": 0.66,
+        "high": 0.9
+      },
+      "n": 50,
+      "count": 39,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "parse_failure_rate": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 420,
+      "count": 0,
+      "wilson_upper": 0.00906343336818131,
+      "rule_of_three_upper": 0.007142857142857143
+    },
+    "path_accuracy": {
+      "interval": {
+        "point": 0.9095238095238095,
+        "low": 0.8809523809523809,
+        "high": 0.9357142857142857
+      },
+      "n": 420,
+      "count": 382,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "policy_question.precision": {
+      "interval": {
+        "point": 0.7575757575757576,
+        "low": 0.6515151515151515,
+        "high": 0.8636363636363636
+      },
+      "n": 66,
+      "count": 50,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "policy_question.recall": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 50,
+      "count": 50,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "product_question.precision": {
+      "interval": {
+        "point": 0.9375,
+        "low": 0.84375,
+        "high": 1.0
+      },
+      "n": 32,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "product_question.recall": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "refund_request.precision": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 36,
+      "count": 36,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "refund_request.recall": {
+      "interval": {
+        "point": 0.72,
+        "low": 0.6,
+        "high": 0.84
+      },
+      "n": 50,
+      "count": 36,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "return_exchange.precision": {
+      "interval": {
+        "point": 0.9302325581395349,
+        "low": 0.8372093023255814,
+        "high": 1.0
+      },
+      "n": 43,
+      "count": 40,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "return_exchange.recall": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 40,
+      "count": 40,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "shipping_delivery.precision": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 48,
+      "count": 48,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "shipping_delivery.recall": {
+      "interval": {
+        "point": 0.96,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 50,
+      "count": 48,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "talk_to_human.precision": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 42,
+      "count": 42,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "talk_to_human.recall": {
+      "interval": {
+        "point": 0.84,
+        "low": 0.74,
+        "high": 0.92
+      },
+      "n": 50,
+      "count": 42,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    }
+  },
+  "statistics": {
+    "macro_precision": "macro_precision",
+    "macro_recall": "macro_recall"
+  },
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

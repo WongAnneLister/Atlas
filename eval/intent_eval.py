@@ -6,17 +6,20 @@ import argparse
 import logging
 import os
 import subprocess
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from time import perf_counter
+from uuid import uuid4
 
 from dotenv import load_dotenv
 
 from eval.intent_inputs import load_benchmark
 from eval.intent_records import IntentItem, IntentRecord, IntentRun
-from eval.intent_report import write_report
+from eval.legacy_core import import_intent, render_intent, save_intent
+from eval.run_record import is_dirty
 from eval.validate_set import validate_current
 from support_agent.config import REPO_ROOT, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
@@ -75,17 +78,29 @@ def measure(item: IntentItem, classifier: Classifier, cache: Path, provenance: s
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report-only", action="store_true")
+    parser.add_argument("--run-dir", type=Path, help="render an existing intent run")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    load_dotenv(REPO_ROOT / ".env")
     settings = get_settings()
     cache = REPO_ROOT / settings.intent_eval.cache_dir
     latest = cache / "latest_run.json"
     report_path = REPO_ROOT / "eval/reports/intent.md"
-    if args.report_only:
-        write_report(IntentRun.model_validate_json(latest.read_text()), report_path)
+    pointer = cache / "latest_run_path.txt"
+    if args.report_only or args.run_dir:
+        if args.run_dir:
+            run_path = REPO_ROOT / args.run_dir
+        elif pointer.exists():
+            run_path = REPO_ROOT / Path(pointer.read_text().strip())
+        else:
+            run_path = import_intent(latest, suffix=uuid4().hex[:8])
+            write_text(pointer, run_path.relative_to(REPO_ROOT).as_posix() + "\n")
+        render_intent(run_path, report_path)
         return 0
+    load_dotenv(REPO_ROOT / ".env")
+    started_at = datetime.now(UTC)
+    dirty = is_dirty()
+    command = ["python", "-m", "eval.intent_eval", *(sys.argv[1:] if argv is None else argv)]
     failures = validate_current()
     if failures:
         raise ValueError("Frozen retrieval set validation failed: " + "; ".join(failures))
@@ -123,7 +138,7 @@ def main(argv: list[str] | None = None) -> int:
         "config_hash": digest(json_text(settings.model_dump(mode="json"))),
         "prompt_hash": manifest["prompt_hash"],
         "dataset_hash": manifest["dataset_hash"],
-        "date": datetime.now(UTC).isoformat(),
+        "date": started_at.isoformat(),
         "provider": provider,
         "model": model_name,
         "model_options": {"temperature": settings.llm.temperature, **settings.llm.model_kwargs},
@@ -165,7 +180,9 @@ def main(argv: list[str] | None = None) -> int:
     metadata["response_models"] = sorted({r.model_name for r in records if r.model_name})
     run = IntentRun(metadata=metadata, records=records)
     write_text(latest, run.model_dump_json() + "\n")
-    write_report(run, report_path)
+    run_path = save_intent(run, command, dirty=dirty, suffix=started_at.strftime("%H%M%S%f"))
+    write_text(pointer, run_path.relative_to(REPO_ROOT).as_posix() + "\n")
+    render_intent(run_path, report_path)
     return 0
 
 

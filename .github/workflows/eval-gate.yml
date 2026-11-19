@@ -1,0 +1,108 @@
+name: Eval release gate
+
+on:
+  schedule:
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+  pull_request:
+    types: [labeled, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'run-evals')
+    # Fork PRs never run their code on the configured runner or receive eval credentials.
+    runs-on: >-
+      ${{ (github.event_name != 'pull_request' ||
+           github.event.pull_request.head.repo.full_name == github.repository)
+           && vars.EVAL_RUNNER || 'ubuntu-latest' }}
+    steps:
+      - name: Check runner and credentials
+        id: credentials
+        env:
+          EVAL_RUNNER: ${{ vars.EVAL_RUNNER }}
+          ALLOWED_REPO: >-
+            ${{ github.event_name != 'pull_request' ||
+                github.event.pull_request.head.repo.full_name == github.repository }}
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER || vars.LLM_PROVIDER }}
+          LLM_FAST_MODEL: ${{ secrets.LLM_FAST_MODEL || vars.LLM_FAST_MODEL }}
+          LLM_MAIN_MODEL: ${{ secrets.LLM_MAIN_MODEL || vars.LLM_MAIN_MODEL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          if [[ "$ALLOWED_REPO" != true ]]; then
+            echo "skipped: fork pull request" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          case "$LLM_PROVIDER" in
+            openai) key=${OPENAI_API_KEY} ;;
+            anthropic) key=${ANTHROPIC_API_KEY} ;;
+            deepseek) key=${DEEPSEEK_API_KEY} ;;
+            *) key='' ;;
+          esac
+          if [[ -z "$key" || -z "$LLM_FAST_MODEL" || -z "$LLM_MAIN_MODEL" ]]; then
+            echo "skipped: LLM secrets or model settings are missing" >> "$GITHUB_STEP_SUMMARY"
+          elif [[ -z "$EVAL_RUNNER" || "$EVAL_RUNNER" == ubuntu-latest ]]; then
+            echo "skipped: no runner with local eval data is configured" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.credentials.outputs.ready == 'true'
+        with:
+          clean: false
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v5
+        if: steps.credentials.outputs.ready == 'true'
+      - name: Check and validate local data
+        if: steps.credentials.outputs.ready == 'true'
+        id: data
+        run: |
+          if [[ ! -f eval/sets/eval_v1.jsonl || ! -f eval/sets/manifest.json ||
+                ! -f data/orders.sqlite || ! -d .cache/embeddings || ! -d .cache/reranker ]]; then
+            echo "skipped: local eval data, orders or model caches are missing" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          uv sync --all-extras --locked
+          make eval-smoke-build
+          validation=$(mktemp)
+          if ! make eval-validate-all EVAL_VALIDATE_ALL_ARGS=--require-present > "$validation"; then
+            cat "$validation"
+            if rg -q 'FAIL \(missing\)' "$validation" &&
+                ! rg -q 'FAIL (hash mismatch|registry counts)' "$validation"; then
+              echo "skipped: registered local eval data is missing" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            exit 1
+          fi
+          cat "$validation"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Run smoke evaluation and release gate
+        if: steps.data.outputs.ready == 'true'
+        env:
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER || vars.LLM_PROVIDER }}
+          LLM_FAST_MODEL: ${{ secrets.LLM_FAST_MODEL || vars.LLM_FAST_MODEL }}
+          LLM_MAIN_MODEL: ${{ secrets.LLM_MAIN_MODEL || vars.LLM_MAIN_MODEL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          scratch=$(mktemp -d)
+          trap 'rm -rf "$scratch"' EXIT
+          make eval-smoke EVAL_SMOKE_ARGS="--output $scratch/smoke.jsonl --report $scratch/smoke.md --run-root $scratch/runs --run-pointer $scratch/run-path"
+          baseline="$scratch/baseline.json"
+          if ! git show origin/main:eval/baselines/main.json > "$baseline" 2>/dev/null; then
+            rm -f "$baseline"
+          fi
+          status=0
+          make eval-gate RUN="$(cat "$scratch/run-path")"             EVAL_GATE_ARGS="--baseline $baseline --output $scratch/gate.md" || status=$?
+          cat "$scratch/gate.md" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"

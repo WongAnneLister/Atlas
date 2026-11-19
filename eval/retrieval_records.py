@@ -4,7 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from eval.schema import EvalItem
+from eval.schema import EvalItem, Group, Split
 from support_agent.retrieval.types import RetrievedChunk
 
 
@@ -40,3 +40,30 @@ class RetrievalRun(BaseModel):
     metadata: RunMetadata
     requested_split: Literal["dev", "test", "all"]
     records: list[SearchRecord]
+
+
+class RankItem(BaseModel):
+    id: str
+    split: Split
+    group: Group
+    gold_sections: list[str]
+    answerable: bool
+
+
+class Rank(BaseModel):
+    section_id: str
+    chunk_id: str
+
+
+class SearchReportRow(BaseModel):
+    item: RankItem
+    mode: str
+    chunks: list[Rank]
+    latency_s: float = Field(ge=0)
+    cache_hit: bool
+
+
+class RetrievalReportRun(BaseModel):
+    metadata: RunMetadata
+    requested_split: Literal["dev", "test", "all"]
+    records: list[SearchReportRow]

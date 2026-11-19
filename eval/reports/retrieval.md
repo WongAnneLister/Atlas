@@ -117,3 +117,80 @@ No-answer items are excluded; this experiment does not establish answer safety.
 ## Top dev failure patterns
 
 - Cross-document questions recover only part of the required evidence: 2 dev misses; example `cross_doc-02fb4ef75dd609300f08f3052872346051d9d67ef719353e5762ea90bd46bf53`.
+
+## Bootstrap intervals (95%)
+
+| Metric | Estimate and interval |
+|---|---:|
+| dev.bm25.overall.cross_doc_hit_all@5 | 23/30 · 76.67% [60.00%, 90.00%] |
+| dev.bm25.overall.mean_latency_s | 1.5944 [1.4560, 1.7433] |
+| dev.bm25.overall.mrr@5 | 89.19% [85.33%, 92.84%] |
+| dev.bm25.overall.recall@1 | 66.67% [59.17%, 73.75%] |
+| dev.bm25.overall.recall@3 | 94.58% [91.66%, 97.50%] |
+| dev.bm25.overall.recall@5 | 97.08% [95.00%, 99.17%] |
+| dev.dense.overall.cross_doc_hit_all@5 | 20/30 · 66.67% [50.00%, 83.33%] |
+| dev.dense.overall.mean_latency_s | 2.0515 [1.9299, 2.1762] |
+| dev.dense.overall.mrr@5 | 89.47% [85.55%, 93.11%] |
+| dev.dense.overall.recall@1 | 68.33% [60.83%, 75.42%] |
+| dev.dense.overall.recall@3 | 92.92% [89.58%, 95.83%] |
+| dev.dense.overall.recall@5 | 95.83% [93.33%, 98.33%] |
+| dev.hybrid.overall.cross_doc_hit_all@5 | 24/30 · 80.00% [63.33%, 93.33%] |
+| dev.hybrid.overall.mean_latency_s | 3.6466 [3.4505, 3.8475] |
+| dev.hybrid.overall.mrr@5 | 92.22% [88.75%, 95.28%] |
+| dev.hybrid.overall.recall@1 | 72.50% [65.83%, 78.75%] |
+| dev.hybrid.overall.recall@3 | 95.83% [93.33%, 97.93%] |
+| dev.hybrid.overall.recall@5 | 97.50% [95.42%, 99.17%] |
+| dev.hybrid_heading_off.overall.cross_doc_hit_all@5 | 20/30 · 66.67% [50.00%, 83.33%] |
+| dev.hybrid_heading_off.overall.mean_latency_s | 3.1979 [3.0173, 3.3908] |
+| dev.hybrid_heading_off.overall.mrr@5 | 91.69% [88.08%, 95.00%] |
+| dev.hybrid_heading_off.overall.recall@1 | 71.67% [64.58%, 78.33%] |
+| dev.hybrid_heading_off.overall.recall@3 | 93.33% [90.00%, 96.67%] |
+| dev.hybrid_heading_off.overall.recall@5 | 95.83% [93.33%, 98.33%] |
+| dev.hybrid_normaliser_off.overall.cross_doc_hit_all@5 | 24/30 · 80.00% [63.33%, 93.33%] |
+| dev.hybrid_normaliser_off.overall.mean_latency_s | 3.6904 [3.5118, 3.8848] |
+| dev.hybrid_normaliser_off.overall.mrr@5 | 92.22% [88.75%, 95.28%] |
+| dev.hybrid_normaliser_off.overall.recall@1 | 72.50% [65.83%, 78.75%] |
+| dev.hybrid_normaliser_off.overall.recall@3 | 95.83% [93.33%, 97.93%] |
+| dev.hybrid_normaliser_off.overall.recall@5 | 97.50% [95.42%, 99.17%] |
+| dev.hybrid_rerank.overall.cross_doc_hit_all@5 | 28/30 · 93.33% [83.33%, 100.00%] |
+| dev.hybrid_rerank.overall.mean_latency_s | 9.1478 [8.8936, 9.4070] |
+| dev.hybrid_rerank.overall.mrr@5 | 98.75% [97.08%, 100.00%] |
+| dev.hybrid_rerank.overall.recall@1 | 85.00% [80.42%, 89.17%] |
+| dev.hybrid_rerank.overall.recall@3 | 98.33% [96.67%, 99.58%] |
+| dev.hybrid_rerank.overall.recall@5 | 99.17% [97.92%, 100.00%] |
+| test.bm25.overall.cross_doc_hit_all@5 | 27/30 · 90.00% [76.67%, 100.00%] |
+| test.bm25.overall.mean_latency_s | 1.5659 [1.4449, 1.6946] |
+| test.bm25.overall.mrr@5 | 90.69% [86.94%, 94.17%] |
+| test.bm25.overall.recall@1 | 69.58% [62.08%, 76.25%] |
+| test.bm25.overall.recall@3 | 96.67% [94.17%, 98.75%] |
+| test.bm25.overall.recall@5 | 98.75% [97.08%, 100.00%] |
+| test.dense.overall.cross_doc_hit_all@5 | 22/30 · 73.33% [56.67%, 90.00%] |
+| test.dense.overall.mean_latency_s | 2.2001 [2.0430, 2.3674] |
+| test.dense.overall.mrr@5 | 91.25% [87.50%, 94.58%] |
+| test.dense.overall.recall@1 | 73.75% [66.67%, 80.42%] |
+| test.dense.overall.recall@3 | 92.92% [89.58%, 95.83%] |
+| test.dense.overall.recall@5 | 96.67% [94.17%, 98.75%] |
+| test.hybrid.overall.cross_doc_hit_all@5 | 29/30 · 96.67% [90.00%, 100.00%] |
+| test.hybrid.overall.mean_latency_s | 3.7754 [3.5650, 4.0004] |
+| test.hybrid.overall.mrr@5 | 94.58% [91.67%, 97.08%] |
+| test.hybrid.overall.recall@1 | 77.92% [71.67%, 84.17%] |
+| test.hybrid.overall.recall@3 | 96.67% [94.57%, 98.75%] |
+| test.hybrid.overall.recall@5 | 99.58% [98.75%, 100.00%] |
+| test.hybrid_heading_off.overall.cross_doc_hit_all@5 | 27/30 · 90.00% [80.00%, 100.00%] |
+| test.hybrid_heading_off.overall.mean_latency_s | 3.5782 [3.3379, 3.8416] |
+| test.hybrid_heading_off.overall.mrr@5 | 93.78% [90.61%, 96.67%] |
+| test.hybrid_heading_off.overall.recall@1 | 76.67% [70.42%, 82.92%] |
+| test.hybrid_heading_off.overall.recall@3 | 95.42% [92.50%, 97.92%] |
+| test.hybrid_heading_off.overall.recall@5 | 98.75% [97.08%, 100.00%] |
+| test.hybrid_normaliser_off.overall.cross_doc_hit_all@5 | 29/30 · 96.67% [90.00%, 100.00%] |
+| test.hybrid_normaliser_off.overall.mean_latency_s | 3.6986 [3.5125, 3.8906] |
+| test.hybrid_normaliser_off.overall.mrr@5 | 94.58% [91.67%, 97.08%] |
+| test.hybrid_normaliser_off.overall.recall@1 | 77.92% [71.67%, 84.17%] |
+| test.hybrid_normaliser_off.overall.recall@3 | 96.67% [94.57%, 98.75%] |
+| test.hybrid_normaliser_off.overall.recall@5 | 99.58% [98.75%, 100.00%] |
+| test.hybrid_rerank.overall.cross_doc_hit_all@5 | 30/30 · 100.00% [100.00%, 100.00%] |
+| test.hybrid_rerank.overall.mean_latency_s | 9.4737 [9.2044, 9.7532] |
+| test.hybrid_rerank.overall.mrr@5 | 99.38% [98.12%, 100.00%] |
+| test.hybrid_rerank.overall.recall@1 | 86.67% [82.50%, 90.83%] |
+| test.hybrid_rerank.overall.recall@3 | 98.33% [96.25%, 100.00%] |
+| test.hybrid_rerank.overall.recall@5 | 100.00% [100.00%, 100.00%] |

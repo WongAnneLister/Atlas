@@ -4,8 +4,9 @@ from pathlib import Path
 
 import pytest
 from eval.compare import compare_runs
-from eval.e2e_eval import _record, _write_report
+from eval.e2e_eval import _record
 from eval.e2e_records import E2EMetadata, E2ERecord
+from eval.e2e_report import _write_report
 from eval.judge import export_csv, import_confirmations, judge_record
 from eval.metrics import outcome_rates, percentile
 from eval.schema import EvalItem
@@ -263,3 +264,31 @@ def test_e2e_diagnostics_report_keeps_legacy_status_unknown(tmp_path) -> None:
     assert "| Classification call failed | 1 |" in report
     assert "| Diagnostic fields unavailable | 1 |" in report
     assert "| Gate rejected without retrieval error | 0 |" in report
+
+
+def test_judge_import_without_source_e2e_keeps_confirmation(tmp_path, monkeypatch):
+    from eval import judge
+    from eval.e2e_records import JudgeRecord
+
+    monkeypatch.setattr(judge, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(judge, "RUNS", tmp_path / "runs")
+    review = tmp_path / "review.csv"
+    confirmations = tmp_path / "confirmed.csv"
+    report = tmp_path / "judge.md"
+    judge.export_csv([JudgeRecord(item_id="item", flagged=True)], review)
+    judge.export_csv([JudgeRecord(item_id="item", flagged=True, confirmed="yes")], confirmations)
+    assert (
+        judge.main(
+            [
+                "--import-csv",
+                str(confirmations),
+                "--output",
+                str(review),
+                "--report",
+                str(report),
+            ]
+        )
+        == 0
+    )
+    assert judge.read_review(review)[0].confirmed == "yes"
+    assert "Git Sha: `pending`" in report.read_text()

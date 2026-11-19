@@ -11,7 +11,7 @@
 | Recall@5 inside the full graph | 0.8000 | test | [`e2e.md`](eval/reports/e2e.md) |
 | Citation validity (gold-section overlap) | 0.6000 | test | [`e2e.md`](eval/reports/e2e.md) |
 | Intent accuracy | 0.9000 | intent holdout (20) | [`intent.md`](eval/reports/intent.md) |
-| Hallucination, judge-flagged | 2.00% | test | [`hallucination_review.md`](eval/reports/hallucination_review.md) |
+| Hallucination, judge-flagged | 2.00% (kappa: n/a (0/30 labels)) | test | [`hallucination_review.md`](eval/reports/hallucination_review.md) |
 | Hallucination, human-confirmed | pending | test | [`hallucination_review.md`](eval/reports/hallucination_review.md) |
 | Latency P50 / P95 (full answer) | 10.0000s / 20.0000s | test | [`e2e.md`](eval/reports/e2e.md) |
 | Cost per conversation | $0.00080 (800 tokens, 1.20 LLM calls, mean) | test | [`e2e.md`](eval/reports/e2e.md) |

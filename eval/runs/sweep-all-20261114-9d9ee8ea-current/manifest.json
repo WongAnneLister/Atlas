@@ -1,0 +1,77 @@
+{
+  "kind": "sweep",
+  "split": "all",
+  "git_sha": "9d9ee8ea72ebeefb3eeb557bce8d31d179c23d13",
+  "config_hash": "3063ca39112dfb0a835c3d1ee717b4bb32624ef41e26cdd3f418a7468c66b1bd",
+  "models": {
+    "embedding": "BAAI/bge-m3",
+    "reranker": "BAAI/bge-reranker-v2-m3"
+  },
+  "datasets": {
+    "eval_v1": {
+      "version": "v1",
+      "sha256": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9"
+    }
+  },
+  "seed": 17,
+  "dirty": null,
+  "started_at": "2026-11-14T03:23:01.126472Z",
+  "ended_at": null,
+  "cost_usd": null,
+  "cost_note": "price not set",
+  "command": [
+    "eval-import-legacy",
+    "sweep",
+    "gate_scores_dev.jsonl",
+    "gate_scores_test.jsonl",
+    "--rule",
+    "midpoint"
+  ],
+  "source": {
+    "dev_metadata": {
+      "record_type": "metadata",
+      "git_sha": "9d9ee8ea72ebeefb3eeb557bce8d31d179c23d13",
+      "config_hash": "3063ca39112dfb0a835c3d1ee717b4bb32624ef41e26cdd3f418a7468c66b1bd",
+      "eval_file_hash": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9",
+      "corpus_hash": "60e259f600ed4ae895106d14385edcb6cfcf12071ec0219a32a936a209c5c6fd",
+      "split": "dev",
+      "date": "2026-11-14T03:23:01.126472+00:00",
+      "models": {
+        "embedding": "BAAI/bge-m3",
+        "reranker": "BAAI/bge-reranker-v2-m3"
+      },
+      "dataset_versions": {
+        "flipkart_faqs": "NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228",
+        "philips_manuals": "InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84",
+        "maktek_faqs": "MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240",
+        "bitext": "bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443"
+      }
+    },
+    "test_metadata": {
+      "record_type": "metadata",
+      "git_sha": "9d9ee8ea72ebeefb3eeb557bce8d31d179c23d13",
+      "config_hash": "3063ca39112dfb0a835c3d1ee717b4bb32624ef41e26cdd3f418a7468c66b1bd",
+      "eval_file_hash": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9",
+      "corpus_hash": "60e259f600ed4ae895106d14385edcb6cfcf12071ec0219a32a936a209c5c6fd",
+      "split": "test",
+      "date": "2026-11-14T03:39:58.954156+00:00",
+      "models": {
+        "embedding": "BAAI/bge-m3",
+        "reranker": "BAAI/bge-reranker-v2-m3"
+      },
+      "dataset_versions": {
+        "flipkart_faqs": "NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228",
+        "philips_manuals": "InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84",
+        "maktek_faqs": "MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240",
+        "bitext": "bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443"
+      }
+    },
+    "threshold": 0.15,
+    "rule": "midpoint",
+    "statistics": {
+      "n_resamples": 2000,
+      "seed": 17,
+      "alpha": 0.05
+    }
+  }
+}

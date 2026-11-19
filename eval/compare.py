@@ -1,13 +1,19 @@
-"""Compare two e2e JSONL runs and identify changed item outcomes."""
+"""Compare paired observations from saved eval runs."""
 
 from __future__ import annotations
 
 import argparse
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
 from eval.e2e_records import E2EMetadata, E2ERecord
+from eval.e2e_runs import load_e2e, prepare_e2e
+from eval.gate import load_rules
+from eval.legacy_pairing import rows_for_legacy_core
 from eval.metrics import outcome_rates
+from eval.paired import MetricRule, compare, comparison_lines
+from eval.run_record import Run, read_run
 from support_agent.config import REPO_ROOT
 from support_agent.data.doc_models import write_text
 
@@ -65,50 +71,109 @@ def compare_runs(a: dict[str, E2ERecord], b: dict[str, E2ERecord]) -> dict[str, 
     }
 
 
+def _read(path: Path, reference: Run | None) -> Run:
+    if path.is_dir():
+        return read_run(path)
+    if reference is None or reference.manifest.kind in {"e2e", "smoke"}:
+        return prepare_e2e(*load_e2e(path))
+    if reference.manifest.kind == "judge":
+        from eval.judge import project_judge, read_review
+
+        items = project_judge(read_review(path))
+    else:
+        items = rows_for_legacy_core(path, reference)
+    metadata = reference.manifest.model_copy(
+        update={
+            "git_sha": "unavailable",
+            "config_hash": "unavailable",
+            "datasets": {},
+            "models": {},
+        }
+    )
+    return reference.model_copy(update={"items": items, "manifest": metadata})
+
+
+def _rules(before: Run, after: Run) -> dict[str, MetricRule]:
+    settings = load_rules()
+    a = {name for row in before.items for name in row.metrics}
+    b = {name for row in after.items for name in row.metrics}
+    rules = {}
+    for name in sorted(a & b):
+        if name in settings.metrics:
+            rules[name] = settings.metrics[name]
+            continue
+        before_stat = before.metrics.statistics.get(name, "mean")
+        after_stat = after.metrics.statistics.get(name, "mean")
+        if before_stat != after_stat:
+            raise ValueError(f"Incompatible statistics for {name}")
+        values = [
+            row.metrics[name] for run in (before, after) for row in run.items if name in row.metrics
+        ]
+        lower = any(fnmatch(name, pattern) for pattern in settings.comparison_lower_is_better)
+        rules[name] = MetricRule(
+            direction="lower" if lower else "higher",
+            test="mcnemar" if all(type(value) is bool for value in values) else "bootstrap",
+            statistic=before_stat,
+        )
+    return rules
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("a", type=Path)
     parser.add_argument("b", type=Path)
     parser.add_argument("--output", type=Path, default=Path("eval/reports/e2e_compare.md"))
     args = parser.parse_args(argv)
-    meta_a, records_a = load_run(REPO_ROOT / args.a)
-    meta_b, records_b = load_run(REPO_ROOT / args.b)
-    diff = compare_runs(records_a, records_b)
-    lines = [
-        "# End-to-end run comparison",
-        "",
-        f"- Run A Git SHA: `{meta_a.git_sha}`",
-        f"- Run A config hash: `{meta_a.config_hash}`",
-        f"- Run A eval file hash: `{meta_a.eval_file_hash}`",
-        f"- Run A split/date: {meta_a.split} / {meta_a.date}",
-        f"- Run A models: `{meta_a.models}`",
-        f"- Run B Git SHA: `{meta_b.git_sha}`",
-        f"- Run B config hash: `{meta_b.config_hash}`",
-        f"- Run B eval file hash: `{meta_b.eval_file_hash}`",
-        f"- Run B split/date: {meta_b.split} / {meta_b.date}",
-        f"- Run B models: `{meta_b.models}`",
-        f"- Shared items: {diff['shared_items']}",
-        f"- Only in A: {len(diff['only_a'])}",
-        f"- Only in B: {len(diff['only_b'])}",
-        "",
-        "## Metric deltas (B minus A)",
-        "",
-        "| Metric | A | B | Delta |",
-        "|---|---:|---:|---:|",
-        *[
-            f"| {name.replace('_', ' ').title()} | {diff['rates']['a'][name]:.2%} | "
-            f"{diff['rates']['b'][name]:.2%} | {diff['deltas'][name]:+.2%} |"
-            for name in ("false_accept", "false_reject", "pass_rate")
-        ],
-        "",
-        "| Item | Accepted A | Accepted B | Handoff A | Handoff B |",
-        "|---|---:|---:|---|---|",
-    ]
+    a, b = REPO_ROOT / args.a, REPO_ROOT / args.b
+    reference = next((read_run(path) for path in (a, b) if path.is_dir()), None)
+    before, after = _read(a, reference), _read(b, reference)
+    ids_a, ids_b = ({row.id for row in run.items} for run in (before, after))
+    results = compare(before, after, _rules(before, after))
+    if not results:
+        raise ValueError("Runs have no shared metrics to compare")
+
+    lines = ["# Eval run comparison", ""]
+    for label, path, run in (("A", args.a, before), ("B", args.b, after)):
+        meta = run.manifest
+        lines.extend(
+            [
+                f"- Run {label}: `{path}`",
+                f"- Run {label} Git SHA: `{meta.git_sha}`",
+                f"- Run {label} config hash: `{meta.config_hash}`",
+                f"- Run {label} datasets: `{meta.datasets}`",
+                f"- Run {label} split: {meta.split}",
+                f"- Run {label} models: `{meta.models}`",
+            ]
+        )
     lines.extend(
-        f"| {row['id']} | {row['accepted_a']} | {row['accepted_b']} | "
-        f"{row['handoff_a']} | {row['handoff_b']} |"
-        for row in diff["changed"]
+        [
+            f"- Shared items: {len(ids_a & ids_b)}",
+            f"- Only in A: {len(ids_a - ids_b)}",
+            f"- Only in B: {len(ids_b - ids_a)}",
+            "",
+            "## Metric deltas (B minus A)",
+            "",
+            *comparison_lines(results),
+            "",
+        ]
     )
+    if before.manifest.kind in {"e2e", "smoke"} and after.manifest.kind in {"e2e", "smoke"}:
+        _, records_a = load_e2e(a)
+        _, records_b = load_e2e(b)
+        changes = compare_runs(
+            {row.item.id: row for row in records_a}, {row.item.id: row for row in records_b}
+        )
+        lines.extend(
+            [
+                "| Item | Accepted A | Accepted B | Handoff A | Handoff B |",
+                "|---|---:|---:|---|---|",
+            ]
+        )
+        lines.extend(
+            f"| {row['id']} | {row['accepted_a']} | {row['accepted_b']} | "
+            f"{row['handoff_a']} | {row['handoff_b']} |"
+            for row in changes["changed"]
+        )
     write_text(REPO_ROOT / args.output, "\n".join(lines) + "\n")
     return 0
 

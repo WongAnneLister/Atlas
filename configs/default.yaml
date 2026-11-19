@@ -182,6 +182,12 @@ intent_eval:
   max_concurrency: 4
   target_accuracy: 0.9
 
+eval:
+  stats:
+    n_resamples: 2000
+    seed: 17
+    alpha: 0.05
+
 evaluation:
   sets_dir: eval/sets
   seed: 42

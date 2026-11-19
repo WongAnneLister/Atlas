@@ -7,6 +7,7 @@ import json
 import logging
 import re
 import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -166,6 +167,7 @@ def score_config_hash(settings: Settings) -> str:
     """Hash every setting that can change retrieval; gate settings are rescored offline."""
     dumped = settings.model_dump(mode="json")
     dumped.pop("gate", None)
+    dumped.pop("eval", None)
     return digest(json_text(dumped))
 
 
@@ -443,7 +445,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dev-cache", type=Path, default=Path("eval/runs/gate_scores_dev.jsonl"))
     parser.add_argument("--test-cache", type=Path, default=Path("eval/runs/gate_scores_test.jsonl"))
     parser.add_argument("--no-collect", action="store_true")
+    parser.add_argument("--run-dir", type=Path, help="render an existing sweep without tuning")
     args = parser.parse_args(argv)
+    from eval.run_record import is_dirty
+    from eval.sweep_runs import render_sweep, save_sweep
+
+    report = REPO_ROOT / "eval/reports/threshold_sweep.md"
+    plot = REPO_ROOT / "eval/reports/threshold_sweep.png"
+    if args.run_dir:
+        render_sweep(REPO_ROOT / args.run_dir, report, plot)
+        return 0
+    started_at = datetime.now(UTC)
+    dirty = is_dirty()
+    command = ["python", "-m", "eval.sweep", *(sys.argv[1:] if argv is None else argv)]
     settings = get_settings().model_copy(deep=True)
     dev_cache = REPO_ROOT / args.dev_cache
     test_cache = REPO_ROOT / args.test_cache
@@ -486,10 +500,19 @@ def main(argv: list[str] | None = None) -> int:
         test_meta, test = load_scores(test_cache) if test_cache.exists() else (None, None)
     if test is not None:
         test = rescore(test, every_item, settings)
-    selected = select_threshold(dev, settings.gate.threshold_rule)
-    report = REPO_ROOT / "eval/reports/threshold_sweep.md"
-    write_report(dev_meta, dev, selected, test_meta, test, report, settings.gate.threshold_rule)
-    write_plot(dev, REPO_ROOT / "eval/reports/threshold_sweep.png", selected)
+    run_path = save_sweep(
+        (dev_meta, dev),
+        (test_meta, test) if test_meta and test is not None else None,
+        settings.gate.threshold_rule,
+        command,
+        root=REPO_ROOT / "eval/runs",
+        suffix=started_at.strftime("%H%M%S%f"),
+        dirty=dirty,
+        started_at=started_at,
+        config_hash=digest(json_text(settings.model_dump(mode="json"))),
+        git_sha=_git_sha(),
+    )
+    selected = render_sweep(run_path, report, plot)
     if test is not None:
         _write_config_threshold(selected, report.relative_to(REPO_ROOT), _git_sha())
     return 0

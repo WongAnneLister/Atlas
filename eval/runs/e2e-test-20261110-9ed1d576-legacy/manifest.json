@@ -1,0 +1,51 @@
+{
+  "kind": "e2e",
+  "split": "test",
+  "git_sha": "9ed1d576deca7c52494a51d728cc06a63d365815",
+  "config_hash": "7aa735a01dfeaa3c3b419d3c433f1da05cd30b60361e80fc0cb5433dfdf4f845",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash"
+  },
+  "datasets": {
+    "eval_v1": {
+      "version": "v1",
+      "sha256": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9"
+    }
+  },
+  "seed": 17,
+  "dirty": null,
+  "started_at": "2026-11-10T15:11:06.756261Z",
+  "ended_at": null,
+  "cost_usd": null,
+  "cost_note": "price not set",
+  "command": [
+    "eval-import-legacy",
+    "e2e",
+    "baseline-001-e2e-test.jsonl"
+  ],
+  "source": {
+    "record_type": "metadata",
+    "git_sha": "9ed1d576deca7c52494a51d728cc06a63d365815",
+    "config_hash": "7aa735a01dfeaa3c3b419d3c433f1da05cd30b60361e80fc0cb5433dfdf4f845",
+    "eval_file_hash": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9",
+    "corpus_hash": "60e259f600ed4ae895106d14385edcb6cfcf12071ec0219a32a936a209c5c6fd",
+    "models": {
+      "fast": "deepseek-flash",
+      "main": "deepseek-flash"
+    },
+    "dataset_versions": {
+      "flipkart_faqs": "NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228",
+      "philips_manuals": "InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84",
+      "maktek_faqs": "MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240",
+      "bitext": "bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443"
+    },
+    "split": "test",
+    "date": "2026-11-10T15:11:06.756261+00:00",
+    "customer_id": "CUST-0001",
+    "threshold": 0.17,
+    "code_hash": null,
+    "prompt_hash": null,
+    "runtime": null
+  }
+}

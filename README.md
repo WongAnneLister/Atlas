@@ -30,7 +30,7 @@ The labels are drafts that a human has not reviewed yet.
 | Recall@5 inside the full graph | 0.9083 | test | [`e2e.md`](eval/reports/e2e.md) |
 | Citation validity (gold-section overlap) | 0.7104 | test | [`e2e.md`](eval/reports/e2e.md) |
 | Intent accuracy | 0.9048 | intent holdout (420) | [`intent.md`](eval/reports/intent.md) |
-| Hallucination, judge-flagged | 5.33% | test | [`hallucination_review.md`](eval/reports/hallucination_review.md) |
+| Hallucination, judge-flagged | 5.33% (kappa: n/a (0/30 labels)) | test | [`hallucination_review.md`](eval/reports/hallucination_review.md) |
 | Hallucination, human-confirmed | pending | test | [`hallucination_review.md`](eval/reports/hallucination_review.md) |
 | Latency P50 / P95 (full answer) | 16.1277s / 28.1733s | test | [`e2e.md`](eval/reports/e2e.md) |
 | Cost per conversation | price not set (7290 tokens, 2.07 LLM calls, mean) | test | [`e2e.md`](eval/reports/e2e.md) |

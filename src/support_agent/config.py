@@ -14,6 +14,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
 
+import yaml
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import (
     BaseSettings,
@@ -235,6 +236,21 @@ class RefundSettings(BaseModel):
     decision_version: Literal["v1", "v2", "v3"] = "v1"
 
 
+class EvalStatsSettings(BaseModel):
+    n_resamples: int = Field(gt=0)
+    seed: int = Field(ge=0)
+    alpha: float = Field(gt=0, lt=1)
+
+
+class EvalPlatformSettings(BaseModel):
+    stats: EvalStatsSettings
+
+
+def _default_eval_platform() -> EvalPlatformSettings:
+    config = yaml.safe_load(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
+    return EvalPlatformSettings.model_validate(config["eval"])
+
+
 class EvalSettings(BaseModel):
     sets_dir: str
     seed: int
@@ -374,6 +390,7 @@ class Settings(BaseSettings):
     graph: GraphSettings
     intent_eval: IntentEvalSettings
     evaluation: EvalSettings
+    eval: EvalPlatformSettings = Field(default_factory=_default_eval_platform)
     milvus: MilvusSettings
     orders: OrdersSettings
     refund: RefundSettings = Field(default_factory=RefundSettings)

@@ -103,6 +103,7 @@ def test_score_collection_resumes_after_dependency_failure(tmp_path, monkeypatch
     monkeypatch.setattr(sweep, "collect_scores", complete)
     monkeypatch.setattr(sweep, "write_report", lambda *args: None)
     monkeypatch.setattr(sweep, "write_plot", lambda *args: None)
+    monkeypatch.setattr("eval.sweep_runs.write_intervals", lambda *args: None)
     monkeypatch.setattr(sweep, "_write_config_threshold", lambda *args: None)
     (tmp_path / "manifest.json").write_text(json.dumps({"corpus_hash": "corpus"}))
     sweep.main(["--dev-cache", str(output), "--test-cache", str(tmp_path / "test.jsonl")])

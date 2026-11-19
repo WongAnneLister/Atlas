@@ -70,3 +70,11 @@ def test_readme_has_no_percentage_outside_the_generated_block() -> None:
 def test_readme_block_matches_the_committed_reports() -> None:
     text = (REPO / "README.md").read_text(encoding="utf-8")
     assert rr.render_block(REPO / "eval" / "reports") in text, "run `make results`"
+
+
+def test_results_confidence_block_matches_saved_reports() -> None:
+    text = (REPO / "docs" / "RESULTS.md").read_text(encoding="utf-8")
+    block = rr.render_stats_block(REPO / "eval" / "reports")
+    assert block in text, "run `make results`"
+    assert "Wilson" in block
+    assert "kappa:" in block
