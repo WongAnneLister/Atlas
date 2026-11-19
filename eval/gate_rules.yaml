@@ -1,4 +1,9 @@
 false_accept_max: 0
+# A baseline must reflect the system, not an outage. Promotion refuses a run where
+# more than this share of items hit a classification, retrieval or answer error
+# (for example 402 Insufficient Balance or a dropped Milvus tunnel). The small
+# allowance covers occasional malformed model output, seen in earlier full runs.
+promotion_max_error_rate: 0.05
 metrics:
   false_accept:
     direction: lower

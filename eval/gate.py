@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
@@ -31,6 +32,7 @@ BASELINE = REPO_ROOT / "eval/baselines/main.json"
 
 class GateRules(BaseModel):
     false_accept_max: Literal[0]
+    promotion_max_error_rate: float = Field(ge=0, le=1)
     metrics: dict[str, MetricRule]
     redteam: list[str]
     comparison_lower_is_better: list[str]
@@ -154,6 +156,31 @@ def evaluate(run: Run, baseline: Run, rules: GateRules) -> GateResult:
     return GateResult(false_accepts, no_answer, comparisons, failures, warnings)
 
 
+ERROR_FIELDS = ("classification_error_type", "retrieval_error_type", "answer_error_type")
+
+
+def dependency_errors(run: Run) -> Counter[str]:
+    """Count items whose graph run hit a dependency or model-call error, by error type."""
+    errors: Counter[str] = Counter()
+    for row in run.items:
+        kinds = {str(row.payload[name]) for name in ERROR_FIELDS if row.payload.get(name)}
+        if row.handoff_reason in {"retrieval_error", "answer_error"} and not kinds:
+            kinds = {row.handoff_reason}
+        errors.update(sorted(kinds)[:1])
+    return errors
+
+
+def check_dependency_errors(run: Run, rules: GateRules) -> None:
+    errors = dependency_errors(run)
+    count = sum(errors.values())
+    if count > rules.promotion_max_error_rate * len(run.items):
+        kinds = ", ".join(f"{kind} x{n}" for kind, n in errors.most_common())
+        raise ValueError(
+            f"Run has dependency errors on {count}/{len(run.items)} items ({kinds}); "
+            "fix the dependency and collect a new run"
+        )
+
+
 def read_baseline(path: Path) -> Run:
     baseline = Baseline.model_validate_json(path.read_bytes())
     return Run(
@@ -173,7 +200,9 @@ def promote(run: Run, run_id: str, path: Path) -> None:
     if run.manifest.git_sha != git("rev-parse", "HEAD") or run.manifest.dirty is not False:
         raise ValueError("Baseline run must have been collected on clean HEAD")
     check_frozen_smoke(run)
-    result = evaluate(run, run, load_rules())
+    rules = load_rules()
+    check_dependency_errors(run, rules)
+    result = evaluate(run, run, rules)
     if not result.passed:
         raise ValueError("The smoke run violates the release rules")
     baseline = Baseline(

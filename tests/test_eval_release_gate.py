@@ -101,3 +101,29 @@ def test_baseline_absence_and_protection(tmp_path, monkeypatch):
 def test_incomplete_run_cannot_represent_the_frozen_benchmark():
     with pytest.raises(ValueError, match="frozen smoke item IDs"):
         gate.check_frozen_smoke(_run())
+
+
+def _promotable(monkeypatch):
+    monkeypatch.setattr(gate, "git", lambda *args: "main" if args[0] == "branch" else "abc123")
+    monkeypatch.setattr(gate, "is_dirty", lambda: False)
+    monkeypatch.setattr(gate, "check_frozen_smoke", lambda run: None)
+
+
+def test_promotion_rejects_a_run_broken_by_dependency_errors(tmp_path, monkeypatch):
+    _promotable(monkeypatch)
+    run = _run()
+    for row in run.items:
+        row.payload = {"classification_error_type": "APIStatusError"}
+    path = tmp_path / "baseline.json"
+    with pytest.raises(ValueError, match="dependency errors on 70/70 items"):
+        gate.promote(run, "run-id", path)
+    assert not path.exists()
+
+
+def test_promotion_allows_a_few_dependency_errors(tmp_path, monkeypatch):
+    _promotable(monkeypatch)
+    run = _run()
+    run.items[0].payload = {"retrieval_error_type": "MilvusException"}
+    run.items[1].payload = {"answer_error_type": "ValidationError"}
+    gate.promote(run, "run-id", tmp_path / "baseline.json")
+    assert (tmp_path / "baseline.json").exists()

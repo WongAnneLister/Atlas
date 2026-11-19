@@ -107,7 +107,10 @@ The gate rejects any no-answer false accept and any significant regression in
 warning instead of failing the gate. The red-team rules will be added with
 their eval set. The gate CLI returns 1 on failure and 2 when the main baseline is
 missing. Promote from a clean `main` checkout using a run collected on its
-current HEAD. Commit `eval/baselines/main.json` after promotion. The baseline
+current HEAD. Promotion also refuses a run where more than
+`promotion_max_error_rate` of items hit a classification, retrieval or answer error
+(an outage, a dropped tunnel or an empty API balance), because such a run would
+make every later run look better than it is. Commit `eval/baselines/main.json` after promotion. The baseline
 stores IDs, scalar outcomes and metadata. The first baseline is created after the
 platform lands on main.
 

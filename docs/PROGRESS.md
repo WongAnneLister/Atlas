@@ -42,6 +42,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | | **Phase 2 — production grade** | | |
 | 17 | Eval platform + CI gate | implemented; first main baseline pending | Versioned datasets, typed run records, bootstrap intervals, paired comparisons, judge calibration, and fixed smoke release check. Saved v1 results replay with zero paired deltas. Current test no-answer result: 0/30, Wilson upper bound 11.4% (`eval/reports/e2e.md`). |
 | 17a | Gate latency report-only + grep | done | `eval/gate_rules.yaml`: `latency_p95` has `blocking: false`; a significant slowdown appears as a warning in the gate summary and no longer fails it. False accepts and the other metrics still block. The eval workflow uses `grep -E` instead of `rg`, which runners may lack. No new eval results. |
+| 17b | Baseline promotion error check | done | `make eval-baseline` now refuses a smoke run when more than `promotion_max_error_rate` (0.05, `eval/gate_rules.yaml`) of items hit a classification, retrieval or answer error. Found on the first smoke attempt on `main` (2026-11-19): DeepSeek returned 402 Insufficient Balance on every intent call, every item was handed off, and the old check would have promoted it. That run was not promoted. No new eval results. |
 | 18 | Postgres + Redis | todo | |
 | 19 | Reliability | todo | |
 | 20 | Red-team set | todo | |
