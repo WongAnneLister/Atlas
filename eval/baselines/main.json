@@ -1,0 +1,1063 @@
+{
+  "run_id": "smoke-test-20261119-7085692a-f90d3e91",
+  "manifest": {
+    "kind": "smoke",
+    "split": "test",
+    "git_sha": "7085692a3d612b56699b65dc933ce2219deaa141",
+    "config_hash": "dda1a531362684f970956ecdd9834c90ea1958e6fa74459beb30828ca5b9f824",
+    "models": {
+      "fast": "deepseek-flash",
+      "main": "deepseek-flash"
+    },
+    "datasets": {
+      "smoke": {
+        "version": "v1",
+        "sha256": "9ed7c618bd6e57767c81da67e106a90dee701ae576ab83102d1485a9bb051424"
+      }
+    },
+    "seed": 17,
+    "dirty": false,
+    "started_at": "2026-11-19T14:59:49.311664Z",
+    "ended_at": "2026-11-19T15:22:15.936678Z",
+    "cost_usd": null,
+    "cost_note": "price not set",
+    "command": [
+      "eval-e2e",
+      "--split",
+      "test",
+      "--eval-file",
+      "eval/sets/smoke.jsonl",
+      "--expect-dataset",
+      "smoke",
+      "--fresh",
+      "--report",
+      "eval/runs/smoke.md"
+    ],
+    "source": {
+      "record_type": "metadata",
+      "git_sha": "7085692a3d612b56699b65dc933ce2219deaa141",
+      "config_hash": "dda1a531362684f970956ecdd9834c90ea1958e6fa74459beb30828ca5b9f824",
+      "eval_file_hash": "9ed7c618bd6e57767c81da67e106a90dee701ae576ab83102d1485a9bb051424",
+      "corpus_hash": "60e259f600ed4ae895106d14385edcb6cfcf12071ec0219a32a936a209c5c6fd",
+      "models": {
+        "fast": "deepseek-flash",
+        "main": "deepseek-flash"
+      },
+      "dataset_versions": {
+        "flipkart_faqs": "NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228",
+        "philips_manuals": "InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84",
+        "maktek_faqs": "MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240",
+        "bitext": "bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443"
+      },
+      "split": "test",
+      "date": "2026-11-19T14:59:49.311664+00:00",
+      "customer_id": "CUST-0001",
+      "threshold": 0.15,
+      "code_hash": "737fe16f98b1d517d23f77071ce7c648132a0acf9b8673b39ca2c1428febb1b7",
+      "prompt_hash": "5c5b444c767805cb98e8e3f89a9ae586bef6c8c93865236f83288bfe80bbabf9",
+      "runtime": {
+        "langchain": "1.4.9",
+        "langchain-core": "1.7.6",
+        "langgraph": "1.2.20",
+        "langchain-deepseek": "1.1.1",
+        "langchain-openai": "1.7.4",
+        "openai": "3.48.0"
+      }
+    }
+  },
+  "outcomes": {
+    "basic_policy-8cb572747e21ec6dc17c6fcc2fb4d46fa30707277fef7f5d91d27b7826fa08fe": {
+      "group": "basic_policy",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 33.3061856660006,
+        "latency_p95": 33.3061856660006,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "basic_policy-094de8b7ca716365591b0423520875a37f63ac94b809ab7852cbea6d139c2a84": {
+      "group": "basic_policy",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 24.705134083000303,
+        "latency_p95": 24.705134083000303,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "basic_policy-0021334160076a8f54b50dd6fe5e7066e2e8c042ef7158efaab9d031b96d7184": {
+      "group": "basic_policy",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 18.810418167000535,
+        "latency_p95": 18.810418167000535,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "basic_policy-9bae78d4f19638095dc1f5a6704a12c796058e7f84012d06dda2eec70664c28e": {
+      "group": "basic_policy",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 18.77298145900022,
+        "latency_p95": 18.77298145900022,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "basic_policy-4a70d3e19d6466b78db98bd671cf26f06f27504b7ed81616dd51affa16b25d43": {
+      "group": "basic_policy",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 19.490798458000427,
+        "latency_p95": 19.490798458000427,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "basic_policy-35a319b5382038c1d0d706b7e32d71f2bcb1babe74400e1b6b69a5f0560702a4": {
+      "group": "basic_policy",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 19.02799524999864,
+        "latency_p95": 19.02799524999864,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "basic_policy-9cc37af6e424b59acc00c18840a43d6f7b31bcb9a768e9315794d8ecc4f9908c": {
+      "group": "basic_policy",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 21.458484082999348,
+        "latency_p95": 21.458484082999348,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "basic_policy-0a8655137a745f736f5940f102a7a64886f1744c9415e3e3162e9a30a509e47c": {
+      "group": "basic_policy",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 22.420337166000536,
+        "latency_p95": 22.420337166000536,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "basic_policy-d041bd82d1f347b7edfdb8e8cfc682aa970e65a2ff11607443e9ef32cd790b59": {
+      "group": "basic_policy",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 15.458063124999171,
+        "latency_p95": 15.458063124999171,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "basic_policy-82200971b1c9c087d36f7d4355febbff4544f5a843317cefa2b8884ead68a2f3": {
+      "group": "basic_policy",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 18.398295291000977,
+        "latency_p95": 18.398295291000977,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "model_number-2666875e8b69e4c93c74cadc64e07ca3f8026bbd1fa52968090a9e3790ea9372": {
+      "group": "model_number",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 28.177067624999836,
+        "latency_p95": 28.177067624999836,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "model_number-c51530d9feba4d6295c946a6b71db480dd8f70a3cf1063ba17a94f50c09e79f3": {
+      "group": "model_number",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 42.66511529200034,
+        "latency_p95": 42.66511529200034,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "model_number-9dfbaf89a7491e6e55d5004cbed910da121c0aa1c21800021eb7627a7bd8ca30": {
+      "group": "model_number",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 30.03718470900094,
+        "latency_p95": 30.03718470900094,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "model_number-0fdb1db0a3631cb243aec818bafff2f86ef3a89b93f27d34802382068a9fb25e": {
+      "group": "model_number",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 23.04263633299888,
+        "latency_p95": 23.04263633299888,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "model_number-024b148af0380c9c257e1426840633f2aa330a8a05c030f05d3ec5b8cd6af7f3": {
+      "group": "model_number",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 22.280106082998827,
+        "latency_p95": 22.280106082998827,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "model_number-fa984d4fae1ed4f3d573421d8c3885f6f648d79966468bd637ea04f09bec735b": {
+      "group": "model_number",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 22.70692133400007,
+        "latency_p95": 22.70692133400007,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "model_number-40c340e6af71a25e6df9520e1f09289bc5b66d79a9f1b8906b912bef989bc44f": {
+      "group": "model_number",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 24.340081291999013,
+        "latency_p95": 24.340081291999013,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "model_number-432b894e5c7a1060fdd00635dd173987bf657a846683c5cb4153ccc425fb8e29": {
+      "group": "model_number",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 22.580841000000873,
+        "latency_p95": 22.580841000000873,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "model_number-b106d4de380d2f892a5d512ab47161e97f4dab7bc0caa1beed8a5220eb6f9dda": {
+      "group": "model_number",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 19.394163832999766,
+        "latency_p95": 19.394163832999766,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "model_number-c97d45df41898a6f4b2dc033a195febb8f1071b9e31cd62f07e976950d7da63e": {
+      "group": "model_number",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 20.131334333000268,
+        "latency_p95": 20.131334333000268,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "colloquial-039aa33bf11d529fed0d36efa92d8ed88b570b5763e35e721f708e491e73ee40": {
+      "group": "colloquial",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 12.767946457999642,
+        "latency_p95": 12.767946457999642,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "colloquial-b625edc0cace123506168d5e96a5b80408dc3561671caa8ffe4d11006def0ccc": {
+      "group": "colloquial",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 13.054533541000637,
+        "latency_p95": 13.054533541000637,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 0.5,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "colloquial-446217d7521df6af5c067f05ec9fed48b090d941c68eb84b58e0469965b5687c": {
+      "group": "colloquial",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 15.203547541999797,
+        "latency_p95": 15.203547541999797,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "colloquial-ea2731aee6569d73cf416c66850fbbbb51ff9dbcd7ee9c81a03edf3e704922f2": {
+      "group": "colloquial",
+      "answerable": true,
+      "handoff_reason": "incomplete_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 12.574262124999223,
+        "latency_p95": 12.574262124999223,
+        "false_reject": true,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 0.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "colloquial-d69402c4d52bd192178ab2091cb6580257686f0e0d995836d8656071e91e6fd3": {
+      "group": "colloquial",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 14.505337458000213,
+        "latency_p95": 14.505337458000213,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "colloquial-f1daccfcf20435eaae9d87a8a15e163af2e4cd1b68ad2430d417314beaa895c0": {
+      "group": "colloquial",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 13.480457916999512,
+        "latency_p95": 13.480457916999512,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 0.5,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "colloquial-f6f6dae584fc8096bb9d7d4a65f46c055913e248826da762d31d5f76f274cdde": {
+      "group": "colloquial",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 14.166018207999514,
+        "latency_p95": 14.166018207999514,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "colloquial-9d1dd1e1d65a8b5eddab4538175df149e2d917fdce73e0353f62be03f4c81e42": {
+      "group": "colloquial",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 13.41450070800056,
+        "latency_p95": 13.41450070800056,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "colloquial-57f3919c97c128b684c2739ae7d69a015f46816491276ef949e3d76e328d0bd3": {
+      "group": "colloquial",
+      "answerable": true,
+      "handoff_reason": "incomplete_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 19.26185445900046,
+        "latency_p95": 19.26185445900046,
+        "false_reject": true,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 0.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "colloquial-a9a724c1cf62d70f383d9fb3bf3cf3b2ac647f3cb4ee37137580e574ca34c644": {
+      "group": "colloquial",
+      "answerable": true,
+      "handoff_reason": "incomplete_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 22.96488175000013,
+        "latency_p95": 22.96488175000013,
+        "false_reject": true,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 0.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "cross_doc-7e60e6d84007a36d0aa0c75f449d8465c4495fc4c35ef626584a9d9792e1b847": {
+      "group": "cross_doc",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 14.501360000000204,
+        "latency_p95": 14.501360000000204,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "cross_doc-4188c9824c8648bd82230802a837bdf76e4a9aec72cf806ab2dc4a22923ffde9": {
+      "group": "cross_doc",
+      "answerable": true,
+      "handoff_reason": "order_not_found",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 3.641227833000812,
+        "latency_p95": 3.641227833000812,
+        "false_reject": true,
+        "graph_recall_at_5": 0.0,
+        "citation_validity": 0.0,
+        "graph_mrr_at_5": 0.0
+      }
+    },
+    "cross_doc-d7dcc979ed24d2759235a9dbe35dde58263c90b867972425fc4f168e2851a8d1": {
+      "group": "cross_doc",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 13.198578042000008,
+        "latency_p95": 13.198578042000008,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "cross_doc-0cb34ef4afd01de7e99fcad1a039179cdea74b413a5dbba2c5e2ac6c2268ce2d": {
+      "group": "cross_doc",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 19.000492665998536,
+        "latency_p95": 19.000492665998536,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "cross_doc-bd8a4918f29d03a02fb98b5ddc98b14a1acc40c7bf7d8eb0f10163e614c87a8a": {
+      "group": "cross_doc",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 15.647712166999554,
+        "latency_p95": 15.647712166999554,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "cross_doc-2f9a30ebcd3e524f0d41884fda7b9ee8ab1fd3a30fd3dbc06114abb4ed9bf680": {
+      "group": "cross_doc",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 15.60454558299898,
+        "latency_p95": 15.60454558299898,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "cross_doc-a33e500413f4237e044f86cc3d52867d48ab1916e82f382e0d9091e0f163ba90": {
+      "group": "cross_doc",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 14.642001333000735,
+        "latency_p95": 14.642001333000735,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 0.6666666666666666,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "cross_doc-5532f722baa093833d5d9dab02f43fe3c50b23e73482554b4ba38cadb47a7a90": {
+      "group": "cross_doc",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 45.719946084000185,
+        "latency_p95": 45.719946084000185,
+        "false_reject": true,
+        "graph_recall_at_5": 0.0,
+        "citation_validity": 0.0,
+        "graph_mrr_at_5": 0.0
+      }
+    },
+    "cross_doc-46eb19eb0956c3e6b9422fc5952778443054088afa10f205449b9d734cecb230": {
+      "group": "cross_doc",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 26.424087041999883,
+        "latency_p95": 26.424087041999883,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "cross_doc-e4646c2890d13d940b140cf400ae92767dc7fe1c2b1dfb3f50c1219fe6e54334": {
+      "group": "cross_doc",
+      "answerable": true,
+      "handoff_reason": null,
+      "metrics": {
+        "pass_rate": true,
+        "latency_p50": 13.452539375000924,
+        "latency_p95": 13.452539375000924,
+        "false_reject": false,
+        "graph_recall_at_5": 1.0,
+        "citation_validity": 1.0,
+        "graph_mrr_at_5": 1.0
+      }
+    },
+    "no_answer-03c1d6a5569ebc834065481b8478437ae1e83b0e048f5a5717a013a553e65b9a": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 13.69826374999866,
+        "latency_p95": 13.69826374999866,
+        "false_accept": false
+      }
+    },
+    "no_answer-071cb095af1c48045e15352498ec7d75ceaddfc6ee16629418cbdd371a4152fc": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 15.479469666999648,
+        "latency_p95": 15.479469666999648,
+        "false_accept": false
+      }
+    },
+    "no_answer-08d85a0ab3ad2983cae5598484601e79a2478eddff9962517430b97bf46864ff": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 12.291619792000347,
+        "latency_p95": 12.291619792000347,
+        "false_accept": false
+      }
+    },
+    "no_answer-170b6c243bbbfd65d8a247ea293717717c9d7b9d27d8095c6152a5f44f0fbfbb": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 13.716839292001168,
+        "latency_p95": 13.716839292001168,
+        "false_accept": false
+      }
+    },
+    "no_answer-243904253eb36c25ebd69406f6dbdea2ea52c3cd0bc9bdcda94cae25c2c02421": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 13.381558457998835,
+        "latency_p95": 13.381558457998835,
+        "false_accept": false
+      }
+    },
+    "no_answer-2edc0dae9c9cab4483fb5f25f49c66ef170a835364396bc7519eaa2ed92cfab3": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "retrieval_error",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 67.73848354199981,
+        "latency_p95": 67.73848354199981,
+        "false_accept": false
+      }
+    },
+    "no_answer-2eff155abf4dff60cd92037045fe79979b2c62dd8c40d0ad62a1f41495d62c56": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 19.18801679199896,
+        "latency_p95": 19.18801679199896,
+        "false_accept": false
+      }
+    },
+    "no_answer-3485f92cf2bc51d70e198908421c5192ddd8502097fed04bd6a5b266ae5f3d58": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 20.274575667001045,
+        "latency_p95": 20.274575667001045,
+        "false_accept": false
+      }
+    },
+    "no_answer-49755a5ecc65c9525ef42cb6af7ff9c4bd8e2716f23039d7e5095577c8cab196": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 13.87741620900124,
+        "latency_p95": 13.87741620900124,
+        "false_accept": false
+      }
+    },
+    "no_answer-535874b14d567bd6986c60361a9f10c27c3b155eb1cfbaaa9c60d81ef2690aae": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 12.386724207999578,
+        "latency_p95": 12.386724207999578,
+        "false_accept": false
+      }
+    },
+    "no_answer-617afd5535997f4ecde3da5ba2c63e4ba4b293d31432e8ac2827a3f4dbb71180": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 23.875484457999846,
+        "latency_p95": 23.875484457999846,
+        "false_accept": false
+      }
+    },
+    "no_answer-6944c2623b572b0d92ab1243194bafcba8dfd1897439f33f54dd48c32bdd9e01": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 20.122315500000695,
+        "latency_p95": 20.122315500000695,
+        "false_accept": false
+      }
+    },
+    "no_answer-6fcbac171c6cd32aa0dab378db380a71a1606a0607aebfcaf48ceea5361a7ff0": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 20.337524709000718,
+        "latency_p95": 20.337524709000718,
+        "false_accept": false
+      }
+    },
+    "no_answer-717a365253d6b19cd75808984b9d4d40e4f42b0e348f780598ddc8fb65516cee": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 22.212304832999507,
+        "latency_p95": 22.212304832999507,
+        "false_accept": false
+      }
+    },
+    "no_answer-7cbfc62bda3ca587a0b99ce7ef71967c0e1ee777123a421d6f79645ae26b1d4a": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 21.705801416999748,
+        "latency_p95": 21.705801416999748,
+        "false_accept": false
+      }
+    },
+    "no_answer-8adffccbf11e38eb0643a4a9a583b63fafd22d6b1f9fcf66b3680f4d15017cad": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 16.29941033400064,
+        "latency_p95": 16.29941033400064,
+        "false_accept": false
+      }
+    },
+    "no_answer-8ee6d815f4924acc3ce0458803e7503a10b2a496fb355e68f9911fa20dae4bb5": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 11.848183541998878,
+        "latency_p95": 11.848183541998878,
+        "false_accept": false
+      }
+    },
+    "no_answer-93f5e2700c0c65de9c01934f68afa54efb5083b34b2df895e0ab67bf2808ec40": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 12.546232708000389,
+        "latency_p95": 12.546232708000389,
+        "false_accept": false
+      }
+    },
+    "no_answer-9d2db708c5b61d98fcc8a8ddc7dee416a8c2591e475802ae4fa8fdceb6ba75a3": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "incomplete_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 21.78558279199933,
+        "latency_p95": 21.78558279199933,
+        "false_accept": false
+      }
+    },
+    "no_answer-9fefb0f9aea97d43d42072a03fc9b83b57b60f7d0c4dd090eab3eec1283c175d": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 14.826851917001477,
+        "latency_p95": 14.826851917001477,
+        "false_accept": false
+      }
+    },
+    "no_answer-a51d697bda0b64933dc19858b50e9bd0680195e8fd7d3372884d1362bdf4fbd8": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 19.38587995800117,
+        "latency_p95": 19.38587995800117,
+        "false_accept": false
+      }
+    },
+    "no_answer-a7df1a82131af9d360054aa05512f30a4ec0a7c97906ea628c4b6bf1cd416ea1": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 13.706697708999855,
+        "latency_p95": 13.706697708999855,
+        "false_accept": false
+      }
+    },
+    "no_answer-b6e1e1798bc37f33c6e1653dc0137a76faae24ec07906551b3e64d5f1fff5c64": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 19.268471792000128,
+        "latency_p95": 19.268471792000128,
+        "false_accept": false
+      }
+    },
+    "no_answer-bf6b69c20457ff8d9cfefaae4f425a4392b2125a76cfb63ae20c1fccaa7b534f": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 15.65749225000036,
+        "latency_p95": 15.65749225000036,
+        "false_accept": false
+      }
+    },
+    "no_answer-c4cb1f62e333a59906a6a9fb3478876b105562936d0382df4b1e94c44334322a": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 14.344402041000649,
+        "latency_p95": 14.344402041000649,
+        "false_accept": false
+      }
+    },
+    "no_answer-d46ba4779cca80b5aa6d961256b1ec4cf225e00d4bda58bb834cb6dc20f9c541": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 16.96274912499939,
+        "latency_p95": 16.96274912499939,
+        "false_accept": false
+      }
+    },
+    "no_answer-db23ddea63f091d2c3032a4286b1af9ff7d4641159c3e51b9f7bd50a642cfa7e": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 13.876791083999706,
+        "latency_p95": 13.876791083999706,
+        "false_accept": false
+      }
+    },
+    "no_answer-df583cbc5888d1f4c3f283af6790f9a52d16b468969be2d64c35d35df908c3f9": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 15.971695042000647,
+        "latency_p95": 15.971695042000647,
+        "false_accept": false
+      }
+    },
+    "no_answer-fadce2c90af8a3c81d0377ca8ad3ad0cba403725b5bb5a8c8ddddfd6853f072e": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 14.968232582999917,
+        "latency_p95": 14.968232582999917,
+        "false_accept": false
+      }
+    },
+    "no_answer-fd715913ea428d4089aafb3d14c612fe9fc78e178333a0a962e05b08fab872ca": {
+      "group": "no_answer",
+      "answerable": false,
+      "handoff_reason": "low_evidence",
+      "metrics": {
+        "pass_rate": false,
+        "latency_p50": 13.821806833000664,
+        "latency_p95": 13.821806833000664,
+        "false_accept": false
+      }
+    }
+  },
+  "metrics": {
+    "metrics": {
+      "citation_validity": {
+        "interval": {
+          "point": 0.8416666666666666,
+          "low": 0.7291666666666666,
+          "high": 0.9375
+        },
+        "n": 40,
+        "count": null,
+        "wilson_upper": null,
+        "rule_of_three_upper": null
+      },
+      "false_accept": {
+        "interval": {
+          "point": 0.0,
+          "low": 0.0,
+          "high": 0.0
+        },
+        "n": 30,
+        "count": 0,
+        "wilson_upper": 0.11351339317396873,
+        "rule_of_three_upper": 0.1
+      },
+      "false_reject": {
+        "interval": {
+          "point": 0.125,
+          "low": 0.025,
+          "high": 0.25
+        },
+        "n": 40,
+        "count": 5,
+        "wilson_upper": null,
+        "rule_of_three_upper": null
+      },
+      "graph_mrr_at_5": {
+        "interval": {
+          "point": 0.95,
+          "low": 0.875,
+          "high": 1.0
+        },
+        "n": 40,
+        "count": null,
+        "wilson_upper": null,
+        "rule_of_three_upper": null
+      },
+      "graph_recall_at_5": {
+        "interval": {
+          "point": 0.95,
+          "low": 0.875,
+          "high": 1.0
+        },
+        "n": 40,
+        "count": null,
+        "wilson_upper": null,
+        "rule_of_three_upper": null
+      },
+      "latency_p50": {
+        "interval": {
+          "point": 16.96274912499939,
+          "low": 15.203547541999797,
+          "high": 19.268471792000128
+        },
+        "n": 70,
+        "count": null,
+        "wilson_upper": null,
+        "rule_of_three_upper": null
+      },
+      "latency_p95": {
+        "interval": {
+          "point": 33.3061856660006,
+          "low": 24.340081291999013,
+          "high": 45.719946084000185
+        },
+        "n": 70,
+        "count": null,
+        "wilson_upper": null,
+        "rule_of_three_upper": null
+      },
+      "pass_rate": {
+        "interval": {
+          "point": 0.5,
+          "low": 0.38571428571428573,
+          "high": 0.6142857142857143
+        },
+        "n": 70,
+        "count": 35,
+        "wilson_upper": null,
+        "rule_of_three_upper": null
+      }
+    },
+    "statistics": {
+      "latency_p50": "p50",
+      "latency_p95": "p95",
+      "first_token_p50": "p50",
+      "first_token_p95": "p95"
+    },
+    "bootstrap": {
+      "n_resamples": 2000,
+      "seed": 17,
+      "alpha": 0.05
+    }
+  }
+}
