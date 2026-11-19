@@ -103,6 +103,7 @@ Agents: update this file in every commit. Keep it short and factual.
 - **Checkpoint 3 — original Week 3 gate failed; renewed acceptance remains open.** The original held-out standalone gate and full graph both reported 3.33% false accept. Round two observes 0/30 full-graph false accepts on the now-known regression set. The standalone gate still permits Cash App Pay; the new answer coverage check creates its handoff. Unreviewed labels, a fresh corpus holdout, human claim review, and the manual acceptance demo remain open. The dev-selected threshold remains 0.17.
 - **Routing round one did not clear Checkpoint 3.** The same no-answer item remained accepted. Round two was frozen after dev, before reserved control tests and full-test regression. No test result changed its prompt, labels, or threshold.
 - **Checkpoint 4 — v1 waiting for the human.** README, generated results and the demo script are done (commit 16). The human still has to record the video, add its link and `docs/img/demo.gif`, apply `docs/REPO_SETTINGS.md` and make the repo public. The refund demo step hands off instead of giving a cited decision. Phase-two platform work has not started.
+- **Checkpoint 4 waiver (author, 2026-11-19).** The author waives the Checkpoint 4 requirement in `AGENTS.md` §8 so phase 2 can start with commit 17. Checkpoint 4 is **not** passed: the demo video, `docs/img/demo.gif`, `docs/REPO_SETTINGS.md` and making the repo public stay open, and the refund demo step still hands off. Phase-two commits must not claim v1 was shipped.
 
 ## Known issues / follow-ups
 
