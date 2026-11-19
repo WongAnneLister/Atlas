@@ -14,6 +14,8 @@ class MetricRule(BaseModel):
     direction: Direction
     test: Literal["mcnemar", "bootstrap"]
     statistic: StatisticName = "mean"
+    # False: the release gate reports a regression but does not fail on it.
+    blocking: bool = True
 
 
 @dataclass(frozen=True)

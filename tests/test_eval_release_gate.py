@@ -5,7 +5,7 @@ from eval import gate
 from eval.run_record import DatasetVersion, Run, RunItem, RunManifest, summarize_metrics
 
 
-def _run(flipped=0, false_accept=False):
+def _run(flipped=0, false_accept=False, latency=2.0):
     items = [
         RunItem(
             id=f"supported-{i}",
@@ -16,7 +16,7 @@ def _run(flipped=0, false_accept=False):
                 "false_reject": i < flipped,
                 "graph_recall_at_5": 1.0,
                 "citation_validity": 1.0,
-                "latency_p95": 2.0,
+                "latency_p95": latency,
             },
         )
         for i in range(40)
@@ -29,7 +29,7 @@ def _run(flipped=0, false_accept=False):
             metrics={
                 "pass_rate": false_accept and i == 0,
                 "false_accept": false_accept and i == 0,
-                "latency_p95": 2.0,
+                "latency_p95": latency,
             },
         )
         for i in range(30)
@@ -57,6 +57,14 @@ def _run(flipped=0, false_accept=False):
 )
 def test_gate_flips(flips, accept, passed):
     assert gate.evaluate(_run(flips, accept), _run(), gate.load_rules()).passed is passed
+
+
+def test_latency_regression_is_reported_but_does_not_fail_the_gate():
+    result = gate.evaluate(_run(latency=9.0), _run(), gate.load_rules())
+    latency = next(row for row in result.comparisons if row.name == "latency_p95")
+    assert latency.verdict == "worse"
+    assert result.passed
+    assert "report only" in result.markdown()
 
 
 def test_gate_rejects_noncomparable_runs():

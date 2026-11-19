@@ -102,7 +102,9 @@ make eval-baseline RUN=eval/runs/<smoke-run-id>
 ```
 
 The gate rejects any no-answer false accept and any significant regression in
-[gate_rules.yaml](../eval/gate_rules.yaml). The red-team rules will be added with
+[gate_rules.yaml](../eval/gate_rules.yaml). A metric with `blocking: false` (currently only
+`latency_p95`, which depends on the runner and the SSH tunnel) is reported as a
+warning instead of failing the gate. The red-team rules will be added with
 their eval set. The gate CLI returns 1 on failure and 2 when the main baseline is
 missing. Promote from a clean `main` checkout using a run collected on its
 current HEAD. Commit `eval/baselines/main.json` after promotion. The baseline

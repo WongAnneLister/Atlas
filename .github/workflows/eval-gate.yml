@@ -75,8 +75,8 @@ jobs:
           validation=$(mktemp)
           if ! make eval-validate-all EVAL_VALIDATE_ALL_ARGS=--require-present > "$validation"; then
             cat "$validation"
-            if rg -q 'FAIL \(missing\)' "$validation" &&
-                ! rg -q 'FAIL (hash mismatch|registry counts)' "$validation"; then
+            if grep -qE 'FAIL \(missing\)' "$validation" &&
+                ! grep -qE 'FAIL (hash mismatch|registry counts)' "$validation"; then
               echo "skipped: registered local eval data is missing" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi

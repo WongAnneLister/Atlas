@@ -41,6 +41,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 16b | Refund decision prompt + window check | measured; default v2 | `eval/reports/refund_decisions.md` (real decision model, no human review): final yes/no on 14 named orders × 2 runs 0/28 with v1, 19/28 with v2; rule-based window holdout (20 delivered orders of other customers) 0/20 to 13/20; wrong final yes 0 for every version. v2 = schema field descriptions (marker in every reason, exact item ids) + `refund_decide_v2.md`; v3 showed no gain. Code now blocks a yes outside any retrieved "within N days of purchase/delivery" window; order facts add `days_since_order`. Demo picker → ORD-000065 approved with a citation in 3 of 4 runs on 2026-11-18. |
 | | **Phase 2 — production grade** | | |
 | 17 | Eval platform + CI gate | implemented; first main baseline pending | Versioned datasets, typed run records, bootstrap intervals, paired comparisons, judge calibration, and fixed smoke release check. Saved v1 results replay with zero paired deltas. Current test no-answer result: 0/30, Wilson upper bound 11.4% (`eval/reports/e2e.md`). |
+| 17a | Gate latency report-only + grep | done | `eval/gate_rules.yaml`: `latency_p95` has `blocking: false`; a significant slowdown appears as a warning in the gate summary and no longer fails it. False accepts and the other metrics still block. The eval workflow uses `grep -E` instead of `rg`, which runners may lack. No new eval results. |
 | 18 | Postgres + Redis | todo | |
 | 19 | Reliability | todo | |
 | 20 | Red-team set | todo | |

@@ -19,6 +19,9 @@ metrics:
     direction: lower
     test: bootstrap
     statistic: p95
+    # Latency depends on the runner, the SSH tunnel and shared CPU/MPS load more
+    # than on the change under test, so a slower run is reported, not blocked.
+    blocking: false
 redteam: []
 comparison_lower_is_better:
   - "*false_accept"

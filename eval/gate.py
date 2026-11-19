@@ -2,7 +2,7 @@
 
 import argparse
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
@@ -56,6 +56,7 @@ class GateResult:
     no_answer: int
     comparisons: list[Comparison]
     failures: list[str]
+    warnings: list[str] = field(default_factory=list)
 
     @property
     def passed(self) -> bool:
@@ -70,6 +71,7 @@ class GateResult:
                 f"No-answer false accepts: {self.false_accepts}/{self.no_answer}",
                 "",
                 *[f"- {failure}" for failure in self.failures],
+                *[f"- {warning}" for warning in self.warnings],
                 "",
                 *comparison_lines(self.comparisons),
                 "",
@@ -138,14 +140,18 @@ def evaluate(run: Run, baseline: Run, rules: GateRules) -> GateResult:
     comparisons = compare(baseline, run, rules.metrics, strict=True)
     _check_metric_coverage(run, rules)
     _check_metric_coverage(baseline, rules)
+    worse = [row.name for row in comparisons if row.verdict == "worse"]
     failures = [
-        f"{row.name} showed a significant regression."
-        for row in comparisons
-        if row.verdict == "worse"
+        f"{name} showed a significant regression." for name in worse if rules.metrics[name].blocking
+    ]
+    warnings = [
+        f"{name} showed a significant regression (report only; does not block)."
+        for name in worse
+        if not rules.metrics[name].blocking
     ]
     if false_accepts > rules.false_accept_max:
         failures.insert(0, "The smoke run accepted a no-answer item.")
-    return GateResult(false_accepts, no_answer, comparisons, failures)
+    return GateResult(false_accepts, no_answer, comparisons, failures, warnings)
 
 
 def read_baseline(path: Path) -> Run:
