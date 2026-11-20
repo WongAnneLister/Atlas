@@ -142,7 +142,7 @@ def test_direct_order_yes_creates_one_pending_request(seeded: Any) -> None:
     assert result["refund_request"]["order_id"] == "ORD-000001"
     assert main.decision_calls == 1
     with service.repository.connection() as connection:
-        assert connection.execute("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 1
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 1
 
 
 def test_fast_order_extraction_verifies_model_returned_id(seeded: Any) -> None:
@@ -255,7 +255,7 @@ def test_final_sale_yes_without_final_sale_policy_becomes_human(seeded: Any) -> 
     assert result["handoff"].reason.value == "policy_requires_human"
     assert result.get("refund_request") is None
     with service.repository.connection() as connection:
-        assert connection.execute("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 0
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 0
 
 
 @pytest.mark.parametrize(
@@ -317,4 +317,73 @@ def test_no_or_uncertain_decision_creates_no_request(seeded: Any, eligible: str)
     else:
         assert "cannot approve" in result["answer"]
     with service.repository.connection() as connection:
-        assert connection.execute("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 0
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 0
+
+
+@pytest.mark.integration
+def test_postgres_checkpoint_survives_refund_restart(postgres_database, seeded) -> None:
+    from pydantic import SecretStr
+
+    from support_agent.db.migrate import upgrade
+    from support_agent.gate.evidence import GateResult
+    from support_agent.graph.postgres import postgres_saver
+    from support_agent.orders.seed import seed_orders
+
+    settings, url = postgres_database
+    local, _ = seeded
+    settings.orders = local.orders
+    settings.data = local.data
+    settings.database_url = SecretStr(url.render_as_string(hide_password=False))
+    service = OrderService(platform=settings)
+    config = {"configurable": {"thread_id": "restart-picker"}}
+    try:
+        upgrade(service.repository.engine)
+        seed_orders(settings)
+        with postgres_saver(settings) as saver:
+            saver.setup()
+        with deps(settings, service, DecisionFake(responses=["unused"])) as before:
+            first = build_graph(before)
+            paused = first.invoke(
+                {
+                    "messages": [HumanMessage(content="Please refund my order")],
+                    "customer_id": "CUST-0001",
+                },
+                config,
+                durability="sync",
+            )
+            picker = paused["__interrupt__"][0].value
+            assert picker["type"] == "order_picker"
+            turn_id = paused["messages"][-1].id
+            assert turn_id
+
+        orders = [service.get_order(choice["order_id"], "CUST-0001") for choice in picker["orders"]]
+        order = next(order for order in orders if order.items[0].refunded_quantity == 0)
+        status = order.status.value.replace("_", " ")
+        policy = FixedRetriever(text=f"{status} refund policy for final sale.")
+        model = DecisionFake(responses=["unused"], decisions=[yes_decision(order)])
+        with deps(settings, service, model, policy) as after:
+            second = build_graph(after)
+            restored = second.get_state(config)
+            assert restored.interrupts[0].value == picker
+            assert restored.values["messages"][-1].id == turn_id
+            result = second.invoke(Command(resume=order.order_id), config, durability="sync")
+            assert result["trace"] == [
+                "rewrite",
+                "classify",
+                "after_sales",
+                "refund_identify",
+                "refund_load",
+                "refund_retrieve",
+                "refund_decide",
+                "refund_act",
+            ]
+            assert result["refund_request"]["order_id"] == order.order_id
+
+        with deps(settings, service, DecisionFake(responses=["unused"])) as reader:
+            persisted = build_graph(reader).get_state(config).values
+            assert isinstance(persisted["gate"], GateResult)
+            assert isinstance(persisted["retrieval"][0], RetrievedChunk)
+            assert persisted["order_context"] == result["order_context"]
+            assert persisted["refund_request"] == result["refund_request"]
+    finally:
+        service.close()

@@ -23,12 +23,12 @@ from eval.chunking_e2e_report import RUNS, section
 from eval.e2e_eval import _git_sha, _model_names
 from eval.gate_round3 import rate_cell
 from eval.grounding_eval import ANSWERS, QUESTIONS, _append, _read, _yaml
+from eval.thread_ids import EvalThreads
 from eval.tools_fallback_report import Comparison, route_ok_ids
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
-from support_agent.orders.service import OrderService
 
 REPLIES = Path("eval/runs/order-replies-template.jsonl")
 REPORT = Path("eval/reports/order_replies.md")
@@ -91,14 +91,15 @@ def run_replies(settings: Settings, reps: int) -> None:
         "date": datetime.now(UTC).isoformat(),
     }
     customer = settings.evaluation.customer_id
-    with GraphDeps(settings, order_service=OrderService(settings=settings.orders)) as deps:
+    threads = EvalThreads("replies")
+    with GraphDeps(settings) as deps:
         graph = build_graph(deps)
         for rep in range(1, reps + 1):
             for question in questions():
                 if (question.id, rep) in done:
                     continue
                 config: dict[str, Any] = {
-                    "configurable": {"thread_id": f"replies:{question.id}:{rep}"}
+                    "configurable": {"thread_id": threads(question.id, str(rep))}
                 }
                 result = graph.invoke(
                     {"messages": [HumanMessage(content=question.text)], "customer_id": customer},

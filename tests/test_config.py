@@ -59,3 +59,57 @@ def test_retrieval_eval_requires_prd_cutoffs(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setenv("SUPPORT_AGENT__RETRIEVAL_EVAL__METRIC_KS", "[1,3]")
     with pytest.raises(ValidationError, match="metric_ks"):
         get_settings()
+
+
+def test_local_is_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ENV", raising=False)
+    settings = get_settings()
+    assert settings.environment == "local"
+    assert settings.db.backend == "sqlite"
+    assert settings.graph.checkpoint_backend == "memory"
+    assert settings.redis.backend == "null"
+
+
+def test_dev_overlay_preserves_base_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ENV", "dev")
+    settings = get_settings()
+    assert settings.environment == "dev"
+    assert settings.db.backend == "postgres"
+    assert settings.graph.checkpoint_backend == "postgres"
+    assert settings.graph.checkpoint_path
+    assert settings.redis.backend == "redis"
+
+
+def test_prod_rejects_memory(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ENV", "prod")
+    monkeypatch.setenv("SUPPORT_AGENT__GRAPH__CHECKPOINT_BACKEND", "memory")
+    with pytest.raises(ValidationError, match="prod requires postgres checkpoints"):
+        get_settings()
+
+
+def test_state_urls_are_not_serialized(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://fake:fake@localhost:5433/support")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+    settings = get_settings()
+    assert settings.database_url is not None
+    assert settings.redis_url is not None
+    assert "database_url" not in settings.model_dump()
+    assert "redis_url" not in settings.model_dump()
+
+
+def test_deep_merge_replaces_lists_and_scalars() -> None:
+    from support_agent.config_layers import deep_merge
+
+    base = {"nested": {"keep": 1, "replace": [1]}, "scalar": 1}
+    assert deep_merge(base, {"nested": {"replace": [2]}, "scalar": 2}) == {
+        "nested": {"keep": 1, "replace": [2]},
+        "scalar": 2,
+    }
+
+
+def test_prod_guard_cannot_be_disabled_by_nested_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ENV", "prod")
+    monkeypatch.setenv("SUPPORT_AGENT__ENVIRONMENT", "local")
+    monkeypatch.setenv("SUPPORT_AGENT__GRAPH__CHECKPOINT_BACKEND", "memory")
+    with pytest.raises(ValidationError, match="prod requires postgres checkpoints"):
+        get_settings()

@@ -14,7 +14,6 @@ from langgraph.types import Command
 from support_agent.config import get_settings
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
-from support_agent.orders.service import OrderService
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -35,7 +34,6 @@ def main(argv: list[str] | None = None) -> int:
     settings = get_settings()
     with GraphDeps(
         settings,
-        order_service=OrderService(settings=settings.orders),
         allow_untuned_gate=args.allow_untuned_gate,
     ) as deps:
         try:

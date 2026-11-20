@@ -9,7 +9,6 @@ from support_agent.api.app import create_app
 from support_agent.api.deps import ApiDeps
 from support_agent.config import get_settings
 from support_agent.graph.deps import GraphDeps
-from support_agent.orders.service import OrderService
 from support_agent.retrieval.milvus_store import MilvusStore
 
 
@@ -17,7 +16,8 @@ def main() -> None:
     load_dotenv()
     settings = get_settings()
     api = settings.api
-    service = OrderService(settings=settings.orders)
+    graph_deps = GraphDeps(settings)
+    service = graph_deps.orders()
 
     def milvus_check() -> bool:
         store = MilvusStore(settings)
@@ -28,7 +28,7 @@ def main() -> None:
 
     deps = ApiDeps(
         settings,
-        GraphDeps(settings, order_service=service),
+        graph_deps,
         service,
         milvus_check,
         warmup=api.warmup_retriever,

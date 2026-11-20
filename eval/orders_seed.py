@@ -12,10 +12,10 @@ from tempfile import TemporaryDirectory
 from support_agent.config import REPO_ROOT, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.orders import OrderNotFound, OrderService
-from support_agent.orders.db import OrderRepository
 from support_agent.orders.fixtures import scenarios
 from support_agent.orders.models import OrderStatus
 from support_agent.orders.seed import generate_dataset
+from support_agent.orders.sql_repository import OrderRepository
 
 TABLES = (
     "customers",
@@ -33,9 +33,9 @@ def snapshot(repository: OrderRepository) -> dict[str, list[dict[str, object]]]:
         return {
             table: [
                 dict(row)
-                for row in connection.execute(
+                for row in connection.exec_driver_sql(
                     f"SELECT * FROM {table} ORDER BY rowid"  # Identifiers come only from TABLES.
-                )
+                ).mappings()
             ]
             for table in TABLES
         }
@@ -43,9 +43,9 @@ def snapshot(repository: OrderRepository) -> dict[str, list[dict[str, object]]]:
 
 def main() -> None:
     settings = get_settings()
-    repository = OrderRepository(REPO_ROOT / settings.orders.db_path)
+    repository = OrderRepository.from_settings(settings, REPO_ROOT / settings.orders.db_path)
     metadata = repository.seed_metadata()
-    service = OrderService(settings=settings.orders)
+    service = OrderService(REPO_ROOT / settings.orders.db_path, settings.orders)
     original = snapshot(repository)
     dataset = generate_dataset(settings)
     if dataset != generate_dataset(settings):
@@ -106,7 +106,7 @@ def main() -> None:
             raise ValueError("Recent orders leaked across customers")
     with TemporaryDirectory(prefix="support-orders-eval-") as temporary:
         temporary_path = Path(temporary) / "orders.sqlite"
-        probe = OrderRepository(temporary_path)
+        probe = OrderRepository.from_settings(settings, temporary_path)
         probe.replace(dataset)
         first = snapshot(probe)
         for table in TABLES:

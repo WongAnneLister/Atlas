@@ -11,8 +11,8 @@ EVAL_INTENT_ARGS ?=
 export Q
 COMPOSE_PYTHON ?= $(RUN) python
 
-.PHONY: setup up down data data-download data-licenses data-docs data-validate-docs data-orders \
-        eval-docs eval-orders \
+.PHONY: setup up up-state down migrate data data-download data-licenses data-docs data-validate-docs data-orders \
+        eval-docs eval-orders eval-orders-parity \
         eval-build eval-validate eval-review eval-review-import eval-set-report \
         ingest ingest-chunks embedding-cache eval-ingest test-milvus eval-retrieval eval-intent eval-e2e sweep serve \
         lint format typecheck test check notes-check notes minio-image-local search reranker-cache \
@@ -35,8 +35,14 @@ setup:
 up:
 	$(COMPOSE_PYTHON) scripts/compose.py up -d
 
+up-state:
+	$(COMPOSE_PYTHON) scripts/compose.py up -d --wait postgres redis
+
 down:
 	$(COMPOSE_PYTHON) scripts/compose.py down
+
+migrate:
+	$(RUN) python -m support_agent.db.migrate
 
 minio-image-local:
 	$(RUN) python scripts/build_minio.py
@@ -63,7 +69,10 @@ eval-docs:
 
 data-orders:
 	$(RUN) python -m support_agent.orders.seed
-	$(RUN) python eval/orders_seed.py
+	@if [ "$${ENV:-local}" = local ]; then $(RUN) python eval/orders_seed.py; fi
+
+eval-orders-parity:
+	$(RUN) python -m eval.orders_parity
 
 eval-orders:
 	$(RUN) python eval/orders_seed.py

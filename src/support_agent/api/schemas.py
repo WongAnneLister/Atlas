@@ -26,3 +26,16 @@ class HealthResponse(BaseModel):
     milvus: bool
     order_db: bool
     models_configured: bool
+
+
+CheckName = Literal["postgres", "migrations", "redis", "milvus"]
+CheckState = Literal["ok", "down", "disabled"]
+
+
+class LiveResponse(BaseModel):
+    status: Literal["ok"] = "ok"
+
+
+class ReadyResponse(BaseModel):
+    status: Literal["ok", "down"]
+    checks: dict[CheckName, CheckState]

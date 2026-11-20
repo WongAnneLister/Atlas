@@ -35,7 +35,7 @@ class RefundPath:
         self.prompt = (PROMPTS / prompt_file).read_text(encoding="utf-8")
 
     def _service(self) -> OrderService:
-        return self.deps.order_service or OrderService(settings=self.deps.settings.orders)
+        return self.deps.orders()
 
     def identify_order(self, state: ConversationState) -> dict[str, Any]:
         service = self._service()
@@ -214,12 +214,21 @@ class RefundPath:
             }
         if not state.refund_order_id or not state.customer_id:
             return self._handoff(state, HandoffReason.ORDER_NOT_FOUND)
+        turn_id = next(
+            (
+                message.id
+                for message in reversed(state.messages)
+                if isinstance(message, HumanMessage)
+            ),
+            None,
+        )
         try:
             request = self._service().create_refund_request(
                 state.refund_order_id,
                 state.customer_id,
                 decision.items,
                 "; ".join(decision.reasons) or "Customer refund request",
+                idempotency_key=turn_id,
             )
         except Exception as error:
             logger.warning("Refund request creation failed: %s", type(error).__name__)

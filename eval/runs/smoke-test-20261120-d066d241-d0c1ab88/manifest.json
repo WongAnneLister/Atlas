@@ -1,0 +1,67 @@
+{
+  "kind": "smoke",
+  "split": "test",
+  "git_sha": "d066d2414b1921e89db98d0e796a21922574d9e8",
+  "config_hash": "51d0e115d3ef4c82b0e94d07950b9ed00438b7ab465aa8e60641804a2e2807bb",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash"
+  },
+  "datasets": {
+    "smoke": {
+      "version": "v1",
+      "sha256": "9ed7c618bd6e57767c81da67e106a90dee701ae576ab83102d1485a9bb051424"
+    }
+  },
+  "seed": 17,
+  "dirty": true,
+  "started_at": "2026-11-20T03:31:39.588658Z",
+  "ended_at": "2026-11-20T04:06:11.485807Z",
+  "cost_usd": null,
+  "cost_note": "price not set",
+  "command": [
+    "eval-e2e",
+    "--split",
+    "test",
+    "--eval-file",
+    "eval/sets/smoke.jsonl",
+    "--expect-dataset",
+    "smoke",
+    "--fresh",
+    "--report",
+    "eval/runs/smoke.md",
+    "--run-pointer",
+    "/tmp/atlas-c18-smoke-dir"
+  ],
+  "source": {
+    "record_type": "metadata",
+    "git_sha": "d066d2414b1921e89db98d0e796a21922574d9e8",
+    "config_hash": "51d0e115d3ef4c82b0e94d07950b9ed00438b7ab465aa8e60641804a2e2807bb",
+    "eval_file_hash": "9ed7c618bd6e57767c81da67e106a90dee701ae576ab83102d1485a9bb051424",
+    "corpus_hash": "60e259f600ed4ae895106d14385edcb6cfcf12071ec0219a32a936a209c5c6fd",
+    "models": {
+      "fast": "deepseek-flash",
+      "main": "deepseek-flash"
+    },
+    "dataset_versions": {
+      "flipkart_faqs": "NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228",
+      "philips_manuals": "InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84",
+      "maktek_faqs": "MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240",
+      "bitext": "bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443"
+    },
+    "split": "test",
+    "date": "2026-11-20T03:31:39.588658+00:00",
+    "customer_id": "CUST-0001",
+    "threshold": 0.15,
+    "code_hash": "f69ea652c471667d890031ea0fd862260c71d8bcc34343c4e10b0ef30bc1f74b",
+    "prompt_hash": "5c5b444c767805cb98e8e3f89a9ae586bef6c8c93865236f83288bfe80bbabf9",
+    "runtime": {
+      "langchain": "1.4.9",
+      "langchain-core": "1.7.6",
+      "langgraph": "1.2.20",
+      "langchain-deepseek": "1.1.1",
+      "langchain-openai": "1.7.4",
+      "openai": "3.48.0"
+    }
+  }
+}

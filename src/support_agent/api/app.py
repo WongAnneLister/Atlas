@@ -4,27 +4,31 @@ import logging
 import sqlite3
 from asyncio import Lock
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
-from contextlib import aclosing, asynccontextmanager
+from contextlib import ExitStack, aclosing, asynccontextmanager
 from pathlib import Path
 from typing import Any
 
 from anyio import CancelScope, fail_after, to_thread
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
+from sqlalchemy.exc import SQLAlchemyError
 from sse_starlette import EventSourceResponse, JSONServerSentEvent
 from starlette.types import Receive, Scope, Send
 
 from support_agent.api.deps import ApiDeps
 from support_agent.api.events import SseEvent
+from support_agent.api.readiness import ReadinessChecks, build_readiness, readiness
 from support_agent.api.runner import Graph, TurnInput, failure_events, run_turn
 from support_agent.api.schemas import (
     ChatRequest,
     ConversationRequest,
     HealthResponse,
+    LiveResponse,
+    ReadyResponse,
     ResumeRequest,
 )
 from support_agent.graph.build import build_graph
@@ -35,7 +39,7 @@ from support_agent.orders.models import CustomerSummary
 
 STATIC = Path(__file__).with_name("static")
 logger = logging.getLogger(__name__)
-_DB_ERRORS = (FileNotFoundError, sqlite3.Error)
+_DB_ERRORS = (FileNotFoundError, sqlite3.Error, SQLAlchemyError)
 
 
 def _encode(event: SseEvent) -> JSONServerSentEvent:
@@ -66,10 +70,11 @@ def create_app(deps: ApiDeps) -> FastAPI:
     system_error = load_templates("handoff_messages.yaml")[HandoffReason.SYSTEM_ERROR]
     locks: dict[str, Lock] = {}
     graph: Graph
+    checks: ReadinessChecks
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        nonlocal graph
+        nonlocal graph, checks
         try:
             graph = await to_thread.run_sync(build_graph, deps.graph_deps)
             if deps.warmup:
@@ -81,7 +86,11 @@ def create_app(deps: ApiDeps) -> FastAPI:
                     )
                 except Exception as error:
                     logger.warning("Retriever warmup failed: %s", type(error).__name__)
-            yield
+            with ExitStack() as resources:
+                checks = deps.readiness or build_readiness(
+                    deps.settings, deps.order_service, deps.milvus_check, resources
+                )
+                yield
         finally:
             await to_thread.run_sync(tracing.flush)
             await to_thread.run_sync(deps.graph_deps.close)
@@ -120,6 +129,17 @@ def create_app(deps: ApiDeps) -> FastAPI:
             order_db=order_db,
             models_configured=models,
         )
+
+    @app.get("/api/health/live")
+    async def live() -> LiveResponse:
+        return LiveResponse()
+
+    @app.get("/api/health/ready")
+    async def ready(response: Response) -> ReadyResponse:
+        result = await readiness(checks, deps.settings.readiness)
+        if result.status == "down":
+            response.status_code = 503
+        return result
 
     async def start_turn(
         request: ConversationRequest, turn_input: TurnInput, text: str | None

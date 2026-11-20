@@ -7,12 +7,13 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.orders import InvalidRefundRequest, OrderNotFound, OrderService
-from support_agent.orders.db import OrderRepository
 from support_agent.orders.models import OrderStatus
 from support_agent.orders.seed import generate_dataset, seed_orders
+from support_agent.orders.sql_repository import OrderRepository
 
 
 @pytest.fixture
@@ -109,7 +110,7 @@ def test_ownership_is_indistinguishable_from_missing(service: OrderService, oper
         messages.append(str(error.value))
     assert messages == ["Order not found"] * len(messages)
     with service.repository.connection() as connection:
-        assert connection.execute("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 0
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 0
 
 
 def test_recent_orders_are_scoped_sorted_and_limited(service: OrderService) -> None:
@@ -156,14 +157,16 @@ def test_refund_request_persists_without_changing_any_order_facts(
     assert reopened.get_order(order.order_id, order.customer_id) == order
     assert reopened.get_tracking(order.order_id, order.customer_id) == tracking
     with service.repository.connection() as connection:
-        row = connection.execute("SELECT * FROM refund_requests").fetchone()
+        row = connection.exec_driver_sql("SELECT * FROM refund_requests").mappings().one()
         assert row["request_id"] == request.request_id
         assert row["status"] == "pending_review"
-        selected = connection.execute("SELECT item_id FROM refund_request_items").fetchall()
+        selected = (
+            connection.exec_driver_sql("SELECT item_id FROM refund_request_items").mappings().all()
+        )
         assert [item["item_id"] for item in selected] == request.item_ids
     seed_orders(order_settings)
     with service.repository.connection() as connection:
-        assert connection.execute("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 0
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 0
 
 
 @pytest.mark.parametrize("invalid", ["empty", "duplicate", "unknown", "other_order", "reason"])
@@ -183,8 +186,11 @@ def test_invalid_refund_inputs_do_not_write(service: OrderService, invalid: str)
     with pytest.raises(InvalidRefundRequest):
         service.create_refund_request(order.order_id, order.customer_id, item_ids, reason)
     with service.repository.connection() as connection:
-        assert connection.execute("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 0
-        assert connection.execute("SELECT COUNT(*) FROM refund_request_items").fetchone()[0] == 0
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 0
+        assert (
+            connection.exec_driver_sql("SELECT COUNT(*) FROM refund_request_items").fetchone()[0]
+            == 0
+        )
 
 
 def test_catalog_products_are_used_and_missing_catalog_has_fallback(
@@ -212,16 +218,16 @@ def test_money_roundtrips_as_decimal_and_integer_cents(service: OrderService) ->
         assert isinstance(order.total, Decimal)
         assert order.total == sum((i.unit_price * i.quantity for i in order.items), Decimal(0))
     with service.repository.connection() as connection:
-        assert {row[0] for row in connection.execute("SELECT typeof(total_cents) FROM orders")} == {
-            "integer"
-        }
-        assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+        assert {
+            row[0] for row in connection.exec_driver_sql("SELECT typeof(total_cents) FROM orders")
+        } == {"integer"}
+        assert connection.exec_driver_sql("PRAGMA foreign_key_check").fetchall() == []
 
 
 def test_missing_database_is_not_silently_created(tmp_path: Path) -> None:
     path = tmp_path / "missing.sqlite"
     with pytest.raises(FileNotFoundError, match="make data-orders"):
-        OrderRepository(path).get_order("ORD-000001", "CUST-0001")
+        OrderRepository.from_settings(get_settings(), path).get_order("ORD-000001", "CUST-0001")
     assert not path.exists()
 
 
@@ -238,23 +244,58 @@ def test_failed_reset_rolls_back_existing_tables(order_settings: Settings) -> No
     dataset = seed_orders(order_settings)
     before = rows(order_settings.orders.db_path)
     invalid = dataset.model_copy(update={"customers": []})
-    with pytest.raises(sqlite3.IntegrityError):
-        OrderRepository(Path(order_settings.orders.db_path)).replace(invalid)
+    with pytest.raises(IntegrityError):
+        OrderRepository.from_settings(order_settings).replace(invalid)
     assert rows(order_settings.orders.db_path) == before
 
 
 def test_refund_item_write_failure_rolls_back_request(service: OrderService) -> None:
     order = service.get_order("ORD-000001", "CUST-0001")
     with service.repository.connection() as connection:
-        connection.execute(
+        connection.exec_driver_sql(
             "CREATE TRIGGER reject_request_item BEFORE INSERT ON refund_request_items "
             "BEGIN SELECT RAISE(ABORT, 'fixture failure'); END"
         )
-    with pytest.raises(sqlite3.IntegrityError, match="fixture failure"):
+    with pytest.raises(IntegrityError, match="fixture failure"):
         service.create_refund_request(
             order.order_id, order.customer_id, [order.items[0].item_id], "Test rollback"
         )
     with service.repository.connection() as connection:
-        assert connection.execute("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 0
-        assert connection.execute("SELECT COUNT(*) FROM refund_request_items").fetchone()[0] == 0
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 0
+        assert (
+            connection.exec_driver_sql("SELECT COUNT(*) FROM refund_request_items").fetchone()[0]
+            == 0
+        )
     assert service.get_order(order.order_id, order.customer_id) == order
+
+
+def test_simultaneous_sqlite_refunds_both_commit(service: OrderService) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    from sqlalchemy import event
+
+    order = service.get_order("ORD-000001", "CUST-0001")
+    first_read, second_read = Event(), Event()
+
+    def after_query(connection, cursor, statement, parameters, context, executemany) -> None:
+        if "FROM order_items" not in statement:
+            return
+        if first_read.is_set():
+            second_read.set()
+        else:
+            first_read.set()
+            second_read.wait(0.25)
+
+    event.listen(service.repository.engine, "after_cursor_execute", after_query)
+
+    def request(reason: str) -> str:
+        return service.create_refund_request(
+            order.order_id, order.customer_id, [order.items[0].item_id], reason
+        ).request_id
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(request, "First issue")
+        assert first_read.wait(2)
+        second = pool.submit(request, "Second issue")
+        assert first.result(timeout=3) != second.result(timeout=3)

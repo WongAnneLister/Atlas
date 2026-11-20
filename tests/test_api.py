@@ -42,6 +42,7 @@ async def client(
     milvus: Callable[[], bool] = lambda: True,
     retriever: Any = None,
     configure_models: bool = True,
+    readiness: Any = None,
 ) -> AsyncIterator[httpx.AsyncClient]:
     settings, service = seeded
     settings.graph.checkpoint_backend = "memory"
@@ -70,7 +71,7 @@ async def client(
             retriever=retriever or FixedRetriever(evidence(score)),
             order_service=service,
         )
-    app = create_app(ApiDeps(settings, deps, service, milvus))
+    app = create_app(ApiDeps(settings, deps, service, milvus, readiness=readiness))
     async with (
         app.router.lifespan_context(app),
         httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as api,

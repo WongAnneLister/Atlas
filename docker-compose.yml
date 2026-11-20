@@ -63,6 +63,33 @@ services:
       - etcd
       - minio
 
+  postgres:
+    image: postgres:16.15-alpine
+    environment:
+      POSTGRES_USER: ${ATLAS_POSTGRES_USER:-support}
+      POSTGRES_PASSWORD: ${ATLAS_POSTGRES_PASSWORD:-support}
+      POSTGRES_DB: ${ATLAS_POSTGRES_DB:-support}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${ATLAS_POSTGRES_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7.4.12-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:${ATLAS_REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   # --- Optional tracing stack (Langfuse v3), profile "tracing". Local dev secrets only. ---
   langfuse-postgres:
     profiles: ["tracing"]
@@ -162,6 +189,7 @@ services:
       LANGFUSE_INIT_USER_PASSWORD: local-dev-password
 
 volumes:
+  postgres_data:
   etcd_data:
   minio_data:
   milvus_data:

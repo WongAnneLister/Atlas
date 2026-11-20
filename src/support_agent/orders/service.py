@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
+from json import dumps
 from pathlib import Path
-from uuid import uuid4
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
-from support_agent.config import REPO_ROOT, OrdersSettings, get_settings
-from support_agent.orders.db import OrderRepository
+from support_agent.config import REPO_ROOT, OrdersSettings, Settings, get_settings
 from support_agent.orders.models import CustomerSummary, Order, RefundRequest, Shipment
+from support_agent.orders.sql_repository import OrderRepository
 
 
 def _utc_now() -> datetime:
@@ -22,10 +23,18 @@ class OrderService:
         db_path: Path | None = None,
         settings: OrdersSettings | None = None,
         clock: Callable[[], datetime] = _utc_now,
+        *,
+        platform: Settings | None = None,
     ) -> None:
-        self.settings = settings or get_settings().orders
-        self.repository = OrderRepository(db_path or REPO_ROOT / self.settings.db_path)
+        platform = platform or get_settings()
+        self.settings = settings or platform.orders
+        if db_path is None and platform.db.backend == "sqlite":
+            db_path = REPO_ROOT / self.settings.db_path
+        self.repository = OrderRepository.from_settings(platform, db_path)
         self.clock = clock
+
+    def close(self) -> None:
+        self.repository.close()
 
     def list_customers(self, limit: int) -> list[CustomerSummary]:
         if limit <= 0:
@@ -57,12 +66,19 @@ class OrderService:
         customer_id: str,
         item_ids: list[str],
         reason: str,
+        *,
+        idempotency_key: str | None = None,
     ) -> RefundRequest:
+        request_key = (
+            uuid5(NAMESPACE_URL, dumps(["atlas-refund", customer_id, order_id, idempotency_key]))
+            if idempotency_key is not None
+            else uuid4()
+        )
         return self.repository.create_refund_request(
             order_id,
             customer_id,
             item_ids,
             reason,
-            f"REF-{uuid4().hex}",
+            f"REF-{request_key.hex}",
             self.clock(),
         )

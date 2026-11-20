@@ -23,6 +23,9 @@ dependencies = [
     "structlog>=24.1",
     "pypdf>=5.0",
     "python-dotenv>=1.2.4",
+    "sqlalchemy>=2.0,<2.1",
+    "alembic>=1.14,<2",
+    "redis>=6,<8",
 ]
 
 [project.optional-dependencies]
@@ -32,6 +35,10 @@ deepseek = [
 ]
 sqlite = [
     "langgraph-checkpoint-sqlite>=3.1.3",
+]
+postgres = [
+    "langgraph-checkpoint-postgres>=3,<4",
+    "psycopg[binary,pool]>=3.2,<4",
 ]
 # Other provider packages can be added when needed; DeepSeek is an opt-in extra.
 

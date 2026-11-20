@@ -11,7 +11,7 @@ class IntentSettings(BaseModel):
 
 
 class GraphSettings(BaseModel):
-    checkpoint_backend: Literal["memory", "sqlite"]
+    checkpoint_backend: Literal["memory", "sqlite", "postgres"]
     checkpoint_path: str
 
 

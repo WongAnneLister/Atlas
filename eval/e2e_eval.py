@@ -30,13 +30,13 @@ from eval.run_record import (
     read_run,
     write_run,
 )
+from eval.thread_ids import EvalThreads
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
 from support_agent.observability import tracing
 from support_agent.observability.cost import UsageLedger, cost_usd
-from support_agent.orders.service import OrderService
 
 
 def _git_sha() -> str:
@@ -285,14 +285,14 @@ def main(argv: list[str] | None = None) -> int:
     if not items:
         raise ValueError("No eval items match the requested split")
     pending = [item for item in items if item.id not in existing]
+    threads = EvalThreads(stem)
     with GraphDeps(
         settings,
-        order_service=OrderService(settings=settings.orders),
         allow_untuned_gate=args.allow_untuned,
     ) as deps:
         graph = build_graph(deps)
         for item in pending:
-            thread_id = f"e2e:{args.split}:{item.id}"
+            thread_id = threads(args.split, item.id)
             trace = (
                 tracing.start_turn(
                     settings,

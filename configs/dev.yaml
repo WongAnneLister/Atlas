@@ -1,0 +1,6 @@
+db:
+  backend: postgres
+graph:
+  checkpoint_backend: postgres
+redis:
+  backend: redis

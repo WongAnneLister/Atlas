@@ -1,0 +1,7 @@
+db:
+  backend: postgres
+  pool_size: 10
+graph:
+  checkpoint_backend: postgres
+redis:
+  backend: redis

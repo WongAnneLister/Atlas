@@ -13,8 +13,9 @@ from support_agent.orders.service import OrderService
 
 
 @pytest.fixture(autouse=True)
-def _fresh_settings() -> Iterator[None]:
+def _fresh_settings(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Each test sees settings rebuilt from the current env."""
+    monkeypatch.setenv("ENV", "local")
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
@@ -29,3 +30,13 @@ def seeded(tmp_path: Path) -> tuple[Settings, OrderService]:
     settings.data.processed_dir = str(tmp_path / "processed")
     seed_orders(settings)
     return settings, OrderService(settings=settings.orders)
+
+
+@pytest.fixture
+def postgres_database(monkeypatch: pytest.MonkeyPatch):
+    from support_agent.db.scratch import scratch_database
+
+    monkeypatch.setenv("ENV", "dev")
+    settings = Settings()
+    with scratch_database(settings) as url:
+        yield settings, url

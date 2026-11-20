@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 
 from eval.e2e_eval import _git_sha, _model_names
 from eval.gate_round3 import rate_cell
+from eval.thread_ids import EvalThreads
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.graph.build import build_graph
@@ -146,10 +147,11 @@ def collect_answers(settings: Settings, meta: dict[str, Any]) -> None:
     answer_settings = settings.model_copy(deep=True)
     answer_settings.agent.order_grounding = False
     customer = settings.evaluation.customer_id
-    with GraphDeps(answer_settings, order_service=OrderService(settings=settings.orders)) as deps:
+    threads = EvalThreads("grounding")
+    with GraphDeps(answer_settings) as deps:
         graph = build_graph(deps)
         for question in pending:
-            config: dict[str, Any] = {"configurable": {"thread_id": f"grounding:{question.id}"}}
+            config: dict[str, Any] = {"configurable": {"thread_id": threads(question.id)}}
             result = graph.invoke(
                 {"messages": [HumanMessage(content=question.text)], "customer_id": customer},
                 config,

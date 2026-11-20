@@ -44,7 +44,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 17a | Gate latency report-only + grep | done | `eval/gate_rules.yaml`: `latency_p95` has `blocking: false`; a significant slowdown appears as a warning in the gate summary and no longer fails it. False accepts and the other metrics still block. The eval workflow uses `grep -E` instead of `rg`, which runners may lack. No new eval results. |
 | 17b | Baseline promotion error check | done | `make eval-baseline` now refuses a smoke run when more than `promotion_max_error_rate` (0.05, `eval/gate_rules.yaml`) of items hit a classification, retrieval or answer error. Found on the first smoke attempt on `main` (2026-11-19): DeepSeek returned 402 Insufficient Balance on every intent call, every item was handed off, and the old check would have promoted it. That run was not promoted. No new eval results. |
 | 17c | First smoke baseline | done | `eval/baselines/main.json`, run `smoke-test-20261119-7085692a-f90d3e91` on clean `main` (`7085692`), real DeepSeek, MPS reranker, VPS Milvus over SSH: no-answer false accepts 0/30; false rejects 5/40; accepted 35/70; graph Recall@5 0.95; citation validity 0.8417; latency P95 33.3062s. Dependency errors 2/70 (one model timeout, one Milvus connection error), under the 0.05 limit. `make eval-gate` on the same run passes with all deltas 0. Single run; DeepSeek through this setup is not deterministic (13f). |
-| 18 | Postgres + Redis | todo | |
+| 18 | Postgres + Redis | done | Eval release gate — Passed. No-answer false accepts 0/30. No significant change on any compared metric. Dependency errors 1/70 (`OpenAIConnectionError`). Order parity found 0 mismatches across 50 customers and 300 orders. HTTP restart and resume verified. See commit 18 verification below. |
 | 19 | Reliability | todo | |
 | 20 | Red-team set | todo | |
 | 21 | Guardrails + security | todo | |
@@ -110,6 +110,8 @@ Agents: update this file in every commit. Keep it short and factual.
 
 ## Known issues / follow-ups
 
+- 18: `make data-validate-docs` reports `Build config changed` after adding platform settings. The corpus and Milvus index were preserved. Follow up by hashing only the settings used to build documents.
+- 18: Active turn locks are process-local until commit 19. A saved refund turn uses its persisted message ID to make replay safe.
 - 17: All five core reports were replayed from saved rows without new model calls. The archived first baseline and tracked sweep PNG were preserved. Judge calibration has 0 human labels and needs 30. Hosted CI has no local eval data. Verify the workflow on a labeled test PR. The first smoke baseline was promoted in 17c.
 
 - 16b: Before the window check, v2 and v3 approved every holdout order 35 days after purchase (29 after delivery) even with `days_since_order` in the facts. The code check was added after seeing that, so the window holdout is no longer unseen; v3 was written after v2 errors on the named orders. Both sets are small and their expectations are agent-authored and unreviewed.
@@ -203,3 +205,38 @@ Run: `make serve` with `SUPPORT_AGENT__MILVUS__URI` set to the SSH-forwarded VPS
 - Refund with picker, not met. "I want a refund for my order." (CUST-0001) showed 5 orders plus "None of these"; picking ORD-000065 resumed through refund_load and refund_retrieve. The refund policy query scored 0.03 against threshold 0.15 and handed off (`low_evidence`). No cited decision was produced. This matches the commit 12 finding.
 - Gold bars, met. "Can I pay for my order with gold bars?" handed off (`incomplete_evidence`). The standalone gate passed it at 0.22 with no key terms; the coverage check stopped it, as with Cash App Pay.
 - Display issue: citation heading paths show an empty segment ("Returns > flipkart_faqs / / Cancellations and Returns"). Not changed here.
+
+## Commit 18 verification (2026-11-20, Asia/Tokyo)
+
+- `make up-state` started healthy Atlas Postgres on loopback port 5433 and Redis on 6379.
+  `make migrate` completed twice. The targeted integration run passed all five tests.
+  It covered order storage, idempotent refund replay, Alembic and LangGraph migrations,
+  readiness, and restart-resume with a new graph.
+- `make eval-orders-parity` compared all seven order tables and the OrderService results on both databases.
+  See `eval/reports/orders_parity.md`. The fresh SQLite audit matched the pre-change measurements.
+  The committed SQLite report and guide were preserved because fresh runs stamp new provenance hashes.
+- `make eval-smoke` ran in `ENV=dev`. The run manifest and aggregate metrics are in `eval/runs/smoke-test-20261120-d066d241-d0c1ab88/`.
+  `make eval-gate` compared the run against the existing `eval/baselines/main.json`.
+  The paired results below use the frozen test smoke set. Latency is report-only.
+  The run was collected on `d066d24` with the commit-18 changes still uncommitted (manifest `dirty: true`),
+  so it is not tied to a reproducible commit. It shows no regression, but it is weaker evidence than a clean-tree run.
+
+| Metric | Paired n | A | B | Delta | 95% CI | McNemar p | Verdict |
+|---|---:|---:|---:|---:|---:|---:|---|
+| false_accept | 30 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| false_reject | 40 | 0.125 | 0.1 | -0.025 | [-0.075, +0] | 1 | no significant change |
+| pass_rate | 70 | 0.5 | 0.514286 | +0.0142857 | [+0, +0.0428571] | 1 | no significant change |
+| graph_recall_at_5 | 40 | 0.95 | 0.975 | +0.025 | [+0, +0.075] | — | no significant change |
+| citation_validity | 40 | 0.841667 | 0.866667 | +0.025 | [+0, +0.075] | — | no significant change |
+| latency_p95 | 70 | 33.3062 | 42.2543 | +8.94807 | [-11.1977, +17.5491] | — | no significant change |
+
+### Manual API restart
+
+1. Loaded `.env` and started `ENV=dev SUPPORT_AGENT__API__PORT=8018 make serve` with
+   Atlas Postgres, Redis and the Milvus tunnel. Readiness reported all four checks `ok`.
+2. Posted `{"customer_id":"CUST-0001","conversation_id":"commit18-restart","message":"I want a refund for my order."}`
+   to `/api/chat`. HTTP 200 returned an `order_picker` with five orders.
+3. Stopped the server and ran the same serve command again. Posted
+   `{"customer_id":"CUST-0001","conversation_id":"commit18-restart","value":"ORD-000065"}` to `/api/resume`.
+   The new process returned HTTP 200 and continued through `refund_load`, `refund_retrieve`,
+   `refund_decide` and `refund_act`. The reply carried one citation and Postgres showed the request as `pending_review`.

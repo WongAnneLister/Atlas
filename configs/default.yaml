@@ -289,3 +289,22 @@ api:
   max_resume_chars: 128
   health_timeout_s: 2
   warmup_retriever: false
+
+db:
+  backend: sqlite
+  pool_size: 5
+  max_overflow: 0
+  pool_timeout_s: 5
+  connect_timeout_s: 5
+  pool_pre_ping: true
+
+redis:
+  backend: "null"
+  connect_timeout_s: 2
+  socket_timeout_s: 2
+
+readiness:
+  postgres_timeout_s: 2
+  migrations_timeout_s: 2
+  redis_timeout_s: 2
+  milvus_timeout_s: 2

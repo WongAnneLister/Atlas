@@ -10,7 +10,7 @@ from pathlib import Path
 
 from support_agent.config import REPO_ROOT, OrdersSettings, SeedProduct, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text
-from support_agent.orders.db import OrderRepository
+from support_agent.db.migrate import ensure_atlas_schema, require_write_target
 from support_agent.orders.fixtures import Scenario, load_products, scenarios
 from support_agent.orders.models import (
     Customer,
@@ -21,6 +21,7 @@ from support_agent.orders.models import (
     SeedMetadata,
     Shipment,
 )
+from support_agent.orders.sql_repository import OrderRepository
 
 log = logging.getLogger(__name__)
 
@@ -194,8 +195,17 @@ def generate_dataset(settings: Settings, catalog_path: Path | None = None) -> Se
 
 def seed_orders(settings: Settings, catalog_path: Path | None = None) -> SeedDataset:
     dataset = generate_dataset(settings, catalog_path)
-    repository = OrderRepository(REPO_ROOT / settings.orders.db_path)
-    repository.replace(dataset)
+    repository = OrderRepository.from_settings(settings)
+    try:
+        if settings.db.backend == "postgres":
+            require_write_target(repository.engine.url)
+            with repository.connection() as connection:
+                ensure_atlas_schema(connection)
+        else:
+            log.info("SQLite target %s", repository.db_path)
+        repository.replace(dataset)
+    finally:
+        repository.close()
     log.info(
         "seeded %d customers, %d orders from %s at fixed date %s",
         len(dataset.customers),
@@ -212,6 +222,9 @@ def main() -> int:
         seed_orders(get_settings())
     except (OSError, ValueError) as exc:
         log.error("order seed failed: %s", exc)
+        return 1
+    except Exception as exc:
+        log.error("order seed failed: %s", type(exc).__name__)
         return 1
     return 0
 

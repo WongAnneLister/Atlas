@@ -13,6 +13,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 
 from support_agent.config import REPO_ROOT, Settings
+from support_agent.graph.postgres import postgres_saver
 from support_agent.llm import Role, get_chat_model
 from support_agent.orders.service import OrderService
 from support_agent.retrieval.embed import BgeM3Embedder
@@ -51,6 +52,8 @@ class GraphDeps:
         if self._checkpointer is None:
             if self.settings.graph.checkpoint_backend == "memory":
                 self._checkpointer = InMemorySaver()
+            elif self.settings.graph.checkpoint_backend == "postgres":
+                self._checkpointer = self._resources.enter_context(postgres_saver(self.settings))
             else:
                 try:
                     from langgraph.checkpoint.sqlite import SqliteSaver
@@ -64,6 +67,14 @@ class GraphDeps:
                     SqliteSaver.from_conn_string(str(checkpoint_path))
                 )
         return self._checkpointer
+
+    def orders(self) -> OrderService:
+        if self._closed:
+            raise RuntimeError("GraphDeps is closed")
+        if self.order_service is None:
+            self.order_service = OrderService(platform=self.settings)
+            self._resources.callback(self.order_service.close)
+        return self.order_service
 
     def knowledge_retriever(self) -> Retriever:
         if self._closed:

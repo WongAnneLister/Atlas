@@ -3,6 +3,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from support_agent.api.readiness import ReadinessChecks
 from support_agent.config import Settings
 from support_agent.graph.deps import GraphDeps
 from support_agent.orders.service import OrderService
@@ -15,3 +16,4 @@ class ApiDeps:
     order_service: OrderService
     milvus_check: Callable[[], bool]
     warmup: bool = False
+    readiness: ReadinessChecks | None = None

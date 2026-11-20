@@ -18,7 +18,6 @@ from support_agent.graph.order_replies import REPLY_TOOL, Lookup, render_order_r
 from support_agent.graph.state import ConversationState
 from support_agent.graph.tools import ToolResult, build_order_tools
 from support_agent.orders.models import OrderNotFound
-from support_agent.orders.service import OrderService
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +72,7 @@ class ToolsPath:
         if not state.customer_id or not state.customer_id.strip():
             return {**_updates(current), **make_handoff(current, HandoffReason.TOOL_ERROR)}
         settings = self.deps.settings
-        service = self.deps.order_service or OrderService(settings=settings.orders)
+        service = self.deps.orders()
         tools = build_order_tools(service, state.customer_id)
         by_name = {tool.name: tool for tool in tools}
         messages: list[BaseMessage] = [

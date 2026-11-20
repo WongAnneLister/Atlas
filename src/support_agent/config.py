@@ -15,15 +15,18 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, SecretStr, model_validator
 from pydantic_settings import (
     BaseSettings,
+    InitSettingsSource,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
-    YamlConfigSettingsSource,
 )
 
+from support_agent.config_layers import yaml_layers
+from support_agent.db.settings import DatabaseSettings
 from support_agent.graph.settings import GraphSettings, IntentEvalSettings, IntentSettings
+from support_agent.infra.settings import ReadinessSettings, RedisSettings
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
@@ -377,6 +380,7 @@ class Settings(BaseSettings):
         env_prefix="SUPPORT_AGENT__",
         env_nested_delimiter="__",
         extra="ignore",
+        hide_input_in_errors=True,
     )
 
     data: DataSettings
@@ -398,6 +402,23 @@ class Settings(BaseSettings):
     tracing: TracingSettings
     costs: CostSettings
     api: APISettings
+    environment: Literal["local", "dev", "prod"]
+    db: DatabaseSettings
+    redis: RedisSettings
+    readiness: ReadinessSettings
+    database_url: SecretStr | None = Field(default=None, exclude=True)
+    redis_url: SecretStr | None = Field(default=None, exclude=True)
+
+    @model_validator(mode="after")
+    def _production_state(self) -> Settings:
+        if self.environment == "prod":
+            if self.graph.checkpoint_backend != "postgres":
+                raise ValueError("prod requires postgres checkpoints")
+            if not self.database_url or not self.database_url.get_secret_value():
+                raise ValueError("prod requires DATABASE_URL")
+            if self.redis.backend == "null":
+                raise ValueError("prod requires Redis")
+        return self
 
     @classmethod
     def settings_customise_sources(
@@ -408,8 +429,17 @@ class Settings(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
-        yaml_source = YamlConfigSettingsSource(settings_cls, yaml_file=config_path())
-        return (init_settings, env_settings, yaml_source)
+        environment = os.getenv("ENV", "local")
+        platform = InitSettingsSource(
+            settings_cls,
+            {
+                "environment": environment,
+                "database_url": os.getenv("DATABASE_URL") or None,
+                "redis_url": os.getenv("REDIS_URL") or None,
+            },
+        )
+        base = yaml_layers(config_path(), DEFAULT_CONFIG_PATH.parent, environment)
+        return (platform, init_settings, env_settings, InitSettingsSource(settings_cls, base))
 
 
 def config_path() -> Path:
