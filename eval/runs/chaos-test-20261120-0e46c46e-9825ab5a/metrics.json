@@ -1,0 +1,180 @@
+{
+  "metrics": {
+    "citation_validity": {
+      "interval": {
+        "point": 0.7166666666666666,
+        "low": 0.575,
+        "high": 0.8416666666666666
+      },
+      "n": 40,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "fallbacks": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 70,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "false_accept": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 30,
+      "count": 0,
+      "wilson_upper": 0.11351339317396873,
+      "rule_of_three_upper": 0.1
+    },
+    "false_reject": {
+      "interval": {
+        "point": 0.25,
+        "low": 0.125,
+        "high": 0.4
+      },
+      "n": 40,
+      "count": 10,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "graph_mrr_at_5": {
+      "interval": {
+        "point": 0.825,
+        "low": 0.7,
+        "high": 0.925
+      },
+      "n": 40,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "graph_recall_at_5": {
+      "interval": {
+        "point": 0.825,
+        "low": 0.7,
+        "high": 0.925
+      },
+      "n": 40,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "handoff_reason.dependency_unavailable": {
+      "interval": {
+        "point": 0.11428571428571428,
+        "low": 0.04285714285714286,
+        "high": 0.2
+      },
+      "n": 70,
+      "count": 8,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "handoff_reason.incomplete_evidence": {
+      "interval": {
+        "point": 0.04285714285714286,
+        "low": 0.0,
+        "high": 0.1
+      },
+      "n": 70,
+      "count": 3,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "handoff_reason.low_evidence": {
+      "interval": {
+        "point": 0.38571428571428573,
+        "low": 0.2714285714285714,
+        "high": 0.5
+      },
+      "n": 70,
+      "count": 27,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "handoff_reason.order_not_found": {
+      "interval": {
+        "point": 0.014285714285714285,
+        "low": 0.0,
+        "high": 0.04285714285714286
+      },
+      "n": 70,
+      "count": 1,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "latency_p50": {
+      "interval": {
+        "point": 26.604727375000948,
+        "low": 25.673884000003454,
+        "high": 27.079666707999422
+      },
+      "n": 70,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "latency_p95": {
+      "interval": {
+        "point": 31.551892000003136,
+        "low": 29.919689832997392,
+        "high": 41.38175741600571
+      },
+      "n": 70,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "pass_rate": {
+      "interval": {
+        "point": 0.42857142857142855,
+        "low": 0.3142857142857143,
+        "high": 0.5428571428571428
+      },
+      "n": 70,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "repairs": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 70,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "retries": {
+      "interval": {
+        "point": 1.0571428571428572,
+        "low": 0.8428571428571429,
+        "high": 1.2714285714285714
+      },
+      "n": 70,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    }
+  },
+  "statistics": {
+    "latency_p50": "p50",
+    "latency_p95": "p95",
+    "first_token_p50": "p50",
+    "first_token_p95": "p95"
+  },
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

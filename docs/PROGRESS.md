@@ -46,7 +46,8 @@ Agents: update this file in every commit. Keep it short and factual.
 | 17c | First smoke baseline | done | `eval/baselines/main.json`, run `smoke-test-20261119-7085692a-f90d3e91` on clean `main` (`7085692`), real DeepSeek, MPS reranker, VPS Milvus over SSH: no-answer false accepts 0/30; false rejects 5/40; accepted 35/70; graph Recall@5 0.95; citation validity 0.8417; latency P95 33.3062s. Dependency errors 2/70 (one model timeout, one Milvus connection error), under the 0.05 limit. `make eval-gate` on the same run passes with all deltas 0. Single run; DeepSeek through this setup is not deterministic (13f). |
 | 18 | Postgres + Redis | done | Eval release gate — Passed. No-answer false accepts 0/30. No significant change on any compared metric. Dependency errors 1/70 (`OpenAIConnectionError`). Order parity found 0 mismatches across 50 customers and 300 orders. HTTP restart and resume verified. See commit 18 verification below. |
 | 18a | Order audit refresh | done | Re-seeded the local SQLite orders for the commit-18 config and re-ran `make eval-orders` on `4a21db7`. `eval/reports/orders_seed.md` and `docs/ORDERS.md` changed only in provenance (git SHA, code, config and seeded-dataset hashes, date). Every count is unchanged: 300 orders, 749 order items, 900 cross-customer operations blocked. The seeded-dataset hash moved because seed metadata embeds the full config hash. |
-| 19 | Reliability | code implemented; live evidence pending | Bounded calls and retries, model fallback and repair, fail-closed handoffs, refund keys, shared turn leases, and Prometheus metrics. Offline fault tests cover the safety routes. The live preflight precedes the smoke and chaos evidence commit. |
+| 19 | Reliability | done; evidence in 19a | Bounded calls and retries, model fallback and repair, fail-closed handoffs, refund keys, shared turn leases, and Prometheus metrics. Offline fault tests cover the safety routes. |
+| 19a | Reliability evidence | done | Smoke run `smoke-test-20261120-0e46c46e-1b9e10e9` on clean `0e46c46` (official API, `deepseek-flash`, `ENV=dev`): eval release gate Passed; no-answer false accepts 0/30; dependency errors 0/70; no significant change on any metric (false reject 0.125 to 0.1, pass rate 0.5 to 0.514, graph Recall@5 0.95 to 0.975, citation validity 0.842 to 0.867, latency P95 33.3 s to 35.9 s). Chaos run `chaos-test-20261120-0e46c46e-9825ab5a` (20% LLM timeouts, reranker down for 50% of calls, seed 42): no-answer false accepts 0/30, answer rate 30/70, 74 retries, 8 `dependency_unavailable` handoffs; see `eval/reports/chaos.md`. Two earlier 19a smoke runs were invalid (environment plus two commit-19 bugs, fixed before this run); see known issues. |
 | 20 | Red-team set | todo | |
 | 21 | Guardrails + security | todo | |
 | 22 | Incremental ingestion | todo | |
@@ -111,7 +112,7 @@ Agents: update this file in every commit. Keep it short and factual.
 
 ## Known issues / follow-ups
 
-- 19: The author confirmed the baseline and commit 18 smoke run used the official API. Commit 19 live evaluation is configured for the relay, so endpoint changes can affect the comparison. The relay was reported unhealthy during implementation. Run one chat preflight before collecting evidence. New manifests record only the model endpoint hostname.
+- 19: The relay (`www.traxnode.com`) returned 503 `no_healthy_account` during commit 19, so the 19a evidence used the official API with `deepseek-flash`, the same endpoint and model as the 17c baseline. New manifests record the model endpoint hostname. From this machine about 1 in 6 new TLS connections to `api.deepseek.com` ended with `SSLEOFError`, and the VPS SSH tunnel dropped several times; the Milvus tunnel now detects a drop in about 30 s and reconnects without limit.
 - 19: Circuit state is per worker. Add Prometheus multiprocess collection when running several API workers. An in-process rerank call can outlive its caller timeout and holds its worker slot until it exits.
 - 19 review fix: the `seeded` test fixture followed `ENV`, so the commit-18 restart test (which sets `ENV=dev` first) reseeded the developer's real `DATABASE_URL` database with 4 customers and 30 orders on every integration run. Found on 2026-11-20 with 30 orders in the dev database. The fixture now always uses a temporary SQLite file (`tests/test_fixture_isolation.py`). The dev database was reseeded to 300 orders with `ENV=dev make data-orders`. Earlier `ENV=dev` runs may have used the 30-order data; the knowledge-only smoke set does not read orders.
 - 19 review fix: the conversation lease TTL was 3600 s because it had to exceed the whole turn budget. With renewal every 15 s that rule was not needed, and a crashed holder blocked its conversation for an hour. The TTL is now 60 s.
@@ -213,6 +214,15 @@ Run: `make serve` with `SUPPORT_AGENT__MILVUS__URI` set to the SSH-forwarded VPS
 - Refund with picker, not met. "I want a refund for my order." (CUST-0001) showed 5 orders plus "None of these"; picking ORD-000065 resumed through refund_load and refund_retrieve. The refund policy query scored 0.03 against threshold 0.15 and handed off (`low_evidence`). No cited decision was produced. This matches the commit 12 finding.
 - Gold bars, met. "Can I pay for my order with gold bars?" handed off (`incomplete_evidence`). The standalone gate passed it at 0.22 with no key terms; the coverage check stopped it, as with Cash App Pay.
 - Display issue: citation heading paths show an empty segment ("Returns > flipkart_faqs / / Cancellations and Returns"). Not changed here.
+
+## Commit 19a verification (2026-11-20, Asia/Tokyo)
+
+- Clean tree at `0e46c46` (`dirty: false`), official DeepSeek API, `deepseek-flash` for both roles, `ENV=dev` (Postgres orders and checkpoints, Redis leases).
+- `make eval-smoke` then `make eval-gate` against `eval/baselines/main.json`: Passed, dependency errors 0/70. The VPS tunnel dropped once during the run and reconnected in 2 s; retries covered it.
+- `make chaos`: `eval/reports/chaos.md`. No-answer false accepts 0/30 under faults.
+- Manual API check (`ENV=dev`, port 8019): `/api/health/ready` returned 200 with postgres, migrations, redis and milvus all `ok`.
+  Two `/api/chat` requests on one conversation, one second apart: the first returned 200 with a cited answer in 42 s; the second returned 409 `Still answering your previous message. Please wait.`
+  A later turn returned 200. `/metrics` exposed the `atlas_*` families; label names were only dependency, endpoint, le, model, outcome, passed, path and role, with no customer, conversation or order ids.
 
 ## Commit 18 verification (2026-11-20, Asia/Tokyo)
 
