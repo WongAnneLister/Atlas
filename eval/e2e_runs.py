@@ -26,8 +26,15 @@ STATISTICS: dict[str, Literal["mean", "p95", "p50"]] = {
 }
 
 
-def project(records: list[E2ERecord]) -> list[RunItem]:
+HANDOFF_METRIC_PREFIX = "handoff_reason."
+RELIABILITY_METRICS = ("retries", "fallbacks", "repairs")
+
+
+def project(records: list[E2ERecord], *, chaos: bool = False) -> list[RunItem]:
     rows = []
+    reasons = (
+        {record.handoff_reason for record in records if record.handoff_reason} if chaos else set()
+    )
     for record in records:
         item = record.item
         metrics = {
@@ -54,6 +61,19 @@ def project(records: list[E2ERecord]) -> list[RunItem]:
             metrics["false_accept"] = record.accepted
         if record.estimated_cost_usd is not None:
             metrics["cost_usd"] = record.estimated_cost_usd
+        if chaos:
+            events = record.reliability_events
+            metrics.update(
+                retries=float(sum(event.retries for event in events)),
+                fallbacks=float(sum(event.fell_back for event in events)),
+                repairs=float(sum(event.repaired for event in events)),
+            )
+            metrics.update(
+                {
+                    f"{HANDOFF_METRIC_PREFIX}{reason}": record.handoff_reason == reason
+                    for reason in reasons
+                }
+            )
         rows.append(
             RunItem(
                 id=item.id,
@@ -82,10 +102,12 @@ def prepare_e2e(
         if (amounts and all(amount is not None for amount in amounts))
         else None
     )
-    items = project(records)
+    chaos = metadata.chaos is not None and metadata.chaos.enabled
+    items = project(records, chaos=chaos)
     datasets = dataset_version(metadata.eval_file_hash)
+    kind = "chaos" if chaos else "smoke" if "smoke" in datasets else "e2e"
     manifest = RunManifest(
-        kind="smoke" if "smoke" in datasets else "e2e",
+        kind=kind,
         split=metadata.split,
         git_sha=metadata.git_sha,
         config_hash=metadata.config_hash,

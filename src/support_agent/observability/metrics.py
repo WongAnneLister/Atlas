@@ -1,0 +1,140 @@
+"""Low-cardinality metrics for graph calls and API responses."""
+
+from collections.abc import Mapping
+from typing import Any, get_args
+
+from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
+from prometheus_client.exposition import choose_encoder
+
+from support_agent.config import Settings
+from support_agent.gate.evidence import GateResult
+from support_agent.graph.handoff import HandoffPayload, HandoffReason
+from support_agent.graph.intents import Path
+from support_agent.llm import Role, resolve_model
+from support_agent.reliability.circuit import CircuitRegistry
+from support_agent.reliability.llm_calls import CallSite
+
+LLM_CALL_SITES = get_args(CallSite)
+
+ENDPOINTS = {
+    "/": "index",
+    "/api/chat": "chat",
+    "/api/resume": "resume",
+    "/api/customers": "customers",
+    "/api/health": "health",
+    "/api/health/live": "live",
+    "/api/health/ready": "ready",
+    "/metrics": "metrics",
+}
+OUTCOMES = frozenset({"success", "invalid", "conflict", "unavailable", "error"})
+MODEL_OUTCOMES = frozenset({"success", "error"})
+ROLES: tuple[Role, ...] = ("fast", "main")
+
+
+class AtlasMetrics:
+    def __init__(self, settings: Settings, registry: CollectorRegistry | None = None) -> None:
+        self.registry = registry if registry is not None else CollectorRegistry()
+        self.models = {"injected", "unconfigured"}
+        for role in ROLES:
+            name, _ = resolve_model(role, settings.llm)
+            if name:
+                self.models.add(name)
+            self.models.update(getattr(settings.llm.fallbacks, role))
+        self.dependencies = {"milvus", "reranker", "orders_db"} | {
+            f"llm:{model}" for model in self.models
+        }
+        self.paths = frozenset(path.value for path in Path)
+        self.requests = Counter(
+            "atlas_requests_total", "HTTP requests", ("endpoint", "outcome"), registry=self.registry
+        )
+        self.request_seconds = Histogram(
+            "atlas_request_seconds",
+            "HTTP request duration",
+            ("endpoint",),
+            registry=self.registry,
+            buckets=settings.reliability.metrics.latency_buckets_s,
+        )
+        self.llm_calls = Counter(
+            "atlas_llm_calls_total",
+            "Model attempts",
+            ("role", "model", "outcome"),
+            registry=self.registry,
+        )
+        self.llm_seconds = Histogram(
+            "atlas_llm_seconds",
+            "Model attempt duration",
+            ("role", "model"),
+            registry=self.registry,
+            buckets=settings.reliability.metrics.latency_buckets_s,
+        )
+        self.retries = Counter(
+            "atlas_retries_total", "Retry attempts", ("dependency",), registry=self.registry
+        )
+        self.fallbacks = Counter(
+            "atlas_fallbacks_total", "Model fallback calls", ("role",), registry=self.registry
+        )
+        self.repairs = Counter(
+            "atlas_repairs_total",
+            "Structured output repairs",
+            ("call_site", "outcome"),
+            registry=self.registry,
+        )
+        self.circuit = Gauge(
+            "atlas_circuit_state",
+            "Circuit state (0 closed, 1 half-open, 2 open)",
+            ("dependency",),
+            registry=self.registry,
+        )
+        self.handoffs = Counter(
+            "atlas_handoffs_total", "Handoffs", ("reason",), registry=self.registry
+        )
+        self.gates = Counter(
+            "atlas_gate_evaluations_total",
+            "Evidence gate evaluations",
+            ("passed",),
+            registry=self.registry,
+        )
+        self.path = Counter("atlas_path_total", "Graph paths", ("path",), registry=self.registry)
+
+    def request(self, path: str, outcome: str, seconds: float, trace_id: str) -> None:
+        endpoint = ENDPOINTS.get(path, "static" if path.startswith("/static/") else "other")
+        exemplar = {"trace_id": trace_id}
+        self.requests.labels(endpoint, outcome if outcome in OUTCOMES else "error").inc(
+            exemplar=exemplar,
+        )
+        self.request_seconds.labels(endpoint).observe(seconds, exemplar=exemplar)
+
+    def llm_attempt(self, role: Role, model: str, outcome: str, seconds: float) -> None:
+        if role in ROLES and outcome in MODEL_OUTCOMES:
+            model = model if model in self.models else "unconfigured"
+            self.llm_calls.labels(role, model, outcome).inc()
+            self.llm_seconds.labels(role, model).observe(seconds)
+
+    def retry(self, dependency: str) -> None:
+        if dependency in self.dependencies:
+            self.retries.labels(dependency).inc()
+
+    def fallback(self, role: Role) -> None:
+        if role in ROLES:
+            self.fallbacks.labels(role).inc()
+
+    def repair(self, call_site: str, outcome: str) -> None:
+        if call_site in LLM_CALL_SITES and outcome in MODEL_OUTCOMES:
+            self.repairs.labels(call_site, outcome).inc()
+
+    def handoff(self, reason: HandoffReason) -> None:
+        self.handoffs.labels(reason.value).inc()
+
+    def graph_update(self, update: Mapping[str, Any]) -> None:
+        if isinstance(gate := update.get("gate"), GateResult):
+            self.gates.labels(str(gate.passed).lower()).inc()
+        if isinstance(handoff := update.get("handoff"), HandoffPayload):
+            self.handoff(handoff.reason)
+        if isinstance(path := update.get("path"), str) and path in self.paths:
+            self.path.labels(path).inc()
+
+    def render(self, circuits: CircuitRegistry, accept: str) -> tuple[bytes, str]:
+        for name in self.dependencies:
+            self.circuit.labels(name).set(circuits.state(name).value)
+        encode, content_type = choose_encoder(accept)
+        return encode(self.registry), content_type

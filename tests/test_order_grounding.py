@@ -186,12 +186,13 @@ def test_retries_are_bounded_and_then_fail_closed(seeded: Any) -> None:
     assert result["trace"][-3:] == ["grounding_retry:1", "grounding_error", "tools_fallback"]
 
 
-def test_one_attempt_keeps_the_single_check(seeded: Any) -> None:
+def test_graph_repairs_once_even_if_standalone_limit_is_one(seeded: Any) -> None:
     settings, _ = seeded
     settings.agent.grounding_attempts = 1
     result, model = _run(seeded, [None, {"sentences": []}])
-    assert len(model.grounding_seen) == 1
-    assert "grounding_error" in result["trace"]
+    assert len(model.grounding_seen) == 2
+    assert "grounding_retry:1" in result["trace"]
+    assert "grounding_error" not in result["trace"]
 
 
 def test_a_raised_error_is_not_retried(seeded: Any) -> None:

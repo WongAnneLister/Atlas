@@ -7,12 +7,14 @@ from pathlib import Path as FilePath
 from typing import Any
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
 from support_agent.config import Settings
 from support_agent.graph.intents import INTENT_TO_PATH, Intent, Path
 from support_agent.graph.state import ConversationState
+from support_agent.reliability.llm_calls import ReliableModels
+from support_agent.reliability.structured import StructuredOutputError, parse_response
 
 logger = logging.getLogger(__name__)
 PROMPT_PATH = FilePath(__file__).resolve().parents[1] / "prompts" / "classify.md"
@@ -30,33 +32,37 @@ class ClassificationOutcome(IntentPrediction):
 
 
 class Classifier:
-    def __init__(self, model: BaseChatModel, settings: Settings) -> None:
+    def __init__(
+        self,
+        model: BaseChatModel | None,
+        settings: Settings,
+        *,
+        models: ReliableModels | None = None,
+    ) -> None:
         self.model = model
+        self.models = models
         self.settings = settings
         self.prompt = PROMPT_PATH.read_text(encoding="utf-8")
 
     def classify(self, query: str) -> ClassificationOutcome:
         model_name: str | None = None
         try:
-            structured = self.model.with_structured_output(IntentPrediction, include_raw=True)
-            response = structured.invoke(
-                [SystemMessage(content=self.prompt), HumanMessage(content=query)]
-            )
-            if not isinstance(response, dict):
-                raise ValueError("Expected structured output with raw response")
-            raw = response.get("raw")
-            if isinstance(raw, BaseMessage):
-                name = raw.response_metadata.get("model_name") or raw.response_metadata.get("model")
-                model_name = name if isinstance(name, str) else None
-            parsing_error = response.get("parsing_error")
-            if parsing_error is not None:
-                if isinstance(parsing_error, Exception):
-                    raise parsing_error
-                raise ValueError("Structured output parsing failed")
-            prediction = IntentPrediction.model_validate(response.get("parsed"))
-            return ClassificationOutcome(**prediction.model_dump(), model_name=model_name)
+            messages = [SystemMessage(content=self.prompt), HumanMessage(content=query)]
+            if self.models is not None:
+                parsed, _ = self.models.structured("classify", "fast", IntentPrediction, messages)
+            else:
+                if self.model is None:
+                    raise RuntimeError("A classifier model is required")
+                response = self.model.with_structured_output(
+                    IntentPrediction, include_raw=True
+                ).invoke(messages)
+                parsed = parse_response(IntentPrediction, response)
+            return ClassificationOutcome(**parsed.value.model_dump(), model_name=parsed.model_name)
         except Exception as error:
-            error_type = type(error).__name__
+            if isinstance(error, StructuredOutputError):
+                error_type, model_name = error.error_type, error.model_name
+            else:
+                error_type = type(error).__name__
             logger.warning("Intent classification failed: %s", error_type)
             return ClassificationOutcome(
                 intent=Intent.CHITCHAT_OTHER,

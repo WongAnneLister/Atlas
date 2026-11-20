@@ -27,6 +27,12 @@ from support_agent.config_layers import yaml_layers
 from support_agent.db.settings import DatabaseSettings
 from support_agent.graph.settings import GraphSettings, IntentEvalSettings, IntentSettings
 from support_agent.infra.settings import ReadinessSettings, RedisSettings
+from support_agent.reliability.settings import (
+    ChaosSettings,
+    FallbackSettings,
+    ReliabilitySettings,
+    validate_reliability,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
@@ -63,7 +69,9 @@ class LLMSettings(BaseModel):
     fast_model: str | None
     main_model: str | None
     temperature: float
-    timeout_s: float
+    timeout_s: float = Field(gt=0, allow_inf_nan=False)
+    fallbacks: FallbackSettings = Field(default_factory=FallbackSettings)
+    provider_max_retries: int = Field(default=0, ge=0)
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -281,7 +289,7 @@ class EvalSettings(BaseModel):
 class MilvusSettings(BaseModel):
     uri: str
     collection: str
-    timeout_s: float = Field(gt=0)
+    timeout_s: float = Field(gt=0, allow_inf_nan=False)
     upsert_batch_size: int = Field(gt=0)
     query_batch_size: int = Field(gt=0)
     id_max_bytes: int = Field(gt=0)
@@ -406,18 +414,23 @@ class Settings(BaseSettings):
     db: DatabaseSettings
     redis: RedisSettings
     readiness: ReadinessSettings
+    reliability: ReliabilitySettings
+    chaos: ChaosSettings
     database_url: SecretStr | None = Field(default=None, exclude=True)
     redis_url: SecretStr | None = Field(default=None, exclude=True)
 
     @model_validator(mode="after")
     def _production_state(self) -> Settings:
         if self.environment == "prod":
+            if self.chaos.enabled:
+                raise ValueError("prod forbids chaos")
             if self.graph.checkpoint_backend != "postgres":
                 raise ValueError("prod requires postgres checkpoints")
             if not self.database_url or not self.database_url.get_secret_value():
                 raise ValueError("prod requires DATABASE_URL")
             if self.redis.backend == "null":
                 raise ValueError("prod requires Redis")
+        validate_reliability(self)
         return self
 
     @classmethod
@@ -439,7 +452,19 @@ class Settings(BaseSettings):
             },
         )
         base = yaml_layers(config_path(), DEFAULT_CONFIG_PATH.parent, environment)
-        return (platform, init_settings, env_settings, InitSettingsSource(settings_cls, base))
+        fallbacks: dict[str, list[str]] = {}
+        for role in ("fast", "main"):
+            value = os.getenv(f"LLM_{role.upper()}_FALLBACKS")
+            if value is not None:
+                fallbacks[role] = [name for item in value.split(",") if (name := item.strip())]
+        dedicated_llm_env = InitSettingsSource(settings_cls, {"llm": {"fallbacks": fallbacks}})
+        return (
+            platform,
+            dedicated_llm_env,
+            init_settings,
+            env_settings,
+            InitSettingsSource(settings_cls, base),
+        )
 
 
 def config_path() -> Path:

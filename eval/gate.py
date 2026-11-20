@@ -153,6 +153,10 @@ def evaluate(run: Run, baseline: Run, rules: GateRules) -> GateResult:
     ]
     if false_accepts > rules.false_accept_max:
         failures.insert(0, "The smoke run accepted a no-answer item.")
+    broken = dependency_error_message(run, rules)
+    if broken is not None:
+        # Name the cause first so dependency outages are not read as code regressions.
+        failures.insert(0, f"Invalid run: {broken}")
     return GateResult(false_accepts, no_answer, comparisons, failures, warnings)
 
 
@@ -164,21 +168,32 @@ def dependency_errors(run: Run) -> Counter[str]:
     errors: Counter[str] = Counter()
     for row in run.items:
         kinds = {str(row.payload[name]) for name in ERROR_FIELDS if row.payload.get(name)}
-        if row.handoff_reason in {"retrieval_error", "answer_error"} and not kinds:
+        if (
+            row.handoff_reason in {"retrieval_error", "answer_error", "dependency_unavailable"}
+            and not kinds
+        ):
             kinds = {row.handoff_reason}
         errors.update(sorted(kinds)[:1])
     return errors
 
 
-def check_dependency_errors(run: Run, rules: GateRules) -> None:
+def dependency_error_message(run: Run, rules: GateRules) -> str | None:
+    """Describe a run whose dependency errors exceed the allowed rate, else None."""
     errors = dependency_errors(run)
     count = sum(errors.values())
-    if count > rules.promotion_max_error_rate * len(run.items):
-        kinds = ", ".join(f"{kind} x{n}" for kind, n in errors.most_common())
-        raise ValueError(
-            f"Run has dependency errors on {count}/{len(run.items)} items ({kinds}); "
-            "fix the dependency and collect a new run"
-        )
+    if count <= rules.promotion_max_error_rate * len(run.items):
+        return None
+    kinds = ", ".join(f"{kind} x{n}" for kind, n in errors.most_common())
+    return (
+        f"dependency errors on {count}/{len(run.items)} items ({kinds}); "
+        "fix the dependency and collect a new run"
+    )
+
+
+def check_dependency_errors(run: Run, rules: GateRules) -> None:
+    message = dependency_error_message(run, rules)
+    if message is not None:
+        raise ValueError(f"Run has {message}")
 
 
 def read_baseline(path: Path) -> Run:

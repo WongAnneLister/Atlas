@@ -17,6 +17,15 @@ def _utc_now() -> datetime:
     return datetime.now(UTC)
 
 
+def _refund_id(customer_id: str, order_id: str, key: str | None) -> str:
+    value = (
+        uuid5(NAMESPACE_URL, dumps(["atlas-refund", customer_id, order_id, key]))
+        if key is not None
+        else uuid4()
+    )
+    return f"REF-{value.hex}"
+
+
 class OrderService:
     def __init__(
         self,
@@ -68,17 +77,21 @@ class OrderService:
         reason: str,
         *,
         idempotency_key: str | None = None,
+        legacy_turn_id: str | None = None,
+        deadline: float | None = None,
     ) -> RefundRequest:
-        request_key = (
-            uuid5(NAMESPACE_URL, dumps(["atlas-refund", customer_id, order_id, idempotency_key]))
-            if idempotency_key is not None
-            else uuid4()
-        )
         return self.repository.create_refund_request(
             order_id,
             customer_id,
             item_ids,
             reason,
-            f"REF-{request_key.hex}",
+            _refund_id(customer_id, order_id, idempotency_key),
             self.clock(),
+            idempotency_key=idempotency_key,
+            deadline=deadline,
+            legacy_request_id=(
+                _refund_id(customer_id, order_id, legacy_turn_id)
+                if legacy_turn_id is not None
+                else None
+            ),
         )

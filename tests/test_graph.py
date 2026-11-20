@@ -177,6 +177,7 @@ def test_classifier_failures_route_to_fixed_without_logging_raw_text(
     assert result["intent"] == Intent.CHITCHAT_OTHER
     assert result["intent_confidence"] == 0
     assert result["classification_failed"] is True
+    assert "human support agent" in result["answer"]
     assert "private text" not in caplog.text
     assert "private question" not in caplog.text
 

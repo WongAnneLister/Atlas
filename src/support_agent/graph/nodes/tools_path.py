@@ -13,11 +13,12 @@ from pydantic import ValidationError
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, load_templates, make_handoff
 from support_agent.graph.intents import Intent
-from support_agent.graph.order_grounding import check_order_answer
+from support_agent.graph.order_grounding import check_order_answer_reliably
 from support_agent.graph.order_replies import REPLY_TOOL, Lookup, render_order_reply, reply_tool
 from support_agent.graph.state import ConversationState
 from support_agent.graph.tools import ToolResult, build_order_tools
 from support_agent.orders.models import OrderNotFound
+from support_agent.reliability.guards import is_dependency_failure
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,12 @@ def execute_tool(tools: dict[str, BaseTool], name: str, arguments: dict[str, Any
         return ToolResult(ok=False, error="invalid_tool_arguments")
     except Exception as error:
         logger.warning("Order tool failed: %s", type(error).__name__)
-        return ToolResult(ok=False, error="order_service_unavailable")
+        code = (
+            "dependency_unavailable"
+            if is_dependency_failure(error)
+            else "order_service_unavailable"
+        )
+        return ToolResult(ok=False, error=code)
 
 
 def _lookup_failed(last_error: str | None) -> HandoffReason:
@@ -72,7 +78,7 @@ class ToolsPath:
         if not state.customer_id or not state.customer_id.strip():
             return {**_updates(current), **make_handoff(current, HandoffReason.TOOL_ERROR)}
         settings = self.deps.settings
-        service = self.deps.orders()
+        service = self.deps.guarded_orders()
         tools = build_order_tools(service, state.customer_id)
         by_name = {tool.name: tool for tool in tools}
         messages: list[BaseMessage] = [
@@ -80,19 +86,23 @@ class ToolsPath:
             HumanMessage(content=state.rewritten_query),
         ]
         try:
-            bound: list[Any] = list(tools)
+            bound = list(tools)
             if settings.agent.order_replies == "template":
                 bound.append(reply_tool())
-            model = self.deps.model("main").bind_tools(bound)
-            return self._loop(current, model, by_name, messages)
+            return self._loop(current, bound, by_name, messages)
         except Exception as error:
             logger.warning("Order loop failed: %s", type(error).__name__)
-            return {**_updates(current), **make_handoff(current, HandoffReason.TOOL_ERROR)}
+            reason = (
+                HandoffReason.DEPENDENCY_UNAVAILABLE
+                if is_dependency_failure(error)
+                else HandoffReason.TOOL_ERROR
+            )
+            return {**_updates(current), **make_handoff(current, reason)}
 
     def _loop(
         self,
         state: ConversationState,
-        model: Any,
+        bound: list[BaseTool],
         tools: dict[str, BaseTool],
         messages: list[BaseMessage],
     ) -> dict[str, Any]:
@@ -105,7 +115,7 @@ class ToolsPath:
         lookups: list[Lookup] = []
         for step in range(cfg.max_steps):
             state.agent_steps = step + 1
-            response = model.invoke(messages)
+            response, _ = self.deps.models.invoke("tools", "main", messages, tools=bound)
             if not isinstance(response, AIMessage) or response.invalid_tool_calls:
                 return {**_updates(state), **make_handoff(state, HandoffReason.TOOL_ERROR)}
             messages.append(response)
@@ -165,6 +175,11 @@ class ToolsPath:
                 messages.append(
                     ToolMessage(content=result.model_dump_json(), tool_call_id=call["id"])
                 )
+                if last_error == "dependency_unavailable":
+                    return {
+                        **_updates(state),
+                        **make_handoff(state, HandoffReason.DEPENDENCY_UNAVAILABLE),
+                    }
                 if state.consecutive_tool_errors >= cfg.max_consecutive_tool_errors:
                     return {**_updates(state), **make_handoff(state, HandoffReason.TOOL_ERROR)}
             decision = next((c for c in response.tool_calls if c["name"] == REPLY_TOOL), None)
@@ -191,12 +206,11 @@ class ToolsPath:
 
     def _grounded(self, state: ConversationState, answer: str) -> bool:
         """Fails closed: a checker error counts as ungrounded."""
-        result = check_order_answer(
-            self.deps.model("main"),
+        result = check_order_answer_reliably(
+            self.deps.models,
             self.grounding_prompt,
             state.order_context,
             answer,
-            self.deps.settings.agent.grounding_attempts,
         )
         if result.attempts > 1:
             state.trace.append(f"grounding_retry:{result.attempts - 1}")

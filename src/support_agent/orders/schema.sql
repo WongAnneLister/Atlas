@@ -59,10 +59,12 @@ CREATE TABLE refund_requests (
     order_id TEXT NOT NULL,
     customer_id TEXT NOT NULL,
     reason TEXT NOT NULL CHECK (length(trim(reason)) > 0),
+    idempotency_key TEXT,
     status TEXT NOT NULL CHECK (status = 'pending_review'),
     created_at TEXT NOT NULL,
     FOREIGN KEY (order_id, customer_id) REFERENCES orders(order_id, customer_id),
-    UNIQUE (request_id, order_id)
+    UNIQUE (request_id, order_id),
+    CONSTRAINT refund_requests_idempotency_key UNIQUE (idempotency_key)
 );
 CREATE TABLE refund_request_items (
     request_id TEXT NOT NULL,

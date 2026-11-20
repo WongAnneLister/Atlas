@@ -33,7 +33,10 @@ def events_for_update(node_name: str, update: dict[str, Any], chunk_words: int) 
     if node_name == "rewrite" or not (answer := update.get("answer")):
         return []
     if handoff := update.get("handoff"):
-        return [SseEvent(name="handoff", data={"reason": handoff.reason, "message": answer})]
+        data = {"reason": handoff.reason, "message": answer}
+        if handoff.trace_id:
+            data["trace_id"] = handoff.trace_id
+        return [SseEvent(name="handoff", data=data)]
 
     events = []
     start = 0

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from eval import gate
-from eval.run_record import DatasetVersion, Run, RunItem, RunManifest, summarize_metrics
+from eval.run_record import DatasetVersion, Run, RunItem, RunManifest, summarize_metrics, write_run
 
 
 def _run(flipped=0, false_accept=False, latency=2.0):
@@ -127,3 +127,60 @@ def test_promotion_allows_a_few_dependency_errors(tmp_path, monkeypatch):
     run.items[1].payload = {"answer_error_type": "ValidationError"}
     gate.promote(run, "run-id", tmp_path / "baseline.json")
     assert (tmp_path / "baseline.json").exists()
+
+
+def test_release_commands_refuse_chaos_with_exact_frozen_items(tmp_path, monkeypatch, capsys):
+    run = gate.read_baseline(gate.BASELINE)
+    gate.check_frozen_smoke(run)
+    run.manifest.kind = "chaos"
+    run.manifest.dirty = False
+    run_dir = write_run(run.manifest, run.items, root=tmp_path)
+    monkeypatch.setattr(
+        gate, "git", lambda *args: "main" if args[0] == "branch" else run.manifest.git_sha
+    )
+    monkeypatch.setattr(gate, "is_dirty", lambda: False)
+
+    assert gate.main(["check", str(run_dir)]) == 1
+    assert "Expected a versioned test smoke run" in capsys.readouterr().out
+
+    baseline = tmp_path / "baseline.json"
+    assert gate.main(["promote", str(run_dir), "--baseline", str(baseline)]) == 1
+    assert "Expected a versioned test smoke run" in capsys.readouterr().out
+    assert not baseline.exists()
+
+
+def test_dependency_unavailable_counts_items_only_once():
+    run = _run()
+    run.items[0].handoff_reason = "dependency_unavailable"
+    run.items[1].handoff_reason = "dependency_unavailable"
+    run.items[1].payload["retrieval_error_type"] = "TimeoutError"
+    run.items[2].handoff_reason = "retrieval_error"
+    run.items[3].handoff_reason = "answer_error"
+
+    assert gate.dependency_errors(run) == {
+        "dependency_unavailable": 1,
+        "TimeoutError": 1,
+        "retrieval_error": 1,
+        "answer_error": 1,
+    }
+
+
+def test_gate_names_a_run_broken_by_dependency_errors_as_invalid():
+    # Regression (19a smoke run): 55/70 items failed on dependencies and the gate only
+    # reported metric regressions, which read like a code regression.
+    run = _run()
+    for row in run.items[:55]:
+        row.payload = {"classification_error_type": "CircuitOpen"}
+    result = gate.evaluate(run, _run(), gate.load_rules())
+    assert not result.passed
+    assert result.failures[0].startswith("Invalid run: dependency errors on 55/70 items")
+    assert "CircuitOpen x55" in result.failures[0]
+    assert "Invalid run" in result.markdown()
+
+
+def test_gate_accepts_a_run_with_few_dependency_errors():
+    run = _run()
+    run.items[0].payload = {"answer_error_type": "APIConnectionError"}
+    result = gate.evaluate(run, _run(), gate.load_rules())
+    assert result.passed
+    assert not any("Invalid run" in failure for failure in result.failures)

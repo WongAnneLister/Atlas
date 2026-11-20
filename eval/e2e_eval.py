@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -17,6 +17,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.types import Command
 
 from eval.common import load_items
+from eval.e2e_endpoint import endpoint_host
 from eval.e2e_records import E2EMetadata, E2ERecord, load_cached_run
 from eval.e2e_report import render_e2e
 from eval.e2e_runs import prepare_e2e
@@ -35,8 +36,11 @@ from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
+from support_agent.llm import Role, resolve_model
 from support_agent.observability import tracing
 from support_agent.observability.cost import UsageLedger, cost_usd
+
+RunRenderer = Callable[[Run, Path], int | None]
 
 
 def _git_sha() -> str:
@@ -48,10 +52,19 @@ def _git_sha() -> str:
 
 
 def _model_names(settings: Settings) -> dict[str, str]:
-    return {
-        "fast": os.environ.get("LLM_FAST_MODEL") or settings.llm.fast_model or "unset",
-        "main": os.environ.get("LLM_MAIN_MODEL") or settings.llm.main_model or "unset",
-    }
+    names = {}
+    roles: tuple[Role, ...] = ("fast", "main")
+    for role in roles:
+        primary, _ = resolve_model(role, settings.llm)
+        names[role] = primary or "unset"
+        fallbacks = list(dict.fromkeys(getattr(settings.llm.fallbacks, role)))
+        if primary in fallbacks:
+            fallbacks.remove(primary)
+        names.update(
+            (f"{role}_fallback_{position}", name)
+            for position, name in enumerate(fallbacks, start=1)
+        )
+    return names
 
 
 def _usage(messages: list[Any]) -> tuple[int | None, int | None]:
@@ -162,6 +175,7 @@ def _record(
         output_tokens=output_tokens,
         llm_calls=usage.calls if usage is not None else None,
         usage_by_model=dict(usage.by_model) if usage is not None else None,
+        reliability_events=result.get("reliability_events", []),
     )
 
 
@@ -186,19 +200,31 @@ def _metadata(settings: Settings, split: str, eval_text: str, corpus_hash: str) 
                 *list((REPO_ROOT / "src/support_agent").rglob("*.py")),
                 REPO_ROOT / "eval/e2e_eval.py",
                 REPO_ROOT / "eval/e2e_records.py",
+                REPO_ROOT / "eval/e2e_endpoint.py",
+                REPO_ROOT / "eval/e2e_runs.py",
             ]
         ),
         prompt_hash=source_hash(list((REPO_ROOT / "src/support_agent/graph/prompts").glob("*"))),
         runtime=runtime_versions(),
+        chaos=settings.chaos if settings.chaos.enabled else None,
+        endpoint_host=endpoint_host(settings.llm),
     )
 
 
-def _save_and_render(run: Run, report: Path, root: Path, suffix: str, pointer: Path | None) -> None:
+def _save_and_render(
+    run: Run,
+    report: Path,
+    root: Path,
+    suffix: str,
+    pointer: Path | None,
+    renderer: RunRenderer,
+) -> int:
     path = write_run(run.manifest, run.items, root=root, suffix=suffix, metrics=run.metrics)
-    render_e2e(read_run(path), report)
+    status = renderer(read_run(path), report)
     if pointer:
         write_text(pointer, str(path) + "\n")
     sys.stdout.write(f"Run record: {path}\n")
+    return status or 0
 
 
 def _priced_run(path: Path, settings: Settings) -> tuple[E2EMetadata, list[E2ERecord]]:
@@ -213,7 +239,13 @@ def _priced_run(path: Path, settings: Settings) -> tuple[E2EMetadata, list[E2ERe
     return metadata, records
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(
+    argv: list[str] | None = None,
+    *,
+    chaos_settings: Settings | None = None,
+    renderer: RunRenderer = render_e2e,
+    collection_command: list[str] | None = None,
+) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--split", choices=["dev", "test", "all"], default="test")
     parser.add_argument("--output", type=Path, default=None)
@@ -247,19 +279,23 @@ def main(argv: list[str] | None = None) -> int:
         render_e2e(read_run(REPO_ROOT / args.run_dir), report)
         return 0
     suffix = args.run_suffix or uuid4().hex[:8]
-    command = ["eval-e2e", *(argv if argv is not None else sys.argv[1:])]
-    settings = get_settings().model_copy(deep=True)
+    command = collection_command or ["eval-e2e", *(argv if argv is not None else sys.argv[1:])]
+    settings = (chaos_settings or get_settings()).model_copy(deep=True)
     if args.report_only:
         output = REPO_ROOT / (args.output or Path(f"eval/runs/e2e_{args.split}.jsonl"))
         metadata, records = _priced_run(output, settings)
-        _save_and_render(
+        if metadata.chaos and metadata.chaos.enabled:
+            parser.error("Use make chaos to render fault-injected runs")
+        return _save_and_render(
             prepare_e2e(metadata, records, command=command),
             report,
             args.run_root,
             suffix,
             args.run_pointer,
+            renderer,
         )
-        return 0
+    if settings.chaos.enabled and chaos_settings is None:
+        parser.error("Use make chaos to collect a fault-injected run")
     dirty = is_dirty()
     if settings.gate.threshold is None and not args.allow_untuned:
         raise RuntimeError("gate.threshold is unset; run `make sweep` before e2e evaluation")
@@ -273,13 +309,16 @@ def main(argv: list[str] | None = None) -> int:
     items = load_items(eval_path)
     if args.split != "all":
         items = [item for item in items if item.split == args.split]
-    stem = args.expect_dataset or "e2e"
+    stem = "chaos" if settings.chaos.enabled else args.expect_dataset or "e2e"
     cache_name = f"{stem}-{args.split}-{suffix}.jsonl" if args.fresh else f"e2e_{args.split}.jsonl"
-    output = REPO_ROOT / (args.output or RUNS / cache_name)
+    cache_root = args.run_root if settings.chaos.enabled else RUNS
+    output = REPO_ROOT / (args.output or cache_root / cache_name)
     output.parent.mkdir(parents=True, exist_ok=True)
     metadata = _metadata(settings, args.split, eval_text, manifest["corpus_hash"])
     existing: dict[str, E2ERecord] = {}
     resumed = output.exists()
+    if resumed and settings.chaos.enabled:
+        raise ValueError("Chaos collection requires a fresh run suffix")
     if resumed:
         metadata, existing = load_cached_run(output, metadata, items)
     if not items:
@@ -339,8 +378,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         else "price not set",
     )
-    _save_and_render(run, report, args.run_root, suffix, args.run_pointer)
-    return 0
+    return _save_and_render(run, report, args.run_root, suffix, args.run_pointer, renderer)
 
 
 if __name__ == "__main__":

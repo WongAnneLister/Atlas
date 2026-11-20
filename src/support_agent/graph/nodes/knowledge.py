@@ -13,6 +13,8 @@ from support_agent.graph.coverage import CoverageAnswer, render_covered_answer
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, make_handoff
 from support_agent.graph.state import CitationRecord, ConversationState
+from support_agent.reliability.guards import diagnostic_type, is_dependency_failure
+from support_agent.reliability.structured import StructuredOutputError
 from support_agent.retrieval.scope import scope_chunks
 from support_agent.retrieval.types import RetrievedChunk
 
@@ -33,6 +35,7 @@ class KnowledgePath:
 
     def retrieve(self, state: ConversationState) -> dict[str, Any]:
         error_type = None
+        dependency_unavailable = False
         retrieval = self.deps.settings.retrieval
         scope = retrieval.store_scope
         pool = (
@@ -46,12 +49,14 @@ class KnowledgePath:
             if dropped:
                 logger.info("Store scope %s dropped %d other-store chunks", store, dropped)
         except Exception as error:
-            error_type = type(error).__name__
+            error_type = diagnostic_type(error)
+            dependency_unavailable = is_dependency_failure(error)
             logger.warning("Knowledge retrieval failed: %s", error_type)
             chunks = []
         return {
             "retrieval": chunks,
             "retrieval_error_type": error_type,
+            "retrieval_dependency_unavailable": dependency_unavailable,
             "trace": [*state.trace, "retrieve"],
         }
 
@@ -68,7 +73,9 @@ class KnowledgePath:
         current = state.model_copy(deep=True)
         current.trace.append("handoff")
         reason = (
-            HandoffReason.RETRIEVAL_ERROR
+            HandoffReason.DEPENDENCY_UNAVAILABLE
+            if state.retrieval_dependency_unavailable
+            else HandoffReason.RETRIEVAL_ERROR
             if state.retrieval_error_type
             else HandoffReason.LOW_EVIDENCE
         )
@@ -80,30 +87,31 @@ class KnowledgePath:
         chunks = state.retrieval[: self.deps.settings.retrieval.rerank_top_k]
         sources = self._sources(chunks)
         try:
-            model = self.deps.model("main").with_structured_output(CoverageAnswer, include_raw=True)
-            response = model.invoke(
+            response, _ = self.deps.models.structured(
+                "answer",
+                "main",
+                CoverageAnswer,
                 [
                     SystemMessage(content=self.prompt),
                     HumanMessage(
                         content=f"Question:\n{state.rewritten_query}\n\nSources:\n{sources}"
                     ),
-                ]
+                ],
             )
+        except StructuredOutputError as error:
+            return {
+                **self._answer_handoff(state, "invalid_output"),
+                "answer_error_type": error.error_type,
+            }
         except Exception as error:
             logger.warning("Knowledge answer failed: %s", type(error).__name__)
             return {
-                **self._answer_handoff(state, "model_error"),
+                **self._answer_handoff(
+                    state, "model_error", dependency_unavailable=is_dependency_failure(error)
+                ),
                 "answer_error_type": type(error).__name__,
             }
-        try:
-            if not isinstance(response, dict) or response.get("parsing_error"):
-                raise ValueError("Invalid structured answer envelope")
-            coverage = CoverageAnswer.model_validate(response.get("parsed"))
-        except Exception as error:
-            return {
-                **self._answer_handoff(state, "invalid_output"),
-                "answer_error_type": type(error).__name__,
-            }
+        coverage = response.value
         status, text = render_covered_answer(coverage, chunks)
         if status != "answered":
             current = state.model_copy(update={"coverage": coverage})
@@ -118,13 +126,17 @@ class KnowledgePath:
             "coverage": coverage,
         }
 
-    def _answer_handoff(self, state: ConversationState, status: str) -> dict[str, Any]:
+    def _answer_handoff(
+        self, state: ConversationState, status: str, *, dependency_unavailable: bool = False
+    ) -> dict[str, Any]:
         current = state.model_copy(deep=True)
         current.trace.append("handoff")
         return {
             **make_handoff(
                 current,
-                HandoffReason.ANSWER_ERROR
+                HandoffReason.DEPENDENCY_UNAVAILABLE
+                if dependency_unavailable
+                else HandoffReason.ANSWER_ERROR
                 if status == "model_error"
                 else HandoffReason.INCOMPLETE_EVIDENCE
                 if status in {"insufficient_coverage", "implied_by_absence"}

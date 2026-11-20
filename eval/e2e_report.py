@@ -55,6 +55,7 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
         f"- Split: {metadata.split} ({len(records)} items)",
         f"- Date (UTC): {metadata.date}",
         f"- Models: {json.dumps(metadata.models, sort_keys=True)}",
+        f"- LLM endpoint host: {metadata.endpoint_host or 'unknown'}",
         f"- Dataset versions: {json.dumps(metadata.dataset_versions, sort_keys=True)}",
         f"- Customer fixture: `{metadata.customer_id}`",
         f"- Gate threshold: {metadata.threshold:.2f}",

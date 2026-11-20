@@ -15,6 +15,7 @@ from support_agent.graph.handoff import HandoffPayload, HandoffReason
 from support_agent.graph.intents import Intent, Path
 from support_agent.graph.state import CitationRecord
 from support_agent.orders.models import Order, OrderItem, OrderStatus, RefundRequest, Shipment
+from support_agent.reliability.events import ReliabilityEvent
 from support_agent.retrieval.types import RetrievedChunk
 
 if TYPE_CHECKING:
@@ -35,6 +36,7 @@ def checkpoint_serializer() -> JsonPlusSerializer:
         OrderStatus,
         Path,
         RefundRequest,
+        ReliabilityEvent,
         RetrievedChunk,
         Shipment,
     )

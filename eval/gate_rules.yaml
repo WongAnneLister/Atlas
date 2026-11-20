@@ -3,6 +3,8 @@ false_accept_max: 0
 # more than this share of items hit a classification, retrieval or answer error
 # (for example 402 Insufficient Balance or a dropped Milvus tunnel). The small
 # allowance covers occasional malformed model output, seen in earlier full runs.
+# The release check uses the same rate: such a run fails as "Invalid run", not as a
+# metric regression, so an outage is not read as a code change.
 promotion_max_error_rate: 0.05
 metrics:
   false_accept:

@@ -122,7 +122,7 @@ def test_retrieval_failure_fails_closed_to_handoff(caplog: Any) -> None:
         result = invoke(build_graph(deps), "Can I return a gold bar?")
     assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
     assert result["gate"].reason == "empty_retrieval"
-    assert result["handoff"].reason == "retrieval_error"
+    assert result["handoff"].reason == "dependency_unavailable"
     assert main.responses == ["This must never be called"]
     assert "private backend detail" not in caplog.text
 
@@ -133,7 +133,7 @@ def test_retrieval_error_is_distinct_from_missing_evidence() -> None:
         result = invoke(build_graph(deps), "Explain the return rules.")
     assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
     assert result["retrieval_error_type"] == "ConnectionError"
-    assert result["handoff"].reason == "retrieval_error"
+    assert result["handoff"].reason == "dependency_unavailable"
 
 
 def test_generation_connection_error_does_not_claim_low_evidence(caplog: Any) -> None:
@@ -157,7 +157,7 @@ def test_generation_connection_error_does_not_claim_low_evidence(caplog: Any) ->
     assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
     assert result["answer_status"] == "model_error"
     assert result["answer_error_type"] == "ConnectionError"
-    assert result["handoff"].reason == "answer_error"
+    assert result["handoff"].reason == "dependency_unavailable"
     assert "private provider detail" not in caplog.text
 
 
@@ -369,3 +369,15 @@ def test_coverage_part_requires_the_explicit_flag() -> None:
     del payload["explicit"]
     result = coverage_graph({"parts": [payload]})
     assert result["answer_status"] == "invalid_output"
+
+
+def test_bad_retrieval_result_keeps_retrieval_error_reason() -> None:
+    class InvalidRetriever:
+        def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]:
+            raise ValueError("invalid data")
+
+    with GraphDeps(Settings(), fast_model=fast_model(), retriever=InvalidRetriever()) as deps:
+        result = invoke(build_graph(deps), "Explain the return rules.")
+    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["retrieval_error_type"] == "ValueError"
+    assert result["handoff"].reason == "retrieval_error"

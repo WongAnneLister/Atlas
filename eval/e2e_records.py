@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field
 
 from eval.schema import EvalItem
 from support_agent.observability.cost import ModelUsage
+from support_agent.reliability.events import ReliabilityEvent
+from support_agent.reliability.settings import ChaosSettings
 
 
 class E2EMetadata(BaseModel):
@@ -26,6 +28,8 @@ class E2EMetadata(BaseModel):
     code_hash: str | None = None
     prompt_hash: str | None = None
     runtime: dict[str, str] | None = None
+    chaos: ChaosSettings | None = None
+    endpoint_host: str | None = None
 
 
 class E2ERecord(BaseModel):
@@ -55,6 +59,7 @@ class E2ERecord(BaseModel):
     # Commit 15: per reported model. None in runs recorded before it.
     llm_calls: int | None = Field(default=None, ge=0)
     usage_by_model: dict[str, ModelUsage] | None = None
+    reliability_events: list[ReliabilityEvent] = Field(default_factory=list)
 
 
 class JudgeRecord(BaseModel):
@@ -81,6 +86,8 @@ def load_cached_run(
         "code_hash",
         "prompt_hash",
         "runtime",
+        "chaos",
+        "endpoint_host",
     ):
         if getattr(saved, key) != getattr(metadata, key):
             raise ValueError(f"E2E cache changed {key}; choose a fresh output")

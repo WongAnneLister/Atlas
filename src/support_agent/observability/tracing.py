@@ -172,6 +172,7 @@ def start_turn(
     conversation_id: str,
     customer_id: str,
     input_text: str | None,
+    trace_id: str | None = None,
 ) -> TurnTrace:
     """Open a root span for one turn; graph spans hang under it via the callback."""
     turn = TurnTrace()
@@ -183,7 +184,10 @@ def start_turn(
         client = _client(settings.tracing)
         text = REDACTED if settings.tracing.redact_inputs and input_text else input_text
         root = client.start_observation(
-            name=name, as_type="span", input={"message": text} if text is not None else None
+            name=name,
+            as_type="span",
+            input={"message": text} if text is not None else None,
+            trace_context={"trace_id": trace_id} if trace_id is not None else None,
         )
         turn._root = root
         turn._session_id, turn._user_id, turn._name = conversation_id, customer_id, name

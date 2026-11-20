@@ -14,8 +14,11 @@ import re
 from typing import Any, Literal
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, ConfigDict, Field
+
+from support_agent.reliability.llm_calls import ReliableModels
+from support_agent.reliability.structured import StructuredOutputError
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +101,45 @@ def _decision(response: Any) -> OrderGrounding | None:
         return None
 
 
+def _messages(data: str, sentences: list[str], prompt: str) -> list[BaseMessage]:
+    return [
+        SystemMessage(content=prompt),
+        HumanMessage(content=f"Order data:\n{data}\n\nAnswer sentences:\n{numbered(sentences)}"),
+    ]
+
+
+def _check(
+    decision: OrderGrounding, sentences: list[str], data: str, attempts: int
+) -> GroundingResult:
+    missing = ungrounded_sentences(decision, sentences, data)
+    status: Literal["grounded", "ungrounded"] = "ungrounded" if missing else "grounded"
+    return GroundingResult(status=status, missing=missing, attempts=attempts)
+
+
+def check_order_answer_reliably(
+    models: ReliableModels,
+    prompt: str,
+    order_context: dict[str, Any] | None,
+    answer: str,
+) -> GroundingResult:
+    """Run the graph's structured grounding check with its single repair."""
+    data = tool_data_text(order_context)
+    sentences = answer_sentences(answer)
+    if not sentences:
+        return GroundingResult(status="grounded", attempts=1)
+    try:
+        response, event = models.structured(
+            "grounding", "main", OrderGrounding, _messages(data, sentences, prompt)
+        )
+    except StructuredOutputError as error:
+        logger.warning("Order grounding reply was invalid: %s", error.error_type)
+        return GroundingResult(status="error", attempts=1 + int(error.repaired))
+    except Exception as error:
+        logger.warning("Order grounding check failed: %s", type(error).__name__)
+        return GroundingResult(status="error", attempts=1)
+    return _check(response.value, sentences, data, 1 + int(event.repaired))
+
+
 def check_order_answer(
     model: BaseChatModel,
     prompt: str,
@@ -114,10 +156,7 @@ def check_order_answer(
     if not sentences:
         return GroundingResult(status="grounded", attempts=1)
     structured = model.with_structured_output(OrderGrounding, include_raw=True)
-    messages = [
-        SystemMessage(content=prompt),
-        HumanMessage(content=f"Order data:\n{data}\n\nAnswer sentences:\n{numbered(sentences)}"),
-    ]
+    messages = _messages(data, sentences, prompt)
     for attempt in range(1, attempts + 1):
         try:
             response = structured.invoke(messages)
@@ -128,7 +167,5 @@ def check_order_answer(
         if decision is None:
             logger.warning("Order grounding reply had no valid structured call")
             continue
-        missing = ungrounded_sentences(decision, sentences, data)
-        status: Literal["grounded", "ungrounded"] = "ungrounded" if missing else "grounded"
-        return GroundingResult(status=status, missing=missing, attempts=attempt)
+        return _check(decision, sentences, data, attempt)
     return GroundingResult(status="error", attempts=attempts)

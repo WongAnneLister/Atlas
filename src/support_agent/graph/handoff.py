@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from support_agent.gate.evidence import GateResult
 from support_agent.graph.coverage import CoverageAnswer
 from support_agent.graph.intents import Intent
+from support_agent.graph.turn_identity import action_key, current_graph_config, turn_message_id
 from support_agent.retrieval.types import RetrievedChunk
 
 if TYPE_CHECKING:
@@ -28,6 +29,7 @@ class HandoffReason(StrEnum):
     COMPLAINT = "complaint"
     LOW_EVIDENCE = "low_evidence"
     RETRIEVAL_ERROR = "retrieval_error"
+    DEPENDENCY_UNAVAILABLE = "dependency_unavailable"
     ANSWER_ERROR = "answer_error"
     INVALID_ANSWER = "invalid_answer"
     INCOMPLETE_EVIDENCE = "incomplete_evidence"
@@ -47,6 +49,8 @@ class HandoffPayload(BaseModel):
     coverage: CoverageAnswer | None = None
     order_context: dict[str, Any] | None = None
     created_at: datetime
+    idempotency_key: str | None = None
+    trace_id: str | None = None
 
 
 def load_templates(name: str) -> dict[str, str]:
@@ -62,7 +66,11 @@ def load_templates(name: str) -> dict[str, str]:
 def make_handoff(state: ConversationState, reason: HandoffReason) -> dict[str, Any]:
     answer = load_templates("handoff_messages.yaml")[reason.value]
     message = AIMessage(content=answer)
+    config = current_graph_config()
+    trace_id = config.get("metadata", {}).get("trace_id")
     payload = HandoffPayload(
+        idempotency_key=action_key(config, turn_message_id(state.messages), "handoff"),
+        trace_id=trace_id if isinstance(trace_id, str) else None,
         reason=reason,
         conversation=[*state.messages, message],
         rewritten_query=state.rewritten_query,

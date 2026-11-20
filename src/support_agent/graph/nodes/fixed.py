@@ -29,7 +29,7 @@ def fixed_reply(state: ConversationState) -> dict[str, Any]:
         if re.search(pattern, original, flags=re.IGNORECASE):
             category = name
             break
-    answer = templates[category]
+    answer = templates["classification_failed" if state.classification_failed else category]
     return {
         "answer": answer,
         "messages": [AIMessage(content=answer)],

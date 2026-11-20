@@ -5,10 +5,59 @@ from __future__ import annotations
 import math
 from typing import Any, Protocol
 
+import grpc  # type: ignore[import-untyped]
+
 from support_agent.config import Settings
 from support_agent.retrieval.chunking import Chunk
 
 DESCRIPTION = "support-agent dense+BM25 chunks v1"
+
+
+# Bound the walk: pymilvus wraps an outage a few times, never dozens.
+_MAX_CHAIN = 16
+
+
+def milvus_transport_failure(error: BaseException) -> bool:
+    """Recognize transient gRPC and Milvus statuses anywhere in the exception chain.
+
+    pymilvus wraps outages several times (retry decorators, connection recovery), with
+    either an explicit cause or an implicit context, so every link is checked.
+    """
+    seen: set[int] = set()
+    link: BaseException | None = error
+    while link is not None and id(link) not in seen and len(seen) < _MAX_CHAIN:
+        seen.add(id(link))
+        if _transient_link(link):
+            return True
+        link = link.__cause__ or link.__context__
+    return False
+
+
+def _transient_link(error: BaseException) -> bool:
+    from pymilvus.client.types import Status
+    from pymilvus.exceptions import (
+        ConnectError,
+        ErrorCode,
+        MilvusException,
+        MilvusUnavailableException,
+    )
+    from pymilvus.grpc_gen import common_pb2
+
+    retryable_statuses = (
+        grpc.StatusCode.DEADLINE_EXCEEDED,
+        grpc.StatusCode.UNAVAILABLE,
+        grpc.StatusCode.RESOURCE_EXHAUSTED,
+    )
+    if isinstance(error, grpc.RpcError):
+        return error.code() in retryable_statuses
+    if not isinstance(error, MilvusException):
+        return False
+    return (
+        isinstance(error, ConnectError | MilvusUnavailableException)
+        or bool(error.retriable)
+        or error.code in (*retryable_statuses, ErrorCode.RATE_LIMIT, Status.CONNECT_FAILED)
+        or error.compatible_code == common_pb2.RateLimit
+    )
 
 
 class ChunkStore(Protocol):
@@ -30,7 +79,9 @@ class SearchStore(Protocol):
 
 
 class MilvusStore:
-    def __init__(self, settings: Settings, client: Any = None) -> None:
+    def __init__(
+        self, settings: Settings, client: Any = None, *, timeout_s: float | None = None
+    ) -> None:
         from pymilvus import MilvusClient
 
         self.settings = settings
@@ -41,7 +92,7 @@ class MilvusStore:
             if client is not None
             else MilvusClient(
                 uri=self.config.uri,
-                timeout=self.config.timeout_s,
+                timeout=timeout_s if timeout_s is not None else self.config.timeout_s,
             )
         )
 
@@ -222,7 +273,9 @@ class MilvusStore:
         )
         return int(result[0]["count(*)"])
 
-    def _search(self, data: object, field: str, metric: str, limit: int) -> list[SearchHit]:
+    def _search(
+        self, data: object, field: str, metric: str, limit: int, timeout_s: float | None
+    ) -> list[SearchHit]:
         if limit <= 0:
             raise ValueError("Search limit must be positive")
         params = {"ef": max(limit, self.config.hnsw_ef_search)} if field == "dense" else {}
@@ -236,7 +289,7 @@ class MilvusStore:
             if self._chunk_snapshot is not None
             else list(Chunk.model_fields),
             consistency_level="Strong",
-            timeout=self.config.timeout_s,
+            timeout=timeout_s if timeout_s is not None else self.config.timeout_s,
         )
         results: list[SearchHit] = []
         for hit in response[0]:
@@ -250,17 +303,26 @@ class MilvusStore:
             results.append(SearchHit(**fields, score=float(hit["distance"])))
         return results
 
-    def search_dense(self, vector: list[float], limit: int | None = None) -> list[SearchHit]:
+    def search_dense(
+        self, vector: list[float], limit: int | None = None, *, timeout_s: float | None = None
+    ) -> list[SearchHit]:
         return self._search(
             vector,
             "dense",
             "COSINE",
             self.settings.retrieval.dense_top_k if limit is None else limit,
+            timeout_s,
         )
 
-    def search_bm25(self, text: str, limit: int | None = None) -> list[SearchHit]:
+    def search_bm25(
+        self, text: str, limit: int | None = None, *, timeout_s: float | None = None
+    ) -> list[SearchHit]:
         return self._search(
-            text, "sparse", "BM25", self.settings.retrieval.bm25_top_k if limit is None else limit
+            text,
+            "sparse",
+            "BM25",
+            self.settings.retrieval.bm25_top_k if limit is None else limit,
+            timeout_s,
         )
 
     def drop(self) -> None:

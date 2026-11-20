@@ -60,7 +60,54 @@ llm:
   main_model: null      # env LLM_MAIN_MODEL wins; used for answers
   temperature: 0.0
   timeout_s: 30
+  provider_max_retries: 0
+  fallbacks:            # LLM_FAST_FALLBACKS and LLM_MAIN_FALLBACKS accept comma lists
+    fast: []
+    main: []
   model_kwargs: {}      # provider-specific options; credentials still come only from env
+
+reliability:
+  timeouts_s:
+    rewrite: 30
+    classify: 30
+    answer: 30
+    decide: 30
+    order_extract: 30
+    grounding: 30
+    complaint: 30
+    tools: 30
+    rerank: 60
+    orders_db: 15
+    # Milvus keeps its deadline in milvus.timeout_s.
+  retry:
+    max_attempts: 3
+    base_delay_s: 0.25
+    max_delay_s: 1
+    jitter_ratio: 0.2
+    budget_s: 185
+  circuit:
+    failure_threshold: 3
+    cool_down_s: 30
+    half_open_max_calls: 1
+  locks:
+    # The stream renews the lease every renew_interval_s, so the TTL only bounds how long
+    # a crashed holder blocks its conversation. Keep it a few renewal intervals long.
+    conversation_ttl_s: 60
+    renew_interval_s: 15
+  metrics:
+    latency_buckets_s: [0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 30, 60, 120, 300, 600]
+  repair_error_max_chars: 600
+  llm_max_in_flight: 16
+
+chaos:
+  enabled: false
+  seed: 42
+  llm_timeout_rate: 0
+  llm_rate_limit_rate: 0
+  llm_garbage_rate: 0
+  rerank_down_rate: 0
+  milvus_down_rate: 0
+  orders_down_rate: 0
 
 retrieval:
   embedding_model: BAAI/bge-m3
@@ -156,7 +203,7 @@ agent:
   knowledge_fallback: true   # see eval/reports/tools_fallback.md
   order_replies: template    # code renders order replies; see eval/reports/order_replies.md
   order_grounding: false     # free_text mode only; failed in eval/reports/order_grounding.md
-  grounding_attempts: 2
+  grounding_attempts: 2  # Standalone grounding evaluation control.
 
 refund:
   policy_query: store_faq      # was order_fields; see eval/reports/refund_policy.md

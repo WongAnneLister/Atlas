@@ -22,7 +22,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-tools-fallback eval-paraphrase-build eval-chunking-ab \
         eval-chunking-e2e eval-safety-fixes eval-order-grounding eval-order-replies eval-model-veto \
         results eval-refund-policy eval-refund-decisions eval-validate-all eval-registry-bump \
-        eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-gate eval-baseline
+        eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke chaos eval-gate eval-baseline
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -231,6 +231,9 @@ eval-smoke-build:
 eval-smoke: eval-smoke-build
 	$(RUN) python -m eval.e2e_eval --split test --eval-file eval/sets/smoke.jsonl \
 		--expect-dataset smoke --fresh --report eval/runs/smoke.md $(EVAL_SMOKE_ARGS)
+
+chaos: $(if $(CHAOS_RUN),,eval-smoke-build)
+	$(RUN) python -m eval.chaos $(if $(CHAOS_RUN),--run-dir "$(CHAOS_RUN)") $(EVAL_CHAOS_ARGS)
 
 eval-gate:
 	$(UV) run python -m eval.gate check "$(RUN)" $(EVAL_GATE_ARGS)

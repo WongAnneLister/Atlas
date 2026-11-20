@@ -1,11 +1,11 @@
 """Read-only LangChain tools bound to a trusted customer, never model arguments."""
 
-from typing import Any
+from typing import Any, Protocol
 
 from langchain_core.tools import BaseTool, StructuredTool
 from pydantic import BaseModel, ConfigDict, Field
 
-from support_agent.orders.service import OrderService
+from support_agent.orders.models import Order, Shipment
 
 
 class OrderArgs(BaseModel):
@@ -24,7 +24,13 @@ class ToolResult(BaseModel):
     error: str | None = None
 
 
-def build_order_tools(service: OrderService, customer_id: str) -> list[BaseTool]:
+class OrderReader(Protocol):
+    def get_order(self, order_id: str, customer_id: str) -> Order: ...
+    def list_recent_orders(self, customer_id: str) -> list[Order]: ...
+    def get_tracking(self, order_id: str, customer_id: str) -> Shipment | None: ...
+
+
+def build_order_tools(service: OrderReader, customer_id: str) -> list[BaseTool]:
     if not customer_id.strip():
         raise ValueError("A trusted customer id is required")
 

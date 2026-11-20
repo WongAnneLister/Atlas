@@ -7,18 +7,18 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
 from support_agent.config import Settings
 from support_agent.graph.state import ConversationState
+from support_agent.reliability.llm_calls import ReliableModels
 
 logger = logging.getLogger(__name__)
 PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "rewrite.md"
 
 
 def make_rewrite_node(
-    model: BaseChatModel, settings: Settings
+    models: ReliableModels, settings: Settings
 ) -> Callable[[ConversationState], dict[str, Any]]:
     prompt = PROMPT_PATH.read_text(encoding="utf-8")
 
@@ -38,7 +38,7 @@ def make_rewrite_node(
             start = human_indices[-settings.intent.rewrite_history_turns :][0]
             messages: list[BaseMessage] = [SystemMessage(content=prompt), *state.messages[start:]]
             try:
-                response = model.invoke(messages)
+                response, _ = models.invoke("rewrite", "fast", messages)
                 if not isinstance(response.content, str) or not response.content.strip():
                     raise ValueError("Rewrite must be nonempty text")
                 query = response.content.strip()
@@ -53,9 +53,12 @@ def make_rewrite_node(
             "classification_failed": False,
             "classification_error_type": None,
             "classifier_model": None,
+            "answered_by_model": {},
+            "reliability_events": [],
             "retrieval": [],
             "gate": None,
             "retrieval_error_type": None,
+            "retrieval_dependency_unavailable": False,
             "answer_status": "not_attempted",
             "answer_error_type": None,
             "coverage": None,

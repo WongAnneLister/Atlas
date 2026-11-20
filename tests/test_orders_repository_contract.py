@@ -102,3 +102,25 @@ def test_refund_write_replays_once(order_repository: tuple[Settings, OrderServic
             "Different issue",
             idempotency_key="refund-turn",
         )
+
+
+def test_repository_returns_one_refund_and_rejects_cross_order_key(order_repository) -> None:
+    _, service = order_repository
+    first, second = service.list_recent_orders("CUST-0001", limit=2)
+    key = "conversation+turn+request"
+    args = (first.order_id, first.customer_id, [first.items[0].item_id], "Issue")
+    original = service.create_refund_request(*args, idempotency_key=key)
+    assert service.create_refund_request(*args, idempotency_key=key) == original
+    with pytest.raises(InvalidRefundRequest, match="key was already used"):
+        service.create_refund_request(
+            second.order_id,
+            second.customer_id,
+            [second.items[0].item_id],
+            "Issue",
+            idempotency_key=key,
+        )
+    with service.repository.connection() as connection:
+        assert (
+            connection.exec_driver_sql("SELECT idempotency_key FROM refund_requests").scalar_one()
+            == key
+        )

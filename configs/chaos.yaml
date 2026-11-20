@@ -1,0 +1,5 @@
+chaos:
+  enabled: true
+  seed: 42
+  llm_timeout_rate: 0.20
+  rerank_down_rate: 0.50

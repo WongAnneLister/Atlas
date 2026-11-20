@@ -65,10 +65,24 @@ def test_migration_round_trip(postgres_database) -> None:
         upgrade(engine)
         with engine.connect() as connection:
             assert migration_at_head(connection)
-            assert set(inspect(connection).get_table_names()) == set(metadata.tables) | {
-                "alembic_version"
-            }
+            inspector = inspect(connection)
+            assert set(inspector.get_table_names()) == set(metadata.tables) | {"alembic_version"}
+            constraints = inspector.get_unique_constraints("refund_requests")
+            assert any(
+                constraint["name"] == "refund_requests_idempotency_key"
+                and constraint["column_names"] == ["idempotency_key"]
+                for constraint in constraints
+            )
         with engine.begin() as connection:
+            command.downgrade(alembic_config(connection), "0001_orders")
+            assert not migration_at_head(connection)
+            columns = inspect(connection).get_columns("refund_requests")
+            assert "idempotency_key" not in {column["name"] for column in columns}
+        upgrade(engine)
+        with engine.begin() as connection:
+            assert migration_at_head(connection)
+            columns = inspect(connection).get_columns("refund_requests")
+            assert "idempotency_key" in {column["name"] for column in columns}
             command.downgrade(alembic_config(connection), "base")
             assert set(inspect(connection).get_table_names()) == {"alembic_version"}
             assert not migration_at_head(connection)

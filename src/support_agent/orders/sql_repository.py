@@ -5,10 +5,12 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
+from time import monotonic
 
-from sqlalchemy import URL, Connection, Engine, select
+from sqlalchemy import URL, Connection, Engine, RowMapping, inspect, select
 from sqlalchemy.dialects.postgresql import insert as postgres_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.exc import IntegrityError
 
 from support_agent.config import Settings
 from support_agent.db.engine import make_engine, postgres_url, sqlite_path, transaction
@@ -29,6 +31,31 @@ from support_agent.orders.tables import customers, order_items, orders, shipment
 
 def cents(amount: Decimal) -> int:
     return int(amount * 100)
+
+
+def _upgrade_sqlite_refund_keys(connection: Connection) -> None:
+    columns = inspect(connection).get_columns("refund_requests")
+    if any(column["name"] == "idempotency_key" for column in columns):
+        return
+    connection.exec_driver_sql("ALTER TABLE refund_requests ADD COLUMN idempotency_key TEXT")
+    connection.exec_driver_sql(
+        "CREATE UNIQUE INDEX refund_requests_idempotency_key ON refund_requests (idempotency_key)"
+    )
+
+
+def _refund_time_left(deadline: float) -> float:
+    remaining = deadline - monotonic()
+    if remaining <= 0:
+        raise TimeoutError("Refund transaction deadline exceeded")
+    return remaining
+
+
+def _check_refund_deadline(connection: Connection, deadline: float) -> None:
+    remaining = _refund_time_left(deadline)
+    if connection.dialect.name == "postgresql":
+        timeout_ms = max(1, int(remaining * 1000))
+        connection.exec_driver_sql(f"SET LOCAL statement_timeout = {timeout_ms}")
+        _refund_time_left(deadline)
 
 
 class OrderRepository:
@@ -56,11 +83,23 @@ class OrderRepository:
         with transaction(self.engine, write=write) as connection:
             yield connection
 
+    @contextmanager
+    def _refund_transaction(self, deadline: float | None) -> Iterator[Connection]:
+        if deadline is not None:
+            _refund_time_left(deadline)
+        with self.connection(write=True) as connection:
+            if deadline is not None:
+                _check_refund_deadline(connection, deadline)
+            yield connection
+            if deadline is not None:
+                _check_refund_deadline(connection, deadline)
+
     def replace(self, dataset: SeedDataset) -> None:
         """Reset known mock tables and insert the validated dataset in one transaction."""
         with self.connection(create=True, write=True) as connection:
             if self.engine.dialect.name == "sqlite":
                 tables.metadata.create_all(connection)
+                _upgrade_sqlite_refund_keys(connection)
             for table in reversed(tables.metadata.sorted_tables):
                 connection.execute(table.delete())
             if dataset.customers:
@@ -170,8 +209,12 @@ class OrderRepository:
         reason: str,
         request_id: str,
         created_at: datetime,
+        *,
+        idempotency_key: str | None = None,
+        legacy_request_id: str | None = None,
+        deadline: float | None = None,
     ) -> RefundRequest:
-        with self.connection(write=True) as connection:
+        with self._refund_transaction(deadline) as connection:
             # Ownership is checked before any request validation or write.
             order = self._owned_order(connection, order_id, customer_id)
             valid_ids = {item.item_id for item in order.items}
@@ -193,13 +236,22 @@ class OrderRepository:
                 created_at=created_at,
             )
             table = tables.refund_requests
-            insert = postgres_insert if self.engine.dialect.name == "postgresql" else sqlite_insert
-            statement = insert(table).on_conflict_do_nothing(index_elements=[table.c.request_id])
+            if connection.dialect.name == "sqlite":
+                _upgrade_sqlite_refund_keys(connection)
+            if legacy_request_id is not None:
+                legacy = self._refund_row(connection, legacy_request_id)
+                if legacy is not None and legacy["idempotency_key"] in (None, idempotency_key):
+                    return self._existing_refund(connection, legacy, request, idempotency_key)
+
+            insert = postgres_insert if connection.dialect.name == "postgresql" else sqlite_insert
+            statement = insert(table).on_conflict_do_nothing().returning(table.c.request_id)
+            values = request.model_dump(exclude={"item_ids"})
             inserted = connection.execute(
-                statement.returning(table.c.request_id), request.model_dump(exclude={"item_ids"})
+                statement, {**values, "idempotency_key": idempotency_key}
             ).scalar_one_or_none()
             if inserted is None:
-                return self._existing_refund(connection, request)
+                row = self._refund_row(connection, request_id, idempotency_key)
+                return self._existing_refund(connection, row, request, idempotency_key)
             connection.execute(
                 tables.refund_request_items.insert(),
                 [
@@ -210,29 +262,62 @@ class OrderRepository:
             return request
 
     @staticmethod
-    def _existing_refund(connection: Connection, request: RefundRequest) -> RefundRequest:
+    def _refund_row(
+        connection: Connection, request_id: str, key: str | None = None
+    ) -> RowMapping | None:
         table = tables.refund_requests
-        row = (
-            connection.execute(
-                select(table).where(
-                    table.c.request_id == request.request_id,
-                    table.c.order_id == request.order_id,
-                    table.c.customer_id == request.customer_id,
-                )
+        query = select(table).with_for_update()
+        if key is not None:
+            row = (
+                connection.execute(query.where(table.c.idempotency_key == key))
+                .mappings()
+                .one_or_none()
             )
+            if row is not None:
+                return row
+        return (
+            connection.execute(query.where(table.c.request_id == request_id))
             .mappings()
             .one_or_none()
         )
+
+    @staticmethod
+    def _existing_refund(
+        connection: Connection,
+        row: RowMapping | None,
+        request: RefundRequest,
+        key: str | None,
+    ) -> RefundRequest:
+        if (
+            row is None
+            or row["order_id"] != request.order_id
+            or row["customer_id"] != request.customer_id
+            or row["reason"] != request.reason
+            or row["idempotency_key"] not in (None, key)
+        ):
+            raise InvalidRefundRequest("Refund request key was already used")
+
+        request_id = row["request_id"]
         items = tables.refund_request_items
         item_ids = (
-            connection.execute(
-                select(items.c.item_id).where(items.c.request_id == request.request_id)
-            )
+            connection.execute(select(items.c.item_id).where(items.c.request_id == request_id))
             .scalars()
             .all()
         )
-        if row is None or row["reason"] != request.reason or set(item_ids) != set(request.item_ids):
+        if set(item_ids) != set(request.item_ids):
             raise InvalidRefundRequest("Refund request key was already used")
+
+        if key is not None and row["idempotency_key"] is None:
+            # A matching request predates the unique key. Claim it for future replays.
+            table = tables.refund_requests
+            try:
+                connection.execute(
+                    table.update()
+                    .where(table.c.request_id == request_id)
+                    .values(idempotency_key=key)
+                )
+            except IntegrityError:
+                raise InvalidRefundRequest("Refund request key was already used") from None
         return RefundRequest.model_validate({**row, "item_ids": request.item_ids})
 
     def seed_metadata(self) -> SeedMetadata:

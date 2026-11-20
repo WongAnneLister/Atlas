@@ -24,12 +24,15 @@ def _fresh_settings(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
 @pytest.fixture
 def seeded(tmp_path: Path) -> tuple[Settings, OrderService]:
     settings = Settings()
+    # Always a temporary SQLite file: an earlier fixture (postgres_database) may have set
+    # ENV=dev, and the dev backend would point at the developer's real DATABASE_URL.
+    settings.db.backend = "sqlite"
     settings.orders.db_path = str(tmp_path / "orders.sqlite")
     settings.orders.n_orders = 30
     settings.orders.n_customers = 4
     settings.data.processed_dir = str(tmp_path / "processed")
     seed_orders(settings)
-    return settings, OrderService(settings=settings.orders)
+    return settings, OrderService(settings=settings.orders, platform=settings)
 
 
 @pytest.fixture

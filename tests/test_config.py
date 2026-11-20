@@ -113,3 +113,58 @@ def test_prod_guard_cannot_be_disabled_by_nested_env(monkeypatch: pytest.MonkeyP
     monkeypatch.setenv("SUPPORT_AGENT__GRAPH__CHECKPOINT_BACKEND", "memory")
     with pytest.raises(ValidationError, match="prod requires postgres checkpoints"):
         get_settings()
+
+
+def test_reliability_defaults_load() -> None:
+    settings = get_settings()
+    assert settings.llm.provider_max_retries == 0
+    assert settings.llm.fallbacks.fast == settings.llm.fallbacks.main == []
+    assert settings.reliability.retry.max_attempts == 3
+    assert settings.reliability.timeouts_s.rerank > 0
+    assert settings.chaos.enabled is False
+
+
+def test_llm_fallback_env_preserves_order_and_can_clear_yaml(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("SUPPORT_AGENT__LLM__FALLBACKS__MAIN", '["from-yaml"]')
+    monkeypatch.setenv("LLM_FAST_FALLBACKS", " fallback-a, , fallback-b ")
+    monkeypatch.setenv("LLM_MAIN_FALLBACKS", "")
+    settings = get_settings()
+    assert settings.llm.fallbacks.fast == ["fallback-a", "fallback-b"]
+    assert settings.llm.fallbacks.main == []
+
+
+@pytest.mark.parametrize(
+    ("keys", "message"),
+    [
+        ({"LLM__TIMEOUT_S": "1"}, "llm.timeout_s"),
+        ({"RELIABILITY__RETRY__BUDGET_S": "59"}, "milvus.timeout_s"),
+        ({"RELIABILITY__RETRY__JITTER_RATIO": "1.1"}, "jitter_ratio"),
+        ({"RELIABILITY__RETRY__BASE_DELAY_S": "2"}, "base_delay_s"),
+        ({"RELIABILITY__LOCKS__CONVERSATION_TTL_S": "1"}, "conversation_ttl_s"),
+        ({"CHAOS__LLM_TIMEOUT_RATE": "-0.1"}, "llm_timeout_rate"),
+    ],
+)
+def test_invalid_reliability_settings_are_rejected(
+    keys: dict[str, str], message: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    for key, value in keys.items():
+        monkeypatch.setenv(f"SUPPORT_AGENT__{key}", value)
+    with pytest.raises(ValidationError, match=message):
+        get_settings()
+
+
+def test_conversation_lease_ttl_stays_short_for_crash_recovery() -> None:
+    # The stream renews the lease, so a long TTL only delays recovery after a crash.
+    locks = get_settings().reliability.locks
+    assert locks.conversation_ttl_s <= 4 * locks.renew_interval_s
+
+
+def test_prod_rejects_chaos(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ENV", "prod")
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://fake:fake@localhost:5433/support")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+    monkeypatch.setenv("SUPPORT_AGENT__CHAOS__ENABLED", "true")
+    with pytest.raises(ValidationError, match="prod forbids chaos"):
+        get_settings()

@@ -20,8 +20,10 @@ from support_agent.graph.refund_decision import (
 )
 from support_agent.graph.refund_query import policy_query
 from support_agent.graph.state import CitationRecord, ConversationState
+from support_agent.graph.turn_identity import action_key, current_graph_config, turn_message_id
 from support_agent.orders.models import Order, OrderNotFound
-from support_agent.orders.service import OrderService
+from support_agent.reliability.guards import diagnostic_type, is_dependency_failure
+from support_agent.reliability.stores import GuardedOrders
 from support_agent.retrieval.scope import scope_chunks
 
 logger = logging.getLogger(__name__)
@@ -34,8 +36,8 @@ class RefundPath:
         prompt_file, self.decision_schema = DECISION_VERSIONS[deps.settings.refund.decision_version]
         self.prompt = (PROMPTS / prompt_file).read_text(encoding="utf-8")
 
-    def _service(self) -> OrderService:
-        return self.deps.orders()
+    def _service(self) -> GuardedOrders:
+        return self.deps.guarded_orders()
 
     def identify_order(self, state: ConversationState) -> dict[str, Any]:
         service = self._service()
@@ -46,14 +48,16 @@ class RefundPath:
         order_id = match.group(0).upper().replace(" ", "-") if match else None
         if order_id is None:
             try:
-                response = self.deps.model("fast").invoke(
+                response, _ = self.deps.models.invoke(
+                    "order_extract",
+                    "fast",
                     [
                         SystemMessage(
                             content="Extract an order id from the customer request. "
                             "Return the id or say none."
                         ),
                         HumanMessage(content=query),
-                    ]
+                    ],
                 )
                 content = getattr(response, "content", "")
                 if isinstance(content, str):
@@ -73,6 +77,8 @@ class RefundPath:
                 }
             except (OrderNotFound, ValueError):
                 pass
+            except Exception as error:
+                return self._identify_unavailable(state, error)
         try:
             orders = service.list_recent_orders(state.customer_id or "")
         except (FileNotFoundError, ValueError):
@@ -80,6 +86,8 @@ class RefundPath:
                 **make_handoff(state.model_copy(deep=True), HandoffReason.ORDER_NOT_FOUND),
                 "trace": [*state.trace, "after_sales", "refund_identify", "handoff"],
             }
+        except Exception as error:
+            return self._identify_unavailable(state, error)
         choices = [self._order_choice(order) for order in orders]
         selected = interrupt({"type": "order_picker", "orders": choices})
         if selected == "none" or not isinstance(selected, str):
@@ -99,6 +107,15 @@ class RefundPath:
             "trace": [*state.trace, "after_sales", "refund_identify"],
         }
 
+    @classmethod
+    def _identify_unavailable(cls, state: ConversationState, error: Exception) -> dict[str, Any]:
+        if not is_dependency_failure(error):
+            raise error
+        current = state.model_copy(
+            update={"trace": [*state.trace, "after_sales", "refund_identify"]}
+        )
+        return cls._handoff(current, HandoffReason.DEPENDENCY_UNAVAILABLE)
+
     def load_order(self, state: ConversationState) -> dict[str, Any]:
         if not state.refund_order_id or not state.customer_id:
             return self._handoff(state, HandoffReason.ORDER_NOT_FOUND)
@@ -106,6 +123,11 @@ class RefundPath:
             order = self._service().get_order(state.refund_order_id, state.customer_id)
         except (OrderNotFound, ValueError):
             return self._handoff(state, HandoffReason.ORDER_NOT_FOUND)
+        except Exception as error:
+            if not is_dependency_failure(error):
+                raise
+            current = state.model_copy(update={"trace": [*state.trace, "refund_load"]})
+            return self._handoff(current, HandoffReason.DEPENDENCY_UNAVAILABLE)
         today = self.deps.settings.orders.today
         days = (today - order.delivered_at).days if order.delivered_at else None
         context = {
@@ -117,6 +139,8 @@ class RefundPath:
         return {"order_context": context, "trace": [*state.trace, "refund_load"]}
 
     def retrieve_policy(self, state: ConversationState) -> dict[str, Any]:
+        if state.handoff is not None:
+            return {}
         order = self._order_from_state(state)
         if order is None:
             return self._handoff(state, HandoffReason.ORDER_NOT_FOUND)
@@ -127,11 +151,15 @@ class RefundPath:
         pool = (
             max(retrieval.rerank_top_k, scope.pool_k) if scope.enabled else retrieval.rerank_top_k
         )
+        error_type = None
+        dependency_unavailable = False
         try:
             ranked = self.deps.knowledge_retriever().retrieve(query, pool)
             chunks, _, _ = scope_chunks(query, ranked, scope, retrieval.rerank_top_k)
         except Exception as error:
-            logger.warning("Refund policy retrieval failed: %s", type(error).__name__)
+            error_type = diagnostic_type(error)
+            dependency_unavailable = is_dependency_failure(error)
+            logger.warning("Refund policy retrieval failed: %s", error_type)
             chunks = []
         gate = evaluate(
             query,
@@ -142,7 +170,13 @@ class RefundPath:
         if not gate.passed:
             current = state.model_copy(update={"retrieval": chunks, "gate": gate}, deep=True)
             return {
-                **make_handoff(current, HandoffReason.LOW_EVIDENCE),
+                **make_handoff(
+                    current,
+                    HandoffReason.DEPENDENCY_UNAVAILABLE
+                    if dependency_unavailable
+                    else HandoffReason.LOW_EVIDENCE,
+                ),
+                "retrieval_error_type": error_type,
                 "retrieval": chunks,
                 "gate": gate,
                 "refund_policy_query": query,
@@ -170,20 +204,26 @@ class RefundPath:
             ),
         ]
         try:
-            model = self.deps.model("main")
-            structured = model.with_structured_output(self.decision_schema, include_raw=True)
-            raw = structured.invoke(messages)
-            decision = self._parse_decision(raw)
+            response, _ = self.deps.models.structured(
+                "decide", "main", self.decision_schema, messages
+            )
         except Exception as error:
             logger.warning("Refund decision failed: %s", type(error).__name__)
-            return self._handoff(state, HandoffReason.POLICY_REQUIRES_HUMAN)
-        decision = self._check_decision(decision, order, state)
+            reason = (
+                HandoffReason.DEPENDENCY_UNAVAILABLE
+                if is_dependency_failure(error)
+                else HandoffReason.POLICY_REQUIRES_HUMAN
+            )
+            return self._handoff(state, reason)
+        decision = self._check_decision(response.value, order, state)
         return {
             "refund_decision": decision.model_dump(),
             "trace": [*state.trace, "refund_decide"],
         }
 
     def act(self, state: ConversationState) -> dict[str, Any]:
+        if state.handoff is not None:
+            return {}
         decision = self._decision(state)
         if decision is None:
             return self._handoff(state, HandoffReason.POLICY_REQUIRES_HUMAN)
@@ -214,25 +254,27 @@ class RefundPath:
             }
         if not state.refund_order_id or not state.customer_id:
             return self._handoff(state, HandoffReason.ORDER_NOT_FOUND)
-        turn_id = next(
-            (
-                message.id
-                for message in reversed(state.messages)
-                if isinstance(message, HumanMessage)
-            ),
-            None,
-        )
+        turn_id = turn_message_id(state.messages)
+        key = action_key(current_graph_config(), turn_id, "refund_request")
+        if key is None:
+            return self._handoff(state, HandoffReason.POLICY_REQUIRES_HUMAN)
         try:
             request = self._service().create_refund_request(
                 state.refund_order_id,
                 state.customer_id,
                 decision.items,
                 "; ".join(decision.reasons) or "Customer refund request",
-                idempotency_key=turn_id,
+                idempotency_key=key,
+                legacy_turn_id=turn_id,
             )
         except Exception as error:
-            logger.warning("Refund request creation failed: %s", type(error).__name__)
-            return self._handoff(state, HandoffReason.POLICY_REQUIRES_HUMAN)
+            logger.warning("Refund request creation failed: %s", diagnostic_type(error))
+            reason = (
+                HandoffReason.DEPENDENCY_UNAVAILABLE
+                if is_dependency_failure(error)
+                else HandoffReason.POLICY_REQUIRES_HUMAN
+            )
+            return self._handoff(state, reason)
         answer = (
             f"Your refund request {request.request_id} is pending human review. {citations}".strip()
         )

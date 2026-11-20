@@ -18,6 +18,7 @@ from support_agent.graph.nodes.refund import RefundPath
 from support_agent.graph.nodes.rewrite import make_rewrite_node
 from support_agent.graph.nodes.tools_path import ToolsPath
 from support_agent.graph.state import ConversationState
+from support_agent.reliability.events import collect_events
 
 
 def route_by_path(state: ConversationState) -> str:
@@ -54,12 +55,36 @@ def _stub(path: Path, name: str) -> Callable[[ConversationState], dict[str, Any]
     return run
 
 
+def _recording_node(
+    node: Callable[[ConversationState], dict[str, Any]],
+) -> Callable[[ConversationState], dict[str, Any]]:
+    def run(state: ConversationState) -> dict[str, Any]:
+        with collect_events() as events:
+            update = node(state)
+        if events:
+            update["reliability_events"] = [
+                *update.get("reliability_events", state.reliability_events),
+                *events,
+            ]
+            models = dict(update.get("answered_by_model", state.answered_by_model))
+            for event in events:
+                if event.role and event.model and event.error_type is None:
+                    models[event.call_site] = event.model
+            update["answered_by_model"] = models
+        return update
+
+    return run
+
+
 def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, Any, Any]:
     """The dependency owner must remain open for the graph's entire lifetime."""
-    model = deps.model()
     graph = StateGraph(ConversationState)
-    graph.add_node("rewrite", RunnableLambda(make_rewrite_node(model, deps.settings)))
-    graph.add_node("classify", Classifier(model, deps.settings))
+
+    def add_node(name: str, node: Callable[[ConversationState], dict[str, Any]]) -> None:
+        graph.add_node(name, RunnableLambda(_recording_node(node)))
+
+    add_node("rewrite", make_rewrite_node(deps.models, deps.settings))
+    add_node("classify", Classifier(None, deps.settings, models=deps.models))
     graph.add_edge(START, "rewrite")
     graph.add_edge("rewrite", "classify")
     graph.add_conditional_edges(
@@ -74,18 +99,18 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
     }
     knowledge = KnowledgePath(deps)
     refund = RefundPath(deps)
-    graph.add_node("retrieve", RunnableLambda(knowledge.retrieve))
-    graph.add_node("gate", RunnableLambda(knowledge.gate))
-    graph.add_node("answer", RunnableLambda(knowledge.answer))
-    graph.add_node("handoff", RunnableLambda(knowledge.handoff))
+    add_node("retrieve", knowledge.retrieve)
+    add_node("gate", knowledge.gate)
+    add_node("answer", knowledge.answer)
+    add_node("handoff", knowledge.handoff)
     graph.add_edge("retrieve", "gate")
     graph.add_conditional_edges("gate", route_after_gate, ["answer", "handoff"])
     graph.add_edge("answer", END)
     graph.add_edge("handoff", END)
-    graph.add_node("refund_load", RunnableLambda(refund.load_order))
-    graph.add_node("refund_retrieve", RunnableLambda(refund.retrieve_policy))
-    graph.add_node("refund_decide", RunnableLambda(refund.decide))
-    graph.add_node("refund_act", RunnableLambda(refund.act))
+    add_node("refund_load", refund.load_order)
+    add_node("refund_retrieve", refund.retrieve_policy)
+    add_node("refund_decide", refund.decide)
+    add_node("refund_act", refund.act)
     graph.add_edge("refund_load", "refund_retrieve")
     graph.add_conditional_edges("refund_retrieve", route_refund_policy, ["refund_decide", END])
     graph.add_edge("refund_decide", "refund_act")
@@ -94,10 +119,10 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
         if path == Path.KNOWLEDGE:
             continue
         if path == Path.AFTER_SALES:
-            graph.add_node(name, RunnableLambda(lambda state: refund.identify_order(state)))
+            add_node(name, refund.identify_order)
             graph.add_conditional_edges(name, route_refund_identify, ["refund_load", END])
             continue
-        graph.add_node(name, RunnableLambda(implementations.get(path, _stub(path, name))))
+        add_node(name, implementations.get(path, _stub(path, name)))
         if path == Path.TOOLS:
             graph.add_conditional_edges(name, route_after_tools, ["retrieve", END])
         else:

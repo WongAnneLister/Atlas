@@ -50,3 +50,4 @@ def test_factory_passes_configured_provider_options(monkeypatch: pytest.MonkeyPa
     assert get_chat_model("fast", settings) is fake
     assert calls[0][0] == "configured-model"
     assert calls[0][1]["extra_body"] == {"thinking": {"type": "disabled"}}
+    assert calls[0][1]["max_retries"] == 0

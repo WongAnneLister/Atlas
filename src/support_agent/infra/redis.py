@@ -17,6 +17,8 @@ class KeyValueStore(Protocol):
     def get(self, key: str) -> str | None: ...
     def set(self, key: str, value: str, ttl_s: int) -> None: ...
     def delete(self, key: str) -> bool: ...
+    def delete_if_value(self, key: str, value: str) -> bool: ...
+    def refresh_if_value(self, key: str, value: str, ttl_s: int) -> bool: ...
     def incr(self, key: str, ttl_s: int) -> int: ...
     def set_if_absent(self, key: str, value: str, ttl_s: int) -> bool: ...
 
@@ -29,6 +31,21 @@ if exists == 0 then
     redis.call('EXPIRE', KEYS[1], ARGV[1])
 end
 return value
+"""
+
+_DELETE_IF_VALUE = """
+if redis.call('GET', KEYS[1]) == ARGV[1] then
+    return redis.call('DEL', KEYS[1])
+end
+return 0
+"""
+
+
+_REFRESH_IF_VALUE = """
+if redis.call('GET', KEYS[1]) == ARGV[1] then
+    return redis.call('EXPIRE', KEYS[1], ARGV[2])
+end
+return 0
 """
 
 
@@ -59,6 +76,13 @@ class RedisStore:
 
     def delete(self, key: str) -> bool:
         return bool(self._client.delete(key))
+
+    def delete_if_value(self, key: str, value: str) -> bool:
+        return bool(self._client.eval(_DELETE_IF_VALUE, 1, key, value))
+
+    def refresh_if_value(self, key: str, value: str, ttl_s: int) -> bool:
+        _validate_ttl(ttl_s)
+        return bool(self._client.eval(_REFRESH_IF_VALUE, 1, key, value, ttl_s))
 
     def incr(self, key: str, ttl_s: int) -> int:
         _validate_ttl(ttl_s)
@@ -103,6 +127,24 @@ class NullRedis:
             if self._entry(key, self._clock()) is None:
                 return False
             del self._values[key]
+            return True
+
+    def delete_if_value(self, key: str, value: str) -> bool:
+        with self._lock:
+            entry = self._entry(key, self._clock())
+            if entry is None or entry[0] != value:
+                return False
+            del self._values[key]
+            return True
+
+    def refresh_if_value(self, key: str, value: str, ttl_s: int) -> bool:
+        _validate_ttl(ttl_s)
+        with self._lock:
+            now = self._clock()
+            entry = self._entry(key, now)
+            if entry is None or entry[0] != value:
+                return False
+            self._values[key] = (value, now + ttl_s)
             return True
 
     def incr(self, key: str, ttl_s: int) -> int:

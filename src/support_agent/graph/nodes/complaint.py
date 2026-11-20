@@ -21,8 +21,10 @@ class ComplaintPath:
     def __call__(self, state: ConversationState) -> dict[str, Any]:
         acknowledgement = load_templates("fixed_replies.yaml")["complaint_acknowledgement"]
         try:
-            response = self.deps.model().invoke(
-                [SystemMessage(content=self.prompt), HumanMessage(content=state.rewritten_query)]
+            response, _ = self.deps.models.invoke(
+                "complaint",
+                "fast",
+                [SystemMessage(content=self.prompt), HumanMessage(content=state.rewritten_query)],
             )
             text = response.content
             if isinstance(text, str) and text.strip():

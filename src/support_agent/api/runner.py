@@ -17,6 +17,7 @@ from support_agent.gate.evidence import GateResult
 from support_agent.graph.handoff import HandoffReason
 from support_agent.graph.state import ConversationState
 from support_agent.observability.cost import UsageLedger, cost_usd
+from support_agent.observability.metrics import AtlasMetrics
 from support_agent.observability.tracing import TurnTrace
 
 Graph = CompiledStateGraph[ConversationState, None, Any, Any]
@@ -31,9 +32,10 @@ def _turn_events(
     chunk_words: int,
     trace: TurnTrace,
     costs: CostSettings,
+    metrics: AtlasMetrics | None,
 ) -> Generator[SseEvent, None, None]:
     try:
-        yield from _traced_turn(graph, input_or_command, config, chunk_words, trace, costs)
+        yield from _traced_turn(graph, input_or_command, config, chunk_words, trace, costs, metrics)
     except Exception as error:
         trace.finish(None, error_type=type(error).__name__)
         raise
@@ -49,6 +51,7 @@ def _traced_turn(
     chunk_words: int,
     trace: TurnTrace,
     costs: CostSettings,
+    metrics: AtlasMetrics | None,
 ) -> Generator[SseEvent, None, None]:
     started = perf_counter()
     usage = UsageLedger()
@@ -62,6 +65,8 @@ def _traced_turn(
         for node, update in updates.items():
             if node == "__interrupt__":
                 update = update[0].value
+            elif metrics and update:
+                metrics.graph_update(update)
             events = events_for_update(node, update or {}, chunk_words)
             if node == "classify":
                 yield from events
@@ -94,15 +99,25 @@ def _traced_turn(
 
 
 def failure_events(
-    error: Exception, conversation_id: str, system_error_message: str
+    error: Exception,
+    conversation_id: str,
+    system_error_message: str,
+    *,
+    trace_id: str | None = None,
+    metrics: AtlasMetrics | None = None,
 ) -> list[SseEvent]:
     error_type = type(error).__name__
-    logger.error("Chat turn %s failed: %s", conversation_id, error_type)
+    logger.error("Chat turn failed trace_id=%s: %s", trace_id or conversation_id, error_type)
+    if metrics:
+        metrics.handoff(HandoffReason.SYSTEM_ERROR)
+    handoff = {"reason": HandoffReason.SYSTEM_ERROR, "message": system_error_message}
+    if trace_id:
+        handoff["trace_id"] = trace_id
     return [
         SseEvent(name="error", data={"error_type": error_type}),
         SseEvent(
             name="handoff",
-            data={"reason": HandoffReason.SYSTEM_ERROR, "message": system_error_message},
+            data=handoff,
         ),
     ]
 
@@ -117,13 +132,17 @@ async def run_turn(
     system_error_message: str,
     trace: TurnTrace,
     costs: CostSettings,
+    metrics: AtlasMetrics | None = None,
+    trace_id: str | None = None,
 ) -> AsyncGenerator[SseEvent, None]:
-    turn = _turn_events(graph, input_or_command, config, chunk_words, trace, costs)
+    turn = _turn_events(graph, input_or_command, config, chunk_words, trace, costs, metrics)
     try:
         async for event in iterate_in_threadpool(turn):
             yield event
     except Exception as error:
-        for event in failure_events(error, conversation_id, system_error_message):
+        for event in failure_events(
+            error, conversation_id, system_error_message, trace_id=trace_id, metrics=metrics
+        ):
             yield event
     finally:
         with CancelScope(shield=True):

@@ -35,27 +35,31 @@ def resolve_model(role: Role, cfg: LLMSettings) -> tuple[str | None, str | None]
     return model, provider
 
 
-def get_chat_model(role: Role, settings: Settings | None = None) -> BaseChatModel:
-    """Return the chat model for `role`, or the injected fake if one is set."""
-    if role in _overrides:
-        return _overrides[role]
+def get_chat_model(
+    role: Role,
+    settings: Settings | None = None,
+    *,
+    model_name: str | None = None,
+    timeout_s: float | None = None,
+) -> BaseChatModel:
+    """Build a configured role model or an explicitly selected fallback."""
     cfg = (settings or get_settings()).llm
-    model, provider = resolve_model(role, cfg)
+    primary, provider = resolve_model(role, cfg)
+    if role in _overrides and (model_name is None or model_name == primary):
+        return _overrides[role]
+    model = model_name or primary
     if not model or not provider:
         raise LLMConfigError(
             f"No model configured for role '{role}'. "
             f"Set {ENV_PROVIDER} and {ENV_MODEL[role]} (see .env.example)."
         )
-    return cast(
-        BaseChatModel,
-        init_chat_model(
-            model,
-            model_provider=provider,
-            temperature=cfg.temperature,
-            timeout=cfg.timeout_s,
-            **cfg.model_kwargs,
-        ),
-    )
+    options = {
+        **cfg.model_kwargs,
+        "temperature": cfg.temperature,
+        "timeout": cfg.timeout_s if timeout_s is None else timeout_s,
+        "max_retries": cfg.provider_max_retries,
+    }
+    return cast(BaseChatModel, init_chat_model(model, model_provider=provider, **options))
 
 
 def set_chat_model_override(role: Role, model: BaseChatModel | None) -> None:

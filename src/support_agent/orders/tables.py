@@ -113,12 +113,14 @@ refund_requests = Table(
     Column("order_id", Text, nullable=False),
     Column("customer_id", Text, nullable=False),
     Column("reason", Text, nullable=False),
+    Column("idempotency_key", Text),
     Column("status", Text, nullable=False),
     Column("created_at", _timestamp, nullable=False),
     CheckConstraint("length(trim(reason)) > 0"),
     CheckConstraint("status = 'pending_review'"),
     ForeignKeyConstraint(["order_id", "customer_id"], ["orders.order_id", "orders.customer_id"]),
     UniqueConstraint("request_id", "order_id"),
+    UniqueConstraint("idempotency_key", name="refund_requests_idempotency_key"),
 )
 refund_request_items = Table(
     "refund_request_items",

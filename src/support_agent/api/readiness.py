@@ -14,7 +14,7 @@ from support_agent.config import Settings
 from support_agent.db.engine import make_engine, postgres_url
 from support_agent.db.migrate import CHECKPOINT_TABLES, migration_at_head
 from support_agent.graph.postgres import checkpoint_migrations_at_head
-from support_agent.infra.redis import NullRedis, RedisStore
+from support_agent.infra.redis import KeyValueStore, NullRedis, RedisStore
 from support_agent.infra.settings import ReadinessSettings
 from support_agent.orders.service import OrderService
 from support_agent.orders.tables import metadata
@@ -66,7 +66,11 @@ def _down() -> bool:
 
 
 def build_readiness(
-    settings: Settings, orders: OrderService, milvus: Probe, resources: ExitStack
+    settings: Settings,
+    orders: OrderService,
+    milvus: Probe,
+    resources: ExitStack,
+    store: KeyValueStore | None,
 ) -> ReadinessChecks:
     checks = ReadinessChecks(milvus=milvus if settings.milvus.uri else _down)
     if settings.db.backend == "postgres" or settings.graph.checkpoint_backend == "postgres":
@@ -93,15 +97,8 @@ def build_readiness(
         checks.postgres = ping_database
         checks.migrations = check_migrations
 
-    try:
-        store = build_redis(settings)
-    except (TypeError, ValueError) as error:
-        logger.warning("Redis readiness configuration failed: %s", type(error).__name__)
-        checks.redis = _down
-    else:
-        if isinstance(store, RedisStore):
-            resources.callback(store.close)
-            checks.redis = store.ping
+    if settings.redis.backend == "redis":
+        checks.redis = store.ping if store is not None else _down
     return checks
 
 

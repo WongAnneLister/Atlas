@@ -43,6 +43,8 @@ async def client(
     retriever: Any = None,
     configure_models: bool = True,
     readiness: Any = None,
+    lock_store: Any = None,
+    registry: Any = None,
 ) -> AsyncIterator[httpx.AsyncClient]:
     settings, service = seeded
     settings.graph.checkpoint_backend = "memory"
@@ -71,7 +73,17 @@ async def client(
             retriever=retriever or FixedRetriever(evidence(score)),
             order_service=service,
         )
-    app = create_app(ApiDeps(settings, deps, service, milvus, readiness=readiness))
+    app = create_app(
+        ApiDeps(
+            settings,
+            deps,
+            service,
+            milvus,
+            readiness=readiness,
+            lock_store=lock_store,
+            metrics_registry=registry,
+        )
+    )
     async with (
         app.router.lifespan_context(app),
         httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as api,
@@ -123,9 +135,9 @@ async def test_knowledge_stream(seeded: Any) -> None:
     assert "cost_usd" in done
 
 
-@pytest.mark.parametrize("reason", ["low_evidence", "retrieval_error"])
+@pytest.mark.parametrize("reason", ["low_evidence", "dependency_unavailable"])
 async def test_knowledge_handoff(seeded: Any, reason: str) -> None:
-    retriever = BrokenRetriever() if reason == "retrieval_error" else None
+    retriever = BrokenRetriever() if reason == "dependency_unavailable" else None
     async with client(seeded, score=0.01, retriever=retriever) as api:
         stream = events(await api.post("/api/chat", json=QUESTION))
     assert names(stream) == ["meta", "handoff", "done"]
@@ -227,7 +239,9 @@ async def test_concurrent_turn_is_rejected(seeded: Any) -> None:
         first = asyncio.create_task(api.post("/api/chat", json=QUESTION))
         try:
             assert await asyncio.to_thread(entered.wait, 5)
-            assert (await api.post("/api/chat", json=QUESTION)).status_code == 409
+            second = await api.post("/api/chat", json=QUESTION)
+            assert second.status_code == 409
+            assert second.json()["detail"] == "Still answering your previous message. Please wait."
         finally:
             unblock.set()
             assert names(events(await first))[-1] == "done"

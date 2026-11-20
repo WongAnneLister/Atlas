@@ -110,7 +110,7 @@ missing. Promote from a clean `main` checkout using a run collected on its
 current HEAD. Promotion also refuses a run where more than
 `promotion_max_error_rate` of items hit a classification, retrieval or answer error
 (an outage, a dropped tunnel or an empty API balance), because such a run would
-make every later run look better than it is. Commit `eval/baselines/main.json` after promotion. The baseline
+make every later run look better than it is. `make eval-gate` applies the same rate: such a run fails with an "Invalid run: dependency errors on X/N items" line before any metric comparison, so an outage is not mistaken for a regression. Commit `eval/baselines/main.json` after promotion. The baseline
 stores IDs, scalar outcomes and metadata. The first baseline is created after the
 platform lands on main.
 
