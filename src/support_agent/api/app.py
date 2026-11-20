@@ -134,7 +134,8 @@ def create_app(deps: ApiDeps) -> FastAPI:
                 )
                 yield
         finally:
-            await to_thread.run_sync(tracing.flush)
+            if tracing.tracing_configured(deps.settings.tracing):
+                await to_thread.run_sync(tracing.flush)
             await to_thread.run_sync(deps.graph_deps.close)
 
     app = FastAPI(lifespan=lifespan)

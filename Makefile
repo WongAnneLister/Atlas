@@ -22,7 +22,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-tools-fallback eval-paraphrase-build eval-chunking-ab \
         eval-chunking-e2e eval-safety-fixes eval-order-grounding eval-order-replies eval-model-veto \
         results eval-refund-policy eval-refund-decisions eval-validate-all eval-registry-bump \
-        eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke chaos eval-gate eval-baseline
+        eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -224,6 +224,12 @@ eval-import-legacy:
 
 eval-judge-calibration:
 	$(RUN) python -m eval.judge_calibration $(EVAL_JUDGE_CALIBRATION_ARGS)
+
+eval-redteam-build:
+	$(RUN) python -m eval.redteam_build
+
+eval-redteam: eval-redteam-build
+	$(RUN) python -m eval.redteam_eval $(EVAL_REDTEAM_ARGS)
 
 eval-smoke-build:
 	$(RUN) python -m eval.smoke

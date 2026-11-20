@@ -34,6 +34,7 @@ CallSite = Literal[
     "rewrite", "classify", "answer", "decide", "order_extract", "grounding", "complaint", "tools"
 ]
 LLMFault = Callable[[str], Literal["garbage"] | None]
+ModelMessages = Callable[[CallSite, Sequence[BaseMessage]], Sequence[BaseMessage]]
 T = TypeVar("T")
 Operation = Callable[[BaseChatModel, bool, Sequence[BaseMessage]], T]
 REPAIR_PROMPT = Path(__file__).resolve().parents[1] / "graph" / "prompts" / "repair.md"
@@ -77,6 +78,12 @@ class ReliableModels:
         self._deps = deps
         self._repair_prompt = REPAIR_PROMPT.read_text(encoding="utf-8").strip()
 
+    def _messages(
+        self, call_site: CallSite, prompt: Sequence[BaseMessage]
+    ) -> Sequence[BaseMessage]:
+        render = self._deps.model_messages
+        return render(call_site, prompt) if render is not None else prompt
+
     def invoke(
         self,
         call_site: CallSite,
@@ -91,7 +98,7 @@ class ReliableModels:
             if garbage:
                 return AIMessage(content="")
             runnable = model.bind_tools(tools) if tools else model
-            return runnable.invoke(prompt)
+            return runnable.invoke(self._messages(call_site, prompt))
 
         return self._call(call_site, role, messages, operation)
 
@@ -109,7 +116,9 @@ class ReliableModels:
                 response = (
                     {"raw": AIMessage(content=""), "parsed": None, "parsing_error": None}
                     if garbage
-                    else model.with_structured_output(schema, include_raw=True).invoke(prompt)
+                    else model.with_structured_output(schema, include_raw=True).invoke(
+                        self._messages(call_site, prompt)
+                    )
                 )
             except (OutputParserException, ValidationError, JSONDecodeError) as error:
                 raise invalid_response(schema, error) from None

@@ -8,9 +8,11 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from eval.paired import Comparison, MetricRule, compare, comparison_lines
+from eval.redteam_gate import RedTeamBudget, RedTeamGateResult, evaluate_redteam
+from eval.redteam_models import CATEGORIES, Category
 from eval.registry import load_registry
 from eval.run_record import (
     DatasetVersion,
@@ -22,7 +24,7 @@ from eval.run_record import (
     is_dirty,
     read_run,
 )
-from eval.smoke import SMOKE_PATH, SmokeSpec
+from eval.smoke import load_smoke_spec
 from support_agent.config import REPO_ROOT
 from support_agent.data.doc_models import write_text
 
@@ -34,8 +36,17 @@ class GateRules(BaseModel):
     false_accept_max: Literal[0]
     promotion_max_error_rate: float = Field(ge=0, le=1)
     metrics: dict[str, MetricRule]
-    redteam: list[str]
+    redteam: dict[Category, RedTeamBudget]
     comparison_lower_is_better: list[str]
+
+    @field_validator("redteam")
+    @classmethod
+    def _all_categories(
+        cls, budgets: dict[Category, RedTeamBudget]
+    ) -> dict[Category, RedTeamBudget]:
+        if set(budgets) != set(CATEGORIES):
+            raise ValueError("A budget entry is required for each red-team category")
+        return budgets
 
 
 class BaselineItem(BaseModel):
@@ -59,6 +70,7 @@ class GateResult:
     comparisons: list[Comparison]
     failures: list[str]
     warnings: list[str] = field(default_factory=list)
+    redteam: RedTeamGateResult | None = None
 
     @property
     def passed(self) -> bool:
@@ -76,6 +88,7 @@ class GateResult:
                 *[f"- {warning}" for warning in self.warnings],
                 "",
                 *comparison_lines(self.comparisons),
+                *(self.redteam.lines if self.redteam else []),
                 "",
             ]
         )
@@ -99,12 +112,12 @@ def _smoke_dataset(run: Run) -> DatasetVersion:
 
 
 def check_frozen_smoke(run: Run) -> None:
-    spec = SmokeSpec.model_validate(yaml.safe_load(SMOKE_PATH.read_text(encoding="utf-8")))
-    expected = set(spec.item_ids)
+    dataset = _smoke_dataset(run)
+    expected = set(load_smoke_spec().item_ids)
     if len(run.items) != len(expected) or {row.id for row in run.items} != expected:
         raise ValueError("Run must contain exactly the frozen smoke item IDs")
     entry = load_registry()["smoke"]
-    if _smoke_dataset(run) != DatasetVersion(version=entry.version, sha256=entry.sha256):
+    if dataset != DatasetVersion(version=entry.version, sha256=entry.sha256):
         raise ValueError("Run must use the registered smoke dataset")
     for row in run.items:
         group = row.id.partition("-")[0]
@@ -135,7 +148,9 @@ def _false_accepts(run: Run) -> tuple[int, int]:
     return sum(row.metrics["false_accept"] is True for row in no_answer), len(no_answer)
 
 
-def evaluate(run: Run, baseline: Run, rules: GateRules) -> GateResult:
+def evaluate(
+    run: Run, baseline: Run, rules: GateRules, *, redteam: Run | None = None
+) -> GateResult:
     if _smoke_dataset(run) != _smoke_dataset(baseline):
         raise ValueError("Smoke dataset versions or hashes differ")
     false_accepts, no_answer = _false_accepts(run)
@@ -157,7 +172,11 @@ def evaluate(run: Run, baseline: Run, rules: GateRules) -> GateResult:
     if broken is not None:
         # Name the cause first so dependency outages are not read as code regressions.
         failures.insert(0, f"Invalid run: {broken}")
-    return GateResult(false_accepts, no_answer, comparisons, failures, warnings)
+    redteam_result = evaluate_redteam(redteam, rules.redteam) if redteam is not None else None
+    if redteam_result:
+        failures.extend(redteam_result.failures)
+        warnings.extend(redteam_result.warnings)
+    return GateResult(false_accepts, no_answer, comparisons, failures, warnings, redteam_result)
 
 
 ERROR_FIELDS = ("classification_error_type", "retrieval_error_type", "answer_error_type")
@@ -243,7 +262,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("run", type=Path)
     parser.add_argument("--baseline", type=Path, default=BASELINE)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--redteam", type=Path, help="include a full or smoke red-team test run")
     args = parser.parse_args(argv)
+    if args.action == "promote" and args.redteam:
+        parser.error("--redteam is available only for the release check")
     try:
         if args.action == "check" and not args.baseline.is_file():
             text, status = "# Eval release gate\n\nNo baseline. Promote a smoke run on main.\n", 2
@@ -254,7 +276,8 @@ def main(argv: list[str] | None = None) -> int:
             run, baseline = read_run(args.run), read_baseline(args.baseline)
             check_frozen_smoke(run)
             check_frozen_smoke(baseline)
-            result = evaluate(run, baseline, load_rules())
+            redteam = read_run(args.redteam) if args.redteam else None
+            result = evaluate(run, baseline, load_rules(), redteam=redteam)
             text, status = result.markdown(), int(not result.passed)
     except (ValueError, OSError) as error:
         text, status = f"# Eval release gate — Failed\n\n{error}\n", 1

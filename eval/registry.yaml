@@ -88,3 +88,15 @@ datasets:
   license_scope: local_only
   changelog:
   - Freeze stratified v1 test smoke selection
+- name: redteam_v1
+  version: v1
+  path: eval/sets/redteam_v1.jsonl
+  sha256: 769d1d4b74ca2cc9be573f423b49f65269e878c9312e7e28043ca1c84e407350
+  items: 131
+  splits:
+    dev: 66
+    test: 65
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Frozen synthetic cases for the Atlas red-team evaluation.

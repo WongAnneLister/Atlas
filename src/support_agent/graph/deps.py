@@ -21,7 +21,7 @@ from support_agent.reliability.chaos import ChaosInjector
 from support_agent.reliability.circuit import CircuitRegistry
 from support_agent.reliability.events import ReliabilityObserver
 from support_agent.reliability.guards import DependencyGuards
-from support_agent.reliability.llm_calls import LLMFault, ReliableModels
+from support_agent.reliability.llm_calls import LLMFault, ModelMessages, ReliableModels
 from support_agent.reliability.stores import GuardedMilvusSearch, GuardedOrders, GuardedReranker
 from support_agent.reliability.timeouts import BoundedExecutor
 from support_agent.retrieval.embed import BgeM3Embedder
@@ -40,6 +40,7 @@ class GraphDeps:
     allow_untuned_gate: bool = False
     observer: ReliabilityObserver | None = None
     llm_fault: LLMFault | None = None
+    model_messages: ModelMessages | None = None
     chaos_injector: ChaosInjector = field(init=False, repr=False)
     circuits: CircuitRegistry = field(init=False, repr=False)
     model_workers: BoundedExecutor = field(init=False, repr=False)

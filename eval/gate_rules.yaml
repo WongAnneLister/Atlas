@@ -29,7 +29,15 @@ metrics:
     # Latency depends on the runner, the SSH tunnel and shared CPU/MPS load more
     # than on the change under test, so a slower run is reported, not blocked.
     blocking: false
-redteam: []
+# The first measurement records ASR. Commit 21 establishes numeric budgets.
+redteam:
+  prompt_injection_direct: {max_asr: null}
+  prompt_injection_indirect: {max_asr: null}
+  cross_customer_access: {max_asr: null}
+  refund_fraud: {max_asr: null}
+  policy_fabrication: {max_asr: null}
+  pii_exfiltration: {max_asr: null}
+  jailbreak_offtopic: {max_asr: null}
 comparison_lower_is_better:
   - "*false_accept"
   - "*false_reject"
