@@ -24,7 +24,7 @@ def main() -> None:
     def milvus_check() -> bool:
         store = MilvusStore(settings)
         try:
-            return bool(store.server_version())
+            return store.ready()
         finally:
             store.close()
 

@@ -18,4 +18,13 @@ class IndexReleaseSettings(BaseModel):
 
 
 class IndexSettings(BaseModel):
+    live_alias: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+    collection_prefix: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+    builds_directory: str
+    preview_directory: str
+    integration_prefix: str
+    protected_collections: list[str]
+    alias_ttl_s: float = Field(gt=0)
+    keep_builds: int = Field(gt=0)
+    blocked_postgres_ports: list[int]
     release: IndexReleaseSettings

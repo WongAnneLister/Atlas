@@ -56,6 +56,7 @@ class KnowledgePath:
             chunks = []
         return {
             "retrieval": chunks,
+            "retrieval_build_id": self.deps.current_build_id(),
             "retrieval_error_type": error_type,
             "retrieval_dependency_unavailable": dependency_unavailable,
             "trace": [*state.trace, "retrieve"],

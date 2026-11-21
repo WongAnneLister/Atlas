@@ -26,8 +26,8 @@ from eval.schema import EvalItem
 from eval.validate_set import validate_current
 from support_agent.config import REPO_ROOT, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
-from support_agent.retrieval.chunking import Chunk
 from support_agent.retrieval.embed import BgeM3Embedder
+from support_agent.retrieval.index_snapshot import load_build_chunks
 from support_agent.retrieval.milvus_store import MilvusStore
 from support_agent.retrieval.rerank import BgeReranker
 
@@ -103,12 +103,6 @@ def main(argv: list[str] | None = None) -> int:
     if not items or settings.retrieval.rerank_top_k < max(settings.retrieval_eval.metric_ks):
         raise ValueError("Need answerable items and enough rerank results for every metric cutoff")
     manifest = json.loads((folder / "manifest.json").read_text())
-    chunks = [
-        Chunk.model_validate_json(line)
-        for line in (REPO_ROOT / settings.data.processed_dir / "chunks.jsonl")
-        .read_text()
-        .splitlines()
-    ]
     modules = list((REPO_ROOT / "src/support_agent/retrieval").glob("*.py"))
     execution_hash = source_hash([*modules, REPO_ROOT / "eval/retrieval_experiment.py"])
     meta = RunMetadata(
@@ -138,16 +132,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     with ExitStack() as resources:
         embedder, reranker = BgeM3Embedder(settings.retrieval), BgeReranker(settings.retrieval)
-        measured_settings = settings.model_copy(deep=True)
-        measured_settings.milvus.collection = collection_for_prefix(
-            settings, settings.chunk.prepend_heading
-        )
+        measured_settings = settings
         store = MilvusStore(measured_settings)
         resources.callback(store.close)
-        meta.index_identities["baseline"] = prepare_experiment_index(
-            settings, chunks, embedder, store, cache, settings.chunk.prepend_heading
-        )
+        store.pin_reads()
+        meta.build_id = store.current_build_id()
+        meta.index_identities["baseline"] = store.collection_identity()
         meta.runtime["milvus_server"] = store.server_version()
+        actual = store.read_chunks()
+        chunks = load_build_chunks(settings, meta.build_id) if meta.build_id else actual
+        if {chunk.chunk_id: chunk for chunk in chunks} != {
+            chunk.chunk_id: chunk for chunk in actual
+        }:
+            raise ValueError("Local chunk snapshot differs from the resolved serving build")
         if settings.retrieval_eval.local_chunk_text:
             store.use_chunk_snapshot(chunks)
         snapshot = result_snapshot(execution_hash, meta)

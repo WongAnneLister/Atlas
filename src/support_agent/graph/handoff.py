@@ -45,6 +45,7 @@ class HandoffPayload(BaseModel):
     conversation: list[AnyMessage]
     rewritten_query: str
     intent: Intent | None
+    retrieval_build_id: str | None = None
     retrieval_snapshot: list[RetrievedChunk] = Field(default_factory=list)
     gate: GateResult | None = None
     coverage: CoverageAnswer | None = None
@@ -78,6 +79,7 @@ def make_handoff(state: ConversationState, reason: HandoffReason) -> dict[str, A
         rewritten_query=state.rewritten_query,
         intent=state.intent,
         retrieval_snapshot=state.retrieval,
+        retrieval_build_id=state.retrieval_build_id,
         gate=state.gate,
         coverage=state.coverage,
         order_context=state.order_context,

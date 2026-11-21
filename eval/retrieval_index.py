@@ -14,6 +14,7 @@ from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.retrieval.chunking import Chunk
 from support_agent.retrieval.embed import BgeM3Embedder, Embedder
+from support_agent.retrieval.index_snapshot import load_build_input
 from support_agent.retrieval.milvus_store import MilvusStore
 
 log = logging.getLogger(__name__)
@@ -164,12 +165,7 @@ def prepare_heading_ablation(
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     settings = get_settings()
-    chunks = [
-        Chunk.model_validate_json(line)
-        for line in (REPO_ROOT / settings.data.processed_dir / "chunks.jsonl")
-        .read_text()
-        .splitlines()
-    ]
+    chunks = load_build_input(settings)
     embedder = BgeM3Embedder(settings.retrieval)
     for prefix, collection in [
         (True, settings.retrieval_eval.baseline_collection),

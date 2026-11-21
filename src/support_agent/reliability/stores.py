@@ -14,7 +14,14 @@ from support_agent.retrieval.types import RetrievedChunk
 
 
 class GuardedMilvusSearch:
-    def __init__(self, settings: Settings, guards: DependencyGuards) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        guards: DependencyGuards,
+        *,
+        provenance_settings: Settings | None = None,
+    ) -> None:
+        self._provenance_settings = provenance_settings
         self._settings = settings
         self._guards = guards
         self._store: MilvusStore | None = None
@@ -23,7 +30,11 @@ class GuardedMilvusSearch:
     def _client(self, timeout_s: float) -> MilvusStore:
         with self._lock:
             if self._store is None:
-                self._store = MilvusStore(self._settings, timeout_s=timeout_s)
+                self._store = MilvusStore(
+                    self._settings,
+                    timeout_s=timeout_s,
+                    provenance_settings=self._provenance_settings,
+                )
             return self._store
 
     def search_dense(self, vector: list[float], limit: int) -> list[SearchHit]:
@@ -37,6 +48,9 @@ class GuardedMilvusSearch:
             "milvus",
             lambda seconds: self._client(seconds).search_bm25(text, limit, timeout_s=seconds),
         )
+
+    def current_build_id(self) -> str | None:
+        return self._store.current_build_id() if self._store is not None else None
 
     def close(self) -> None:
         if self._store is not None:

@@ -18,6 +18,7 @@ from support_agent.infra.redis import KeyValueStore, NullRedis, RedisStore
 from support_agent.infra.settings import ReadinessSettings
 from support_agent.orders.service import OrderService
 from support_agent.orders.tables import metadata
+from support_agent.retrieval.index_tables import metadata as index_metadata
 
 logger = logging.getLogger(__name__)
 Probe = Callable[[], bool]
@@ -88,7 +89,7 @@ def build_readiness(
             with engine.connect() as connection:
                 current_tables = set(inspect(connection).get_table_names())
                 return (
-                    current_tables >= metadata.tables.keys()
+                    current_tables >= metadata.tables.keys() | index_metadata.tables.keys()
                     and current_tables >= CHECKPOINT_TABLES
                     and migration_at_head(connection)
                     and checkpoint_migrations_at_head(connection)

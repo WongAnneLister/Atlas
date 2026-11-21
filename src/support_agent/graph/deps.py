@@ -50,6 +50,8 @@ class GraphDeps:
     )
     _resources: ExitStack = field(default_factory=ExitStack, init=False, repr=False)
     _checkpointer: BaseCheckpointSaver[Any] | None = field(default=None, init=False, repr=False)
+    index_registry_settings: Settings | None = None
+    _index_store: GuardedMilvusSearch | None = field(default=None, init=False, repr=False)
     _closed: bool = field(default=False, init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -133,12 +135,21 @@ class GraphDeps:
     def guarded_orders(self) -> GuardedOrders:
         return GuardedOrders(self.orders, self.dependency_guards)
 
+    def current_build_id(self) -> str | None:
+        store = self._index_store
+        return store.current_build_id() if store is not None else None
+
     def knowledge_retriever(self) -> Retriever:
         if self._closed:
             raise RuntimeError("GraphDeps is closed")
         if self.retriever is None:
-            store = GuardedMilvusSearch(self.settings, self.dependency_guards)
+            store = GuardedMilvusSearch(
+                self.settings,
+                self.dependency_guards,
+                provenance_settings=self.index_registry_settings,
+            )
             self._resources.callback(store.close)
+            self._index_store = store
             self.retriever = build_retriever(
                 "hybrid_rerank",
                 settings=self.settings,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import subprocess
 import xml.etree.ElementTree as ET
 from collections import Counter
@@ -16,9 +17,11 @@ from support_agent.ingest import IngestRun
 from support_agent.retrieval.chunking import Chunk
 
 
-def main() -> None:
+def main(*, preview: bool = False) -> None:
     settings = get_settings()
     output = REPO_ROOT / settings.data.processed_dir
+    if preview:
+        output /= settings.index.preview_directory
     run = IngestRun.model_validate_json((output / "ingest_run.json").read_text(encoding="utf-8"))
     text = (output / "chunks.jsonl").read_text(encoding="utf-8")
     chunks = [Chunk.model_validate_json(line) for line in text.splitlines() if line.strip()]
@@ -117,4 +120,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--preview", action="store_true")
+    main(preview=parser.parse_args().preview)

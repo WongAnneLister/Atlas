@@ -33,6 +33,12 @@ def test_score_collection_resumes_after_dependency_failure(tmp_path, monkeypatch
         def __init__(self, *args):
             pass
 
+        def pin_reads(self):
+            pass
+
+        def current_build_id(self):
+            return None
+
         def close(self):
             pass
 

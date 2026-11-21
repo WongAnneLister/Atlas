@@ -13,6 +13,8 @@ from support_agent.data.doc_models import digest
 from support_agent.data.validate_docs import parse_document
 from support_agent.retrieval.tokenization import Tokenizer
 
+CHUNKER_VERSION = "1"
+
 
 class Chunk(BaseModel):
     chunk_id: str
@@ -112,22 +114,36 @@ def chunk_document(text: str, config: ChunkSettings, tokenizer: Tokenizer) -> li
             re.M,
         )
     }
-    chunks: list[Chunk] = []
-    for sid, prose in sections.items():
-        pieces = section_pieces(sid, prose, config, tokenizer, headings[sid])
-        for index, piece in enumerate(pieces):
-            chunks.append(
-                Chunk(
-                    chunk_id=digest(f"{sid}:{index}"),
-                    doc_id=header.doc_id,
-                    section_id=sid,
-                    title=header.title,
-                    heading_path=f"{header.title} > {headings[sid]}",
-                    text=piece,
-                    n_tokens=tokenizer.count(piece),
-                )
-            )
-    return chunks
+    return [
+        chunk
+        for sid, prose in sections.items()
+        for chunk in chunk_section(
+            sid, prose, header.doc_id, header.title, headings[sid], config, tokenizer
+        )
+    ]
+
+
+def chunk_section(
+    sid: str,
+    prose: str,
+    doc_id: str,
+    title: str,
+    heading: str,
+    config: ChunkSettings,
+    tokenizer: Tokenizer,
+) -> list[Chunk]:
+    return [
+        Chunk(
+            chunk_id=digest(f"{sid}:{index}"),
+            doc_id=doc_id,
+            section_id=sid,
+            title=title,
+            heading_path=f"{title} > {heading}",
+            text=piece,
+            n_tokens=tokenizer.count(piece),
+        )
+        for index, piece in enumerate(section_pieces(sid, prose, config, tokenizer, heading))
+    ]
 
 
 def load_chunks(folder: Path, config: ChunkSettings, tokenizer: Tokenizer) -> list[Chunk]:

@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
+import json
 import math
+import re
+from collections.abc import Sequence
+from time import monotonic
 from typing import Any, Protocol
 
 import grpc  # type: ignore[import-untyped]
+from pydantic import BaseModel
 
 from support_agent.config import Settings
 from support_agent.retrieval.chunking import Chunk
 
+STORE_SCHEMA_VERSION = "1"
 DESCRIPTION = "support-agent dense+BM25 chunks v1"
 
 
@@ -68,6 +74,11 @@ class ChunkStore(Protocol):
     def count(self) -> int: ...
 
 
+class VectorChunk(BaseModel):
+    chunk: Chunk
+    dense: list[float]
+
+
 class SearchHit(Chunk):
     score: float
 
@@ -80,12 +91,20 @@ class SearchStore(Protocol):
 
 class MilvusStore:
     def __init__(
-        self, settings: Settings, client: Any = None, *, timeout_s: float | None = None
+        self,
+        settings: Settings,
+        client: Any = None,
+        *,
+        timeout_s: float | None = None,
+        provenance_settings: Settings | None = None,
     ) -> None:
         from pymilvus import MilvusClient
 
         self.settings = settings
+        self.provenance_settings = provenance_settings or settings
         self.config = settings.milvus
+        self._pinned_reads: str | None = None
+        self._build_identity: tuple[float, str | None] | None = None
         self._chunk_snapshot: dict[str, Chunk] | None = None
         self.client: Any = (
             client
@@ -103,12 +122,77 @@ class MilvusStore:
     def collection(self) -> str:
         return self.config.collection
 
+    def has_collection(self, name: str) -> bool:
+        return bool(self.client.has_collection(collection_name=name, timeout=self.config.timeout_s))
+
     def exists(self) -> bool:
-        return bool(self.client.has_collection(collection_name=self.config.collection))
+        return self.has_collection(self.collection)
+
+    def switch_alias(self, target: str, expected: str | None) -> None:
+        alias = self.settings.index.live_alias
+        if alias in self.settings.index.protected_collections or alias == target:
+            raise ValueError("Invalid lifecycle alias")
+        if self.alias_target(alias) != expected:
+            raise ValueError("Milvus alias drift before switch")
+        if self.alias_target(target) is not None or not self.has_collection(target):
+            raise ValueError("Index alias needs an existing physical target")
+        switch = self.client.create_alias if expected is None else self.client.alter_alias
+        switch(collection_name=target, alias=alias, timeout=self.config.timeout_s)
+
+    def pin_reads(self) -> None:
+        """Bind a multi-query experiment to the alias target it started with."""
+        if self.collection == self.settings.index.live_alias:
+            target = self.alias_target()
+            if target is None:
+                raise ValueError("Serving index alias is missing; adopt or release an index first")
+            self._pinned_reads = target
+            self._build_identity = None
+
+    @property
+    def read_collection(self) -> str:
+        return self._pinned_reads or self.collection
+
+    def ready(self) -> bool:
+        if self.collection != self.settings.index.live_alias:
+            return self.exists()
+        target = self.alias_target()
+        return target is not None and self.has_collection(target)
+
+    def current_build_id(self) -> str | None:
+        """Resolve provenance without making successful search depend on the registry."""
+        at = monotonic()
+        if self._build_identity is not None and at < self._build_identity[0]:
+            return self._build_identity[1]
+        build_id = None
+        try:
+            target = (
+                (self._pinned_reads or self.alias_target())
+                if self.collection == self.settings.index.live_alias
+                else self.collection
+            )
+            if target:
+                prefix = self.settings.index.collection_prefix
+                suffix = target.removeprefix(prefix)
+                if target.startswith(prefix) and re.fullmatch(r"[a-f0-9]+", suffix):
+                    build_id = suffix
+                else:
+                    from support_agent.retrieval.registry import IndexRegistry
+
+                    registry = IndexRegistry.from_settings(self.provenance_settings)
+                    try:
+                        record = registry.get_build_by_collection(target)
+                        build_id = record.build_id if record else None
+                    finally:
+                        registry.close()
+        except Exception:
+            # Build provenance is optional. The retrieval operation has its own failure path.
+            pass
+        self._build_identity = (at + self.settings.index.alias_ttl_s, build_id)
+        return build_id
 
     def collection_identity(self) -> str:
         info = self.client.describe_collection(
-            collection_name=self.config.collection, timeout=self.config.timeout_s
+            collection_name=self.read_collection, timeout=self.config.timeout_s
         )
         if info.get("description") != DESCRIPTION:
             raise ValueError("Expected a support-agent collection")
@@ -119,7 +203,7 @@ class MilvusStore:
         if not count:
             return []
         reader = self.client.query_iterator(
-            collection_name=self.config.collection,
+            collection_name=self.read_collection,
             filter="",
             batch_size=self.config.query_batch_size,
             output_fields=list(Chunk.model_fields),
@@ -136,6 +220,27 @@ class MilvusStore:
             raise ValueError("Incomplete collection snapshot")
         return chunks
 
+    def read_vectors(self, section_ids: Sequence[str]) -> list[VectorChunk]:
+        if not section_ids:
+            return []
+        reader = self.client.query_iterator(
+            collection_name=self.read_collection,
+            filter=f"section_id in {json.dumps(list(section_ids), ensure_ascii=False)}",
+            batch_size=self.config.query_batch_size,
+            output_fields=[*Chunk.model_fields, "dense"],
+            consistency_level="Strong",
+            timeout=self.config.timeout_s,
+        )
+        results: list[VectorChunk] = []
+        try:
+            while rows := reader.next():
+                results.extend(
+                    VectorChunk(chunk=Chunk.model_validate(row), dense=row["dense"]) for row in rows
+                )
+        finally:
+            reader.close()
+        return results
+
     def use_chunk_snapshot(self, chunks: list[Chunk]) -> None:
         if not chunks or len({chunk.chunk_id for chunk in chunks}) != len(chunks):
             raise ValueError("Need a nonempty unique chunk snapshot")
@@ -149,12 +254,58 @@ class MilvusStore:
         if description.get("description") != DESCRIPTION:
             raise ValueError("Refusing to reset a collection not created by support-agent")
 
+    def alias_target(self, alias: str | None = None) -> str | None:
+        from pymilvus.exceptions import MilvusException
+
+        describe = getattr(self.client, "describe_alias", None)
+        if describe is None:
+            return None
+        try:
+            response = describe(alias=alias or self.collection, timeout=self.config.timeout_s)
+        except MilvusException as error:
+            message = str(error.message).lower()
+            if (
+                not milvus_transport_failure(error)
+                and "alias" in message
+                and any(
+                    marker in message
+                    for marker in (
+                        "not found",
+                        "not exist",
+                        "cannot find",
+                        "can't find",
+                        "doesn't exist",
+                    )
+                )
+            ):
+                return None
+            raise
+        target = response.get("collection_name")
+        if not isinstance(target, str) or not target:
+            raise ValueError("Invalid Milvus alias description")
+        return target
+
+    def _require_physical_writable(self) -> None:
+        if self.collection in self.settings.index.protected_collections:
+            raise ValueError("Refusing to modify a protected collection")
+        if self.collection == self.settings.index.live_alias or self.alias_target() is not None:
+            raise ValueError("Refusing to modify a collection through an alias")
+
     def create_or_reset(self) -> None:
+        self._require_physical_writable()
+        if self.exists():
+            self.drop()
+        self._create_schema()
+
+    def create(self) -> None:
+        self._require_physical_writable()
+        if self.exists():
+            raise ValueError("Refusing to replace an existing collection")
+        self._create_schema()
+
+    def _create_schema(self) -> None:
         from pymilvus import DataType, Function, FunctionType, MilvusClient
 
-        if self.client.has_collection(collection_name=self.config.collection):
-            self._assert_owned()
-            self.client.drop_collection(collection_name=self.config.collection)
         schema = MilvusClient.create_schema(
             auto_id=False,
             enable_dynamic_field=False,
@@ -242,6 +393,7 @@ class MilvusStore:
                     )
 
     def upsert(self, chunks: list[Chunk], vectors: list[list[float]]) -> None:
+        self._require_physical_writable()
         self.validate(chunks, vectors)
         size = self.config.upsert_batch_size
         for offset in range(0, len(chunks), size):
@@ -265,7 +417,7 @@ class MilvusStore:
 
     def count(self) -> int:
         result = self.client.query(
-            collection_name=self.config.collection,
+            collection_name=self.read_collection,
             filter="",
             output_fields=["count(*)"],
             consistency_level="Strong",
@@ -280,7 +432,7 @@ class MilvusStore:
             raise ValueError("Search limit must be positive")
         params = {"ef": max(limit, self.config.hnsw_ef_search)} if field == "dense" else {}
         response = self.client.search(
-            collection_name=self.config.collection,
+            collection_name=self.read_collection,
             data=[data],
             anns_field=field,
             limit=limit,
@@ -326,9 +478,27 @@ class MilvusStore:
         )
 
     def drop(self) -> None:
-        if self.client.has_collection(collection_name=self.config.collection):
+        self._require_physical_writable()
+        if self.exists():
+            list_aliases = getattr(self.client, "list_aliases", None)
+            if list_aliases is not None and list_aliases(
+                collection_name=self.collection, timeout=self.config.timeout_s
+            ):
+                raise ValueError("Refusing to drop a collection still referenced by an alias")
             self._assert_owned()
             self.client.drop_collection(collection_name=self.config.collection)
 
     def close(self) -> None:
         self.client.close()
+
+
+def configured_build_id(settings: Settings) -> str | None:
+    """A best-effort provenance read for collectors that are about to query Milvus."""
+    try:
+        store = MilvusStore(settings)
+    except Exception:
+        return None
+    try:
+        return store.current_build_id()
+    finally:
+        store.close()

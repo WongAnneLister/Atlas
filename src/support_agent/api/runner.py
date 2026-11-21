@@ -90,6 +90,7 @@ def _traced_turn(
             "llm_calls": usage.calls,
             "cost_usd": cost_usd(usage.by_model, costs),
             "trace": [name for name in route[max(start, 0) :] if name in nodes],
+            "retrieval_build_id": snapshot.values.get("retrieval_build_id"),
             "gate": GateResult.model_validate(gate).model_dump(mode="json") if gate else None,
         },
     )

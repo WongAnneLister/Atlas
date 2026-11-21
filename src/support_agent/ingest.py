@@ -1,10 +1,12 @@
-"""Load source documents, create chunks, embed, and replace the demo Milvus collection."""
+"""Build and release an index, or prepare preview chunks without Milvus."""
 
 from __future__ import annotations
 
 import argparse
 import logging
+import sys
 from datetime import UTC, datetime
+from importlib import import_module
 from time import perf_counter
 
 from pydantic import BaseModel, Field
@@ -20,6 +22,7 @@ log = logging.getLogger(__name__)
 
 
 class IngestRun(BaseModel):
+    build_id: str | None = None
     started_at: str
     status: str = "preparing"
     config_hash: str
@@ -65,6 +68,8 @@ def ingest_chunks(
 
 def run(settings: Settings, *, chunks_only: bool = False) -> IngestRun:
     output = REPO_ROOT / settings.data.processed_dir
+    if chunks_only:
+        output /= settings.index.preview_directory
     run_info = IngestRun(
         started_at=datetime.now(UTC).isoformat(),
         config_hash=digest(json_text(settings.model_dump(mode="json"))),
@@ -123,6 +128,9 @@ def run(settings: Settings, *, chunks_only: bool = False) -> IngestRun:
 
 
 def main() -> int:
+    if "--chunks-only" not in sys.argv[1:]:
+        lifecycle = import_module("eval.index_lifecycle")
+        return int(lifecycle.main(["ingest", *sys.argv[1:]]))
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--chunks-only", action="store_true")
     args = parser.parse_args()

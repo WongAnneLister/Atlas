@@ -10,7 +10,6 @@ each distinct query is retrieved once.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import statistics
 import subprocess
 from collections import Counter
@@ -28,6 +27,7 @@ from support_agent.graph.refund_query import template_key
 from support_agent.graph.state import ConversationState
 from support_agent.orders.models import Order
 from support_agent.orders.service import OrderService
+from support_agent.retrieval.index_snapshot import load_build_chunks
 from support_agent.retrieval.scope import section_store
 from support_agent.retrieval.types import RetrievedChunk
 
@@ -168,11 +168,20 @@ def query_lines(rows: list[Row]) -> list[str]:
     return lines
 
 
-def write_report(rows: list[Row], settings: Settings, path: Path) -> None:
+def write_report(
+    rows: list[Row], settings: Settings, path: Path, build_id: str | None = None
+) -> None:
     variant = settings.model_dump(mode="json")
     variant.pop("refund", None)
-    chunks = REPO_ROOT / "data/processed/chunks.jsonl"
-    corpus = hashlib.sha256(chunks.read_bytes()).hexdigest() if chunks.is_file() else "missing"
+    corpus = (
+        digest(
+            "".join(
+                chunk.model_dump_json() + "\n" for chunk in load_build_chunks(settings, build_id)
+            )
+        )
+        if build_id
+        else "unresolved"
+    )
     sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
     retrieval = settings.retrieval
     lines = [
@@ -232,7 +241,8 @@ def main(argv: list[str] | None = None) -> int:
             settings.refund.policy_query = mode
             path = RefundPath(GraphDeps(settings, retriever=retriever, order_service=service))
             rows += [measure(path, order, mode, settings, retriever.failed) for order in orders]
-    write_report(rows, base, REPO_ROOT / args.report)
+        build_id = deps.current_build_id()
+    write_report(rows, base, REPO_ROOT / args.report, build_id)
     return 0
 
 

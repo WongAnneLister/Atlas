@@ -126,6 +126,9 @@ def _collect(args: argparse.Namespace, arguments: list[str]) -> tuple[Run, Path]
             run(items, settings=settings, run_dir=run_dir, judge=_judge(judge_deps))
         )
     rows = _project(observations, items)
+    builds = sorted(
+        {turn.build_id for item in observations for turn in item.turns if turn.build_id}
+    )
     manifest = RunManifest(
         kind="redteam",
         split=args.split,
@@ -142,6 +145,8 @@ def _collect(args: argparse.Namespace, arguments: list[str]) -> tuple[Run, Path]
         command=["python", "-m", "eval.redteam_eval", *arguments],
         source={
             "subset": args.subset,
+            "build_id": builds[0] if len(builds) == 1 else None,
+            "build_ids": builds,
             "endpoint_host": endpoint_host(isolated.llm),
             "dataset_versions": {
                 record.name: f"{record.repo_id}@{record.revision}"

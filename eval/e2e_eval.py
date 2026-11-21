@@ -39,6 +39,7 @@ from support_agent.graph.deps import GraphDeps
 from support_agent.llm import Role, resolve_model
 from support_agent.observability import tracing
 from support_agent.observability.cost import UsageLedger, cost_usd
+from support_agent.retrieval.milvus_store import configured_build_id
 
 RunRenderer = Callable[[Run, Path], int | None]
 
@@ -143,6 +144,7 @@ def _record(
         input_tokens, output_tokens = _usage(result.get("messages", []))
     handoff = result.get("handoff")
     return E2ERecord(
+        build_id=result.get("retrieval_build_id"),
         item=item,
         intent=getattr(result.get("intent"), "value", result.get("intent")),
         path=getattr(result.get("path"), "value", result.get("path")),
@@ -315,6 +317,7 @@ def main(
     output = REPO_ROOT / (args.output or cache_root / cache_name)
     output.parent.mkdir(parents=True, exist_ok=True)
     metadata = _metadata(settings, args.split, eval_text, manifest["corpus_hash"])
+    metadata.build_id = configured_build_id(settings)
     existing: dict[str, E2ERecord] = {}
     resumed = output.exists()
     if resumed and settings.chaos.enabled:
@@ -347,6 +350,8 @@ def main(
                 graph, item, settings.evaluation.customer_id, thread_id, trace
             )
             record = _record(item, result, latency, usage.first_token_at, usage.tokens(), usage)
+            if record.build_id is not None and record.build_id != metadata.build_id:
+                raise ValueError("Index build changed during collection; choose a fresh output")
             record.estimated_cost_usd = (
                 cost_usd(record.usage_by_model, settings.costs) if record.usage_by_model else None
             )

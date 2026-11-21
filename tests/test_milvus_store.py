@@ -2,11 +2,17 @@ from __future__ import annotations
 
 import pytest
 
-from support_agent.config import get_settings
+from support_agent.config import Settings
 from support_agent.ingest import ingest_chunks
 from support_agent.retrieval.chunking import Chunk
 from support_agent.retrieval.embed import FakeEmbedder
 from support_agent.retrieval.milvus_store import DESCRIPTION, MilvusStore
+
+
+def fixture_settings() -> Settings:
+    settings = Settings()
+    settings.milvus.collection = "unit_fixture_collection"
+    return settings
 
 
 def chunk() -> Chunk:
@@ -60,7 +66,7 @@ class Client:
 
 
 def test_dense_and_bm25_schema_and_upsert_omit_generated_sparse_values() -> None:
-    settings = get_settings()
+    settings = fixture_settings()
     client = Client()
     store = MilvusStore(settings, client)
     assert (
@@ -83,13 +89,13 @@ def test_store_refuses_foreign_collection_reset() -> None:
     client = Client()
     client.exists, client.description = True, "another application's collection"
     with pytest.raises(ValueError, match="Refusing to reset"):
-        MilvusStore(get_settings(), client).create_or_reset()
+        MilvusStore(fixture_settings(), client).create_or_reset()
     assert client.drops == 0
 
 
 @pytest.mark.parametrize("bad", ["shape", "nonfinite", "bytes"])
 def test_invalid_rows_fail_before_reset(bad: str) -> None:
-    settings = get_settings()
+    settings = fixture_settings()
     client = Client()
     client.exists = True
     store = MilvusStore(settings, client)
@@ -107,13 +113,13 @@ def test_invalid_rows_fail_before_reset(bad: str) -> None:
 
 
 def test_zero_search_limit_is_rejected() -> None:
-    store = MilvusStore(get_settings(), Client())
+    store = MilvusStore(fixture_settings(), Client())
     with pytest.raises(ValueError, match="positive"):
         store.search_bm25("returns", limit=0)
 
 
 def test_bad_embedding_keeps_the_previous_collection() -> None:
-    settings = get_settings()
+    settings = fixture_settings()
     client = Client()
     client.exists = True
 
@@ -137,7 +143,7 @@ def test_index_snapshot_returns_complete_chunk_fields_and_collection_identity() 
 
         def query_iterator(self, **kwargs: object) -> object:
             assert set(kwargs["output_fields"]) == set(Chunk.model_fields)
-            assert kwargs["batch_size"] == get_settings().milvus.query_batch_size
+            assert kwargs["batch_size"] == fixture_settings().milvus.query_batch_size
             return Iterator()
 
     class Iterator:
@@ -153,7 +159,7 @@ def test_index_snapshot_returns_complete_chunk_fields_and_collection_identity() 
             closed.append(True)
 
     closed: list[bool] = []
-    store = MilvusStore(get_settings(), SnapshotClient())
+    store = MilvusStore(fixture_settings(), SnapshotClient())
     assert store.read_chunks() == [chunk()]
     assert store.collection_identity() == "123"
     assert closed == [True]
@@ -168,7 +174,7 @@ def test_verified_local_chunk_hydration_preserves_fields_and_rejects_unknown_ids
             return [[{"entity": {"chunk_id": self.chunk_id}, "distance": 0.9}]]
 
     client = IdClient()
-    store = MilvusStore(get_settings(), client)
+    store = MilvusStore(fixture_settings(), client)
     store.use_chunk_snapshot([chunk()])
     result = store.search_bm25("returns")
     assert result[0].model_dump(exclude={"score"}) == chunk().model_dump()

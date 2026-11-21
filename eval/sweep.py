@@ -24,6 +24,7 @@ from support_agent.gate.evidence import VETO_REASONS, evaluate
 from support_agent.retrieval.chunking import Chunk
 from support_agent.retrieval.embed import BgeM3Embedder
 from support_agent.retrieval.factory import build_retriever
+from support_agent.retrieval.index_snapshot import load_build_chunks, load_latest_chunks
 from support_agent.retrieval.milvus_store import MilvusStore
 from support_agent.retrieval.rerank import BgeReranker
 from support_agent.retrieval.scope import scope_chunks
@@ -48,9 +49,11 @@ class GateScore(BaseModel):
     ranked_section_ids: list[str] = Field(default_factory=list)
     chunks: list[ChunkScore] = Field(default_factory=list)
     vetoed: bool = False
+    build_id: str | None = None
 
 
 class GateScoreMetadata(BaseModel):
+    build_id: str | None = None
     record_type: str = "metadata"
     git_sha: str
     config_hash: str
@@ -111,12 +114,15 @@ def production_chunks(retriever: Any, question: str, settings: Settings) -> list
 
 
 def load_local_chunks(settings: Settings, path: Path | None = None) -> dict[str, Chunk]:
-    path = path or REPO_ROOT / settings.data.processed_dir / "chunks.jsonl"
-    chunks = [
-        Chunk.model_validate_json(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line
-    ]
+    latest = REPO_ROOT / settings.data.processed_dir / "chunks.jsonl"
+    if path is None or path.resolve() == latest.resolve():
+        chunks = load_latest_chunks(settings, expected_build_id=None)
+    else:
+        chunks = [
+            Chunk.model_validate_json(line)
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line
+        ]
     return {chunk.chunk_id: chunk for chunk in chunks}
 
 
@@ -128,7 +134,14 @@ def rescore(
 ) -> list[GateScore]:
     """Recompute gate scores from cached retrieval snapshots with the current gate code."""
     questions = {item.id: item.question for item in items}
-    texts = load_local_chunks(settings, chunk_file) if any(r.chunks for r in records) else {}
+    build_ids = {record.build_id for record in records if record.chunks}
+    if len(build_ids) > 1:
+        raise ValueError("Cached gate records use different index builds")
+    build_id = next(iter(build_ids), None)
+    if build_id is not None:
+        texts = {chunk.chunk_id: chunk for chunk in load_build_chunks(settings, build_id)}
+    else:
+        texts = load_local_chunks(settings, chunk_file) if build_ids else {}
     rescored = []
     for record in records:
         chunks = [
@@ -194,11 +207,30 @@ def collect_scores(
     selection: tuple[Path, list[EvalItem], str] | None = None,
 ) -> list[GateScore]:
     """Run retrieval once per question and cache the reranked snapshot and gate scores."""
+    try:
+        store = MilvusStore(settings)
+    except Exception as error:
+        raise RuntimeError("Milvus is unavailable; start it with `make up` and retry") from error
+    try:
+        store.pin_reads()
+        return _collect_with_store(settings, split, output, selection, store)
+    finally:
+        store.close()
+
+
+def _collect_with_store(
+    settings: Settings,
+    split: str,
+    output: Path,
+    selection: tuple[Path, list[EvalItem], str] | None,
+    store: MilvusStore,
+) -> list[GateScore]:
     eval_path, items, corpus_hash = selection or _eval_paths(settings, split)
     if not items:
         raise ValueError(f"No {split} evaluation items found")
 
     metadata = GateScoreMetadata(
+        build_id=store.current_build_id(),
         git_sha=_git_sha(),
         config_hash=score_config_hash(settings),
         eval_file_hash=digest(eval_path.read_text(encoding="utf-8")),
@@ -222,7 +254,7 @@ def collect_scores(
         else:
             if all(
                 getattr(saved, name) == getattr(metadata, name)
-                for name in ("config_hash", "eval_file_hash", "corpus_hash", "split")
+                for name in ("config_hash", "eval_file_hash", "corpus_hash", "split", "build_id")
             ):
                 validate_score_rows(cached, items, split)
                 records = cached
@@ -231,48 +263,42 @@ def collect_scores(
     pending = [item for item in items if item.id not in completed]
     if not pending:
         return records
-    try:
-        store = MilvusStore(settings)
-    except Exception as error:
-        raise RuntimeError("Milvus is unavailable; start it with `make up` and retry") from error
-    try:
-        retriever = build_retriever(
-            "hybrid_rerank",
-            settings=settings,
-            store=store,
-            embedder=BgeM3Embedder(settings.retrieval),
-            reranker=BgeReranker(settings.retrieval),
+    retriever = build_retriever(
+        "hybrid_rerank",
+        settings=settings,
+        store=store,
+        embedder=BgeM3Embedder(settings.retrieval),
+        reranker=BgeReranker(settings.retrieval),
+    )
+    for item in pending:
+        chunks = production_chunks(retriever, item.question, settings)
+        result = evaluate(item.question, chunks, settings.gate, allow_untuned=True)
+        records.append(
+            GateScore(
+                id=item.id,
+                build_id=metadata.build_id,
+                group=item.group,
+                split=item.split,
+                answerable=item.answerable,
+                score=result.score,
+                signals=result.signals,
+                ranked_section_ids=[chunk.section_id for chunk in chunks],
+                chunks=[
+                    ChunkScore(chunk_id=chunk.chunk_id, rerank=chunk.scores.get("rerank", 0.0))
+                    for chunk in chunks
+                ],
+                vetoed=result.reason in VETO_REASONS,
+            )
         )
-        for item in pending:
-            chunks = production_chunks(retriever, item.question, settings)
-            result = evaluate(item.question, chunks, settings.gate, allow_untuned=True)
-            records.append(
-                GateScore(
-                    id=item.id,
-                    group=item.group,
-                    split=item.split,
-                    answerable=item.answerable,
-                    score=result.score,
-                    signals=result.signals,
-                    ranked_section_ids=[chunk.section_id for chunk in chunks],
-                    chunks=[
-                        ChunkScore(chunk_id=chunk.chunk_id, rerank=chunk.scores.get("rerank", 0.0))
-                        for chunk in chunks
-                    ],
-                    vetoed=result.reason in VETO_REASONS,
-                )
-            )
-            temporary = output.with_suffix(output.suffix + ".tmp")
-            write_text(
-                temporary,
-                metadata.model_dump_json()
-                + "\n"
-                + "".join(record.model_dump_json() + "\n" for record in records),
-            )
-            temporary.replace(output)
-            logging.getLogger(__name__).info("%s scores: %d/%d", split, len(records), len(items))
-    finally:
-        store.close()
+        temporary = output.with_suffix(output.suffix + ".tmp")
+        write_text(
+            temporary,
+            metadata.model_dump_json()
+            + "\n"
+            + "".join(record.model_dump_json() + "\n" for record in records),
+        )
+        temporary.replace(output)
+        logging.getLogger(__name__).info("%s scores: %d/%d", split, len(records), len(items))
     return records
 
 

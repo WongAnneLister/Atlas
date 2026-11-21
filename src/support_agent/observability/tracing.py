@@ -99,6 +99,8 @@ def turn_tags(values: Mapping[str, Any]) -> tuple[list[str], dict[str, str]]:
     if reason is not None:
         tags.append(f"handoff:{_value(reason)}")
     tags.extend(f"guardrail:{flag}" for flag in values.get("guardrail_flags", []))
+    if isinstance(build_id := values.get("retrieval_build_id"), str):
+        metadata["retrieval_build_id"] = build_id
     return tags, metadata
 
 

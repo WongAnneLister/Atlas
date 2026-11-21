@@ -51,6 +51,7 @@ _STRUCTURED_ERRORS = frozenset(
 class TurnOutcome(BaseModel):
     kind: Literal["chat", "resume"]
     http_status: int
+    build_id: str | None = None
     events: list[SseEvent] = Field(default_factory=list)
     route: list[str] = Field(default_factory=list)
     answer: str = ""
@@ -105,6 +106,7 @@ class _FixtureGraph(GraphDeps):
         fast_model: BaseChatModel | None,
         main_model: BaseChatModel | None,
         retriever: Retriever | None,
+        registry_settings: Settings,
     ) -> None:
         super().__init__(
             fixtures.settings,
@@ -113,6 +115,7 @@ class _FixtureGraph(GraphDeps):
             retriever=retriever,
             order_service=fixtures.orders,
             model_messages=hooks.model_messages,
+            index_registry_settings=registry_settings,
         )
         # With no injected fake, GraphDeps uses GuardedMilvusSearch (read methods only).
         self._overlay = hooks.overlay(super().knowledge_retriever)
@@ -278,6 +281,7 @@ async def _run_turn(
     outcome.refund_request = state.refund_request
     outcome.citations = state.citations
     outcome.retrieval = state.retrieval
+    outcome.build_id = state.retrieval_build_id
     outcome.error_type = _dependency_failure(state)
     return outcome
 
@@ -395,7 +399,7 @@ async def run(
         if main_model is not None:
             fixtures.settings.llm.fallbacks.main.clear()
         hooks = FixtureHooks(fixtures.canaries["system_prompt"])
-        deps = _FixtureGraph(fixtures, hooks, fast_model, main_model, retriever)
+        deps = _FixtureGraph(fixtures, hooks, fast_model, main_model, retriever, settings)
         app = create_app(
             ApiDeps(
                 settings=fixtures.settings,

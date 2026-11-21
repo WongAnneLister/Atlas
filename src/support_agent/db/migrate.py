@@ -12,6 +12,7 @@ from sqlalchemy import URL, Connection, Engine, inspect
 from support_agent.config import REPO_ROOT, get_settings
 from support_agent.db.engine import make_engine, postgres_url, transaction
 from support_agent.orders.tables import metadata
+from support_agent.retrieval.index_tables import metadata as index_metadata
 
 logger = logging.getLogger(__name__)
 CHECKPOINT_TABLES = frozenset(
@@ -38,7 +39,12 @@ def require_write_target(url: URL) -> None:
 
 def ensure_atlas_schema(connection: Connection) -> None:
     inspector = inspect(connection)
-    allowed = metadata.tables.keys() | CHECKPOINT_TABLES | {"alembic_version"}
+    allowed = (
+        metadata.tables.keys()
+        | index_metadata.tables.keys()
+        | CHECKPOINT_TABLES
+        | {"alembic_version"}
+    )
     if set(inspector.get_table_names()) - allowed:
         raise ValueError("Refusing to write to a database with unexpected tables")
     if connection.dialect.name == "postgresql":

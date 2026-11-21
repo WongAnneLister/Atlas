@@ -2,7 +2,8 @@
 
 ## Chunking & index
 
-Run `make up`, then `make ingest`. Inspect `data/processed/chunks.jsonl` locally.
+Run `make up` and prepare the registered release datasets before `make ingest`. Inspect
+`data/processed/chunks.jsonl` locally after building.
 `make ingest-chunks` runs the real pinned BGE tokenizer without loading model weights or Milvus.
 Optional `make embedding-cache` prefetches model files without loading the encoder.
 `make test-milvus` runs the integration test explicitly; normal unit tests remain offline.
@@ -30,7 +31,7 @@ All Milvus SDK imports are isolated in `milvus_store.py`.
 UTF-8 byte lengths, vector shape and finite values are checked before collection replacement.
 Reset refuses a collection lacking this project's description marker.
 The pipeline checks server connectivity before downloading weights; it embeds before resetting data.
-Index promotion and transactional incremental updates belong to the later production phase.
+Index promotion uses the lifecycle below.
 
 Compose works with either the Docker plugin or official standalone docker-compose CLI.
 On a host without the app environment, use `make up COMPOSE_PYTHON=python3` for Compose only.
@@ -43,11 +44,70 @@ Set `MINIO_TARGET_ARCH` to match the Docker server; the local build defaults to 
 The core containers have configurable memory limits in `docker-compose.yml`.
 Published Milvus ports bind to loopback. For a remote Docker context, forward the ports over SSH.
 The client URI remains configurable; never assume a remote Docker daemon is the local host.
-No unrelated containers are stopped. Only the configured project collection is reset by ingestion.
+No unrelated containers are stopped. Ingestion creates a private candidate collection.
 
 References: [Milvus full text search](https://milvus.io/docs/v2.5.x/full-text-search.md),
 [BGE-M3 model card](https://huggingface.co/BAAI/bge-m3).
 MinIO build context: [upstream distribution change](https://github.com/minio/minio#source-only-distribution).
+
+## Index lifecycle
+
+The default serving name is the Milvus alias `support_chunks_live`. The registry records the
+serving and previous builds. A build owns an immutable collection and a snapshot of its sections.
+
+```mermaid
+flowchart LR
+    Docs["Policy documents"] --> Plan["Compare with serving sections"]
+    Plan --> Build["Build a new collection"]
+    Build --> Check["Compare retrieval and check no-answer items"]
+    Check -->|Pass| Live["Move serving alias"]
+    Check -->|Refuse| Hold["Keep current alias"]
+    Live -->|Rollback| Prior["Restore previous target"]
+```
+
+- `make index-plan` reports added, changed, deleted and unchanged section IDs without contacting
+  Milvus. It compares with the serving build, so rollback and unreleased builds do not move the
+  comparison point. Add `INDEX_ARGS='--docs-dir /path/to/scratch-docs'` to use a scratch corpus.
+- Every change builds a new collection. Incremental builds encode added and changed sections and
+  copy verified dense vectors for unchanged chunks. A changed encoding or chunking fingerprint
+  triggers a full build. The fingerprint includes the embedding profile, chunk settings and
+  schema versions. `make index-build INDEX_ARGS=--full` forces a full rebuild.
+- `make index-release BUILD=<id>` compares raw-query retrieval and evidence-gate outcomes on
+  the frozen dev and knowledge smoke sets. It pairs hit, reciprocal rank and gate outcomes against
+  the serving build and reuses compatible saved evidence. This is an index check. CI still covers
+  rewritten queries, full graph behavior and red-team cases. The CPU reranker dominates its cost
+  because the check reranks each question. `INDEX_ARGS=--reranker-device=mps` can select that device
+  for the evidence run.
+- Every candidate no-answer item must fail the evidence gate. An unassessed candidate no-answer
+  item also prevents release. Runs above the configured retrieval-error limit are invalid.
+  A paired regression may be overridden with a written `--override-reason`; the registry and
+  report retain it. It cannot override the absolute rule or an invalid run.
+- `make index-adopt COLLECTION=support_chunks` verifies on-disk chunks against the existing index
+  and registers it without changing its rows. Adoption establishes text equivalence and assumes the
+  supplied embedding settings describe the existing vectors. It is for bootstrapping the current
+  index and skips the release evaluation. On an empty deployment, `make ingest` builds and checks
+  the first index without a live comparison. Once an alias exists, the same command builds and
+  runs the paired check. Local SQLite creates its registry tables on the first lifecycle write.
+  For the PostgreSQL backend, run the Atlas migration before using the lifecycle commands.
+- `make index-rollback` restores the previous released collection. After an embedding change,
+  run the application with the embedding settings for the serving build. The paired check uses
+  each build's recorded embedding profile. `make index-status` compares Milvus with the registry.
+  After a verified interrupted switch, `INDEX_ARGS=--reconcile` records the known Milvus target.
+- `make index-gc` is a preview. `INDEX_ARGS=--yes` deletes only eligible registry-owned builds
+  with the configured prefix. The live and previous targets, adopted collections and the
+  registered experiment collection names are protected. Release, rollback and GC serialize
+  their alias operations through the registry.
+- Per-build chunk text and its checksum live under the configured builds directory. The legacy
+  `chunks.jsonl` and `ingest_run.json` describe the last completed build. Cached rank readers
+  require matching build provenance. `make ingest-chunks` writes a preview separately.
+  Serving searches follow the alias. Build ID telemetry may lag within the configured lookup TTL.
+  Retrieval benchmarks that hydrate local text pin their starting target for the entire run.
+- Standard retrieval evaluation starts from the alias. Explicit ablations use separate physical
+  collections. Existing protected experiment indexes can only be reused with matching evidence.
+  Provide fresh experiment names when an ablation must build new indexes.
+- Offline tests use scratch registries and fake dependencies. The author runs Milvus freshness,
+  alias and optional PostgreSQL checks in 22b. No live measurements were collected in this change.
+
 
 ## Hybrid + RRF
 
@@ -106,8 +166,8 @@ See the [upstream model card](https://huggingface.co/BAAI/bge-reranker-v2-m3) fo
 
 After `make data-docs`, `make eval-build`, and `make ingest`, run `make eval-retrieval`.
 The default test run also measures dev. Use `SPLIT=dev` for development or `SPLIT=all` for both.
-`EVAL_RETRIEVAL_ARGS=--no-ablations` skips the optional ablations; both run by default.
-The experiment builds verified heading-on and heading-off copies in independent collections.
+`EVAL_RETRIEVAL_ARGS=--ablations` enables explicit controls after preparing matching experiment indexes.
+The default run measures the serving index.
 Both copies use identical chunks, model revision, encoder settings and index configuration.
 The demo collection is preserved. Model-number cleanup is disabled only for its own row.
 Both ablations compare against hybrid without reranking, holding the remaining settings fixed.

@@ -18,6 +18,7 @@ from eval.run_record import (
     Run,
     RunItem,
     RunManifest,
+    format_summary,
     git,
     is_dirty,
     read_run,
@@ -214,10 +215,30 @@ class ReleaseDecision:
     comparisons: list[Comparison] = field(default_factory=list)
     changes: dict[str, list[str]] = field(default_factory=dict)
     override_reason: str | None = None
+    candidate: RunManifest | None = None
+    summaries: dict[str, str] = field(default_factory=dict)
 
     def markdown(self) -> str:
         outcome = "Invalid run" if self.outcome == "invalid" else self.outcome.capitalize()
         lines = [f"# Index release — {outcome}", "", *(f"- {reason}" for reason in self.reasons)]
+        if self.candidate:
+            manifest = self.candidate
+            lines.extend(
+                [
+                    "",
+                    f"- Candidate collection: {manifest.source.get('collection')}",
+                    f"- Git SHA: {manifest.git_sha}",
+                    f"- Config hash: {manifest.config_hash}",
+                    f"- Split: {manifest.split}",
+                    f"- UTC date: {manifest.started_at}",
+                    f"- Models: {', '.join(manifest.models.values())}",
+                    f"- Dataset versions: {manifest.datasets}",
+                ]
+            )
+        if self.summaries:
+            lines.extend(
+                ["", *[f"- {name}: {summary}" for name, summary in self.summaries.items()]]
+            )
         if self.override_reason:
             lines.extend(["", f"Paired override reason: {self.override_reason}"])
         if self.comparisons:
@@ -279,7 +300,15 @@ def evaluate_release(
         absolute.append(f"No-answer gate passed: {', '.join(unsafe)}.")
     if unknown:
         absolute.append(f"No-answer gate could not be verified: {', '.join(unknown)}.")
-    decision = ReleaseDecision("refuse" if absolute else "release", absolute)
+    decision = ReleaseDecision(
+        "refuse" if absolute else "release",
+        absolute,
+        candidate=candidate.manifest,
+        summaries={
+            name: format_summary(summary, rate=name != "rr_at_5")
+            for name, summary in candidate.metrics.metrics.items()
+        },
+    )
     if live is None:
         return decision
     if (

@@ -180,8 +180,12 @@ class RefundPath:
             self.deps.settings.gate,
             allow_untuned=self.deps.allow_untuned_gate,
         )
+        build_id = self.deps.current_build_id()
         if not gate.passed:
-            current = state.model_copy(update={"retrieval": chunks, "gate": gate}, deep=True)
+            current = state.model_copy(
+                update={"retrieval": chunks, "gate": gate, "retrieval_build_id": build_id},
+                deep=True,
+            )
             return {
                 **make_handoff(
                     current,
@@ -191,12 +195,14 @@ class RefundPath:
                 ),
                 "retrieval_error_type": error_type,
                 "retrieval": chunks,
+                "retrieval_build_id": build_id,
                 "gate": gate,
                 "refund_policy_query": query,
                 "trace": [*state.trace, "refund_retrieve", "handoff"],
             }
         return {
             "retrieval": chunks,
+            "retrieval_build_id": build_id,
             "gate": gate,
             "refund_policy_query": query,
             "trace": [*state.trace, "refund_retrieve"],

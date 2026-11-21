@@ -167,13 +167,16 @@ make setup             # install dependencies with uv
 make check             # lint, types and offline tests; no network, models or LLM calls
 make up                # start Milvus in Docker
 make data              # download the datasets, check licenses, build policy docs, seed mock orders
-make ingest            # chunk, embed and load into Milvus
+make eval-build        # prepare the registered evaluation set
+make eval-smoke-build  # materialize the frozen release smoke set
+make ingest            # build a Milvus collection and check it before releasing
 make serve             # chat page at http://127.0.0.1:8000
 ```
 
-Expect `make data` to take a few minutes. It also rewrites the run metadata (dates, hashes) in a few generated docs. `make ingest` downloads BGE-M3 and embeds every chunk on CPU.
-That took about 13 minutes on a laptop ([`ingestion.md`](eval/reports/ingestion.md)).
-The reranker downloads on first use, so the first question is slow.
+Expect `make data` to take a few minutes. It also rewrites the run metadata (dates, hashes) in a few generated docs.
+The first `make ingest` downloads the embedding model and reranker, then checks the new index.
+An existing deployment can adopt its current index before building a new one.
+See [Index lifecycle](docs/RETRIEVAL.md#index-lifecycle).
 
 `make serve` reads `.env` itself. Pick a demo customer in the page, then ask a question.
 Tick **Debug** to see the gate score and the node trace.

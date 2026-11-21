@@ -14,11 +14,19 @@ depends_on = None
 
 def upgrade() -> None:
     op.add_column("refund_requests", sa.Column("idempotency_key", sa.Text(), nullable=True))
-    op.create_unique_constraint(
-        "refund_requests_idempotency_key", "refund_requests", ["idempotency_key"]
-    )
+    if op.get_context().dialect.name == "sqlite":
+        op.create_index(
+            "refund_requests_idempotency_key", "refund_requests", ["idempotency_key"], unique=True
+        )
+    else:
+        op.create_unique_constraint(
+            "refund_requests_idempotency_key", "refund_requests", ["idempotency_key"]
+        )
 
 
 def downgrade() -> None:
-    op.drop_constraint("refund_requests_idempotency_key", "refund_requests", type_="unique")
+    if op.get_context().dialect.name == "sqlite":
+        op.drop_index("refund_requests_idempotency_key", table_name="refund_requests")
+    else:
+        op.drop_constraint("refund_requests_idempotency_key", "refund_requests", type_="unique")
     op.drop_column("refund_requests", "idempotency_key")

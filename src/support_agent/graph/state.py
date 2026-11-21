@@ -38,6 +38,7 @@ class ConversationState(BaseModel):
     classifier_model: str | None = None
     answered_by_model: dict[str, str] = Field(default_factory=dict)
     reliability_events: list[ReliabilityEvent] = Field(default_factory=list)
+    retrieval_build_id: str | None = None
     retrieval: list[RetrievedChunk] = Field(default_factory=list)
     gate: GateResult | None = None
     retrieval_error_type: str | None = None

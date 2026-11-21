@@ -14,6 +14,7 @@ COMPOSE_PYTHON ?= $(RUN) python
 .PHONY: setup up up-state down migrate data data-download data-licenses data-docs data-validate-docs data-orders \
         eval-docs eval-orders eval-orders-parity \
         eval-build eval-validate eval-review eval-review-import eval-set-report \
+        index-plan index-build index-release index-rollback index-status index-adopt index-gc \
         ingest ingest-chunks embedding-cache eval-ingest test-milvus eval-retrieval eval-intent eval-e2e sweep serve \
         lint format typecheck test check notes-check notes minio-image-local search reranker-cache \
         eval-retrieval-index eval-failures eval-intent-build eval-intent-draft gate-analysis chat \
@@ -99,12 +100,11 @@ eval-set-report:
 	$(RUN) python -m eval.report_set
 
 ingest:
-	$(RUN) python -m support_agent.ingest
-	$(RUN) python -m eval.ingestion
+	$(RUN) python -m support_agent.ingest $(INDEX_ARGS)
 
 ingest-chunks:
 	$(RUN) python -m support_agent.ingest --chunks-only
-	$(RUN) python -m eval.ingestion
+	$(RUN) python -m eval.ingestion --preview
 
 embedding-cache:
 	$(RUN) python -m support_agent.retrieval.embed
@@ -277,3 +277,12 @@ check: lint typecheck test notes-check
 
 eval-index-release:
 	$(RUN) python -m eval.index_release $(INDEX_EVAL_ARGS)
+
+index-plan index-build index-rollback index-status index-gc:
+	$(RUN) python -m eval.index_lifecycle $(@:index-%=%) $(INDEX_ARGS)
+
+index-release:
+	$(RUN) python -m eval.index_lifecycle release "$(BUILD)" $(INDEX_ARGS)
+
+index-adopt:
+	$(RUN) python -m eval.index_lifecycle adopt "$(COLLECTION)" $(INDEX_ARGS)

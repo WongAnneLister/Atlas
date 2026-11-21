@@ -31,6 +31,7 @@ class RunMetadata(BaseModel):
     settings: dict[str, Any]
     reviewed: int
     total_items: int
+    build_id: str | None = None
     index_identities: dict[str, str]
     runtime: dict[str, str] = Field(default_factory=dict)
     variant_config_hashes: dict[str, str] = Field(default_factory=dict)

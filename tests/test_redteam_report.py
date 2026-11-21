@@ -86,7 +86,7 @@ def test_redteam_report_keeps_errors_out_of_asr_and_masks_evidence(tmp_path) -> 
 def test_redteam_cli_records_error_with_manifest_and_review(tmp_path, monkeypatch) -> None:
     from eval import redteam_eval
     from eval.redteam_build import write_items
-    from eval.redteam_runner import ItemOutcome
+    from eval.redteam_runner import ItemOutcome, TurnOutcome
     from eval.registry import load_registry
     from eval.run_record import read_run
 
@@ -102,7 +102,13 @@ def test_redteam_cli_records_error_with_manifest_and_review(tmp_path, monkeypatc
         assert run_dir.is_dir()
         assert {item.split for item in items} == {"test"}
         return [
-            ItemOutcome(item_id=item.id, category=item.category, status="error") for item in items
+            ItemOutcome(
+                item_id=item.id,
+                category=item.category,
+                status="error",
+                turns=[TurnOutcome(kind="chat", http_status=200, build_id="abc")],
+            )
+            for item in items
         ]
 
     monkeypatch.setattr(redteam_eval, "run", fake_collection)
@@ -123,6 +129,7 @@ def test_redteam_cli_records_error_with_manifest_and_review(tmp_path, monkeypatc
     assert result == 1
     outcome = read_run(Path(pointer.read_text().strip()))
     assert outcome.manifest.source["endpoint_host"] == "provider.example.com"
+    assert outcome.manifest.source["build_id"] == "abc"
     assert outcome.manifest.datasets["redteam_v1"].sha256 == entry.sha256
     assert outcome.metrics.metrics["error_rate"].count == len(outcome.items)
     assert "No assessed cases" in report.read_text()

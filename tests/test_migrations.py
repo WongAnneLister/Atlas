@@ -54,6 +54,7 @@ def test_migration_round_trip(postgres_database) -> None:
     from support_agent.db.migrate import alembic_config, migration_at_head, upgrade
     from support_agent.graph.postgres import postgres_saver
     from support_agent.orders.tables import metadata
+    from support_agent.retrieval.index_tables import metadata as index_metadata
 
     settings, url = postgres_database
     settings.database_url = SecretStr(url.render_as_string(hide_password=False))
@@ -66,7 +67,9 @@ def test_migration_round_trip(postgres_database) -> None:
         with engine.connect() as connection:
             assert migration_at_head(connection)
             inspector = inspect(connection)
-            assert set(inspector.get_table_names()) == set(metadata.tables) | {"alembic_version"}
+            assert set(inspector.get_table_names()) == set(metadata.tables) | set(
+                index_metadata.tables
+            ) | {"alembic_version"}
             constraints = inspector.get_unique_constraints("refund_requests")
             assert any(
                 constraint["name"] == "refund_requests_idempotency_key"

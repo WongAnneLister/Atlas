@@ -30,10 +30,12 @@ class E2EMetadata(BaseModel):
     runtime: dict[str, str] | None = None
     chaos: ChaosSettings | None = None
     endpoint_host: str | None = None
+    build_id: str | None = None
 
 
 class E2ERecord(BaseModel):
     record_type: Literal["item"] = "item"
+    build_id: str | None = None
     item: EvalItem
     intent: str | None = None
     path: str | None = None
@@ -88,6 +90,7 @@ def load_cached_run(
         "runtime",
         "chaos",
         "endpoint_host",
+        "build_id",
     ):
         if getattr(saved, key) != getattr(metadata, key):
             raise ValueError(f"E2E cache changed {key}; choose a fresh output")
