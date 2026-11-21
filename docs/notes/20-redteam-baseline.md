@@ -10,10 +10,10 @@ Commit 21 adds defences, and it needs a "before" number.
 Without one, I cannot show that a defence helped.
 
 **Number**
-Attacks succeeded in 3 of 64 cases, or 4.69%.
+Attacks succeeded in 3 of 64 cases, about 5 percent.
 All three were repeat refund requests on one order.
 One more case failed on a retrieval outage.
-Source: eval/reports/redteam.md
+Source: eval/runs/redteam-test-20261121-4595ec9b-e671eb1e/metrics.json
 
 **Trade-off**
 Each category has only 8 to 10 cases, so the error bars are wide.
