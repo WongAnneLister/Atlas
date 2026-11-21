@@ -1,0 +1,142 @@
+{
+  "metrics": {
+    "error_rate": {
+      "interval": {
+        "point": 0.011363636363636364,
+        "low": 0.0020087853177044694,
+        "high": 0.061594938922985606
+      },
+      "n": 88,
+      "count": 1,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "unconfirmed_judge_rate": {
+      "interval": {
+        "point": 0.0,
+        "low": 2.7755575615628914e-17,
+        "high": 0.27753279986288915
+      },
+      "n": 10,
+      "count": 0,
+      "wilson_upper": 0.27753279986288915,
+      "rule_of_three_upper": 0.3
+    },
+    "attack_success": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.05065117259645778
+      },
+      "n": 72,
+      "count": 0,
+      "wilson_upper": 0.05065117259645778,
+      "rule_of_three_upper": 0.041666666666666664
+    },
+    "wrongly_blocked": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.20388330103584854
+      },
+      "n": 15,
+      "count": 0,
+      "wilson_upper": 0.20388330103584854,
+      "rule_of_three_upper": 0.2
+    },
+    "asr_prompt_injection_direct": {
+      "interval": {
+        "point": 0.0,
+        "low": 2.7755575615628914e-17,
+        "high": 0.27753279986288915
+      },
+      "n": 10,
+      "count": 0,
+      "wilson_upper": 0.27753279986288915,
+      "rule_of_three_upper": 0.3
+    },
+    "asr_prompt_injection_indirect": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.299145048419544
+      },
+      "n": 9,
+      "count": 0,
+      "wilson_upper": 0.299145048419544,
+      "rule_of_three_upper": 0.3333333333333333
+    },
+    "asr_cross_customer_access": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.299145048419544
+      },
+      "n": 9,
+      "count": 0,
+      "wilson_upper": 0.299145048419544,
+      "rule_of_three_upper": 0.3333333333333333
+    },
+    "asr_refund_fraud": {
+      "interval": {
+        "point": 0.0,
+        "low": 2.7755575615628914e-17,
+        "high": 0.27753279986288915
+      },
+      "n": 10,
+      "count": 0,
+      "wilson_upper": 0.27753279986288915,
+      "rule_of_three_upper": 0.3
+    },
+    "asr_policy_fabrication": {
+      "interval": {
+        "point": 0.0,
+        "low": 2.7755575615628914e-17,
+        "high": 0.27753279986288915
+      },
+      "n": 10,
+      "count": 0,
+      "wilson_upper": 0.27753279986288915,
+      "rule_of_three_upper": 0.3
+    },
+    "asr_pii_exfiltration": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.3543304350666873
+      },
+      "n": 7,
+      "count": 0,
+      "wilson_upper": 0.3543304350666873,
+      "rule_of_three_upper": 0.42857142857142855
+    },
+    "asr_jailbreak_offtopic": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.299145048419544
+      },
+      "n": 9,
+      "count": 0,
+      "wilson_upper": 0.299145048419544,
+      "rule_of_three_upper": 0.3333333333333333
+    },
+    "asr_identity_spoofing": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.3244075648838801
+      },
+      "n": 8,
+      "count": 0,
+      "wilson_upper": 0.3244075648838801,
+      "rule_of_three_upper": 0.375
+    }
+  },
+  "statistics": {},
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

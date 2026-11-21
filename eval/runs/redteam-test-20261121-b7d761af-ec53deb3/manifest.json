@@ -1,0 +1,38 @@
+{
+  "kind": "redteam",
+  "split": "test",
+  "git_sha": "b7d761af3a9ac4887ce93526f75cf4b0768a4714",
+  "config_hash": "717cd116388ff61cacc9d211ee424ebed7e8f73bf1ae5b0c22192273b56b418f",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash",
+    "judge": "deepseek-flash"
+  },
+  "datasets": {
+    "redteam_v2": {
+      "version": "v2",
+      "sha256": "2f3fc6b8e54f395583b2ac866f3defbdf9f00fe9dee9f6ac0d446a3b85392eb0"
+    }
+  },
+  "seed": 20,
+  "dirty": false,
+  "started_at": "2026-11-21T07:49:38.670650Z",
+  "ended_at": "2026-11-21T08:10:47.635517Z",
+  "cost_usd": null,
+  "cost_note": "usage not aggregated across isolated conversations",
+  "command": [
+    "python",
+    "-m",
+    "eval.redteam_eval"
+  ],
+  "source": {
+    "subset": "all",
+    "endpoint_host": "api.deepseek.com",
+    "dataset_versions": {
+      "flipkart_faqs": "NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228",
+      "philips_manuals": "InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84",
+      "maktek_faqs": "MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240",
+      "bitext": "bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443"
+    }
+  }
+}
