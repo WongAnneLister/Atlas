@@ -95,16 +95,19 @@ flowchart LR
   After a verified interrupted switch, `INDEX_ARGS=--reconcile` records the known Milvus target.
 - `make index-gc` is a preview. `INDEX_ARGS=--yes` deletes only eligible registry-owned builds
   with the configured prefix. The live and previous targets, adopted collections and the
-  registered experiment collection names are protected. Release, rollback and GC serialize
-  their alias operations through the registry.
+  registered experiment collection names are protected. Failed builds never take one of the
+  `index.keep_builds` rollback slots. Release, rollback and GC serialize their alias operations
+  through the registry. The release check runs before that lock is taken, because it can run for
+  an hour on CPU and the registry shares its database with orders and refunds. After the check,
+  the switch takes the lock and refuses if the alias moved in the meantime.
 - Per-build chunk text and its checksum live under the configured builds directory. The legacy
   `chunks.jsonl` and `ingest_run.json` describe the last completed build. Cached rank readers
   require matching build provenance. `make ingest-chunks` writes a preview separately.
   Serving searches follow the alias. Build ID telemetry may lag within the configured lookup TTL.
   Retrieval benchmarks that hydrate local text pin their starting target for the entire run.
-- Standard retrieval evaluation starts from the alias. Explicit ablations use separate physical
-  collections. Existing protected experiment indexes can only be reused with matching evidence.
-  Provide fresh experiment names when an ablation must build new indexes.
+- Standard retrieval evaluation starts from the alias. Ablations use the two configured experiment
+  collections. The experiment builder may rebuild only those two, after opting in on its own store.
+  The lifecycle (build, release, GC, adoption) can never write to or drop them.
 - Offline tests use scratch registries and fake dependencies. The author runs Milvus freshness,
   alias and optional PostgreSQL checks in 22b. No live measurements were collected in this change.
 
@@ -166,8 +169,8 @@ See the [upstream model card](https://huggingface.co/BAAI/bge-reranker-v2-m3) fo
 
 After `make data-docs`, `make eval-build`, and `make ingest`, run `make eval-retrieval`.
 The default test run also measures dev. Use `SPLIT=dev` for development or `SPLIT=all` for both.
-`EVAL_RETRIEVAL_ARGS=--ablations` enables explicit controls after preparing matching experiment indexes.
-The default run measures the serving index.
+The baseline modes measure the serving index. The heading ablation runs by default
+(`retrieval_eval.run_ablations`); `EVAL_RETRIEVAL_ARGS=--no-ablations` skips it.
 Both copies use identical chunks, model revision, encoder settings and index configuration.
 The demo collection is preserved. Model-number cleanup is disabled only for its own row.
 Both ablations compare against hybrid without reranking, holding the remaining settings fixed.

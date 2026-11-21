@@ -79,26 +79,37 @@ def release_index(
     build_id: str,
     check: Check,
 ) -> Decision:
+    # The check can run for an hour. Holding the registry lock that long would block every
+    # other write to the same database, so collect evidence first and compare-and-swap after.
     expected = registry.get_alias(settings.index.live_alias).build_id
+    live = registry.get_build(expected)
+    if admin.alias_target() != (live.collection if live else None):
+        raise ValueError("Index alias drift; inspect index-status before releasing or collecting")
+    target = _require_candidate(registry.get_build(build_id), admin)
+    decision, evidence = check(target, live)
+    if decision.outcome != "release":
+        return decision
     with registry.locked_alias(settings.index.live_alias) as lock:
         if lock.current.build_id != expected:
             raise ValueError("Another release changed the index alias; retry with fresh evidence")
-        live = _aligned(lock, admin)
-        target = lock.get_build(build_id)
-        if target is None or target.status != "built" or target.mode == "adopted":
-            raise ValueError("Release requires a completed private candidate build")
-        if not admin.exists(target.collection):
-            raise ValueError("Candidate collection is missing")
-        decision, evidence = check(target, live)
-        if decision.outcome == "release":
-            admin.switch(target.collection, live.collection if live else None)
-            lock.swap(
-                live.build_id if live else None,
-                build_id,
-                eval_run_id=evidence,
-                override_reason=decision.override_reason,
-            )
-        return decision
+        _aligned(lock, admin)
+        _require_candidate(lock.get_build(build_id), admin)
+        admin.switch(target.collection, live.collection if live else None)
+        lock.swap(
+            expected,
+            build_id,
+            eval_run_id=evidence,
+            override_reason=decision.override_reason,
+        )
+    return decision
+
+
+def _require_candidate(target: BuildRecord | None, admin: CollectionAdmin) -> BuildRecord:
+    if target is None or target.status != "built" or target.mode == "adopted":
+        raise ValueError("Release requires a completed private candidate build")
+    if not admin.exists(target.collection):
+        raise ValueError("Candidate collection is missing")
+    return target
 
 
 def rollback_index(
@@ -169,12 +180,14 @@ def gc_indexes(
             and build.collection == settings.index.collection_prefix + build.build_id
             and build.collection not in settings.index.protected_collections
         ]
-        candidates = [
-            build for build in eligible[settings.index.keep_builds :] if build.build_id not in keep
-        ]
+        # A failed build has no usable collection, so it must not take a rollback slot.
+        usable = [build for build in eligible if build.status != "failed"]
+        keep.update(build.build_id for build in usable[: settings.index.keep_builds])
+        candidates = [build for build in eligible if build.build_id not in keep]
         if yes:
             for build in candidates:
-                admin.drop(build.collection)
+                if admin.exists(build.collection):
+                    admin.drop(build.collection)
                 lock.mark_dropped(build.build_id)
         return [build.collection for build in candidates]
 

@@ -104,6 +104,7 @@ class MilvusStore:
         self.provenance_settings = provenance_settings or settings
         self.config = settings.milvus
         self._pinned_reads: str | None = None
+        self._experiment_writes = False
         self._build_identity: tuple[float, str | None] | None = None
         self._chunk_snapshot: dict[str, Chunk] | None = None
         self.client: Any = (
@@ -285,8 +286,21 @@ class MilvusStore:
             raise ValueError("Invalid Milvus alias description")
         return target
 
+    def allow_experiment_writes(self) -> None:
+        """Let the retrieval experiment builder rebuild its own configured collection."""
+        experiments = {
+            self.settings.retrieval_eval.baseline_collection,
+            self.settings.retrieval_eval.heading_ablation_collection,
+        }
+        if self.collection not in experiments:
+            raise ValueError("Only configured experiment collections accept experiment writes")
+        self._experiment_writes = True
+
     def _require_physical_writable(self) -> None:
-        if self.collection in self.settings.index.protected_collections:
+        if (
+            self.collection in self.settings.index.protected_collections
+            and not self._experiment_writes
+        ):
             raise ValueError("Refusing to modify a protected collection")
         if self.collection == self.settings.index.live_alias or self.alias_target() is not None:
             raise ValueError("Refusing to modify a collection through an alias")

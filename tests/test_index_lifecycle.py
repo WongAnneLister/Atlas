@@ -36,6 +36,8 @@ class Admin:
 def setup(tmp_path):
     settings = Settings()
     settings.data.processed_dir = str(tmp_path)
+    # Fail fast if a test write waits on a held SQLite write lock.
+    settings.db.connect_timeout_s = 1
     store = IndexRegistry(
         make_engine(URL.create("sqlite", database=str(tmp_path / "scratch.sqlite")), settings.db)
     )
@@ -46,7 +48,7 @@ def setup(tmp_path):
         store.close()
 
 
-def add(setup, ident, *, mode="full", collection=None):
+def add(setup, ident, *, mode="full", collection=None, status="built"):
     settings, registry, admin = setup
     collection = collection or settings.index.collection_prefix + ident
     build = BuildRecord(
@@ -58,7 +60,7 @@ def add(setup, ident, *, mode="full", collection=None):
         embed_revision="fake",
         chunker_version="1",
         docs_hash="fixture",
-        status="built",
+        status=status,
     )
     registry.begin_build(build)
     admin.collections.add(collection)
@@ -168,29 +170,72 @@ def test_adoption_refuses_mismatched_text(setup, tmp_path: Path) -> None:
     assert admin.target is None and not registry.builds()
 
 
-def test_release_refuses_when_another_switch_wins(setup, monkeypatch) -> None:
+def test_slow_check_holds_no_registry_lock_and_a_concurrent_release_wins(setup) -> None:
+    """The release check can take an hour; other writes to the same database must not wait."""
     from eval.index_release import ReleaseDecision
 
-    from support_agent.retrieval.index_models import AliasRecord
     from support_agent.retrieval.index_release import release_index
 
     settings, registry, admin = setup
     winner = add(setup, "a")
     newcomer = add(setup, "b")
-    release_index(
-        settings,
-        registry,
-        admin,
-        winner.build_id,
-        lambda *_: (ReleaseDecision("release"), "winner"),
-    )
-    monkeypatch.setattr(registry, "get_alias", lambda alias: AliasRecord(alias=alias))
-    with pytest.raises(ValueError, match="Another release"):
+
+    def slow_check(candidate, live):
+        # Another operator releases a build while this check is still collecting evidence.
         release_index(
             settings,
             registry,
             admin,
-            newcomer.build_id,
-            lambda *_: (ReleaseDecision("release"), "newcomer"),
+            winner.build_id,
+            lambda *_: (ReleaseDecision("release"), "winner"),
         )
+        return ReleaseDecision("release"), "newcomer"
+
+    with pytest.raises(ValueError, match="Another release"):
+        release_index(settings, registry, admin, newcomer.build_id, slow_check)
     assert admin.target == winner.collection
+    assert registry.get_alias(settings.index.live_alias).build_id == winner.build_id
+    assert registry.get_build(newcomer.build_id).status == "built"
+
+
+def test_refused_release_takes_no_lock_and_changes_nothing(setup) -> None:
+    from eval.index_release import ReleaseDecision
+
+    from support_agent.retrieval.index_release import release_index
+
+    settings, registry, admin = setup
+    candidate = add(setup, "a")
+
+    def refuse(target, live):
+        add(setup, "b")  # a registry write during the check must not wait on a lock
+        return ReleaseDecision("refuse"), "refused"
+
+    assert release_index(settings, registry, admin, candidate.build_id, refuse).outcome == "refuse"
+    assert admin.target is None
+    assert registry.get_alias(settings.index.live_alias).build_id is None
+
+
+def test_gc_does_not_spend_rollback_slots_on_failed_builds(setup) -> None:
+    from eval.index_release import ReleaseDecision
+
+    from support_agent.retrieval.index_release import gc_indexes, release_index
+
+    settings, registry, admin = setup
+    settings.index.keep_builds = 3
+    released = [add(setup, ident) for ident in ("a", "b", "c")]
+    for build in released:
+        release_index(
+            settings,
+            registry,
+            admin,
+            build.build_id,
+            lambda *_: (ReleaseDecision("release"), "fixture"),
+        )
+    # A failed build drops its own collection.
+    failed = [add(setup, ident, status="failed") for ident in ("d", "e")]
+    for build in failed:
+        admin.collections.remove(build.collection)
+    dropped = gc_indexes(settings, registry, admin, yes=True)
+    assert set(dropped) == {build.collection for build in failed}
+    assert {build.collection for build in released} <= admin.collections and not admin.drops
+    assert {registry.get_build(build.build_id).status for build in failed} == {"dropped"}

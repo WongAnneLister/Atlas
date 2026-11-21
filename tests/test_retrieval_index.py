@@ -4,7 +4,9 @@ import pytest
 from eval.retrieval_index import prepare_experiment_index, prepare_heading_ablation
 
 from support_agent.config import get_settings
-from test_milvus_store import chunk
+from support_agent.retrieval.embed import FakeEmbedder
+from support_agent.retrieval.milvus_store import MilvusStore
+from test_milvus_store import Client, chunk
 
 
 def test_heading_ablation_reembeds_body_only_and_reuses_verified_index(tmp_path: Path) -> None:
@@ -96,3 +98,28 @@ def test_verified_heading_on_baseline_reuses_vectors_after_database_failure(tmp_
         == "new-baseline"
     )
     assert len(inputs) == len(items)
+
+
+def test_heading_ablation_may_rebuild_its_protected_experiment_collection(tmp_path: Path) -> None:
+    """A changed fingerprint must rebuild the ablation index, not fail on the lifecycle guard."""
+    settings = get_settings()
+    experiment = settings.model_copy(deep=True)
+    experiment.milvus.collection = settings.retrieval_eval.heading_ablation_collection
+    assert experiment.milvus.collection in settings.index.protected_collections
+
+    class Store(MilvusStore):
+        def server_version(self) -> str:
+            return "fixture"
+
+        def read_chunks(self) -> list:
+            return [chunk()] if self.client.rows else []
+
+        def collection_identity(self) -> str:
+            return "rebuilt"
+
+    client = Client()
+    client.exists = True
+    store = Store(experiment, client)
+    embedder = FakeEmbedder(settings.retrieval.embedding_dim)
+    assert prepare_heading_ablation(settings, [chunk()], embedder, store, tmp_path) == "rebuilt"
+    assert client.drops == 1 and len(client.rows) == 1

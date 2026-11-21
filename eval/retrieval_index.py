@@ -133,6 +133,7 @@ def prepare_experiment_index(
         )
     if isinstance(store, MilvusStore):
         store.validate(chunks, vectors)
+        store.allow_experiment_writes()
     store.create_or_reset()
     store.upsert(chunks, vectors)
     if chunk_hash(store.read_chunks()) != chunk_hash(chunks):

@@ -182,3 +182,21 @@ def test_verified_local_chunk_hydration_preserves_fields_and_rejects_unknown_ids
     client.chunk_id = "unknown"
     with pytest.raises(ValueError, match="snapshot"):
         store.search_bm25("returns")
+
+
+def test_only_configured_experiment_collections_accept_experiment_writes() -> None:
+    settings = Settings()
+    settings.milvus.collection = settings.retrieval_eval.heading_ablation_collection
+    client = Client()
+    client.exists = True
+    store = MilvusStore(settings, client)
+    with pytest.raises(ValueError, match="protected"):
+        store.create_or_reset()
+    store.allow_experiment_writes()
+    store.create_or_reset()
+    assert client.drops == 1
+    for name in ("support_chunks", "support_chunks_faq_v1", settings.index.live_alias):
+        other = Settings()
+        other.milvus.collection = name
+        with pytest.raises(ValueError, match="experiment"):
+            MilvusStore(other, Client()).allow_experiment_writes()

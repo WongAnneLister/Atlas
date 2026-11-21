@@ -119,6 +119,12 @@ Agents: update this file in every commit. Keep it short and factual.
 
 ## Known issues / follow-ups
 
+- 22 review fix: `release_index` ran the release check inside the registry write lock. On SQLite this is `BEGIN IMMEDIATE` on the orders database, so refund and handoff writes would have timed out for the whole check (about 220 queries, 15-20 s each on CPU, live and candidate). The check now runs first; the switch takes the lock and refuses if the alias moved (`tests/test_index_lifecycle.py`).
+- 22 review fix: commit 22 protected the two retrieval experiment collections and changed the code their fingerprint hashes, so `--ablations` could only fail; it also switched `retrieval_eval.run_ablations` to false without saying so. The experiment builder may now rebuild only its two configured collections, and the default is true again. The lifecycle still cannot write to or drop them.
+- 22 review fix: GC counted failed builds (which have no collection) inside `index.keep_builds`, so failed attempts could push usable rollback targets out. Failed builds are now dropped from the registry without taking a slot.
+- 22: The `make sweep` cache key now includes the serving build id. After `make index-adopt`, old caches no longer match and the next sweep runs every dev question again.
+- 22: Migration `0002_refund_idempotency` was edited in place to use a unique index on SQLite, where Alembic cannot add a constraint with `ALTER TABLE`. The PostgreSQL branch is unchanged, so databases already at 0002 are not affected.
+
 - 21b: The guardrails did not lower any v1 attack rate, because every v1 category was already 0/n before them. The input guard does fire (9 `guardrail_blocked` handoffs on the full split) on attacks that the gate or routing stopped before. A harder attack set is needed to measure it.
 - 21b: A spoofed `customer_id` now ends mostly as a `tool_error` handoff ("I couldn't verify your order information"). It fails closed, but the handoff reason mixes spoofing with real tool outages. A distinct reason would make the handoff queue clearer.
 - 21b: Three of the six 21b runs saw one `OpenAIConnectionError` each (before smoke: knowledge answer; after smoke and after full red-team: classification). The other three had none. The after full red-team run exits 1 because of its one error item; it was kept, not rerun.

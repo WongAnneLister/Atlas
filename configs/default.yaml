@@ -156,7 +156,7 @@ retrieval_eval:
   cache_dir: .cache/retrieval
   heading_ablation_collection: support_chunks_eval_no_heading
   baseline_collection: support_chunks_eval_heading_on
-  run_ablations: false
+  run_ablations: true
   # All modes use the same verified local source text; Milvus returns ids and scores.
   local_chunk_text: true
 
