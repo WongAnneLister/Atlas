@@ -494,13 +494,21 @@ class MilvusStore:
     def drop(self) -> None:
         self._require_physical_writable()
         if self.exists():
-            list_aliases = getattr(self.client, "list_aliases", None)
-            if list_aliases is not None and list_aliases(
-                collection_name=self.collection, timeout=self.config.timeout_s
-            ):
+            if self._aliases():
                 raise ValueError("Refusing to drop a collection still referenced by an alias")
             self._assert_owned()
             self.client.drop_collection(collection_name=self.config.collection)
+
+    def _aliases(self) -> list[str]:
+        list_aliases = getattr(self.client, "list_aliases", None)
+        if list_aliases is None:
+            return []
+        # pymilvus returns {"aliases": [...], "collection_name": ...}, which is always truthy.
+        response = list_aliases(collection_name=self.collection, timeout=self.config.timeout_s)
+        aliases = response.get("aliases") if isinstance(response, dict) else response
+        if not isinstance(aliases, list) or not all(isinstance(name, str) for name in aliases):
+            raise ValueError("Invalid Milvus alias listing")
+        return aliases
 
     def close(self) -> None:
         self.client.close()

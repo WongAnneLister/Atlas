@@ -119,6 +119,7 @@ Agents: update this file in every commit. Keep it short and factual.
 
 ## Known issues / follow-ups
 
+- 22b review fix: `MilvusStore.drop()` treated the pymilvus 3 `list_aliases` response as a list. The response is a dict (`{"aliases": [...]}`) and is always truthy, so every drop was refused, including the cleanup of a failed build, GC and the existing Milvus integration test. Found by the first 22b integration run; it now reads the `aliases` list (`tests/test_milvus_store.py`).
 - 22 review fix: `release_index` ran the release check inside the registry write lock. On SQLite this is `BEGIN IMMEDIATE` on the orders database, so refund and handoff writes would have timed out for the whole check (about 220 queries, 15-20 s each on CPU, live and candidate). The check now runs first; the switch takes the lock and refuses if the alias moved (`tests/test_index_lifecycle.py`).
 - 22 review fix: commit 22 protected the two retrieval experiment collections and changed the code their fingerprint hashes, so `--ablations` could only fail; it also switched `retrieval_eval.run_ablations` to false without saying so. The experiment builder may now rebuild only its two configured collections, and the default is true again. The lifecycle still cannot write to or drop them.
 - 22 review fix: GC counted failed builds (which have no collection) inside `index.keep_builds`, so failed attempts could push usable rollback targets out. Failed builds are now dropped from the registry without taking a slot.

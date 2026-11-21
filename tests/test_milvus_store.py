@@ -200,3 +200,22 @@ def test_only_configured_experiment_collections_accept_experiment_writes() -> No
         other.milvus.collection = name
         with pytest.raises(ValueError, match="experiment"):
             MilvusStore(other, Client()).allow_experiment_writes()
+
+
+@pytest.mark.parametrize("aliases", [[], ["support_chunks_live"]])
+def test_drop_reads_the_alias_list_not_the_response_envelope(aliases: list[str]) -> None:
+    client = Client()
+    client.exists = True
+    # pymilvus 3 wraps the list in a dict that is truthy even when it is empty.
+    client.list_aliases = lambda **kwargs: {  # type: ignore[attr-defined]
+        "aliases": aliases,
+        "collection_name": "unit_fixture_collection",
+    }
+    store = MilvusStore(fixture_settings(), client)
+    if aliases:
+        with pytest.raises(ValueError, match="alias"):
+            store.drop()
+        assert client.drops == 0
+    else:
+        store.drop()
+        assert client.drops == 1
