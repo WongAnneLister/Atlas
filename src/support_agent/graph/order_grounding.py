@@ -17,6 +17,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, ConfigDict, Field
 
+from support_agent.graph.model_data import lookup_data, order_block
 from support_agent.reliability.llm_calls import ReliableModels
 from support_agent.reliability.structured import StructuredOutputError
 
@@ -52,7 +53,8 @@ def _flat(text: str) -> str:
 
 
 def tool_data_text(order_context: dict[str, Any] | None) -> str:
-    return json.dumps(order_context or {}, sort_keys=True, ensure_ascii=False, default=str)
+    data = lookup_data(order_context or {})
+    return json.dumps(data, sort_keys=True, ensure_ascii=False, default=str)
 
 
 def answer_sentences(answer: str) -> list[str]:
@@ -104,7 +106,9 @@ def _decision(response: Any) -> OrderGrounding | None:
 def _messages(data: str, sentences: list[str], prompt: str) -> list[BaseMessage]:
     return [
         SystemMessage(content=prompt),
-        HumanMessage(content=f"Order data:\n{data}\n\nAnswer sentences:\n{numbered(sentences)}"),
+        HumanMessage(
+            content=f"Order data:\n{order_block(data)}\n\nAnswer sentences:\n{numbered(sentences)}"
+        ),
     ]
 
 

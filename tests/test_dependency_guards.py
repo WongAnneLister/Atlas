@@ -43,7 +43,15 @@ def test_knowledge_never_answers_after_search_or_rerank_failure(seeded, dependen
             )
         )
         result = invoke(build_graph(deps), "How can I return an item?")
-    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
     assert result["handoff"].reason.value == "dependency_unavailable"
     assert result["retrieval_error_type"] == "TimeoutError"
     assert result["retrieval"] == []
@@ -74,15 +82,17 @@ def test_orders_outage_hands_off_on_both_routes(seeded, monkeypatch, intent) -> 
     assert result["handoff"].reason.value == "dependency_unavailable"
     if intent is Intent.ORDER_STATUS:
         route = [step for step in result["trace"] if not step.startswith("tool_")]
-        assert route == ["rewrite", "classify", "tools"]
+        assert route == ["input_guard", "rewrite", "classify", "tools", "output_guard"]
         assert len(model.seen) == 1
     else:
         assert result["trace"] == [
+            "input_guard",
             "rewrite",
             "classify",
             "after_sales",
             "refund_identify",
             "handoff",
+            "output_guard",
         ]
         assert model.decision_calls == 0
     with service.repository.connection() as connection:

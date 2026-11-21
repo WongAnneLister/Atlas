@@ -12,6 +12,7 @@ from support_agent.gate.evidence import evaluate
 from support_agent.graph.coverage import CoverageAnswer, render_covered_answer
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, make_handoff
+from support_agent.graph.model_data import source_blocks
 from support_agent.graph.state import CitationRecord, ConversationState
 from support_agent.reliability.guards import diagnostic_type, is_dependency_failure
 from support_agent.reliability.structured import StructuredOutputError
@@ -85,7 +86,7 @@ class KnowledgePath:
         if state.gate is None or not state.gate.passed:
             return self.handoff(state)
         chunks = state.retrieval[: self.deps.settings.retrieval.rerank_top_k]
-        sources = self._sources(chunks)
+        sources = source_blocks(chunks)
         try:
             response, _ = self.deps.models.structured(
                 "answer",
@@ -146,13 +147,6 @@ class KnowledgePath:
             "citations": [],
             "answer_status": status,
         }
-
-    @staticmethod
-    def _sources(chunks: list[RetrievedChunk]) -> str:
-        return "\n\n".join(
-            f"[{number}] {chunk.heading_path}\n{chunk.text}"
-            for number, chunk in enumerate(chunks, start=1)
-        )
 
     @staticmethod
     def _check_citations(

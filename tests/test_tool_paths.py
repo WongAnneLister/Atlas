@@ -105,9 +105,9 @@ def test_graph_order_status_has_tool_trace_and_database_status(seeded: Any) -> N
             },
             {"configurable": {"thread_id": "CUST-0001:order"}},
         )
-    assert result["trace"][:3] == ["rewrite", "classify", "tools"]
-    assert result["trace"][3].startswith("tool_call:get_order:")
-    assert result["trace"][4].startswith("tool_result:get_order:")
+    assert result["trace"][:4] == ["input_guard", "rewrite", "classify", "tools"]
+    assert result["trace"][4].startswith("tool_call:get_order:")
+    assert result["trace"][5].startswith("tool_result:get_order:")
     assert result["answer"] == order.status
     assert result["order_context"]["get_order"]["status"] == order.status
     assert result["agent_steps"] == 2
@@ -348,6 +348,7 @@ def test_graph_routes_a_general_question_from_tools_to_gated_knowledge(seeded: A
             {"configurable": {"thread_id": "CUST-0001:fallback"}},
         )
     assert result["trace"] == [
+        "input_guard",
         "rewrite",
         "classify",
         "tools",
@@ -355,6 +356,7 @@ def test_graph_routes_a_general_question_from_tools_to_gated_knowledge(seeded: A
         "retrieve",
         "gate",
         "handoff",
+        "output_guard",
     ]
     assert result["handoff"].reason == "low_evidence"
     assert "Not an order question." not in result["answer"]

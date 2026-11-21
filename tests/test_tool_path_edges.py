@@ -92,7 +92,7 @@ def test_clarification_uses_fresh_tools_and_clears_stale_handoff(seeded: Any) ->
     assert result["answer"].startswith("You're welcome")
     assert result["agent_steps"] == result["tool_errors"] == 0
     assert result["order_context"] is None and result["handoff"] is None
-    assert result["trace"][-3:] == ["rewrite", "classify", "fixed"]
+    assert result["trace"][-5:] == ["input_guard", "rewrite", "classify", "fixed", "output_guard"]
 
 
 def test_cli_one_shot_uses_graph_and_real_seeded_database(

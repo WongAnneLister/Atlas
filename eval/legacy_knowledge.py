@@ -19,7 +19,11 @@ class LegacyKnowledgePath(KnowledgePath):
     def answer(self, state: ConversationState) -> dict[str, Any]:
         if state.gate is None or not state.gate.passed:
             return self.handoff(state)
-        sources = self._sources(state.retrieval[: self.deps.settings.retrieval.rerank_top_k])
+        chunks = state.retrieval[: self.deps.settings.retrieval.rerank_top_k]
+        sources = "\n\n".join(
+            f"[{number}] {chunk.heading_path}\n{chunk.text}"
+            for number, chunk in enumerate(chunks, start=1)
+        )
         try:
             response = self.deps.model("main").invoke(
                 [

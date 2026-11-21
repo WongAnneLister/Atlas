@@ -13,6 +13,7 @@ from pydantic import ValidationError
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, load_templates, make_handoff
 from support_agent.graph.intents import Intent
+from support_agent.graph.model_data import order_block
 from support_agent.graph.order_grounding import check_order_answer_reliably
 from support_agent.graph.order_replies import REPLY_TOOL, Lookup, render_order_reply, reply_tool
 from support_agent.graph.state import ConversationState
@@ -172,9 +173,8 @@ class ToolsPath:
                     state.consecutive_tool_errors += 1
                 summary = result.model_dump_json()[: cfg.trace_max_chars]
                 state.trace.append(f"tool_result:{call['name']}:{summary}")
-                messages.append(
-                    ToolMessage(content=result.model_dump_json(), tool_call_id=call["id"])
-                )
+                data_block = order_block(result.model_dump_json())
+                messages.append(ToolMessage(content=data_block, tool_call_id=call["id"]))
                 if last_error == "dependency_unavailable":
                     return {
                         **_updates(state),

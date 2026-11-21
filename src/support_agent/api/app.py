@@ -18,6 +18,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sse_starlette import EventSourceResponse, JSONServerSentEvent
 from starlette.types import Receive, Scope, Send
 
+from support_agent.api.body_limit import BodyLimitMiddleware
 from support_agent.api.deps import ApiDeps
 from support_agent.api.events import SseEvent
 from support_agent.api.http_metrics import RequestMetricsMiddleware
@@ -31,6 +32,15 @@ from support_agent.api.schemas import (
     LiveResponse,
     ReadyResponse,
     ResumeRequest,
+    SessionRequest,
+    SessionResponse,
+)
+from support_agent.api.security import (
+    SESSION_REQUIRED,
+    RateLimits,
+    RateLimitUnavailable,
+    SessionAuthMiddleware,
+    SessionTokens,
 )
 from support_agent.graph.build import build_graph
 from support_agent.graph.handoff import HandoffReason, load_templates
@@ -93,6 +103,7 @@ class TurnResponse(EventSourceResponse):
 
 def create_app(deps: ApiDeps) -> FastAPI:
     cfg = deps.settings.api
+    tokens = SessionTokens.from_environment(cfg.session)
     metrics = AtlasMetrics(deps.settings, deps.metrics_registry)
     deps.graph_deps.observer = metrics
     system_error = load_templates("handoff_messages.yaml")[HandoffReason.SYSTEM_ERROR]
@@ -100,10 +111,11 @@ def create_app(deps: ApiDeps) -> FastAPI:
     orders: GuardedOrders
     graph: Graph
     checks: ReadinessChecks
+    rate_limits: RateLimits
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        nonlocal graph, checks, locks, orders
+        nonlocal graph, checks, locks, orders, rate_limits
         try:
             graph = await to_thread.run_sync(build_graph, deps.graph_deps)
             if deps.warmup:
@@ -125,6 +137,9 @@ def create_app(deps: ApiDeps) -> FastAPI:
                     else:
                         if isinstance(store, RedisStore):
                             resources.callback(store.close)
+                rate_limits = RateLimits(
+                    cfg.rate_limit, store, shared=deps.settings.redis.backend == "redis"
+                )
                 locks = ConversationLocks(store, deps.settings.reliability.locks.conversation_ttl_s)
                 orders = GuardedOrders(
                     lambda: deps.order_service, deps.graph_deps.dependency_guards
@@ -139,6 +154,8 @@ def create_app(deps: ApiDeps) -> FastAPI:
             await to_thread.run_sync(deps.graph_deps.close)
 
     app = FastAPI(lifespan=lifespan)
+    app.add_middleware(SessionAuthMiddleware, tokens=tokens)
+    app.add_middleware(BodyLimitMiddleware, max_bytes=cfg.max_body_bytes)
     app.add_middleware(RequestMetricsMiddleware, metrics=metrics)
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
@@ -154,6 +171,29 @@ def create_app(deps: ApiDeps) -> FastAPI:
             if not isinstance(error, _DB_ERRORS) and not is_dependency_failure(error):
                 raise
             raise HTTPException(503, "Order database unavailable") from error
+
+    def is_demo_customer(customer_id: str) -> bool:
+        return any(customer.customer_id == customer_id for customer in customers())
+
+    async def limit(http: Request, customer_id: str | None = None) -> None:
+        ip = http.client.host if http.client else "unknown"
+        try:
+            retry_after = await to_thread.run_sync(rate_limits.retry_after, ip, customer_id)
+        except RateLimitUnavailable as error:
+            raise HTTPException(503, "Rate limit unavailable") from error
+        if retry_after is not None:
+            raise HTTPException(429, "Too many requests", headers={"Retry-After": str(retry_after)})
+
+    @app.post("/api/session")
+    async def session(
+        request: SessionRequest, http: Request, response: Response
+    ) -> SessionResponse:
+        await limit(http)
+        if not await to_thread.run_sync(is_demo_customer, request.customer_id):
+            # 403, not 404: the harness reads 404 as "this build has no session route".
+            raise HTTPException(403, "Not a demo customer")
+        response.headers["Cache-Control"] = "no-store"
+        return SessionResponse(token=tokens.issue(request.customer_id))
 
     @app.get("/api/health")
     async def health() -> HealthResponse:
@@ -195,10 +235,15 @@ def create_app(deps: ApiDeps) -> FastAPI:
         return Response(content=data, headers={"content-type": content_type})
 
     async def start_turn(
-        request: ConversationRequest, turn_input: TurnInput, text: str | None, http: Request
+        request: ConversationRequest,
+        turn_input: TurnInput,
+        text: str | None,
+        http: Request,
+        customer_id: str,
     ) -> TurnResponse:
+        await limit(http, customer_id)
         trace_id: str = http.state.trace_id
-        thread_id = f"{request.customer_id}:{request.conversation_id}"
+        thread_id = f"{customer_id}:{request.conversation_id}"
         try:
             with CancelScope(shield=True):
                 token = await to_thread.run_sync(locks.acquire, thread_id)
@@ -232,7 +277,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
                 deps.settings,
                 name="chat_turn" if text is not None else "resume_turn",
                 conversation_id=request.conversation_id,
-                customer_id=request.customer_id,
+                customer_id=customer_id,
                 input_text=text,
                 trace_id=trace_id,
             )
@@ -260,14 +305,8 @@ def create_app(deps: ApiDeps) -> FastAPI:
             )
 
         try:
-            try:
-                exists = await to_thread.run_sync(orders.customer_exists, request.customer_id)
-            except Exception as error:
-                if not isinstance(error, _DB_ERRORS) and not is_dependency_failure(error):
-                    raise
-                raise HTTPException(503, "Order database unavailable") from error
-            if not exists:
-                raise HTTPException(404, "Unknown customer")
+            if not await to_thread.run_sync(is_demo_customer, customer_id):
+                raise HTTPException(401, SESSION_REQUIRED, headers={"WWW-Authenticate": "Bearer"})
             if isinstance(turn_input, Command):
                 try:
                     with fail_after(deps.settings.reliability.timeouts_s.orders_db):
@@ -287,16 +326,20 @@ def create_app(deps: ApiDeps) -> FastAPI:
     async def chat(request: ChatRequest, http: Request) -> TurnResponse:
         if len(request.message) > cfg.max_message_chars:
             raise HTTPException(422, "Message exceeds the configured length limit")
+        customer_id: str = http.state.atlas_customer_id
         payload: dict[str, Any] = {
             "messages": [HumanMessage(content=request.message)],
-            "customer_id": request.customer_id,
+            "customer_id": customer_id,
         }
-        return await start_turn(request, payload, request.message, http)
+        return await start_turn(request, payload, request.message, http, customer_id)
 
     @app.post("/api/resume")
     async def resume(request: ResumeRequest, http: Request) -> TurnResponse:
         if len(request.value) > cfg.max_resume_chars:
             raise HTTPException(422, "Selection exceeds the configured length limit")
-        return await start_turn(request, Command(resume=request.value.strip()), None, http)
+        customer_id: str = http.state.atlas_customer_id
+        return await start_turn(
+            request, Command(resume=request.value.strip()), None, http, customer_id
+        )
 
     return app

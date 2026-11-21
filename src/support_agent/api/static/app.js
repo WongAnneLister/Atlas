@@ -12,12 +12,14 @@ const status = document.querySelector("#status");
 
 let conversationId;
 let activeRequest;
+let sessionRequest;
+let sessionToken;
 let picker;
 
 function syncControls() {
-  message.disabled = send.disabled = Boolean(activeRequest || picker || !customer.value);
+  message.disabled = send.disabled = Boolean(activeRequest || picker || !sessionToken);
   for (const button of picker?.querySelectorAll("button") ?? []) {
-    button.disabled = Boolean(activeRequest);
+    button.disabled = Boolean(activeRequest || !sessionToken);
   }
 }
 
@@ -108,8 +110,44 @@ async function readEvents(body, handle) {
   }
 }
 
+async function requestError(response) {
+  const error = await response.json().catch(() => ({}));
+  return new Error(typeof error.detail === "string" ? error.detail : "Invalid request.");
+}
+
+async function issueSession(customerId, signal) {
+  const response = await fetch("/api/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ customer_id: customerId }),
+    signal,
+  });
+  if (!response.ok) throw await requestError(response);
+  return (await response.json()).token;
+}
+
+async function selectCustomer() {
+  sessionRequest?.abort();
+  sessionToken = null;
+  resetChat();
+  if (!customer.value) return;
+  const request = new AbortController();
+  sessionRequest = request;
+  try {
+    const token = await issueSession(customer.value, request.signal);
+    if (sessionRequest === request) sessionToken = token;
+  } catch (error) {
+    if (sessionRequest === request) status.textContent = error.message;
+  } finally {
+    if (sessionRequest === request) {
+      sessionRequest = null;
+      syncControls();
+    }
+  }
+}
+
 async function run(endpoint, payload) {
-  if (activeRequest) return;
+  if (activeRequest || !sessionToken) return;
   const request = new AbortController();
   activeRequest = request;
   status.textContent = "";
@@ -118,17 +156,23 @@ async function run(endpoint, payload) {
   let answer = "";
   let complete = false;
   try {
-    const response = await fetch("/api/" + endpoint, {
+    const body = JSON.stringify({ conversation_id: conversationId, ...payload });
+    const sendTurn = (token) => fetch("/api/" + endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ conversation_id: conversationId, customer_id: customer.value, ...payload }),
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body,
       signal: request.signal,
     });
+    let response = await sendTurn(sessionToken);
     if (activeRequest !== request) return;
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(typeof error.detail === "string" ? error.detail : "Invalid request.");
+    if (response.status === 401) {
+      const token = await issueSession(customer.value, request.signal);
+      if (activeRequest !== request) return;
+      sessionToken = token;
+      response = await sendTurn(token);
     }
+    if (activeRequest !== request) return;
+    if (!response.ok) throw await requestError(response);
     if (endpoint === "resume") {
       picker.remove();
       picker = null;
@@ -171,13 +215,13 @@ async function run(endpoint, payload) {
 composer.addEventListener("submit", (event) => {
   event.preventDefault();
   const text = message.value.trim();
-  if (!text || activeRequest || picker) return;
+  if (!text || activeRequest || picker || !sessionToken) return;
   addMessage("user", text);
   message.value = "";
   run("chat", { message: text });
 });
-customer.addEventListener("change", resetChat);
-newChat.addEventListener("click", resetChat);
+customer.addEventListener("change", selectCustomer);
+newChat.addEventListener("click", () => sessionToken ? resetChat() : selectCustomer());
 debug.addEventListener("change", () => { details.hidden = !debug.checked; });
 
 async function loadCustomers() {
@@ -188,8 +232,8 @@ async function loadCustomers() {
       customer.add(new Option(item.name + " (" + item.customer_id + ")", item.customer_id));
     }
     if (!customer.value) throw new Error("No demo customers found.");
-    resetChat();
     customer.disabled = newChat.disabled = false;
+    await selectCustomer();
   } catch (error) {
     status.textContent = error.message;
   }

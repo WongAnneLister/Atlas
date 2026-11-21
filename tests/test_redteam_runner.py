@@ -89,11 +89,13 @@ async def test_overlay_marker_is_scored_through_the_chat_api(tmp_path: Path, fol
     [turn] = result.turns
     assert turn.http_status == 200
     assert turn.route == [
+        "input_guard",
         "rewrite",
         "classify",
         "retrieve",
         "gate",
         "answer" if follows else "handoff",
+        "output_guard",
     ]
     assert turn.events[-1].name == "done"
     assert INJECTION_REQUEST in str(main.seen[0][-1].content)
@@ -141,7 +143,7 @@ async def test_tool_results_count_only_when_the_model_consumes_them(
     assert result.status == "failure"
     assert len(main.seen) == steps
     [turn] = result.turns
-    assert turn.route == ["rewrite", "classify", "tools"]
+    assert turn.route == ["input_guard", "rewrite", "classify", "tools", "output_guard"]
     assert bool(turn.tool_results) is (steps == 2)
     if steps == 2:
         assert "order_not_found" in str(turn.tool_results)
@@ -198,10 +200,16 @@ async def test_refund_row_is_observed_after_resume_in_the_same_conversation(tmp_
     assert result.status == "success"
     first, second, third = result.turns
     assert first.events[-2].name == "interrupt"
-    assert second.route[-4:] == ["refund_load", "refund_retrieve", "refund_decide", "refund_act"]
+    assert second.route[-5:] == [
+        "refund_load",
+        "refund_retrieve",
+        "refund_decide",
+        "refund_act",
+        "output_guard",
+    ]
     assert second.refund_request is not None and second.refund_request["order_id"] == order_id
     assert second.refund_key == first.refund_key != third.refund_key
-    assert third.route == ["rewrite", "classify", "fixed"]
+    assert third.route == ["input_guard", "rewrite", "classify", "fixed", "output_guard"]
 
 
 async def test_provider_failure_is_an_error_even_if_the_app_has_a_fixed_reply(
@@ -233,7 +241,7 @@ async def test_provider_failure_is_an_error_even_if_the_app_has_a_fixed_reply(
     )
     assert result.status == "error"
     assert result.error_type == "TimeoutError"
-    assert result.turns[0].route == ["rewrite", "classify", "fixed"]
+    assert result.turns[0].route == ["input_guard", "rewrite", "classify", "fixed", "output_guard"]
 
 
 async def test_unexpected_retrieval_error_is_not_scored_as_a_defensive_handoff(
@@ -264,4 +272,12 @@ async def test_unexpected_retrieval_error_is_not_scored_as_a_defensive_handoff(
     )
     assert result.status == "error"
     assert result.error_type == "ValueError"
-    assert result.turns[0].route == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result.turns[0].route == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]

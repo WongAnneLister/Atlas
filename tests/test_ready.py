@@ -9,14 +9,14 @@ async def test_liveness_does_not_touch_dependencies(seeded) -> None:
     def unexpected() -> bool:
         raise AssertionError("Liveness called a dependency")
 
-    async with client(seeded, milvus=unexpected) as api:
+    async with client(seeded, customer_id=None, milvus=unexpected) as api:
         live = await api.get("/api/health/live")
     assert live.status_code == 200
     assert live.json() == {"status": "ok"}
 
 
 async def test_local_readiness_disables_unused_services(seeded) -> None:
-    async with client(seeded) as api:
+    async with client(seeded, customer_id=None) as api:
         ready = await api.get("/api/health/ready")
     assert ready.status_code == 200
     assert ready.json() == {
@@ -42,7 +42,7 @@ async def test_readiness_reports_separate_failures(seeded, redis_works) -> None:
     checks = ReadinessChecks(
         postgres=lambda: True, migrations=lambda: True, redis=redis, milvus=lambda: True
     )
-    async with client(seeded, readiness=checks) as api:
+    async with client(seeded, customer_id=None, readiness=checks) as api:
         ready = await api.get("/api/health/ready")
     assert ready.status_code == (200 if redis_works else 503)
     assert ready.json()["checks"] == {
@@ -71,7 +71,7 @@ async def test_readiness_times_out_independently(seeded) -> None:
 
     checks = ReadinessChecks(milvus=slow, redis=redis)
     try:
-        async with client(seeded, readiness=checks) as api:
+        async with client(seeded, customer_id=None, readiness=checks) as api:
             ready = await api.get("/api/health/ready")
         assert redis_ran.is_set()
         assert ready.status_code == 503
@@ -97,7 +97,7 @@ async def test_ready_with_real_postgres_and_redis(postgres_database) -> None:
     settings.database_url = SecretStr(url.render_as_string(hide_password=False))
     service = OrderService(platform=settings)
     try:
-        async with client((settings, service)) as api:
+        async with client((settings, service), customer_id=None) as api:
             ready = await api.get("/api/health/ready")
             assert ready.status_code == 503
             assert ready.json()["checks"] == {
@@ -140,7 +140,7 @@ async def test_timed_out_readiness_reuses_the_running_probe(seeded) -> None:
 
     checks = ReadinessChecks(milvus=slow)
     try:
-        async with client(seeded, readiness=checks) as api:
+        async with client(seeded, customer_id=None, readiness=checks) as api:
             assert (await api.get("/api/health/ready")).status_code == 503
             assert (await api.get("/api/health/ready")).status_code == 503
             assert calls == 1

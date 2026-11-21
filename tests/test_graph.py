@@ -110,13 +110,13 @@ def test_all_intents_follow_fixed_routes_and_skip_first_rewrite(
         result = invoke(build_graph(deps), "A self-contained customer request")
     path = INTENT_TO_PATH[intent]
     if path == Path.AFTER_SALES:
-        assert result["trace"] == ["rewrite", "classify"]
+        assert result["trace"] == ["input_guard", "rewrite", "classify"]
         assert result["__interrupt__"][0].value["type"] == "order_picker"
         return
     expected_trace = (
-        ["rewrite", "classify", "retrieve", "gate", "handoff"]
+        ["input_guard", "rewrite", "classify", "retrieve", "gate", "handoff", "output_guard"]
         if path == Path.KNOWLEDGE
-        else ["rewrite", "classify", PATH_NODES[path]]
+        else ["input_guard", "rewrite", "classify", PATH_NODES[path], "output_guard"]
     )
     assert result["trace"] == expected_trace
     assert result["intent"] == intent
@@ -138,7 +138,10 @@ def test_followup_rewrites_with_history_and_keeps_append_only_trace() -> None:
         invoke(graph, "Does this model have a timer?")
         result = invoke(graph, "what about the W40 Pro?")
     assert result["rewritten_query"] == "Does W40 Pro have a timer?"
-    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"] * 2
+    assert (
+        result["trace"]
+        == ["input_guard", "rewrite", "classify", "retrieve", "gate", "handoff", "output_guard"] * 2
+    )
     history = model.rewritten_messages[0]
     assert [message.type for message in history] == ["system", "human", "ai", "human"]
     assert history[-1].content == "what about the W40 Pro?"
@@ -173,7 +176,7 @@ def test_classifier_failures_route_to_fixed_without_logging_raw_text(
     model = StructuredFake(responses=["unused"], predictions=[prediction])
     with GraphDeps(settings=Settings(), fast_model=model) as deps:
         result = invoke(build_graph(deps), "private question")
-    assert result["trace"] == ["rewrite", "classify", "fixed"]
+    assert result["trace"] == ["input_guard", "rewrite", "classify", "fixed", "output_guard"]
     assert result["intent"] == Intent.CHITCHAT_OTHER
     assert result["intent_confidence"] == 0
     assert result["classification_failed"] is True
@@ -201,10 +204,12 @@ def test_low_confidence_flags_only_knowledge_and_after_sales(
     path = INTENT_TO_PATH[intent]
     assert result["intent_low_confidence"] == (path in {Path.KNOWLEDGE, Path.AFTER_SALES})
     if path == Path.AFTER_SALES:
-        assert result["trace"] == ["rewrite", "classify"]
+        assert result["trace"] == ["input_guard", "rewrite", "classify"]
         assert result["__interrupt__"][0].value["type"] == "order_picker"
         return
-    assert result["trace"][-1] == ("handoff" if path == Path.KNOWLEDGE else PATH_NODES[path])
+    assert result["trace"][-2:] == (
+        ["handoff" if path == Path.KNOWLEDGE else PATH_NODES[path], "output_guard"]
+    )
 
 
 def test_checkpoints_isolate_threads() -> None:
@@ -213,7 +218,7 @@ def test_checkpoints_isolate_threads() -> None:
         graph = build_graph(deps)
         invoke(graph, "first thread", thread="one")
         result = invoke(graph, "second thread", thread="two")
-    assert result["trace"] == ["rewrite", "classify", "tools"]
+    assert result["trace"] == ["input_guard", "rewrite", "classify", "tools", "output_guard"]
     assert len(result["messages"]) == 2
     assert model.rewritten_messages == []
 
@@ -285,7 +290,13 @@ def test_sqlite_checkpoint_persists_and_dependency_owner_closes(tmp_path: FilePa
     with GraphDeps(settings=settings, fast_model=fake(Intent.ORDER_STATUS)) as next_deps:
         next_graph = build_graph(next_deps)
         saved = next_graph.get_state({"configurable": {"thread_id": "conversation"}})
-        assert saved.values["trace"] == ["rewrite", "classify", "tools"]
+        assert saved.values["trace"] == [
+            "input_guard",
+            "rewrite",
+            "classify",
+            "tools",
+            "output_guard",
+        ]
         assert saved.values["messages"][0].content == "my order"
 
 

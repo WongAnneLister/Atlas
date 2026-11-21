@@ -10,7 +10,14 @@ ThreadPart = Annotated[str, StringConstraints(pattern=r"^[^:\s]+$")]
 
 class ConversationRequest(BaseModel):
     conversation_id: ThreadPart
+
+
+class SessionRequest(BaseModel):
     customer_id: ThreadPart
+
+
+class SessionResponse(BaseModel):
+    token: str
 
 
 class ChatRequest(ConversationRequest):

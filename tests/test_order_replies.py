@@ -171,7 +171,14 @@ def test_graph_routes_a_policy_question_from_the_order_path_through_the_gate(
             {"configurable": {"thread_id": "CUST-0001:template"}},
         )
     trace = result["trace"]
-    assert trace[:3] == ["rewrite", "classify", "tools"]
-    assert trace[-5:] == ["reply:not_order_data", "tools_fallback", "retrieve", "gate", "handoff"]
+    assert trace[:4] == ["input_guard", "rewrite", "classify", "tools"]
+    assert trace[-6:] == [
+        "reply:not_order_data",
+        "tools_fallback",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
     assert result["handoff"].reason == HandoffReason.LOW_EVIDENCE
     assert "friend" not in result["answer"]

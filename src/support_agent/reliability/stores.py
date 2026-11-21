@@ -66,6 +66,9 @@ class GuardedOrders:
     def list_customers(self, limit: int) -> list[CustomerSummary]:
         return self._guards.call("orders_db", lambda _: self._service().list_customers(limit))
 
+    def customer_email(self, customer_id: str) -> str | None:
+        return self._guards.call("orders_db", lambda _: self._service().customer_email(customer_id))
+
     def customer_exists(self, customer_id: str) -> bool:
         return self._guards.call(
             "orders_db", lambda _: self._service().customer_exists(customer_id)

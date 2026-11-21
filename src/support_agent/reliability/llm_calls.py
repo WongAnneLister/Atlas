@@ -31,7 +31,15 @@ if TYPE_CHECKING:
     from support_agent.graph.deps import GraphDeps
 
 CallSite = Literal[
-    "rewrite", "classify", "answer", "decide", "order_extract", "grounding", "complaint", "tools"
+    "input_guard",
+    "rewrite",
+    "classify",
+    "answer",
+    "decide",
+    "order_extract",
+    "grounding",
+    "complaint",
+    "tools",
 ]
 LLMFault = Callable[[str], Literal["garbage"] | None]
 ModelMessages = Callable[[CallSite, Sequence[BaseMessage]], Sequence[BaseMessage]]

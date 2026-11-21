@@ -10,6 +10,7 @@ from support_agent.gate.evidence import GateResult
 from support_agent.graph.coverage import CoverageAnswer
 from support_agent.graph.handoff import HandoffPayload
 from support_agent.graph.intents import Intent, Path
+from support_agent.guardrails.input import InputAction
 from support_agent.reliability.events import ReliabilityEvent
 from support_agent.retrieval.types import RetrievedChunk
 
@@ -25,6 +26,9 @@ class ConversationState(BaseModel):
     messages: Annotated[list[AnyMessage], add_messages] = Field(default_factory=list)
     customer_id: str | None = None
     rewritten_query: str = ""
+    input_guard_action: InputAction = "allow"
+    guardrail_flags: list[str] = Field(default_factory=list)
+    output_guard_flag: str | None = None
     intent: Intent | None = None
     intent_confidence: float = Field(default=0, ge=0, le=1, allow_inf_nan=False)
     path: Path | None = None
@@ -47,6 +51,7 @@ class ConversationState(BaseModel):
         "insufficient_coverage",
         "implied_by_absence",
         "invalid_evidence",
+        "guardrail_blocked",
     ] = "not_attempted"
     answer_error_type: str | None = None
     coverage: CoverageAnswer | None = None

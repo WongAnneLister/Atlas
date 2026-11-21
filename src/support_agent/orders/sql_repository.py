@@ -190,6 +190,11 @@ class OrderRepository:
                 for row in connection.execute(statement.limit(limit)).mappings()
             ]
 
+    def customer_email(self, customer_id: str) -> str | None:
+        statement = select(customers.c.email).where(customers.c.customer_id == customer_id)
+        with self.connection() as connection:
+            return connection.execute(statement).scalar_one_or_none()
+
     def customer_exists(self, customer_id: str) -> bool:
         statement = select(customers.c.customer_id).where(customers.c.customer_id == customer_id)
         with self.connection() as connection:

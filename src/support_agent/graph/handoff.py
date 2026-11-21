@@ -26,6 +26,7 @@ PROMPTS = Path(__file__).with_name("prompts")
 class HandoffReason(StrEnum):
     SYSTEM_ERROR = "system_error"
     USER_REQUESTED = "user_requested"
+    GUARDRAIL_BLOCKED = "guardrail_blocked"
     COMPLAINT = "complaint"
     LOW_EVIDENCE = "low_evidence"
     RETRIEVAL_ERROR = "retrieval_error"
@@ -48,6 +49,7 @@ class HandoffPayload(BaseModel):
     gate: GateResult | None = None
     coverage: CoverageAnswer | None = None
     order_context: dict[str, Any] | None = None
+    guardrail_flags: list[str] = Field(default_factory=list)
     created_at: datetime
     idempotency_key: str | None = None
     trace_id: str | None = None
@@ -79,6 +81,7 @@ def make_handoff(state: ConversationState, reason: HandoffReason) -> dict[str, A
         gate=state.gate,
         coverage=state.coverage,
         order_context=state.order_context,
+        guardrail_flags=state.guardrail_flags,
         created_at=datetime.now(UTC),
     )
     return {"answer": answer, "messages": [message], "handoff": payload}

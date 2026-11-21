@@ -57,6 +57,6 @@ def test_classifier_faults_use_the_fixed_route(fault: str, diagnostic: str) -> N
             {"messages": [HumanMessage(content="How do I return this item?")]},
             {"configurable": {"thread_id": "chaos-fake"}},
         )
-    assert result["trace"] == ["rewrite", "classify", "fixed"]
+    assert result["trace"] == ["input_guard", "rewrite", "classify", "fixed", "output_guard"]
     assert result["classification_error_type"] == diagnostic
     assert "human support agent" in result["answer"]

@@ -50,6 +50,9 @@ class OrderService:
             raise ValueError("limit must be positive")
         return self.repository.list_customers(limit)
 
+    def customer_email(self, customer_id: str) -> str | None:
+        return self.repository.customer_email(customer_id)
+
     def customer_exists(self, customer_id: str) -> bool:
         return self.repository.customer_exists(customer_id)
 

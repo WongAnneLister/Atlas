@@ -50,11 +50,13 @@ def test_answer_repair_still_checks_citations_and_quotes(forged: bool) -> None:
         result = invoke(build_graph(deps), "What is the return window?")
 
     assert result["trace"] == [
+        "input_guard",
         "rewrite",
         "classify",
         "retrieve",
         "gate",
         "handoff" if forged else "answer",
+        "output_guard",
     ]
     assert result["gate"].passed
     assert result["answer_status"] == ("invalid_evidence" if forged else "answered")
@@ -87,7 +89,7 @@ def test_classifier_repair_has_no_retry_fallback_or_private_validation_input(
     with GraphDeps(settings, fast_model=model) as deps:
         result = invoke(build_graph(deps), "May I return this?")
 
-    assert result["trace"] == ["rewrite", "classify", "fixed"]
+    assert result["trace"] == ["input_guard", "rewrite", "classify", "fixed", "output_guard"]
     assert result["classification_failed"]
     assert len(model.classified_messages) == 2
     assert model.classified_messages[1][:-1] == model.classified_messages[0]
@@ -107,7 +109,7 @@ def test_classifier_can_use_a_repaired_prediction() -> None:
     )
     with GraphDeps(Settings(), fast_model=model) as deps:
         result = invoke(build_graph(deps), "Hello")
-    assert result["trace"] == ["rewrite", "classify", "fixed"]
+    assert result["trace"] == ["input_guard", "rewrite", "classify", "fixed", "output_guard"]
     assert not result["classification_failed"]
     assert result["reliability_events"][0].repaired
     assert len(model.classified_messages) == 2
@@ -127,6 +129,7 @@ def test_repaired_refund_decision_still_obeys_code_checked_window(seeded: Any) -
         result = invoke_refund(build_graph(deps), "Refund ORD-000001")
 
     assert result["trace"] == [
+        "input_guard",
         "rewrite",
         "classify",
         "after_sales",
@@ -135,6 +138,7 @@ def test_repaired_refund_decision_still_obeys_code_checked_window(seeded: Any) -
         "refund_retrieve",
         "refund_decide",
         "handoff",
+        "output_guard",
     ]
     assert result["handoff"].reason == "policy_requires_human"
     assert result["refund_request"] is None

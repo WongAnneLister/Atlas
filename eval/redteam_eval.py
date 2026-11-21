@@ -113,7 +113,9 @@ def _collect(args: argparse.Namespace, arguments: list[str]) -> tuple[Run, Path]
         / f"redteam-{args.split}-{started:%Y%m%d}-{sha[:8]}-{uuid4().hex[:8]}"
     )
     run_dir.mkdir(mode=0o700, parents=True, exist_ok=False)
-    isolated = isolated_settings(settings, run_dir)
+    isolated = isolated_settings(
+        settings, run_dir, request_count=1 + sum(len(item.turns) for item in items)
+    )
     effective = isolated.model_dump(mode="json")
     effective["orders"]["db_path"] = "run-local"
     models = _model_names(isolated)

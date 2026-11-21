@@ -16,6 +16,7 @@ from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
 
 from support_agent.config import Settings, TracingSettings
+from support_agent.guardrails.pii import redact_pii
 
 logger = logging.getLogger(__name__)
 REDACTED = "[redacted]"
@@ -51,16 +52,17 @@ def mask_data(data: Any, *, settings: TracingSettings) -> Any:
         data = data.model_dump(mode="json")
     if isinstance(data, Mapping):
         if _is_chunk(data):
-            return _trim_chunk(data)
+            data = _trim_chunk(data)
         customer = data.get("type") in _CUSTOMER_ROLES or data.get("role") in _CUSTOMER_ROLES
-        masked: dict[str, Any] = {}
+        masked: dict[Any, Any] = {}
         for key, value in data.items():
+            safe_key = redact_pii(key) if isinstance(key, str) else key
             if settings.redact_inputs and (
                 key in _CUSTOMER_TEXT_KEYS or (customer and key == "content")
             ):
-                masked[key] = REDACTED
+                masked[safe_key] = REDACTED
             else:
-                masked[key] = mask_data(value, settings=settings)
+                masked[safe_key] = mask_data(value, settings=settings)
         return masked
     if isinstance(data, list | tuple):
         items = [mask_data(value, settings=settings) for value in data]
@@ -68,7 +70,7 @@ def mask_data(data: Any, *, settings: TracingSettings) -> Any:
             isinstance(value, Mapping) and set(value) == _TRIMMED_CHUNK_KEYS for value in items
         )
         return items[: settings.max_chunks] if items and chunks else items
-    return data
+    return redact_pii(data) if isinstance(data, str) else data
 
 
 def _value(item: Any) -> Any:
@@ -96,6 +98,7 @@ def turn_tags(values: Mapping[str, Any]) -> tuple[list[str], dict[str, str]]:
         reason = handoff.get("reason")
     if reason is not None:
         tags.append(f"handoff:{_value(reason)}")
+    tags.extend(f"guardrail:{flag}" for flag in values.get("guardrail_flags", []))
     return tags, metadata
 
 

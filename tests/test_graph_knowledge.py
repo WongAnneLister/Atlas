@@ -76,7 +76,15 @@ def test_high_evidence_answers_with_valid_source_metadata() -> None:
         retriever=retriever,
     ) as deps:
         result = invoke(build_graph(deps), "How long do I have to return an item?")
-    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "answer"], result["gate"]
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "answer",
+        "output_guard",
+    ], result["gate"]
     assert result["answer"] == "You have 30 days to return the item. [1]"
     assert result["citations"] == [
         {
@@ -102,7 +110,15 @@ def test_low_evidence_hands_off_without_calling_answer_model() -> None:
         retriever=FixedRetriever(evidence(0.01)),
     ) as deps:
         result = invoke(build_graph(deps), "Can I pay with gold bars?")
-    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
     assert result["handoff"].reason == "low_evidence"
     assert result["handoff"].retrieval_snapshot[0].chunk_id == "chunk-1"
     assert result["handoff"].gate.signals["top_score"] == 0.01
@@ -120,7 +136,15 @@ def test_retrieval_failure_fails_closed_to_handoff(caplog: Any) -> None:
         retriever=BrokenRetriever(),
     ) as deps:
         result = invoke(build_graph(deps), "Can I return a gold bar?")
-    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
     assert result["gate"].reason == "empty_retrieval"
     assert result["handoff"].reason == "dependency_unavailable"
     assert main.responses == ["This must never be called"]
@@ -131,7 +155,15 @@ def test_retrieval_error_is_distinct_from_missing_evidence() -> None:
     settings = Settings()
     with GraphDeps(settings, fast_model=fast_model(), retriever=BrokenRetriever()) as deps:
         result = invoke(build_graph(deps), "Explain the return rules.")
-    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
     assert result["retrieval_error_type"] == "ConnectionError"
     assert result["handoff"].reason == "dependency_unavailable"
 
@@ -154,7 +186,15 @@ def test_generation_connection_error_does_not_claim_low_evidence(caplog: Any) ->
     ) as deps:
         result = invoke(build_graph(deps), "Explain the return rules.")
     assert result["gate"].passed
-    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
     assert result["answer_status"] == "model_error"
     assert result["answer_error_type"] == "ConnectionError"
     assert result["handoff"].reason == "dependency_unavailable"
@@ -213,7 +253,15 @@ def test_partial_coverage_creates_handoff_even_with_high_gate_score() -> None:
         }
     )
     assert result["gate"].passed
-    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
     assert result["handoff"].reason == "incomplete_evidence"
     assert result["answer_status"] == "insufficient_coverage"
     assert "30 days" not in result["answer"]
@@ -232,14 +280,22 @@ def test_partial_coverage_creates_handoff_even_with_high_gate_score() -> None:
 )
 def test_invalid_evidence_cannot_become_a_cited_answer(citation: dict) -> None:
     result = coverage_graph({"parts": [part(evidence=[citation])]})
-    assert result["trace"][-1] == "handoff"
+    assert result["trace"][-2:] == ["handoff", "output_guard"]
     assert result["answer_status"] in {"invalid_output", "invalid_evidence"}
     assert result["citations"] == []
 
 
 def test_supported_parts_get_code_generated_citations() -> None:
     result = coverage_graph({"parts": [part()]})
-    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "answer"]
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "answer",
+        "output_guard",
+    ]
     assert result["answer"] == "Unused items can be returned within 30 days. [1]"
     assert result["citations"][0]["section_id"] == "returns.window"
     assert result["answer_status"] == "answered"
@@ -257,7 +313,7 @@ def test_direct_answer_without_passing_gate_never_invokes_model() -> None:
 )
 def test_malformed_or_evidenceless_decision_fails_closed(payload: dict) -> None:
     result = coverage_graph(payload)
-    assert result["trace"][-1] == "handoff"
+    assert result["trace"][-2:] == ["handoff", "output_guard"]
     assert result["answer_status"] == "invalid_output"
     assert result["citations"] == []
 
@@ -348,7 +404,15 @@ def test_single_store_question_never_sees_the_other_stores_policy() -> None:
             build_graph(deps),
             "For the generic store: What is the maximum amount I can pay with Cash on Delivery?",
         )
-    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
     assert [chunk.chunk_id for chunk in result["retrieval"]] == ["gen"]
     assert result["handoff"].reason == "low_evidence"
     assert main.responses == ["This must never be called"]
@@ -357,7 +421,15 @@ def test_single_store_question_never_sees_the_other_stores_policy() -> None:
 def test_answer_from_absence_hands_off_even_with_valid_quotes() -> None:
     no = "No, a cheque is not listed among the accepted methods."
     result = coverage_graph({"parts": [part(answer=no, explicit=False)]})
-    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
     assert result["handoff"].reason == "incomplete_evidence"
     assert result["answer_status"] == "implied_by_absence"
     assert "cheque" not in result["answer"]
@@ -378,6 +450,14 @@ def test_bad_retrieval_result_keeps_retrieval_error_reason() -> None:
 
     with GraphDeps(Settings(), fast_model=fast_model(), retriever=InvalidRetriever()) as deps:
         result = invoke(build_graph(deps), "Explain the return rules.")
-    assert result["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
     assert result["retrieval_error_type"] == "ValueError"
     assert result["handoff"].reason == "retrieval_error"

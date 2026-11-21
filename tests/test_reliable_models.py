@@ -86,11 +86,11 @@ def test_graph_records_retry_and_model_and_clears_prior_turn_events(
         first = invoke(graph, "hello")
         second = invoke(graph, "hello again")
 
-    assert first["trace"] == ["rewrite", "classify", "fixed"]
+    assert first["trace"] == ["input_guard", "rewrite", "classify", "fixed", "output_guard"]
     assert first["answered_by_model"] == {"classify": "primary"}
     assert first["reliability_events"][0].retries == 1
     assert first["reliability_events"][0].attempts == 2
-    assert second["trace"][-3:] == ["rewrite", "classify", "fixed"]
+    assert second["trace"][-5:] == ["input_guard", "rewrite", "classify", "fixed", "output_guard"]
     assert [event.call_site for event in second["reliability_events"]] == ["rewrite", "classify"]
     assert second["answered_by_model"] == {"rewrite": "primary", "classify": "primary"}
 
@@ -103,7 +103,7 @@ def test_non_retryable_classification_failure_records_no_fallback(
     with GraphDeps(settings, fast_model=model) as deps:
         result = invoke(build_graph(deps), "hello")
 
-    assert result["trace"] == ["rewrite", "classify", "fixed"]
+    assert result["trace"] == ["input_guard", "rewrite", "classify", "fixed", "output_guard"]
     assert result["classification_error_type"] == "RuntimeError"
     assert result["answered_by_model"] == {}
     [event] = result["reliability_events"]

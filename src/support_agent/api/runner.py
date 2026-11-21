@@ -66,18 +66,18 @@ def _traced_turn(
             if node == "__interrupt__":
                 update = update[0].value
             elif metrics and update:
-                metrics.graph_update(update)
+                metrics.graph_update(update, publish_handoff=node == "output_guard")
             events = events_for_update(node, update or {}, chunk_words)
             if node == "classify":
                 yield from events
             elif events:
-                # A refund can hand off before its last edge. Publish only its final reply.
+                # Publish only after the checked reply and checkpoint are complete.
                 terminal = events
 
     snapshot = graph.get_state(config)
     gate = snapshot.values.get("gate")
     route = snapshot.values.get("trace", [])
-    boundary = "classify" if isinstance(input_or_command, Command) else "rewrite"
+    boundary = "classify" if isinstance(input_or_command, Command) else "input_guard"
     start = max((i for i, name in enumerate(route) if name == boundary), default=-1)
     if isinstance(input_or_command, Command):
         start += 1

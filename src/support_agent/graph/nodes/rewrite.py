@@ -17,6 +17,42 @@ logger = logging.getLogger(__name__)
 PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "rewrite.md"
 
 
+def reset_turn() -> dict[str, Any]:
+    return {
+        "rewritten_query": "",
+        "output_guard_flag": None,
+        "intent": None,
+        "intent_confidence": 0,
+        "path": None,
+        "intent_low_confidence": False,
+        "classification_failed": False,
+        "classification_error_type": None,
+        "classifier_model": None,
+        "answered_by_model": {},
+        "reliability_events": [],
+        "retrieval": [],
+        "gate": None,
+        "retrieval_error_type": None,
+        "retrieval_dependency_unavailable": False,
+        "answer_status": "not_attempted",
+        "answer_error_type": None,
+        "coverage": None,
+        "order_context": None,
+        "refund_candidates": [],
+        "refund_order_id": None,
+        "refund_policy_query": "",
+        "refund_decision": None,
+        "refund_request": None,
+        "handoff": None,
+        "tool_errors": 0,
+        "consecutive_tool_errors": 0,
+        "agent_steps": 0,
+        "fallback_to_knowledge": False,
+        "answer": "",
+        "citations": [],
+    }
+
+
 def make_rewrite_node(
     models: ReliableModels, settings: Settings
 ) -> Callable[[ConversationState], dict[str, Any]]:
@@ -44,38 +80,6 @@ def make_rewrite_node(
                 query = response.content.strip()
             except Exception as error:
                 logger.warning("Query rewrite failed: %s", type(error).__name__)
-        return {
-            "rewritten_query": query,
-            "intent": None,
-            "intent_confidence": 0,
-            "path": None,
-            "intent_low_confidence": False,
-            "classification_failed": False,
-            "classification_error_type": None,
-            "classifier_model": None,
-            "answered_by_model": {},
-            "reliability_events": [],
-            "retrieval": [],
-            "gate": None,
-            "retrieval_error_type": None,
-            "retrieval_dependency_unavailable": False,
-            "answer_status": "not_attempted",
-            "answer_error_type": None,
-            "coverage": None,
-            "order_context": None,
-            "refund_candidates": [],
-            "refund_order_id": None,
-            "refund_policy_query": "",
-            "refund_decision": None,
-            "refund_request": None,
-            "handoff": None,
-            "tool_errors": 0,
-            "consecutive_tool_errors": 0,
-            "agent_steps": 0,
-            "fallback_to_knowledge": False,
-            "answer": "",
-            "citations": [],
-            "trace": [*state.trace, "rewrite"],
-        }
+        return {"rewritten_query": query, "trace": [*state.trace, "rewrite"]}
 
     return rewrite

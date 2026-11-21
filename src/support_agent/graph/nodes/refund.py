@@ -13,6 +13,7 @@ from langgraph.types import interrupt
 from support_agent.gate.evidence import evaluate
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, make_handoff
+from support_agent.graph.model_data import order_block, order_data, refund_data, source_blocks
 from support_agent.graph.refund_decision import (
     DECISION_VERSIONS,
     RefundDecision,
@@ -140,7 +141,7 @@ class RefundPath:
         today = self.deps.settings.orders.today
         days = (today - order.delivered_at).days if order.delivered_at else None
         context = {
-            "order": order.model_dump(mode="json"),
+            "order": order_data(order),
             "days_since_order": (today - order.order_date).days,
             "days_since_delivery": days,
             "today": today.isoformat(),
@@ -205,15 +206,12 @@ class RefundPath:
         order = self._order_from_state(state)
         if order is None or state.gate is None or not state.gate.passed:
             return self._handoff(state, HandoffReason.POLICY_REQUIRES_HUMAN)
-        sources = self._sources(state)
+        sources = source_blocks(state.retrieval)
+        data = refund_data(state.order_context or {})
+        order_facts = order_block(json.dumps(data, sort_keys=True))
         messages = [
             SystemMessage(content=self.prompt),
-            HumanMessage(
-                content=(
-                    f"Order facts:\n{json.dumps(state.order_context, sort_keys=True)}\n\n"
-                    f"Sources:\n{sources}"
-                )
-            ),
+            HumanMessage(content=(f"Order facts:\n{order_facts}\n\nSources:\n{sources}")),
         ]
         try:
             response, _ = self.deps.models.structured(
@@ -317,13 +315,6 @@ class RefundPath:
             return Order.model_validate(state.order_context["order"])
         except Exception:
             return None
-
-    @staticmethod
-    def _sources(state: ConversationState) -> str:
-        return "\n\n".join(
-            f"[{index}] {chunk.heading_path}\n{chunk.text}"
-            for index, chunk in enumerate(state.retrieval, start=1)
-        )
 
     @staticmethod
     def _parse_decision(raw: Any) -> RefundDecision:

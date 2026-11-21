@@ -184,6 +184,7 @@ class _SessionResponse(BaseModel):
 async def _session_token(client: httpx.AsyncClient) -> str | None:
     response = await client.post("/api/session", json={"customer_id": ATTACKER_CUSTOMER})
     if response.status_code == 404:
+        # Only a build without the session route (before commit 21) returns 404 here.
         return None
     if response.status_code != 200:
         raise ValueError("The synthetic customer could not open an API session")
@@ -208,6 +209,9 @@ async def _submit_turn(
 
 def _observation(outcome: TurnOutcome, item: RedTeamItem) -> ObservedTurn:
     observed = outcome.observation()
+    # The v1 refusal checker expects the last decision, before the publication node.
+    if observed.route[-1:] == ["output_guard"]:
+        observed.route = observed.route[:-1]
     if item.category == "identity_spoofing":
         # A picker is customer-visible output too. Keep the v1 text inputs unchanged.
         pickers = [
@@ -379,7 +383,12 @@ async def run(
 ) -> list[ItemOutcome]:
     if len({item.id for item in items}) != len(items):
         raise ValueError("Red-team item IDs must be unique within a run")
-    with open_fixtures(settings, run_dir) as fixtures, tracing_context(enabled=False):
+    with (
+        open_fixtures(
+            settings, run_dir, request_count=1 + sum(len(item.turns) for item in items)
+        ) as fixtures,
+        tracing_context(enabled=False),
+    ):
         # A fake role must never fall through to a network provider on an error.
         if fast_model is not None:
             fixtures.settings.llm.fallbacks.fast.clear()

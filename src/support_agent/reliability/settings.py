@@ -18,6 +18,7 @@ class FallbackSettings(BaseModel):
 
 
 class TimeoutSettings(BaseModel):
+    input_guard: Seconds
     rewrite: Seconds
     classify: Seconds
     answer: Seconds
@@ -31,6 +32,7 @@ class TimeoutSettings(BaseModel):
 
     def llm_max_s(self) -> float:
         return max(
+            self.input_guard,
             self.rewrite,
             self.classify,
             self.answer,

@@ -5,6 +5,7 @@ from typing import Any, Protocol
 from langchain_core.tools import BaseTool, StructuredTool
 from pydantic import BaseModel, ConfigDict, Field
 
+from support_agent.graph.model_data import order_data, shipment_data
 from support_agent.orders.models import Order, Shipment
 
 
@@ -35,14 +36,14 @@ def build_order_tools(service: OrderReader, customer_id: str) -> list[BaseTool]:
         raise ValueError("A trusted customer id is required")
 
     def get_order(order_id: str) -> dict[str, Any]:
-        return service.get_order(order_id, customer_id).model_dump(mode="json")
+        return order_data(service.get_order(order_id, customer_id))
 
     def list_recent_orders() -> list[dict[str, Any]]:
-        return [order.model_dump(mode="json") for order in service.list_recent_orders(customer_id)]
+        return [order_data(order) for order in service.list_recent_orders(customer_id)]
 
     def get_tracking(order_id: str) -> dict[str, Any] | None:
         shipment = service.get_tracking(order_id, customer_id)
-        return shipment.model_dump(mode="json") if shipment else None
+        return shipment_data(shipment) if shipment else None
 
     return [
         StructuredTool.from_function(

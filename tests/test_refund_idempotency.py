@@ -70,7 +70,7 @@ def test_graph_replay_upgrades_a_legacy_sqlite_row_without_replacing_it(seeded) 
             },
             {"configurable": {"thread_id": "legacy"}},
         )
-    assert result["trace"][-2:] == ["refund_decide", "refund_act"]
+    assert result["trace"][-3:] == ["refund_decide", "refund_act", "output_guard"]
     assert result["refund_request"]["request_id"] == request_id
     with service.repository.connection() as connection:
         key = connection.exec_driver_sql("SELECT idempotency_key FROM refund_requests").scalar_one()
@@ -97,7 +97,7 @@ def test_same_turn_id_in_two_conversations_keeps_refund_requests_separate(seeded
                 },
                 {"configurable": {"thread_id": thread_id}},
             )
-        assert result["trace"][-2:] == ["refund_decide", "refund_act"]
+        assert result["trace"][-3:] == ["refund_decide", "refund_act", "output_guard"]
         ids.append(result["refund_request"]["request_id"])
     assert ids[0] != ids[1]
     with service.repository.connection() as connection:
@@ -168,6 +168,7 @@ def test_decision_timeout_keeps_one_dependency_handoff(seeded) -> None:
     with deps(settings, service, main) as graph_deps:
         result = invoke(build_graph(graph_deps), "Refund ORD-000001")
     assert result["trace"] == [
+        "input_guard",
         "rewrite",
         "classify",
         "after_sales",
@@ -175,6 +176,7 @@ def test_decision_timeout_keeps_one_dependency_handoff(seeded) -> None:
         "refund_load",
         "refund_retrieve",
         "handoff",
+        "output_guard",
     ]
     assert result["handoff"].reason == HandoffReason.DEPENDENCY_UNAVAILABLE
     assert sum(isinstance(message, AIMessage) for message in result["messages"]) == 1

@@ -9,6 +9,7 @@ from typing import Any
 
 import httpx
 import pytest
+from langchain_core.messages import AIMessage
 
 from support_agent.api.app import create_app
 from support_agent.api.deps import ApiDeps
@@ -45,6 +46,8 @@ async def client(
     readiness: Any = None,
     lock_store: Any = None,
     registry: Any = None,
+    customer_id: str | None = REQUEST["customer_id"],
+    root_path: str = "",
 ) -> AsyncIterator[httpx.AsyncClient]:
     settings, service = seeded
     settings.graph.checkpoint_backend = "memory"
@@ -86,9 +89,20 @@ async def client(
     )
     async with (
         app.router.lifespan_context(app),
-        httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as api,
+        httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app, root_path=root_path),
+            base_url=f"http://test{root_path}",
+        ) as api,
     ):
+        if customer_id is not None:
+            api.headers.update(await session_header(api, customer_id))
         yield api
+
+
+async def session_header(api: httpx.AsyncClient, customer_id: str) -> dict[str, str]:
+    response = await api.post("/api/session", json={"customer_id": customer_id})
+    assert response.status_code == 200
+    return {"Authorization": f"Bearer {response.json()['token']}"}
 
 
 def events(response: httpx.Response) -> list[tuple[str, Any]]:
@@ -126,8 +140,16 @@ async def test_knowledge_stream(seeded: Any) -> None:
     ]
     done = stream[-1][1]
     assert done["gate"]["passed"] is True
-    assert done["trace"] == ["rewrite", "classify", "retrieve", "gate", "answer"]
-    assert second[-1][1]["trace"] == ["rewrite", "classify", "fixed"]
+    assert done["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "answer",
+        "output_guard",
+    ]
+    assert second[-1][1]["trace"] == ["input_guard", "rewrite", "classify", "fixed", "output_guard"]
     assert second[-1][1]["gate"] is None
     assert "usage" in done
     # The test fakes bypass LangChain callbacks; the ledger itself is unit-tested.
@@ -143,7 +165,15 @@ async def test_knowledge_handoff(seeded: Any, reason: str) -> None:
     assert names(stream) == ["meta", "handoff", "done"]
     assert stream[1][1]["reason"] == reason
     assert stream[-1][1]["gate"]["passed"] is False
-    assert stream[-1][1]["trace"] == ["rewrite", "classify", "retrieve", "gate", "handoff"]
+    assert stream[-1][1]["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
 
 
 @pytest.mark.parametrize("select_order", [True, False])
@@ -164,10 +194,16 @@ async def test_refund_interrupt_and_resume(seeded: Any, select_order: bool) -> N
         selected = refundable_order(service).order_id if select_order else "none"
         assert (
             await api.post(
-                "/api/resume", json={**REQUEST, "customer_id": "CUST-0002", "value": selected}
+                "/api/resume",
+                json={**REQUEST, "value": selected},
+                headers=await session_header(api, "CUST-0002"),
             )
         ).status_code == 409
-        resumed = events(await api.post("/api/resume", json={**REQUEST, "value": selected}))
+        resumed = events(
+            await api.post(
+                "/api/resume", json={**REQUEST, "customer_id": "CUST-0002", "value": selected}
+            )
+        )
         assert (
             await api.post("/api/resume", json={**REQUEST, "value": selected})
         ).status_code == 409
@@ -182,12 +218,13 @@ async def test_refund_interrupt_and_resume(seeded: Any, select_order: bool) -> N
             "refund_retrieve",
             "refund_decide",
             "refund_act",
+            "output_guard",
         ]
         assert resumed[-2][0] == "citations"
         assert resumed[-2][1][0]["chunk_id"] == "refund-policy-1"
         assert "[1]" in "".join(data["text"] for event, data in resumed if event == "token")
     else:
-        assert trace == ["after_sales", "refund_identify", "handoff"]
+        assert trace == ["after_sales", "refund_identify", "handoff", "output_guard"]
         assert names(resumed) == ["handoff", "done"]
         assert resumed[0][1]["reason"] == "order_not_found"
 
@@ -257,9 +294,7 @@ async def test_request_validation(seeded: Any) -> None:
             {"conversation_id": "ambiguous:id"},
         ]:
             assert (await api.post("/api/chat", json={**QUESTION, **payload})).status_code == 422
-        assert (
-            await api.post("/api/chat", json={**QUESTION, "customer_id": "missing"})
-        ).status_code == 404
+        assert (await api.post("/api/session", json={"customer_id": "missing"})).status_code == 403
         assert (await api.post("/api/resume", json={**REQUEST, "value": "none"})).status_code == 409
         assert (
             await api.post(
@@ -309,13 +344,16 @@ async def test_health_uses_effective_model_environment(
 
 def test_token_chunks_preserve_exact_final_text() -> None:
     answer = " First  second\nthird [1]. "
-    assert [event.data for event in events_for_update("answer", {"answer": answer}, 2)] == [
+    assert [event.data for event in events_for_update("output_guard", {"answer": answer}, 2)] == [
         {"text": " First  second\n"},
         {"text": "third [1]. "},
         [],
     ]
     assert names(
-        [(event.name, event.data) for event in events_for_update("answer", {"answer": answer}, 1)]
+        [
+            (event.name, event.data)
+            for event in events_for_update("output_guard", {"answer": answer}, 1)
+        ]
     ) == ["token"] * 4 + ["citations"]
 
 
@@ -328,3 +366,25 @@ def test_nonterminal_updates_are_ignored() -> None:
 def test_interrupt_mapping() -> None:
     picker = {"type": "order_picker", "orders": []}
     assert events_for_update("__interrupt__", picker, 2)[0].data == picker
+
+
+async def test_unchecked_reply_never_reaches_the_stream(
+    seeded: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pending = "Please contact witness@example.com."
+
+    def candidate(self, state):
+        assert state.gate.passed
+        return {
+            "answer": pending,
+            "messages": [AIMessage(content=pending)],
+            "trace": [*state.trace, "answer"],
+        }
+
+    monkeypatch.setattr(KnowledgePath, "answer", candidate)
+    async with client(seeded) as api:
+        stream = events(await api.post("/api/chat", json=QUESTION))
+    assert names(stream) == ["meta", "handoff", "done"]
+    assert stream[1][1]["reason"] == "guardrail_blocked"
+    assert stream[-1][1]["trace"][-2:] == ["answer", "output_guard"]
+    assert pending not in str(stream)

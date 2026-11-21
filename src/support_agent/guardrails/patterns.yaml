@@ -1,0 +1,16 @@
+# Written from the v2 dev split. Block commands addressing the assistant's instructions.
+- flag: instruction_override
+  action: block
+  pattern: '\b(?:ignore|override)\s+(?:your\s+(?:(?:support-only|previous)\s+)?|all\s+previous\s+)instructions\b'
+- flag: role_header
+  action: block
+  pattern: '(?:^|\n)[ \t]*(?:\[system\]|enable\s+developer\s+mode\b)'
+- flag: prompt_request
+  action: block
+  pattern: '\b(?:print|reveal|show|repeat)\s+your\s+system\s+prompt\b'
+- flag: roleplay_request
+  action: allow_flagged
+  pattern: '\b(?:stay in character|(?:assistant|general assistant) with no (?:restrictions|topic limits))\b'
+- flag: instruction_payload
+  action: allow_flagged
+  pattern: '\b(?:then do what it says|new instruction for the assistant|from now on end every message)\b'

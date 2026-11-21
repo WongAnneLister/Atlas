@@ -13,7 +13,9 @@ from support_agent.graph.intents import PATH_NODES, Path
 from support_agent.graph.nodes.classify import Classifier
 from support_agent.graph.nodes.complaint import ComplaintPath
 from support_agent.graph.nodes.fixed import fixed_reply
+from support_agent.graph.nodes.input_guard import InputGuard
 from support_agent.graph.nodes.knowledge import KnowledgePath, route_after_gate
+from support_agent.graph.nodes.output_guard import OutputGuard
 from support_agent.graph.nodes.refund import RefundPath
 from support_agent.graph.nodes.rewrite import make_rewrite_node
 from support_agent.graph.nodes.tools_path import ToolsPath
@@ -32,15 +34,15 @@ def route_by_path(state: ConversationState) -> str:
 
 def route_after_tools(state: ConversationState) -> str:
     """A question the order loop did not treat as a lookup goes through retrieval."""
-    return "retrieve" if state.fallback_to_knowledge else END
+    return "retrieve" if state.fallback_to_knowledge else "output_guard"
 
 
 def route_refund_identify(state: ConversationState) -> str:
-    return "refund_load" if state.refund_order_id else END
+    return "refund_load" if state.refund_order_id else "output_guard"
 
 
 def route_refund_policy(state: ConversationState) -> str:
-    return "refund_decide" if state.gate is not None and state.gate.passed else END
+    return "refund_decide" if state.gate is not None and state.gate.passed else "output_guard"
 
 
 def _stub(path: Path, name: str) -> Callable[[ConversationState], dict[str, Any]]:
@@ -57,10 +59,19 @@ def _stub(path: Path, name: str) -> Callable[[ConversationState], dict[str, Any]
 
 def _recording_node(
     node: Callable[[ConversationState], dict[str, Any]],
+    *,
+    publishes_reply: bool,
 ) -> Callable[[ConversationState], dict[str, Any]]:
     def run(state: ConversationState) -> dict[str, Any]:
         with collect_events() as events:
             update = node(state)
+        if not publishes_reply and update.get("answer"):
+            # Keep unchecked drafts out of the history even if the graph stops here.
+            update["messages"] = [
+                message
+                for message in update.get("messages", [])
+                if not isinstance(message, AIMessage)
+            ]
         if events:
             update["reliability_events"] = [
                 *update.get("reliability_events", state.reliability_events),
@@ -81,11 +92,19 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
     graph = StateGraph(ConversationState)
 
     def add_node(name: str, node: Callable[[ConversationState], dict[str, Any]]) -> None:
-        graph.add_node(name, RunnableLambda(_recording_node(node)))
+        graph.add_node(
+            name, RunnableLambda(_recording_node(node, publishes_reply=name == "output_guard"))
+        )
 
+    add_node("input_guard", InputGuard(deps))
     add_node("rewrite", make_rewrite_node(deps.models, deps.settings))
     add_node("classify", Classifier(None, deps.settings, models=deps.models))
-    graph.add_edge(START, "rewrite")
+    graph.add_edge(START, "input_guard")
+    graph.add_conditional_edges(
+        "input_guard",
+        lambda state: "output_guard" if state.input_guard_action == "block" else "rewrite",
+        ["rewrite", "output_guard"],
+    )
     graph.add_edge("rewrite", "classify")
     graph.add_conditional_edges(
         "classify",
@@ -105,26 +124,32 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
     add_node("handoff", knowledge.handoff)
     graph.add_edge("retrieve", "gate")
     graph.add_conditional_edges("gate", route_after_gate, ["answer", "handoff"])
-    graph.add_edge("answer", END)
-    graph.add_edge("handoff", END)
+    graph.add_edge("answer", "output_guard")
+    graph.add_edge("handoff", "output_guard")
     add_node("refund_load", refund.load_order)
     add_node("refund_retrieve", refund.retrieve_policy)
     add_node("refund_decide", refund.decide)
     add_node("refund_act", refund.act)
     graph.add_edge("refund_load", "refund_retrieve")
-    graph.add_conditional_edges("refund_retrieve", route_refund_policy, ["refund_decide", END])
+    graph.add_conditional_edges(
+        "refund_retrieve", route_refund_policy, ["refund_decide", "output_guard"]
+    )
     graph.add_edge("refund_decide", "refund_act")
-    graph.add_edge("refund_act", END)
+    graph.add_edge("refund_act", "output_guard")
     for path, name in PATH_NODES.items():
         if path == Path.KNOWLEDGE:
             continue
         if path == Path.AFTER_SALES:
             add_node(name, refund.identify_order)
-            graph.add_conditional_edges(name, route_refund_identify, ["refund_load", END])
+            graph.add_conditional_edges(
+                name, route_refund_identify, ["refund_load", "output_guard"]
+            )
             continue
         add_node(name, implementations.get(path, _stub(path, name)))
         if path == Path.TOOLS:
-            graph.add_conditional_edges(name, route_after_tools, ["retrieve", END])
+            graph.add_conditional_edges(name, route_after_tools, ["retrieve", "output_guard"])
         else:
-            graph.add_edge(name, END)
+            graph.add_edge(name, "output_guard")
+    add_node("output_guard", OutputGuard(deps))
+    graph.add_edge("output_guard", END)
     return graph.compile(checkpointer=deps.checkpointer())

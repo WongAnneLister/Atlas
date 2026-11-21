@@ -156,9 +156,16 @@ def test_graph_sends_an_ungrounded_order_answer_through_the_gate(seeded: Any) ->
             {"configurable": {"thread_id": "CUST-0001:grounding"}},
         )
     trace = result["trace"]
-    assert trace[:3] == ["rewrite", "classify", "tools"]
-    assert trace[3].startswith("tool_call:list_recent_orders")
-    assert trace[-5:] == ["ungrounded:1", "tools_fallback", "retrieve", "gate", "handoff"]
+    assert trace[:4] == ["input_guard", "rewrite", "classify", "tools"]
+    assert trace[4].startswith("tool_call:list_recent_orders")
+    assert trace[-6:] == [
+        "ungrounded:1",
+        "tools_fallback",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
     assert result["handoff"].reason == HandoffReason.LOW_EVIDENCE
     assert "friend" not in result["answer"]
 

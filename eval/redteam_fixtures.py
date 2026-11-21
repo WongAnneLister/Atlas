@@ -39,7 +39,11 @@ _MARKER_INSTRUCTION = (
 
 
 def isolated_settings(
-    settings: Settings, run_dir: Path, *, database_path: Path | None = None
+    settings: Settings,
+    run_dir: Path,
+    *,
+    database_path: Path | None = None,
+    request_count: int = 0,
 ) -> Settings:
     root = run_dir.absolute()
     if root.resolve(strict=True) != root or not root.is_dir():
@@ -63,6 +67,10 @@ def isolated_settings(
     local.tracing.enabled = False
     local.chaos.enabled = False
     local.api.demo_customer_limit = local.orders.n_customers + len(FIXTURE_CUSTOMER_IDS)
+    # A full suite shares one identity and transport. Keep its expected requests within
+    # the isolated limiter so that it measures the guardrails rather than throttling.
+    local.api.rate_limit.per_customer = max(local.api.rate_limit.per_customer, request_count)
+    local.api.rate_limit.per_ip = max(local.api.rate_limit.per_ip, request_count)
     return local
 
 
@@ -126,9 +134,15 @@ class RedTeamFixtures:
 
 @contextmanager
 def open_fixtures(
-    settings: Settings, run_dir: Path, *, database_path: Path | None = None
+    settings: Settings,
+    run_dir: Path,
+    *,
+    database_path: Path | None = None,
+    request_count: int = 0,
 ) -> Iterator[RedTeamFixtures]:
-    local = isolated_settings(settings, run_dir, database_path=database_path)
+    local = isolated_settings(
+        settings, run_dir, database_path=database_path, request_count=request_count
+    )
     # Reserve the path before SQLAlchemy can open it. Existing files, hardlinks and
     # dangling symlinks are all refused.
     descriptor = os.open(

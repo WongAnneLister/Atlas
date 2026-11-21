@@ -129,6 +129,7 @@ def test_direct_order_yes_creates_one_pending_request(seeded: Any) -> None:
     with deps(settings, service, main) as graph_deps:
         result = invoke(build_graph(graph_deps), "I want a refund for ORD-000001")
     assert result["trace"] == [
+        "input_guard",
         "rewrite",
         "classify",
         "after_sales",
@@ -137,6 +138,7 @@ def test_direct_order_yes_creates_one_pending_request(seeded: Any) -> None:
         "refund_retrieve",
         "refund_decide",
         "refund_act",
+        "output_guard",
     ]
     assert result["refund_request"]["status"] == "pending_review"
     assert result["refund_request"]["order_id"] == "ORD-000001"
@@ -242,7 +244,7 @@ def test_policy_gate_failure_skips_decision_model(seeded: Any) -> None:
     with deps(settings, service, main, FixedRetriever(score=0.01)) as graph_deps:
         result = invoke(build_graph(graph_deps), "Refund ORD-000001")
     assert result["handoff"].reason.value == "low_evidence"
-    assert result["trace"][-1] == "handoff"
+    assert result["trace"][-2:] == ["handoff", "output_guard"]
     assert main.decision_calls == 0
 
 
@@ -306,7 +308,7 @@ def test_item_with_a_pending_request_is_not_requested_again(seeded: Any) -> None
     main = DecisionFake(responses=["unused"], decisions=[yes_decision(order)])
     with deps(settings, service, main) as graph_deps:
         result = invoke(build_graph(graph_deps), "Refund ORD-000001", thread="later-chat")
-    assert result["trace"][-3:] == ["refund_retrieve", "refund_decide", "handoff"]
+    assert result["trace"][-4:] == ["refund_retrieve", "refund_decide", "handoff", "output_guard"]
     assert result["order_context"]["pending_refund_item_ids"] == [item]
     assert result["handoff"].reason.value == "policy_requires_human"
     assert result.get("refund_request") is None
@@ -325,7 +327,7 @@ def test_write_guard_holds_when_the_pending_read_was_stale(seeded: Any, monkeypa
     main = DecisionFake(responses=["unused"], decisions=[yes_decision(order)])
     with deps(settings, service, main) as graph_deps:
         result = invoke(build_graph(graph_deps), "Refund ORD-000001", thread="racing-chat")
-    assert result["trace"][-2:] == ["refund_decide", "handoff"]
+    assert result["trace"][-3:] == ["refund_decide", "handoff", "output_guard"]
     assert result["handoff"].reason.value == "policy_requires_human"
     assert result.get("refund_request") is None
     with service.repository.connection() as connection:
@@ -404,6 +406,7 @@ def test_postgres_checkpoint_survives_refund_restart(postgres_database, seeded) 
             assert restored.values["messages"][-1].id == turn_id
             result = second.invoke(Command(resume=order.order_id), config, durability="sync")
             assert result["trace"] == [
+                "input_guard",
                 "rewrite",
                 "classify",
                 "after_sales",
@@ -412,6 +415,7 @@ def test_postgres_checkpoint_survives_refund_restart(postgres_database, seeded) 
                 "refund_retrieve",
                 "refund_decide",
                 "refund_act",
+                "output_guard",
             ]
             assert result["refund_request"]["order_id"] == order.order_id
 

@@ -26,6 +26,7 @@ from pydantic_settings import (
 from support_agent.config_layers import yaml_layers
 from support_agent.db.settings import DatabaseSettings
 from support_agent.graph.settings import GraphSettings, IntentEvalSettings, IntentSettings
+from support_agent.guardrails.settings import GuardrailSettings
 from support_agent.infra.settings import ReadinessSettings, RedisSettings
 from support_agent.reliability.settings import (
     ChaosSettings,
@@ -372,6 +373,16 @@ class CostSettings(BaseModel):
     prices: dict[str, ModelPrice] = Field(default_factory=dict)
 
 
+class SessionSettings(BaseModel):
+    ttl_s: int = Field(gt=0)
+
+
+class RateLimitSettings(BaseModel):
+    window_s: int = Field(gt=0)
+    per_customer: int = Field(gt=0)
+    per_ip: int = Field(gt=0)
+
+
 class APISettings(BaseModel):
     host: str
     port: int
@@ -379,6 +390,9 @@ class APISettings(BaseModel):
     demo_customer_limit: int = Field(gt=0)
     max_message_chars: int = Field(gt=0)
     max_resume_chars: int = Field(gt=0)
+    max_body_bytes: int = Field(gt=0)
+    session: SessionSettings
+    rate_limit: RateLimitSettings
     health_timeout_s: float = Field(gt=0, allow_inf_nan=False)
     warmup_retriever: bool
 
@@ -410,6 +424,7 @@ class Settings(BaseSettings):
     tracing: TracingSettings
     costs: CostSettings
     api: APISettings
+    guardrails: GuardrailSettings
     environment: Literal["local", "dev", "prod"]
     db: DatabaseSettings
     redis: RedisSettings

@@ -10,16 +10,20 @@ from support_agent.config import Settings
 from support_agent.gate.evidence import GateResult
 from support_agent.graph.handoff import HandoffPayload, HandoffReason
 from support_agent.graph.intents import Path
+from support_agent.guardrails.input import InputFlag
+from support_agent.guardrails.output import OutputFlag
 from support_agent.llm import Role, resolve_model
 from support_agent.reliability.circuit import CircuitRegistry
 from support_agent.reliability.llm_calls import CallSite
 
 LLM_CALL_SITES = get_args(CallSite)
+_INPUT_FLAGS = frozenset(get_args(InputFlag))
 
 ENDPOINTS = {
     "/": "index",
     "/api/chat": "chat",
     "/api/resume": "resume",
+    "/api/session": "session",
     "/api/customers": "customers",
     "/api/health": "health",
     "/api/health/live": "live",
@@ -94,6 +98,9 @@ class AtlasMetrics:
             ("passed",),
             registry=self.registry,
         )
+        self.guardrail_flags = Counter(
+            "atlas_guardrail_flags_total", "Guardrail flags", ("flag",), registry=self.registry
+        )
         self.path = Counter("atlas_path_total", "Graph paths", ("path",), registry=self.registry)
 
     def request(self, path: str, outcome: str, seconds: float, trace_id: str) -> None:
@@ -125,10 +132,15 @@ class AtlasMetrics:
     def handoff(self, reason: HandoffReason) -> None:
         self.handoffs.labels(reason.value).inc()
 
-    def graph_update(self, update: Mapping[str, Any]) -> None:
+    def graph_update(self, update: Mapping[str, Any], *, publish_handoff: bool = True) -> None:
+        if (output_flag := update.get("output_guard_flag")) in get_args(OutputFlag):
+            self.guardrail_flags.labels(output_flag).inc()
+        for flag in update.get("guardrail_flags", []):
+            if not output_flag and flag in _INPUT_FLAGS:
+                self.guardrail_flags.labels(flag).inc()
         if isinstance(gate := update.get("gate"), GateResult):
             self.gates.labels(str(gate.passed).lower()).inc()
-        if isinstance(handoff := update.get("handoff"), HandoffPayload):
+        if publish_handoff and isinstance(handoff := update.get("handoff"), HandoffPayload):
             self.handoff(handoff.reason)
         if isinstance(path := update.get("path"), str) and path in self.paths:
             self.path.labels(path).inc()

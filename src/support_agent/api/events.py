@@ -30,7 +30,7 @@ def events_for_update(node_name: str, update: dict[str, Any], chunk_words: int) 
         ]
     if node_name == "__interrupt__":
         return [SseEvent(name="interrupt", data=update)]
-    if node_name == "rewrite" or not (answer := update.get("answer")):
+    if node_name != "output_guard" or not (answer := update.get("answer")):
         return []
     if handoff := update.get("handoff"):
         data = {"reason": handoff.reason, "message": answer}

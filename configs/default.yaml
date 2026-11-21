@@ -68,6 +68,7 @@ llm:
 
 reliability:
   timeouts_s:
+    input_guard: 8
     rewrite: 30
     classify: 30
     answer: 30
@@ -327,6 +328,18 @@ costs:
   prices:
     deepseek-v4.1-flash: {input_per_million_usd: null, output_per_million_usd: null, checked: null}
 
+guardrails:
+  input:
+    patterns_file: src/support_agent/guardrails/patterns.yaml
+    classifier:
+      enabled: false
+      model_role: fast
+  output:
+    prompt_leak: true
+    foreign_pii: true
+    commitments: true
+    prompt_word_window: 12
+
 api:
   host: 127.0.0.1
   port: 8000
@@ -335,6 +348,13 @@ api:
   max_message_chars: 4000
   max_resume_chars: 128
   health_timeout_s: 2
+  max_body_bytes: 131072
+  session:
+    ttl_s: 3600
+  rate_limit:
+    window_s: 60
+    per_customer: 30
+    per_ip: 120
   warmup_retriever: false
 
 db:
