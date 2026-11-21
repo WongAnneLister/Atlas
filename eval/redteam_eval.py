@@ -13,13 +13,11 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from eval.e2e_endpoint import endpoint_host
 from eval.e2e_eval import _model_names
 from eval.judge import JudgeDecision
-from eval.redteam_build import load_items
+from eval.redteam_build import DEFAULT_DATASET, load_items
 from eval.redteam_canaries import DEFAULT_SEED
 from eval.redteam_fixtures import isolated_settings
-from eval.redteam_models import RedTeamItem
+from eval.redteam_models import DATASETS, Dataset, RedTeamItem, verdict_metric
 from eval.redteam_report import (
-    DATASET,
-    METRIC,
     export_review,
     local_output,
     publish_text,
@@ -29,7 +27,7 @@ from eval.redteam_report import (
 from eval.redteam_runner import ItemOutcome, JudgeInput, run
 from eval.registry import file_hash, load_registry
 from eval.run_record import RUNS, DatasetVersion, Run, RunItem, RunManifest, git, is_dirty, read_run
-from eval.smoke import load_smoke_spec
+from eval.smoke import redteam_smoke_ids
 from support_agent.config import REPO_ROOT, get_settings
 from support_agent.data.doc_models import digest, json_text
 from support_agent.graph.deps import GraphDeps
@@ -38,12 +36,14 @@ DEFAULT_REPORT = REPO_ROOT / "eval/reports/redteam.md"
 JUDGE_PROMPT = REPO_ROOT / "eval/prompts/redteam_commitments.md"
 
 
-def _select(items: list[RedTeamItem], split: str, subset: str) -> list[RedTeamItem]:
+def _select(
+    items: list[RedTeamItem], split: str, subset: str, *, dataset: Dataset = "redteam_v1"
+) -> list[RedTeamItem]:
     chosen = [item for item in items if item.split == split]
     if subset == "smoke":
         if split != "test":
             raise ValueError("Red-team smoke is a test split")
-        ids = load_smoke_spec().redteam
+        ids = redteam_smoke_ids(dataset)
         by_id = {item.id: item for item in chosen}
         if not ids or len(set(ids)) != len(ids) or any(identity not in by_id for identity in ids):
             raise ValueError("Invalid frozen red-team smoke IDs")
@@ -81,7 +81,11 @@ def _project(observations: list[ItemOutcome], items: list[RedTeamItem]) -> list[
         RunItem(
             id=row.item_id,
             group=row.category,
-            metrics={} if row.status == "error" else {METRIC: row.status == "success"},
+            metrics=(
+                {}
+                if row.status == "error"
+                else {verdict_metric(row.category): row.status == "success"}
+            ),
             payload={
                 **row.model_dump(mode="json"),
                 "condition": expected[row.item_id].success.kind,
@@ -96,11 +100,11 @@ def _project(observations: list[ItemOutcome], items: list[RedTeamItem]) -> list[
 
 def _collect(args: argparse.Namespace, arguments: list[str]) -> tuple[Run, Path]:
     settings = get_settings()
-    entry = load_registry()[DATASET]
+    entry = load_registry()[args.dataset]
     source = REPO_ROOT / entry.path
     if file_hash(source) != entry.sha256:
         raise ValueError("Red-team cases do not match the registered dataset hash")
-    items = _select(load_items(source), args.split, args.subset)
+    items = _select(load_items(source), args.split, args.subset, dataset=args.dataset)
     started = datetime.now(UTC)
     sha = git("rev-parse", "HEAD")
     dirty = is_dirty()
@@ -126,7 +130,7 @@ def _collect(args: argparse.Namespace, arguments: list[str]) -> tuple[Run, Path]
         git_sha=sha,
         config_hash=digest(json_text(effective)),
         models=models,
-        datasets={DATASET: DatasetVersion(version=entry.version, sha256=entry.sha256)},
+        datasets={args.dataset: DatasetVersion(version=entry.version, sha256=entry.sha256)},
         seed=DEFAULT_SEED,
         dirty=dirty,
         started_at=started,
@@ -153,6 +157,7 @@ def _collect(args: argparse.Namespace, arguments: list[str]) -> tuple[Run, Path]
 def main(argv: list[str] | None = None) -> int:
     arguments = sys.argv[1:] if argv is None else argv
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dataset", choices=DATASETS, default=DEFAULT_DATASET)
     parser.add_argument("--split", choices=["dev", "test"], default="test")
     parser.add_argument("--subset", choices=["all", "smoke"], default="all")
     parser.add_argument("--run-root", type=Path, default=RUNS)

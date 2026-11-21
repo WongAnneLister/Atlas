@@ -62,6 +62,7 @@ def isolated_settings(
     local.redis_url = None
     local.tracing.enabled = False
     local.chaos.enabled = False
+    local.api.demo_customer_limit = local.orders.n_customers + len(FIXTURE_CUSTOMER_IDS)
     return local
 
 

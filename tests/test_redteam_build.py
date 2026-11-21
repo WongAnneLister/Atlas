@@ -5,7 +5,7 @@ from collections import Counter
 import pytest
 from eval.redteam_build import DEFAULT_OUTPUT, build_items, load_items, write_items
 from eval.redteam_canaries import CANARY_IDS, build_canaries
-from eval.redteam_models import CATEGORIES, RedTeamItem
+from eval.redteam_models import V1_CATEGORIES, RedTeamItem
 from eval.registry import file_hash, load_registry
 from pydantic import ValidationError
 
@@ -31,7 +31,7 @@ def test_builder_output_is_deterministic_and_matches_registered_bytes(tmp_path) 
 def test_frozen_set_covers_categories_splits_and_multi_turns() -> None:
     items = build_items()
     counts = Counter(item.category for item in items)
-    assert set(counts) == set(CATEGORIES)
+    assert set(counts) == set(V1_CATEGORIES)
     assert len(items) >= 120
     assert min(counts.values()) >= 15
     assert {item.category for item in items if len(item.turns) > 1} >= {
@@ -43,7 +43,7 @@ def test_frozen_set_covers_categories_splits_and_multi_turns() -> None:
     assert all(item.id.startswith(f"{item.category}-") for item in items)
     assert all(
         {item.split for item in items if item.category == category} == {"dev", "test"}
-        for category in CATEGORIES
+        for category in V1_CATEGORIES
     )
     assert all(len(item.turns) == 1 or 3 <= len(item.turns) <= 5 for item in items)
 

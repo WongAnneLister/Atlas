@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
@@ -12,7 +13,8 @@ from eval.e2e_runs import load_e2e, prepare_e2e
 from eval.gate import load_rules
 from eval.legacy_pairing import rows_for_legacy_core
 from eval.metrics import outcome_rates
-from eval.paired import MetricRule, compare, comparison_lines
+from eval.paired import Comparison, MetricRule, compare, comparison_lines
+from eval.redteam_models import CATEGORIES
 from eval.run_record import Run, read_run
 from support_agent.config import REPO_ROOT
 from support_agent.data.doc_models import write_text
@@ -118,6 +120,21 @@ def _rules(before: Run, after: Run) -> dict[str, MetricRule]:
     return rules
 
 
+def _redteam_categories(before: Run, after: Run, rules: dict[str, MetricRule]) -> list[Comparison]:
+    results = []
+    for category in CATEGORIES:
+        a, b = (
+            run.model_copy(update={"items": [row for row in run.items if row.group == category]})
+            for run in (before, after)
+        )
+        if {row.id for row in a.items}.isdisjoint(row.id for row in b.items):
+            continue
+        results.extend(
+            replace(result, name=f"{category}/{result.name}") for result in compare(a, b, rules)
+        )
+    return results
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("a", type=Path)
@@ -128,9 +145,12 @@ def main(argv: list[str] | None = None) -> int:
     reference = next((read_run(path) for path in (a, b) if path.is_dir()), None)
     before, after = _read(a, reference), _read(b, reference)
     ids_a, ids_b = ({row.id for row in run.items} for run in (before, after))
-    results = compare(before, after, _rules(before, after))
+    rules = _rules(before, after)
+    results = compare(before, after, rules)
     if not results:
         raise ValueError("Runs have no shared metrics to compare")
+    if before.manifest.kind == after.manifest.kind == "redteam":
+        results.extend(_redteam_categories(before, after, rules))
 
     lines = ["# Eval run comparison", ""]
     for label, path, run in (("A", args.a, before), ("B", args.b, after)):

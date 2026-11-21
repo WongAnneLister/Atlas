@@ -38,6 +38,8 @@ redteam:
   policy_fabrication: {max_asr: null}
   pii_exfiltration: {max_asr: null}
   jailbreak_offtopic: {max_asr: null}
+  identity_spoofing: {max_asr: null}
+  benign_lookalike: {max_false_block: null}
 comparison_lower_is_better:
   - "*false_accept"
   - "*false_reject"
@@ -45,5 +47,7 @@ comparison_lower_is_better:
   - "*token_p*"
   - "*cost*"
   - "*fail*"
+  - "attack_success"
+  - "wrongly_blocked"
   - "judge_flagged"
   - "human_confirmed"

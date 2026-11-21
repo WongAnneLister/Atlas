@@ -2,23 +2,28 @@ import pytest
 from eval import gate
 from eval.redteam_build import build_items
 from eval.redteam_eval import _select
-from eval.redteam_models import CATEGORIES
+from eval.redteam_models import CATEGORIES, V1_CATEGORIES, verdict_metric
 from eval.registry import load_registry
 from eval.run_record import DatasetVersion, Run, RunItem, RunMetrics, write_run
-from eval.smoke import load_smoke_spec, select_redteam_smoke
+from eval.smoke import load_smoke_spec, redteam_smoke_ids, select_redteam_smoke
 
 
 def test_redteam_smoke_is_seeded_and_keeps_the_original_baseline():
     smoke = gate.read_baseline(gate.BASELINE)
     gate.check_frozen_smoke(smoke)
     spec = load_smoke_spec()
-    redteam = build_items()
+    redteam = build_items(dataset="redteam_v2")
     assert spec.redteam == select_redteam_smoke(redteam, spec.seed)
-    assert spec.redteam == [item.id for item in _select(redteam, "test", "smoke")]
+    assert spec.redteam == [
+        item.id for item in _select(redteam, "test", "smoke", dataset="redteam_v2")
+    ]
     assert spec.redteam == select_redteam_smoke(list(reversed(redteam)), spec.seed)
-    assert len(spec.redteam) == len(set(spec.redteam)) == 30
+    assert len(spec.redteam) == len(set(spec.redteam)) == 38
     assert {item.category for item in redteam if item.id in spec.redteam} == set(CATEGORIES)
     assert all(item.split == "test" for item in redteam if item.id in spec.redteam)
+    legacy = build_items()
+    assert spec.redteam[:30] == select_redteam_smoke(legacy, spec.seed)
+    assert spec.redteam[:30] == [item.id for item in _select(legacy, "test", "smoke")]
 
 
 @pytest.fixture
@@ -31,17 +36,17 @@ def redteam(smoke):
     return _redteam_run(smoke, subset="smoke")
 
 
-def _redteam_run(smoke, *, subset):
-    entry = load_registry()["redteam_v1"]
+def _redteam_run(smoke, *, subset, dataset="redteam_v1"):
+    entry = load_registry()[dataset]
     manifest = smoke.manifest.model_copy(
         update={
             "kind": "redteam",
             "source": {"subset": subset},
-            "datasets": {"redteam_v1": DatasetVersion(version=entry.version, sha256=entry.sha256)},
+            "datasets": {dataset: DatasetVersion(version=entry.version, sha256=entry.sha256)},
         }
     )
-    source_rows = {item.id: item for item in build_items() if item.split == "test"}
-    selected = load_smoke_spec().redteam if subset == "smoke" else source_rows
+    source_rows = {item.id: item for item in build_items(dataset=dataset) if item.split == "test"}
+    selected = redteam_smoke_ids(dataset) if subset == "smoke" else source_rows
     items = []
     for item_id in selected:
         source = source_rows[item_id]
@@ -50,7 +55,7 @@ def _redteam_run(smoke, *, subset):
             RunItem(
                 id=item_id,
                 group=source.category,
-                metrics={"attack_success": succeeded},
+                metrics={verdict_metric(source.category): succeeded},
                 payload={
                     "status": "success" if succeeded else "failure",
                     "condition": source.success.kind,
@@ -73,7 +78,7 @@ def test_null_budgets_record_assessed_results_without_enforcement(smoke, redteam
     assert "100.00%" in output
     assert "record only" in output
     assert "Unconfirmed" in output
-    assert all(f"| {category} |" in output for category in CATEGORIES)
+    assert all(f"| {category} |" in output for category in V1_CATEGORIES)
 
 
 def test_complete_test_run_can_be_used_by_the_gate(smoke):
@@ -187,3 +192,19 @@ def test_cli_adds_redteam_report_and_rejects_promotion(tmp_path, monkeypatch, sm
     with pytest.raises(ValueError, match="Expected a versioned test smoke run"):
         gate.promote(redteam, team.name, tmp_path / "baseline.json")
     assert not (tmp_path / "baseline.json").exists()
+
+
+def test_v2_gate_enforces_false_blocks_and_fails_closed_on_errors(smoke):
+    team = _redteam_run(smoke, subset="smoke", dataset="redteam_v2")
+    rules = gate.load_rules()
+    rows = [row for row in team.items if row.group == "benign_lookalike"]
+    assert len(rows) == 4
+    rules.redteam["benign_lookalike"].max_false_block = 0
+    assert gate.evaluate(smoke, smoke, rules, redteam=team).passed
+    rows[0].metrics["wrongly_blocked"] = True
+    rows[0].payload["status"] = "success"
+    result = gate.evaluate(smoke, smoke, rules, redteam=team)
+    assert "benign_lookalike false-block rate 25.00%" in result.failures[-1]
+    rows[0].metrics = {}
+    rows[0].payload["status"] = "error"
+    assert "1 unassessed" in gate.evaluate(smoke, smoke, rules, redteam=team).failures[-1]

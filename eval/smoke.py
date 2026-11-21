@@ -15,7 +15,7 @@ import yaml
 from pydantic import BaseModel, Field, field_validator
 
 from eval.common import load_items
-from eval.redteam_models import CATEGORIES, RedTeamItem
+from eval.redteam_models import CATEGORIES, V1_CATEGORIES, Dataset, RedTeamItem
 from eval.registry import DatasetEntry, file_hash, inspect_dataset, load_registry, write_registry
 from eval.schema import GROUPS, EvalItem
 from support_agent.config import REPO_ROOT, get_settings
@@ -24,7 +24,11 @@ from support_agent.data.doc_models import write_text
 SMOKE_PATH = REPO_ROOT / "eval/smoke.yaml"
 OUTPUT_PATH = REPO_ROOT / "eval/sets/smoke.jsonl"
 STRATA = {group: 30 if group == "no_answer" else 10 for group in GROUPS}
-REDTEAM_SMOKE_SIZE = 30
+V1_REDTEAM_SMOKE_SIZE = 30
+NEW_CATEGORY_SMOKE_SIZE = 4
+REDTEAM_SMOKE_SIZE = V1_REDTEAM_SMOKE_SIZE + NEW_CATEGORY_SMOKE_SIZE * (
+    len(CATEGORIES) - len(V1_CATEGORIES)
+)
 RULE = "All test no-answer items and a seeded sample of ten from each answerable test group."
 
 
@@ -44,7 +48,9 @@ class SmokeSpec(BaseModel):
             len(set(ids)) != REDTEAM_SMOKE_SIZE
             or {item_id.partition("-")[0] for item_id in ids} != set(CATEGORIES)
         ):
-            raise ValueError("Red-team smoke requires 30 unique IDs covering every category")
+            raise ValueError(
+                f"Red-team smoke requires {REDTEAM_SMOKE_SIZE} unique IDs covering every category"
+            )
         return ids
 
 
@@ -55,15 +61,27 @@ def load_smoke_spec(path: Path = SMOKE_PATH) -> SmokeSpec:
 def select_redteam_smoke(items: Sequence[RedTeamItem], seed: int) -> list[str]:
     """Sample each category separately from the test split."""
     rng = random.Random(seed)
-    size, remainder = divmod(REDTEAM_SMOKE_SIZE, len(CATEGORIES))
-    extra = set(rng.sample(CATEGORIES, remainder))
+    size, remainder = divmod(V1_REDTEAM_SMOKE_SIZE, len(V1_CATEGORIES))
+    extra = set(rng.sample(V1_CATEGORIES, remainder))
+    available = {item.category for item in items}
     selected = []
     for category in CATEGORIES:
+        if category not in available:
+            continue
+        count = size + (category in extra) if category in V1_CATEGORIES else NEW_CATEGORY_SMOKE_SIZE
         members = sorted(
             item.id for item in items if item.category == category and item.split == "test"
         )
-        selected.extend(rng.sample(members, size + (category in extra)))
+        selected.extend(rng.sample(members, count))
     return selected
+
+
+def redteam_smoke_ids(dataset: Dataset) -> list[str]:
+    return [
+        item_id
+        for item_id in load_smoke_spec().redteam
+        if dataset == "redteam_v2" or item_id.partition("-")[0] in V1_CATEGORIES
+    ]
 
 
 def _validate_selection(rows: list[EvalItem], selected: list[EvalItem]) -> None:

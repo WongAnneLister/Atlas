@@ -110,6 +110,8 @@ def test_redteam_cli_records_error_with_manifest_and_review(tmp_path, monkeypatc
     pointer = tmp_path / "run-path"
     result = redteam_eval.main(
         [
+            "--dataset",
+            "redteam_v1",
             "--report",
             str(report),
             "--run-root",

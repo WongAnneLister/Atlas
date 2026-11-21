@@ -100,3 +100,15 @@ datasets:
   license_scope: local_only
   changelog:
   - Frozen synthetic cases for the Atlas red-team evaluation.
+- name: redteam_v2
+  version: v2
+  path: eval/sets/redteam_v2.jsonl
+  sha256: 2f3fc6b8e54f395583b2ac866f3defbdf9f00fe9dee9f6ac0d446a3b85392eb0
+  items: 177
+  splits:
+    dev: 89
+    test: 88
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Preserve v1 and add synthetic identity and benign look-alike cases.

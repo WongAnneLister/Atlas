@@ -18,7 +18,7 @@ from sqlalchemy import select
 
 from eval.judge import JudgeDecision
 from eval.redteam_canaries import ATTACKER_CUSTOMER
-from eval.redteam_checks import Observation, ObservedRefund, ObservedTurn, evaluate_success
+from eval.redteam_checks import Observation, ObservedRefund, ObservedTurn
 from eval.redteam_fixtures import (
     FIXTURE_CUSTOMER_IDS,
     FIXTURE_ORDER_IDS,
@@ -27,6 +27,7 @@ from eval.redteam_fixtures import (
     open_fixtures,
 )
 from eval.redteam_models import Category, RedTeamItem, Turn
+from eval.redteam_scoring import score
 from support_agent.api.app import create_app
 from support_agent.api.deps import ApiDeps
 from support_agent.api.events import SseEvent
@@ -176,18 +177,59 @@ class _TextData(BaseModel):
     text: str
 
 
+class _SessionResponse(BaseModel):
+    token: str = Field(min_length=1)
+
+
+async def _session_token(client: httpx.AsyncClient) -> str | None:
+    response = await client.post("/api/session", json={"customer_id": ATTACKER_CUSTOMER})
+    if response.status_code == 404:
+        return None
+    if response.status_code != 200:
+        raise ValueError("The synthetic customer could not open an API session")
+    try:
+        return _SessionResponse.model_validate_json(response.content).token
+    except ValueError:
+        raise ValueError("Invalid fixture session response") from None
+
+
+async def _submit_turn(
+    client: httpx.AsyncClient, item: RedTeamItem, turn: Turn, token: str | None
+) -> tuple[httpx.Response, str]:
+    body_customer_id = turn.body_customer_id or ATTACKER_CUSTOMER
+    if body_customer_id not in FIXTURE_CUSTOMER_IDS:
+        raise ValueError("Evaluation must use synthetic fixture identities")
+    field = "message" if turn.kind == "chat" else "value"
+    body = {"customer_id": body_customer_id, "conversation_id": item.id, field: turn.text}
+    headers = {"Authorization": f"Bearer {token}"} if token is not None else None
+    response = await client.post(f"/api/{turn.kind}", json=body, headers=headers)
+    return response, ATTACKER_CUSTOMER if token is not None else body_customer_id
+
+
+def _observation(outcome: TurnOutcome, item: RedTeamItem) -> ObservedTurn:
+    observed = outcome.observation()
+    if item.category == "identity_spoofing":
+        # A picker is customer-visible output too. Keep the v1 text inputs unchanged.
+        pickers = [
+            json.dumps(event.data, default=str)
+            for event in outcome.events
+            if event.name == "interrupt"
+        ]
+        observed.answer = "\n".join([observed.answer, *pickers])
+    return observed
+
+
 async def _run_turn(
     client: httpx.AsyncClient,
     saver: BaseCheckpointSaver[Any],
     hooks: FixtureHooks,
     item: RedTeamItem,
     turn: Turn,
+    token: str | None,
 ) -> TurnOutcome:
-    config: RunnableConfig = {"configurable": {"thread_id": f"{ATTACKER_CUSTOMER}:{item.id}"}}
-    field = "message" if turn.kind == "chat" else "value"
-    body = {"customer_id": ATTACKER_CUSTOMER, "conversation_id": item.id, field: turn.text}
     with hooks.capture(item.fixtures.overlay_chunk_ids) as tool_results:
-        response = await client.post(f"/api/{turn.kind}", json=body)
+        response, customer_id = await _submit_turn(client, item, turn, token)
+    config: RunnableConfig = {"configurable": {"thread_id": f"{customer_id}:{item.id}"}}
     outcome = TurnOutcome(
         kind=turn.kind, http_status=response.status_code, tool_results=tool_results
     )
@@ -214,7 +256,7 @@ async def _run_turn(
     if checkpoint is None:
         raise ValueError("Missing turn checkpoint")
     state = ConversationState.model_validate(checkpoint["channel_values"])
-    if state.customer_id != ATTACKER_CUSTOMER or not outcome.route:
+    if state.customer_id != customer_id or not outcome.route:
         raise ValueError("Invalid turn checkpoint")
     outcome.answer = "".join(
         _TextData.model_validate(event.data).text
@@ -286,6 +328,7 @@ async def _run_item(
     saver: BaseCheckpointSaver[Any],
     hooks: FixtureHooks,
     judge: Judge | None,
+    token: str | None,
 ) -> ItemOutcome:
     record = ItemOutcome(item_id=item.id, category=item.category, status="error")
     try:
@@ -296,7 +339,7 @@ async def _run_item(
         ):
             raise ValueError("Evaluation targets must use synthetic fixture identities")
         for turn in item.turns:
-            outcome = await _run_turn(client, saver, hooks, item, turn)
+            outcome = await _run_turn(client, saver, hooks, item, turn, token)
             record.turns.append(outcome)
             if outcome.error_type is not None:
                 record.error_type = outcome.error_type
@@ -306,15 +349,16 @@ async def _run_item(
             record.judge_used,
             record.judge_claims,
         ) = await _judge(item, record.turns, judge)
-        checked = evaluate_success(
+        checked = score(
             item,
             Observation(
-                turns=[turn.observation() for turn in record.turns],
+                turns=[_observation(turn, item) for turn in record.turns],
                 refunds=_refunds(fixtures, record.turns),
                 canaries=fixtures.canaries,
                 foreign_fields=fixtures.foreign_fields,
                 judged_fabrication=record.judged_fabrication,
             ),
+            [turn.handoff_reason for turn in record.turns],
         )
         record.status = "success" if checked.success else "failure"
         record.evidence = checked.evidence
@@ -363,4 +407,8 @@ async def run(
                 trust_env=False,
             ) as client,
         ):
-            return [await _run_item(item, fixtures, client, saver, hooks, judge) for item in items]
+            token = await _session_token(client)
+            return [
+                await _run_item(item, fixtures, client, saver, hooks, judge, token)
+                for item in items
+            ]

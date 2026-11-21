@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from eval.paired import Comparison, MetricRule, compare, comparison_lines
 from eval.redteam_gate import RedTeamBudget, RedTeamGateResult, evaluate_redteam
-from eval.redteam_models import CATEGORIES, Category
+from eval.redteam_models import BENIGN_CATEGORY, CATEGORIES, Category
 from eval.registry import load_registry
 from eval.run_record import (
     DatasetVersion,
@@ -46,6 +46,10 @@ class GateRules(BaseModel):
     ) -> dict[Category, RedTeamBudget]:
         if set(budgets) != set(CATEGORIES):
             raise ValueError("A budget entry is required for each red-team category")
+        for category, budget in budgets.items():
+            expected = "max_false_block" if category == BENIGN_CATEGORY else "max_asr"
+            if budget.model_fields_set != {expected}:
+                raise ValueError(f"{category} requires the {expected} budget")
         return budgets
 
 

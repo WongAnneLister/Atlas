@@ -23,10 +23,12 @@ from eval.redteam_canaries import (
     REFUND_ORDERS,
 )
 from eval.redteam_models import (
-    CATEGORIES,
+    DATASETS,
+    V1_CATEGORIES,
     CanaryLeak,
     Category,
     CompliedOfftopic,
+    Dataset,
     FabricatedCommitment,
     Fixtures,
     FollowedInjection,
@@ -40,9 +42,17 @@ from eval.redteam_models import (
     Target,
     Turn,
 )
+from eval.redteam_v2_cases import new_cases
 from support_agent.config import REPO_ROOT
 
+DEFAULT_DATASET: Dataset = "redteam_v2"
 DEFAULT_OUTPUT = REPO_ROOT / "eval/sets/redteam_v1.jsonl"
+
+
+def _path(dataset: Dataset) -> Path:
+    return DEFAULT_OUTPUT.with_name(f"{dataset}.jsonl")
+
+
 _INJECTION_TOPICS = ("returns", "shipping", "warranty")
 
 
@@ -348,7 +358,7 @@ def _offtopic() -> list[_Case]:
     return cases
 
 
-def build_items(seed: int = DEFAULT_SEED) -> list[RedTeamItem]:
+def build_items(seed: int = DEFAULT_SEED, *, dataset: Dataset = "redteam_v1") -> list[RedTeamItem]:
     groups = (
         _direct(),
         _indirect(),
@@ -360,13 +370,22 @@ def build_items(seed: int = DEFAULT_SEED) -> list[RedTeamItem]:
     )
     rng = Random(seed)
     items = []
-    for category, cases in zip(CATEGORIES, groups, strict=True):
+    for category, cases in zip(V1_CATEGORIES, groups, strict=True):
         # Balance both splits within a category while choosing cases reproducibly.
         test_indexes = set(rng.sample(range(len(cases)), len(cases) // 2))
         items.extend(
             case.item(category, "test" if index in test_indexes else "dev")
             for index, case in enumerate(cases)
         )
+    if dataset == "redteam_v2":
+        for cases in new_cases():
+            test_indexes = set(rng.sample(range(len(cases)), len(cases) // 2))
+            items.extend(
+                RedTeamItem.from_content(
+                    case.model_copy(update={"split": "test" if index in test_indexes else "dev"})
+                )
+                for index, case in enumerate(cases)
+            )
     return sorted(items, key=lambda item: item.id)
 
 
@@ -379,7 +398,7 @@ def load_items(path: Path) -> list[RedTeamItem]:
     return items
 
 
-def write_items(path: Path = DEFAULT_OUTPUT) -> None:
+def write_items(path: Path = DEFAULT_OUTPUT, *, dataset: Dataset = "redteam_v1") -> None:
     if path.suffix != ".jsonl":
         raise ValueError("Output must be a JSONL file")
     try:
@@ -392,7 +411,7 @@ def write_items(path: Path = DEFAULT_OUTPUT) -> None:
     with TemporaryDirectory(dir=path.parent) as folder:
         temporary_path = Path(folder) / path.name
         with temporary_path.open("w", encoding="utf-8", newline="\n") as temporary:
-            for item in build_items():
+            for item in build_items(dataset=dataset):
                 temporary.write(f"{item.model_dump_json()}\n")
         # Replacing a racing link changes the directory entry, never the linked file.
         temporary_path.replace(path)
@@ -400,10 +419,16 @@ def write_items(path: Path = DEFAULT_OUTPUT) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--dataset", choices=DATASETS)
     args = parser.parse_args(argv)
     try:
-        write_items(args.output)
+        if args.output or args.dataset:
+            dataset = args.dataset or "redteam_v1"
+            write_items(args.output or _path(dataset), dataset=dataset)
+        else:
+            for dataset in DATASETS:
+                write_items(_path(dataset), dataset=dataset)
     except (OSError, ValueError) as error:
         parser.error(str(error))
     return 0

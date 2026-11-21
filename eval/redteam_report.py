@@ -7,13 +7,19 @@ from io import StringIO
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-from eval.redteam_models import CATEGORIES
+from eval.redteam_models import (
+    ATTACK_METRIC,
+    BENIGN_CATEGORY,
+    CATEGORIES,
+    DATASETS,
+    FALSE_BLOCK_METRIC,
+    V1_CATEGORIES,
+    Dataset,
+)
 from eval.run_record import MetricSummary, Run, RunItem, RunMetrics, format_summary
 from eval.stats import rule_of_three_upper, wilson_interval
 from support_agent.config import EvalStatsSettings
 
-DATASET = "redteam_v1"
-METRIC = "attack_success"
 JUDGE_CATEGORY = "policy_fabrication"
 
 
@@ -47,8 +53,15 @@ def _summary(count: int, size: int, alpha: float) -> MetricSummary:
     )
 
 
-def _verdicts(items: Iterable[RunItem]) -> list[bool]:
-    return [value for item in items if type(value := item.metrics.get(METRIC)) is bool]
+def _verdicts(items: Iterable[RunItem], metric: str) -> list[bool]:
+    return [value for item in items if type(value := item.metrics.get(metric)) is bool]
+
+
+def dataset_name(run: Run) -> Dataset:
+    names = [name for name in DATASETS if name in run.manifest.datasets]
+    if run.manifest.kind != "redteam" or len(names) != 1:
+        raise ValueError("Expected a versioned red-team run")
+    return names[0]
 
 
 def redteam_metrics(items: list[RunItem], settings: EvalStatsSettings) -> RunMetrics:
@@ -57,7 +70,7 @@ def redteam_metrics(items: list[RunItem], settings: EvalStatsSettings) -> RunMet
     judged = [
         bool(item.payload["unconfirmed"])
         for item in items
-        if item.group == JUDGE_CATEGORY and METRIC in item.metrics
+        if item.group == JUDGE_CATEGORY and ATTACK_METRIC in item.metrics
     ]
     metrics = {
         "error_rate": _summary(
@@ -66,9 +79,18 @@ def redteam_metrics(items: list[RunItem], settings: EvalStatsSettings) -> RunMet
     }
     if judged:
         metrics["unconfirmed_judge_rate"] = _summary(sum(judged), len(judged), settings.alpha)
-    results = {METRIC: _verdicts(items)}
+    attack_cases = [item for item in items if item.group != BENIGN_CATEGORY]
+    results = {
+        ATTACK_METRIC: _verdicts(attack_cases, ATTACK_METRIC),
+        FALSE_BLOCK_METRIC: _verdicts(
+            (item for item in items if item.group == BENIGN_CATEGORY), FALSE_BLOCK_METRIC
+        ),
+    }
     for category in CATEGORIES:
-        results[f"asr_{category}"] = _verdicts(item for item in items if item.group == category)
+        if category != BENIGN_CATEGORY:
+            results[f"asr_{category}"] = _verdicts(
+                (item for item in attack_cases if item.group == category), ATTACK_METRIC
+            )
     metrics.update(
         (key, _summary(sum(outcomes), len(outcomes), settings.alpha))
         for key, outcomes in results.items()
@@ -79,8 +101,9 @@ def redteam_metrics(items: list[RunItem], settings: EvalStatsSettings) -> RunMet
 
 def render_report(run: Run, path: Path) -> None:
     manifest = run.manifest
-    dataset = manifest.datasets.get(DATASET)
-    if manifest.kind != "redteam" or dataset is None or dataset.version is None:
+    name = dataset_name(run)
+    dataset = manifest.datasets[name]
+    if dataset.version is None:
         raise ValueError("Expected a versioned red-team run")
     counts = Counter((item.group, item.payload["status"]) for item in run.items)
     statistics = run.metrics.bootstrap
@@ -93,7 +116,7 @@ def render_report(run: Run, path: Path) -> None:
         f"- Git SHA: `{manifest.git_sha}`",
         f"- Working tree changed at collection: {manifest.dirty}",
         f"- Config hash: `{manifest.config_hash}`",
-        f"- Dataset: {DATASET} {dataset.version} (`{dataset.sha256}`)",
+        f"- Dataset: {name} {dataset.version} (`{dataset.sha256}`)",
         f"- Split: {manifest.split} ({manifest.source['subset']})",
         f"- Date (UTC): {manifest.started_at.isoformat() if manifest.started_at else 'unknown'}",
         f"- Model names: {', '.join(manifest.models.values()) or 'unknown'}",
@@ -105,19 +128,44 @@ def render_report(run: Run, path: Path) -> None:
         f"| Category | Attack success rate and {confidence:.0%} Wilson CI | Errors |",
         "|---|---|---:|",
     ]
-    for category in CATEGORIES:
+    categories = V1_CATEGORIES if name == "redteam_v1" else CATEGORIES
+    for category in categories:
+        if category == BENIGN_CATEGORY:
+            continue
         metric = run.metrics.metrics.get(f"asr_{category}")
-        name = f"{category} (unconfirmed where judged)" if category == JUDGE_CATEGORY else category
+        label = f"{category} (unconfirmed where judged)" if category == JUDGE_CATEGORY else category
         lines.append(
-            f"| {name} | {format_summary(metric) if metric else 'No assessed cases'} | "
+            f"| {label} | {format_summary(metric) if metric else 'No assessed cases'} | "
             f"{counts[category, 'error']} |"
         )
-    overall = run.metrics.metrics.get(METRIC)
+    overall = run.metrics.metrics.get(ATTACK_METRIC)
+    false_block_errors = counts[BENIGN_CATEGORY, "error"]
+    attack_errors = (run.metrics.metrics["error_rate"].count or 0) - false_block_errors
     lines.extend(
         [
             f"| **Overall** | {format_summary(overall) if overall else 'No assessed cases'} | "
-            f"{run.metrics.metrics['error_rate'].count} |",
+            f"{attack_errors} |",
             "",
+        ]
+    )
+    if name == "redteam_v2":
+        false_blocks = run.metrics.metrics.get(FALSE_BLOCK_METRIC)
+        lines.extend(
+            [
+                "## False blocks",
+                "",
+                "Benign look-alikes are excluded from attack success rates.",
+                "",
+                f"| Category | False block rate and {confidence:.0%} Wilson CI | Errors |",
+                "|---|---|---:|",
+                f"| {BENIGN_CATEGORY} | "
+                f"{format_summary(false_blocks) if false_blocks else 'No assessed cases'} | "
+                f"{false_block_errors} |",
+                "",
+            ]
+        )
+    lines.extend(
+        [
             "## Successful cases",
             "",
             "| Item | Category | Condition | Evidence |",
@@ -133,7 +181,7 @@ def render_report(run: Run, path: Path) -> None:
         "fabricated_commitment": "The judge flagged an unsupported commitment. Unconfirmed.",
     }
     for item in run.items:
-        if item.metrics.get(METRIC) is True:
+        if item.metrics.get(ATTACK_METRIC) is True:
             condition = item.payload["condition"]
             lines.append(f"| {item.id} | {item.group} | {condition} | {evidence[condition]} |")
     if overall is None or overall.count == 0:
