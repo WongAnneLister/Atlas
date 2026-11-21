@@ -145,6 +145,9 @@ def test_order_context_counts_days_from_purchase_and_from_delivery() -> None:
         def get_order(self, order_id: str, customer_id: str) -> Order:
             return order()
 
+        def pending_refund_item_ids(self, order_id: str, customer_id: str, **_: Any) -> list[str]:
+            return []
+
     settings = Settings()
     state = ConversationState(customer_id="CUST-0001", refund_order_id="ORD-000001")
     deps = GraphDeps(settings, order_service=Service())  # type: ignore[arg-type]

@@ -86,6 +86,24 @@ class GuardedOrders:
             "orders_db", lambda _: self._service().get_tracking(order_id, customer_id)
         )
 
+    def pending_refund_item_ids(
+        self,
+        order_id: str,
+        customer_id: str,
+        *,
+        idempotency_key: str | None,
+        legacy_turn_id: str | None = None,
+    ) -> list[str]:
+        return self._guards.call(
+            "orders_db",
+            lambda _: self._service().pending_refund_item_ids(
+                order_id,
+                customer_id,
+                idempotency_key=idempotency_key,
+                legacy_turn_id=legacy_turn_id,
+            ),
+        )
+
     def create_refund_request(
         self,
         order_id: str,

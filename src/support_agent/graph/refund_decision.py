@@ -1,8 +1,9 @@
 """Refund decision schemas and the code checks every model decision must pass.
 
 A yes or no decision survives only if each reason cites retrieved policy, the items are
-real open items of the order, special cases are backed by cited text, and no retrieved
-return window is exceeded. Anything else becomes needs_human (a handoff).
+real open items of the order with no other request in review, special cases are backed
+by cited text, and no retrieved return window is exceeded. Anything else becomes
+needs_human (a handoff).
 """
 
 from __future__ import annotations
@@ -59,7 +60,12 @@ def check_decision(
     valid_citations = sorted(
         {number for number in decision.citations if 1 <= number <= len(state.retrieval)}
     )
-    valid_items = {item.item_id for item in order.items if item.refunded_quantity < item.quantity}
+    pending = set((state.order_context or {}).get("pending_refund_item_ids") or [])
+    valid_items = {
+        item.item_id
+        for item in order.items
+        if item.refunded_quantity < item.quantity and item.item_id not in pending
+    }
     cited_numbers = {
         int(number) for reason in decision.reasons for number in CITATION.findall(reason)
     }

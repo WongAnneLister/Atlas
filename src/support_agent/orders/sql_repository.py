@@ -1,13 +1,13 @@
 """Order repository shared by SQLite and PostgreSQL."""
 
-from collections.abc import Iterator
+from collections.abc import Collection, Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 from time import monotonic
 
-from sqlalchemy import URL, Connection, Engine, RowMapping, inspect, select
+from sqlalchemy import URL, Connection, Engine, RowMapping, inspect, or_, select
 from sqlalchemy.dialects.postgresql import insert as postgres_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
@@ -21,6 +21,7 @@ from support_agent.orders.models import (
     Order,
     OrderItem,
     OrderNotFound,
+    RefundAlreadyPending,
     RefundRequest,
     SeedDataset,
     SeedMetadata,
@@ -41,6 +42,29 @@ def _upgrade_sqlite_refund_keys(connection: Connection) -> None:
     connection.exec_driver_sql(
         "CREATE UNIQUE INDEX refund_requests_idempotency_key ON refund_requests (idempotency_key)"
     )
+
+
+def _pending_items(
+    connection: Connection,
+    order_id: str,
+    *,
+    own_request_ids: Collection[str] = (),
+    key: str | None = None,
+) -> set[str]:
+    """Items of the order held by a request in review, other than this turn's own write."""
+    requests, items = tables.refund_requests, tables.refund_request_items
+    statement = (
+        select(items.c.item_id)
+        .join(requests, requests.c.request_id == items.c.request_id)
+        .where(items.c.order_id == order_id, requests.c.status == "pending_review")
+    )
+    if own_request_ids:
+        statement = statement.where(requests.c.request_id.not_in(list(own_request_ids)))
+    if key is not None:
+        statement = statement.where(
+            or_(requests.c.idempotency_key.is_(None), requests.c.idempotency_key != key)
+        )
+    return set(connection.execute(statement).scalars())
 
 
 def _refund_time_left(deadline: float) -> float:
@@ -186,6 +210,18 @@ class OrderRepository:
             ids = connection.execute(statement).scalars().all()
             return [self._owned_order(connection, order_id, customer_id) for order_id in ids]
 
+    def pending_refund_item_ids(
+        self,
+        order_id: str,
+        customer_id: str,
+        *,
+        own_request_ids: Collection[str] = (),
+    ) -> list[str]:
+        # No key filter here: a legacy SQLite file may lack the column until its next write.
+        with self.connection() as connection:
+            self._owned_order(connection, order_id, customer_id)
+            return sorted(_pending_items(connection, order_id, own_request_ids=own_request_ids))
+
     def get_tracking(self, order_id: str, customer_id: str) -> Shipment | None:
         with self.connection() as connection:
             self._owned_order(connection, order_id, customer_id)
@@ -217,6 +253,11 @@ class OrderRepository:
         with self._refund_transaction(deadline) as connection:
             # Ownership is checked before any request validation or write.
             order = self._owned_order(connection, order_id, customer_id)
+            # Serialise writers per order so two chats cannot both pass the pending check.
+            # SQLite already holds its write lock from BEGIN IMMEDIATE.
+            connection.execute(
+                select(orders.c.order_id).where(orders.c.order_id == order_id).with_for_update()
+            )
             valid_ids = {item.item_id for item in order.items}
             if (
                 not item_ids
@@ -242,6 +283,11 @@ class OrderRepository:
                 legacy = self._refund_row(connection, legacy_request_id)
                 if legacy is not None and legacy["idempotency_key"] in (None, idempotency_key):
                     return self._existing_refund(connection, legacy, request, idempotency_key)
+            pending = _pending_items(
+                connection, order_id, own_request_ids=[request_id], key=idempotency_key
+            )
+            if pending & set(item_ids):
+                raise RefundAlreadyPending("An item already has a refund request in review")
 
             insert = postgres_insert if connection.dialect.name == "postgresql" else sqlite_insert
             statement = insert(table).on_conflict_do_nothing().returning(table.c.request_id)

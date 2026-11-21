@@ -82,16 +82,17 @@ def test_same_turn_id_in_two_conversations_keeps_refund_requests_separate(seeded
     from support_agent.graph.build import build_graph
 
     settings, service = seeded
-    order = service.get_order("ORD-000001", "CUST-0001")
+    order = service.get_order("ORD-000004", "CUST-0001")
     ids: list[str] = []
-    for thread_id in ("shop-one", "shop-two"):
-        decision = yes_decision(order)
+    # Each conversation asks for a different item: one item may hold one open request.
+    for thread_id, item in zip(("shop-one", "shop-two"), order.items, strict=True):
+        decision = {**yes_decision(order), "items": [item.item_id]}
         with deps(
             settings, service, DecisionFake(responses=["unused"], decisions=[decision])
         ) as graph_deps:
             result = build_graph(graph_deps).invoke(
                 {
-                    "messages": [HumanMessage(content="Refund ORD-000001", id="same-turn-id")],
+                    "messages": [HumanMessage(content="Refund ORD-000004", id="same-turn-id")],
                     "customer_id": order.customer_id,
                 },
                 {"configurable": {"thread_id": thread_id}},

@@ -269,11 +269,13 @@ def test_refund_item_write_failure_rolls_back_request(service: OrderService) -> 
     assert service.get_order(order.order_id, order.customer_id) == order
 
 
-def test_simultaneous_sqlite_refunds_both_commit(service: OrderService) -> None:
+def test_simultaneous_requests_for_one_item_commit_once(service: OrderService) -> None:
     from concurrent.futures import ThreadPoolExecutor
     from threading import Event
 
     from sqlalchemy import event
+
+    from support_agent.orders import RefundAlreadyPending
 
     order = service.get_order("ORD-000001", "CUST-0001")
     first_read, second_read = Event(), Event()
@@ -298,4 +300,8 @@ def test_simultaneous_sqlite_refunds_both_commit(service: OrderService) -> None:
         first = pool.submit(request, "First issue")
         assert first_read.wait(2)
         second = pool.submit(request, "Second issue")
-        assert first.result(timeout=3) != second.result(timeout=3)
+        assert first.result(timeout=3).startswith("REF-")
+        with pytest.raises(RefundAlreadyPending):
+            second.result(timeout=3)
+    with service.repository.connection() as connection:
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").scalar_one() == 1

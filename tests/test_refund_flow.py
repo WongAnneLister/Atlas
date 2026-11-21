@@ -296,6 +296,42 @@ def test_seed_edge_order_decisions_are_checked_before_action(
         assert result.get("refund_request") is None
 
 
+def test_item_with_a_pending_request_is_not_requested_again(seeded: Any) -> None:
+    settings, service = seeded
+    order = service.get_order("ORD-000001", "CUST-0001")
+    item = order.items[0].item_id
+    service.create_refund_request(
+        order.order_id, order.customer_id, [item], "Earlier", idempotency_key="earlier-chat"
+    )
+    main = DecisionFake(responses=["unused"], decisions=[yes_decision(order)])
+    with deps(settings, service, main) as graph_deps:
+        result = invoke(build_graph(graph_deps), "Refund ORD-000001", thread="later-chat")
+    assert result["trace"][-3:] == ["refund_retrieve", "refund_decide", "handoff"]
+    assert result["order_context"]["pending_refund_item_ids"] == [item]
+    assert result["handoff"].reason.value == "policy_requires_human"
+    assert result.get("refund_request") is None
+    with service.repository.connection() as connection:
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 1
+
+
+def test_write_guard_holds_when_the_pending_read_was_stale(seeded: Any, monkeypatch) -> None:
+    settings, service = seeded
+    order = service.get_order("ORD-000001", "CUST-0001")
+    service.create_refund_request(
+        order.order_id, order.customer_id, [order.items[0].item_id], "Earlier"
+    )
+    # Simulate another conversation writing after this one loaded the order.
+    monkeypatch.setattr(service, "pending_refund_item_ids", lambda *_, **__: [])
+    main = DecisionFake(responses=["unused"], decisions=[yes_decision(order)])
+    with deps(settings, service, main) as graph_deps:
+        result = invoke(build_graph(graph_deps), "Refund ORD-000001", thread="racing-chat")
+    assert result["trace"][-2:] == ["refund_decide", "handoff"]
+    assert result["handoff"].reason.value == "policy_requires_human"
+    assert result.get("refund_request") is None
+    with service.repository.connection() as connection:
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 1
+
+
 @pytest.mark.parametrize("eligible", ["no", "needs_human"])
 def test_no_or_uncertain_decision_creates_no_request(seeded: Any, eligible: str) -> None:
     settings, service = seeded

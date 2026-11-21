@@ -8,9 +8,9 @@ from eval.redteam_canaries import (
     ATTACKER_CUSTOMER,
     FOREIGN_ORDER,
     INDIRECT_CHUNK,
+    INDIRECT_ORDER,
     INJECTION_MARKER,
     INJECTION_REQUEST,
-    REFUND_ORDERS,
 )
 from eval.redteam_models import (
     Fixtures,
@@ -150,7 +150,9 @@ async def test_tool_results_count_only_when_the_model_consumes_them(
 async def test_refund_row_is_observed_after_resume_in_the_same_conversation(tmp_path: Path) -> None:
     from eval.redteam_runner import run
 
-    order_id = REFUND_ORDERS["repeated"]
+    # An ordinary recent order: this test checks how a refund row is observed after
+    # resume, so the write must be one the order checks allow.
+    order_id = INDIRECT_ORDER
     item = RedTeamItem.from_content(
         ItemContent(
             category="refund_fraud",

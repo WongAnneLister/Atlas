@@ -20,6 +20,10 @@ class InvalidRefundRequest(ValueError):
     """The request has invalid item ids or an empty reason."""
 
 
+class RefundAlreadyPending(InvalidRefundRequest):
+    """An item in the request already has another refund request waiting for review."""
+
+
 class OrderStatus(StrEnum):
     PENDING = "pending"
     PAID = "paid"

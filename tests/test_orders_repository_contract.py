@@ -8,7 +8,7 @@ from pydantic import SecretStr
 
 from support_agent.config import Settings
 from support_agent.db.migrate import upgrade
-from support_agent.orders import InvalidRefundRequest, OrderNotFound
+from support_agent.orders import InvalidRefundRequest, OrderNotFound, RefundAlreadyPending
 from support_agent.orders.models import CustomerSummary
 from support_agent.orders.seed import generate_dataset, seed_orders
 from support_agent.orders.service import OrderService
@@ -124,3 +124,78 @@ def test_repository_returns_one_refund_and_rejects_cross_order_key(order_reposit
             connection.exec_driver_sql("SELECT idempotency_key FROM refund_requests").scalar_one()
             == key
         )
+
+
+def test_pending_request_blocks_another_request_for_the_same_item(order_repository) -> None:
+    _, service = order_repository
+    order = service.get_order("ORD-000004", "CUST-0001")
+    first, second = (item.item_id for item in order.items)
+    ids = (order.order_id, order.customer_id)
+    original = service.create_refund_request(*ids, [first], "Issue", idempotency_key="chat-one")
+    with pytest.raises(RefundAlreadyPending):
+        service.create_refund_request(*ids, [first], "Changed my mind", idempotency_key="chat-two")
+    with pytest.raises(RefundAlreadyPending):
+        service.create_refund_request(*ids, [second, first], "Both items")
+    # A replay of the same write still returns the original request.
+    assert service.create_refund_request(*ids, [first], "Issue", idempotency_key="chat-one") == (
+        original
+    )
+    assert service.pending_refund_item_ids(*ids) == [first]
+    # The turn that wrote the request does not see its own write as a conflict.
+    assert service.pending_refund_item_ids(*ids, idempotency_key="chat-one") == []
+    service.create_refund_request(*ids, [second], "Issue", idempotency_key="chat-three")
+    assert service.pending_refund_item_ids(*ids) == [first, second]
+    with pytest.raises(OrderNotFound):
+        service.pending_refund_item_ids(order.order_id, "missing")
+    with service.repository.connection() as connection:
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").scalar_one() == 2
+
+
+def test_pending_request_without_a_key_still_blocks(order_repository) -> None:
+    _, service = order_repository
+    order = service.get_order("ORD-000002", "CUST-0001")
+    item = [order.items[0].item_id]
+    service.repository.create_refund_request(
+        order.order_id, order.customer_id, item, "Issue", "REF-unkeyed", datetime.now(UTC)
+    )
+    with pytest.raises(RefundAlreadyPending):
+        service.create_refund_request(
+            order.order_id, order.customer_id, item, "Issue", idempotency_key="later-chat"
+        )
+
+
+def test_concurrent_chats_cannot_both_pass_the_pending_check(order_repository) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    from sqlalchemy import event
+
+    _, service = order_repository
+    order = service.get_order("ORD-000003", "CUST-0001")
+    first_read, second_read = Event(), Event()
+
+    def after_query(connection, cursor, statement, parameters, context, executemany) -> None:
+        # Hold the first writer right after its pending check until the second one checks.
+        if "JOIN refund_requests" not in statement:
+            return
+        if first_read.is_set():
+            second_read.set()
+        else:
+            first_read.set()
+            second_read.wait(0.5)
+
+    event.listen(service.repository.engine, "after_cursor_execute", after_query)
+
+    def request(key: str) -> str:
+        ids = (order.order_id, order.customer_id, [order.items[0].item_id], "Issue")
+        return service.create_refund_request(*ids, idempotency_key=key).request_id
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(request, "chat-one")
+        assert first_read.wait(2)
+        second = pool.submit(request, "chat-two")
+        assert first.result(timeout=5).startswith("REF-")
+        with pytest.raises(RefundAlreadyPending):
+            second.result(timeout=5)
+    with service.repository.connection() as connection:
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").scalar_one() == 1

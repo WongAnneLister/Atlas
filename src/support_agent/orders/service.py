@@ -69,6 +69,22 @@ class OrderService:
     def get_tracking(self, order_id: str, customer_id: str) -> Shipment | None:
         return self.repository.get_tracking(order_id, customer_id)
 
+    def pending_refund_item_ids(
+        self,
+        order_id: str,
+        customer_id: str,
+        *,
+        idempotency_key: str | None = None,
+        legacy_turn_id: str | None = None,
+    ) -> list[str]:
+        """Item ids held by another request in review; this turn's own write does not count."""
+        own = [
+            _refund_id(customer_id, order_id, value)
+            for value in (idempotency_key, legacy_turn_id)
+            if value is not None
+        ]
+        return self.repository.pending_refund_item_ids(order_id, customer_id, own_request_ids=own)
+
     def create_refund_request(
         self,
         order_id: str,

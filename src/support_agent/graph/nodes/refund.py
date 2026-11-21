@@ -119,8 +119,17 @@ class RefundPath:
     def load_order(self, state: ConversationState) -> dict[str, Any]:
         if not state.refund_order_id or not state.customer_id:
             return self._handoff(state, HandoffReason.ORDER_NOT_FOUND)
+        turn_id = turn_message_id(state.messages)
+        key = action_key(current_graph_config(), turn_id, "refund_request")
         try:
-            order = self._service().get_order(state.refund_order_id, state.customer_id)
+            service = self._service()
+            order = service.get_order(state.refund_order_id, state.customer_id)
+            pending = service.pending_refund_item_ids(
+                state.refund_order_id,
+                state.customer_id,
+                idempotency_key=key,
+                legacy_turn_id=turn_id,
+            )
         except (OrderNotFound, ValueError):
             return self._handoff(state, HandoffReason.ORDER_NOT_FOUND)
         except Exception as error:
@@ -136,6 +145,9 @@ class RefundPath:
             "days_since_delivery": days,
             "today": today.isoformat(),
         }
+        if pending:
+            # Only when present, so the decision prompt is unchanged for other orders.
+            context["pending_refund_item_ids"] = pending
         return {"order_context": context, "trace": [*state.trace, "refund_load"]}
 
     def retrieve_policy(self, state: ConversationState) -> dict[str, Any]:
