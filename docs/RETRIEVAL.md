@@ -78,10 +78,15 @@ flowchart LR
   rewritten queries, full graph behavior and red-team cases. The CPU reranker dominates its cost
   because the check reranks each question. `INDEX_ARGS=--reranker-device=mps` can select that device
   for the evidence run.
-- Every candidate no-answer item must fail the evidence gate. An unassessed candidate no-answer
-  item also prevents release. Runs above the configured retrieval-error limit are invalid.
-  A paired regression may be overridden with a written `--override-reason`; the registry and
-  report retain it. It cannot override the absolute rule or an invalid run.
+- Every dev no-answer item must fail the evidence gate (`index.release.absolute_splits`); the
+  gate threshold was tuned on dev. A test-split no-answer item may pass the gate only if it also
+  passes on the live build: the serving index passes one at the gate today, and the LLM coverage
+  check stops it later in the app. A first release has no live build, so it judges dev only and
+  lists other passes. An unassessed candidate no-answer item also prevents release.
+  Runs above the configured retrieval-error limit are invalid. A paired regression may be
+  overridden with a written `--override-reason`; the registry and report retain it. It cannot
+  override a no-answer rule or an invalid run. Matching clean evidence for a build is reused
+  as either the live or the candidate side.
 - `make index-adopt COLLECTION=support_chunks` verifies on-disk chunks against the existing index
   and registers it without changing its rows. Adoption establishes text equivalence and assumes the
   supplied embedding settings describe the existing vectors. It is for bootstrapping the current

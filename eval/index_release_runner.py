@@ -1,6 +1,12 @@
 """Bind saved release evidence to the index lifecycle."""
 
-from eval.index_release import collect_run, evaluate_release, find_live_run, load_release_set
+from eval.index_release import (
+    absolute_ids,
+    collect_run,
+    evaluate_release,
+    find_live_run,
+    load_release_set,
+)
 from eval.run_record import read_run
 from support_agent.config import Settings
 from support_agent.retrieval.index_models import BuildRecord
@@ -47,14 +53,26 @@ def check_for(
                     release_set=selected,
                 )
             live_run = read_run(path)
-        path = collect_run(
+        # A clean run with the same build, items and evidence config is valid in either role.
+        path = find_live_run(
+            config,
+            build_id=candidate.build_id,
+            release_set=selected,
+            fingerprint=candidate.fingerprint,
+            collection=candidate.collection,
+        ) or collect_run(
             config,
             candidate.collection,
             build_id=candidate.build_id,
             fingerprint=candidate.fingerprint,
             release_set=selected,
         )
-        result = evaluate_release(read_run(path), live_run, override_reason=override_reason)
+        result = evaluate_release(
+            read_run(path),
+            live_run,
+            override_reason=override_reason,
+            absolute=absolute_ids(selected, config),
+        )
         return result, path.name
 
     return check

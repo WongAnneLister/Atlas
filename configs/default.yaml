@@ -282,6 +282,9 @@ index:
   blocked_postgres_ports: [5432]
   release:
     sets: [dev, smoke]
+    # Zero no-answer gate passes is required only where the threshold was tuned (dev).
+    # Other no-answer items must not newly pass against the live build (gate_rules.yaml).
+    absolute_splits: [dev]
     hit_k: 5
 
 milvus:

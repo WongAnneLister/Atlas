@@ -148,3 +148,113 @@ def test_fake_retrieval_records_matching_run_for_reuse(tmp_path, monkeypatch) ->
         )
         is None
     )
+
+
+def noanswer_run(*, dev: bool = False, test: bool = False) -> Run:
+    base = run()
+    rows = [row for row in base.items if row.answerable]
+    rows += [
+        RunItem(
+            id=ident, group="no_answer", answerable=False, metrics={"noanswer_gate_pass": value}
+        )
+        for ident, value in (("dev-item", dev), ("test-item", test))
+    ]
+    return base.model_copy(update={"items": rows})
+
+
+def test_known_test_split_pass_releases_with_a_note() -> None:
+    from eval.index_release import evaluate_release
+
+    result = evaluate_release(
+        noanswer_run(test=True), noanswer_run(test=True), absolute={"dev-item"}
+    )
+    assert result.outcome == "release"
+    assert "already pass the gate on the live build" in result.markdown()
+    assert "test-item" in result.markdown()
+
+
+def test_new_test_split_pass_refuses_even_with_override() -> None:
+    from eval.index_release import evaluate_release
+
+    result = evaluate_release(
+        noanswer_run(test=True),
+        noanswer_run(),
+        absolute={"dev-item"},
+        override_reason="policy removed",
+    )
+    assert result.outcome == "refuse"
+    assert "newly passes the gate: test-item" in result.markdown()
+
+
+def test_dev_split_pass_refuses_even_when_live_passes_it() -> None:
+    from eval.index_release import evaluate_release
+
+    result = evaluate_release(noanswer_run(dev=True), noanswer_run(dev=True), absolute={"dev-item"})
+    assert result.outcome == "refuse"
+    assert "No-answer gate passed: dev-item" in result.markdown()
+
+
+def test_bootstrap_judges_only_the_absolute_split() -> None:
+    from eval.index_release import evaluate_release
+
+    result = evaluate_release(noanswer_run(test=True), absolute={"dev-item"})
+    assert result.outcome == "release" and "recorded, not judged" in result.markdown()
+    assert evaluate_release(noanswer_run(dev=True), absolute={"dev-item"}).outcome == "refuse"
+
+
+def test_absolute_ids_follow_configured_splits() -> None:
+    from eval.index_release import ReleaseSet, absolute_ids
+    from eval.schema import EvalItem
+
+    from support_agent.config import Settings
+
+    def item(ident: str, split: str, answerable: bool) -> EvalItem:
+        return EvalItem(
+            id=ident,
+            group="no_answer" if not answerable else "basic_policy",
+            split=split,
+            question="Question?",
+            gold_sections=[] if not answerable else ["s"],
+            answer_points=[] if not answerable else ["a"],
+            answerable=answerable,
+            source="fixture",
+        )
+
+    selected = ReleaseSet(
+        [item("d", "dev", False), item("t", "test", False), item("a", "dev", True)], {}, "dev"
+    )
+    assert absolute_ids(selected, Settings()) == {"d"}
+
+
+def test_matching_candidate_evidence_is_reused(monkeypatch) -> None:
+    from pathlib import Path
+
+    from eval import index_release_runner as runner
+    from eval.index_release import ReleaseSet
+
+    from support_agent.config import Settings
+    from support_agent.retrieval.index_models import BuildRecord
+    from support_agent.retrieval.index_plan import embedding_profile
+
+    settings = Settings()
+    build = BuildRecord(
+        build_id="ab",
+        collection="support_chunks_bab",
+        mode="full",
+        fingerprint="f",
+        embed_model="m",
+        embed_revision="r",
+        embedding_profile=embedding_profile(settings),
+        chunker_version="1",
+        docs_hash="d",
+    )
+    monkeypatch.setattr(runner, "load_release_set", lambda config: ReleaseSet([], {}, "dev"))
+    monkeypatch.setattr(runner, "find_live_run", lambda *a, **k: Path("saved"))
+    monkeypatch.setattr(runner, "read_run", lambda path: noanswer_run())
+
+    def collect(*args, **kwargs):
+        raise AssertionError("matching evidence must not be collected again")
+
+    monkeypatch.setattr(runner, "collect_run", collect)
+    decision, evidence = runner.check_for(settings)(build, None)
+    assert decision.outcome == "release" and evidence == "saved"

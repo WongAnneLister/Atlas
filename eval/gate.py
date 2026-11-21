@@ -37,6 +37,7 @@ INDEX_RELEASE_METRICS = frozenset({"hit_at_5", "rr_at_5", "gate_pass", "noanswer
 
 class IndexReleaseRules(BaseModel):
     noanswer_gate_pass_max: Literal[0]
+    noanswer_new_pass_max: Literal[0]
 
 
 class GateRules(BaseModel):

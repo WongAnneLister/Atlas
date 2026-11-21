@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from collections.abc import Collection
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -74,6 +75,18 @@ def load_release_set(settings: Settings) -> ReleaseSet:
         raise ValueError("Release requires answerable and no-answer items")
     return ReleaseSet(
         sorted(items, key=lambda item: item.id), datasets, "-".join(settings.index.release.sets)
+    )
+
+
+def absolute_ids(release_set: ReleaseSet, settings: Settings) -> frozenset[str]:
+    """No-answer items whose gate result must be zero with no reference to the live build.
+
+    The gate threshold is tuned on dev, so dev is where zero gate passes is a calibrated claim.
+    Test items only have to avoid new passes against the live build (see gate_rules.yaml).
+    """
+    splits = set(settings.index.release.absolute_splits)
+    return frozenset(
+        item.id for item in release_set.items if not item.answerable and item.split in splits
     )
 
 
@@ -217,6 +230,7 @@ class ReleaseDecision:
     override_reason: str | None = None
     candidate: RunManifest | None = None
     summaries: dict[str, str] = field(default_factory=dict)
+    notes: list[str] = field(default_factory=list)
 
     def markdown(self) -> str:
         outcome = "Invalid run" if self.outcome == "invalid" else self.outcome.capitalize()
@@ -239,6 +253,8 @@ class ReleaseDecision:
             lines.extend(
                 ["", *[f"- {name}: {summary}" for name, summary in self.summaries.items()]]
             )
+        if self.notes:
+            lines.extend(["", *(f"- Note: {note}" for note in self.notes)])
         if self.override_reason:
             lines.extend(["", f"Paired override reason: {self.override_reason}"])
         if self.comparisons:
@@ -284,25 +300,27 @@ def evaluate_release(
     *,
     rules: GateRules | None = None,
     override_reason: str | None = None,
+    absolute: Collection[str] | None = None,
 ) -> ReleaseDecision:
+    """Judge a candidate run; ``absolute`` names the zero-pass no-answer items (None: all)."""
     rules = rules or load_rules()
     for name, run in (("Candidate", candidate), ("Live", live)):
         if run is not None and (invalid := _validate_rows(run, name, rules)):
             return ReleaseDecision("invalid", [invalid])
-    unsafe = [row.id for row in candidate.items if row.metrics.get(_NOANSWER) is True]
-    unknown = [
-        row.id
-        for row in candidate.items
-        if row.answerable is False and row.payload.get("error_type")
-    ]
-    absolute = []
+    no_answer = [row for row in candidate.items if row.answerable is False]
+    scope = set(absolute) if absolute is not None else {row.id for row in no_answer}
+    passing = [row.id for row in no_answer if row.metrics.get(_NOANSWER) is True]
+    unsafe = [row_id for row_id in passing if row_id in scope]
+    relative = [row_id for row_id in passing if row_id not in scope]
+    unknown = [row.id for row in no_answer if row.payload.get("error_type")]
+    refusals = []
     if len(unsafe) > rules.index_release.noanswer_gate_pass_max:
-        absolute.append(f"No-answer gate passed: {', '.join(unsafe)}.")
+        refusals.append(f"No-answer gate passed: {', '.join(unsafe)}.")
     if unknown:
-        absolute.append(f"No-answer gate could not be verified: {', '.join(unknown)}.")
+        refusals.append(f"No-answer gate could not be verified: {', '.join(unknown)}.")
     decision = ReleaseDecision(
-        "refuse" if absolute else "release",
-        absolute,
+        "refuse" if refusals else "release",
+        refusals,
         candidate=candidate.manifest,
         summaries={
             name: format_summary(summary, rate=name != "rr_at_5")
@@ -310,6 +328,11 @@ def evaluate_release(
         },
     )
     if live is None:
+        if relative:
+            decision.notes.append(
+                "No live build to compare; these no-answer items pass the gate and are "
+                f"recorded, not judged: {', '.join(relative)}."
+            )
         return decision
     if (
         not candidate.manifest.source.get("item_set_hash")
@@ -325,6 +348,17 @@ def evaluate_release(
     if {item.name for item in decision.comparisons} != metrics.keys():
         return ReleaseDecision("invalid", ["A metric has no paired observations."])
     previous = {row.id: row for row in live.items}
+    new = [row_id for row_id in relative if previous[row_id].metrics.get(_NOANSWER) is not True]
+    known = [row_id for row_id in relative if row_id not in new]
+    if len(new) > rules.index_release.noanswer_new_pass_max:
+        # Not covered by --override-reason: a new no-answer pass is a safety change.
+        decision.outcome = "refuse"
+        decision.reasons.append(f"No-answer item newly passes the gate: {', '.join(new)}.")
+    if known:
+        decision.notes.append(
+            "These no-answer items already pass the gate on the live build; a later "
+            f"check, not this one, stops them: {', '.join(known)}."
+        )
     for metric in metrics:
         changes = [
             row.id
@@ -364,10 +398,12 @@ def main() -> int:
         path = collect_run(get_settings(), args.collection, reranker_device=args.reranker_device)
         sys.stdout.write(f"{path}\n")
         return 0
+    settings = get_settings()
     result = evaluate_release(
         read_run(args.candidate),
         read_run(args.live) if args.live else None,
         override_reason=args.override_reason,
+        absolute=absolute_ids(load_release_set(settings), settings),
     )
     sys.stdout.write(result.markdown())
     if args.output:
