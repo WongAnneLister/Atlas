@@ -22,7 +22,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-tools-fallback eval-paraphrase-build eval-chunking-ab \
         eval-chunking-e2e eval-safety-fixes eval-order-grounding eval-order-replies eval-model-veto \
         results eval-refund-policy eval-refund-decisions eval-validate-all eval-registry-bump \
-        eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
+        eval-index-release eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -274,3 +274,6 @@ notes:
 	$(RUN) python scripts/check_notes.py --build
 
 check: lint typecheck test notes-check
+
+eval-index-release:
+	$(RUN) python -m eval.index_release $(INDEX_EVAL_ARGS)

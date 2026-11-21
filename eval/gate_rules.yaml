@@ -6,7 +6,14 @@ false_accept_max: 0
 # The release check uses the same rate: such a run fails as "Invalid run", not as a
 # metric regression, so an outage is not read as a code change.
 promotion_max_error_rate: 0.05
+# Registered before collecting any commit 22b evidence.
+index_release:
+  noanswer_gate_pass_max: 0
 metrics:
+  hit_at_5: {direction: higher, test: mcnemar}
+  rr_at_5: {direction: higher, test: bootstrap}
+  gate_pass: {direction: higher, test: mcnemar}
+  noanswer_gate_pass: {direction: lower, test: mcnemar}
   false_accept:
     direction: lower
     test: mcnemar

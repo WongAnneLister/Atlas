@@ -34,6 +34,7 @@ from support_agent.reliability.settings import (
     ReliabilitySettings,
     validate_reliability,
 )
+from support_agent.retrieval.index_settings import IndexSettings
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
@@ -418,6 +419,7 @@ class Settings(BaseSettings):
     evaluation: EvalSettings
     eval: EvalPlatformSettings = Field(default_factory=_default_eval_platform)
     milvus: MilvusSettings
+    index: IndexSettings
     orders: OrdersSettings
     refund: RefundSettings = Field(default_factory=RefundSettings)
     memory: MemorySettings

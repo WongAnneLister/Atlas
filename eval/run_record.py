@@ -169,7 +169,8 @@ def write_run(
     if date is None and manifest.source.get("date") not in (None, "pending"):
         date = datetime.fromisoformat(manifest.source["date"])
     date = date or datetime.now(UTC)
-    run_id = f"{manifest.kind}-{manifest.split}-{date:%Y%m%d}-{manifest.git_sha[:8]}"
+    kind = "index-release" if manifest.kind == "index_release" else manifest.kind
+    run_id = f"{kind}-{manifest.split}-{date:%Y%m%d}-{manifest.git_sha[:8]}"
     path = root / (f"{run_id}-{suffix}" if suffix else run_id)
     metrics = metrics if metrics is not None else summarize_metrics(items)
     path.mkdir(parents=True, exist_ok=False)

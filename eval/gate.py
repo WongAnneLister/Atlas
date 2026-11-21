@@ -32,7 +32,15 @@ RULES = REPO_ROOT / "eval/gate_rules.yaml"
 BASELINE = REPO_ROOT / "eval/baselines/main.json"
 
 
+INDEX_RELEASE_METRICS = frozenset({"hit_at_5", "rr_at_5", "gate_pass", "noanswer_gate_pass"})
+
+
+class IndexReleaseRules(BaseModel):
+    noanswer_gate_pass_max: Literal[0]
+
+
 class GateRules(BaseModel):
+    index_release: IndexReleaseRules
     false_accept_max: Literal[0]
     promotion_max_error_rate: float = Field(ge=0, le=1)
     metrics: dict[str, MetricRule]
@@ -129,6 +137,10 @@ def check_frozen_smoke(run: Run) -> None:
             raise ValueError(f"Smoke labels differ for {row.id}")
 
 
+def _smoke_rules(rules: GateRules) -> dict[str, MetricRule]:
+    return {name: rule for name, rule in rules.metrics.items() if name not in INDEX_RELEASE_METRICS}
+
+
 def _check_metric_coverage(run: Run, rules: GateRules) -> None:
     expected = {
         "false_accept": False,
@@ -137,7 +149,7 @@ def _check_metric_coverage(run: Run, rules: GateRules) -> None:
         "citation_validity": True,
     }
     for row in run.items:
-        for name in rules.metrics:
+        for name in _smoke_rules(rules):
             required = name not in expected or row.answerable is expected[name]
             if (name in row.metrics) != required:
                 raise ValueError(f"{name} requires the same observations as the frozen benchmark")
@@ -158,7 +170,7 @@ def evaluate(
     if _smoke_dataset(run) != _smoke_dataset(baseline):
         raise ValueError("Smoke dataset versions or hashes differ")
     false_accepts, no_answer = _false_accepts(run)
-    comparisons = compare(baseline, run, rules.metrics, strict=True)
+    comparisons = compare(baseline, run, _smoke_rules(rules), strict=True)
     _check_metric_coverage(run, rules)
     _check_metric_coverage(baseline, rules)
     worse = [row.name for row in comparisons if row.verdict == "worse"]

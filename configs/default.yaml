@@ -266,6 +266,11 @@ evaluation:
     - Privacy & Security
   customer_id: CUST-0001
 
+index:
+  release:
+    sets: [dev, smoke]
+    hit_k: 5
+
 milvus:
   uri: http://localhost:19530
   collection: support_chunks   # faq_unit index: support_chunks_faq_v1
