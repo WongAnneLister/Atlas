@@ -7,6 +7,7 @@ from eval.cost_report import cost_lines
 from eval.e2e_diagnostics import diagnostic_lines
 from eval.e2e_records import E2EMetadata, E2ERecord
 from eval.e2e_runs import unpack
+from eval.e2e_speed import NOT_COMPARABLE, speed_lines
 from eval.judge_calibration import read_kappa
 from eval.metrics import mrr, noanswer_false_accept, outcome_rates, percentile, recall_at_k
 from eval.run_record import Run, confidence_level, format_summary
@@ -45,6 +46,8 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
         for record in records
         if record.latency_first_token_s is not None
     ]
+    source = metadata.model_dump(mode="json")
+    note = "" if metadata.latency_comparable else f" ({NOT_COMPARABLE})"
     lines = [
         "# End-to-end evaluation",
         "",
@@ -64,6 +67,7 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
         f"- Collection code hash: `{metadata.code_hash or 'not recorded in legacy run'}`",
         f"- Prompt hash: `{metadata.prompt_hash or 'not recorded in legacy run'}`",
         f"- Model runtime: `{metadata.runtime}`",
+        *speed_lines(source),
         "- First-token latency uses model streaming callbacks when available.",
         "- Providers without streaming callbacks report first-token latency as unavailable.",
         "- Recall@5 uses retrieved sections.",
@@ -85,19 +89,19 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
         f"| Citation validity | {sum(citation_validity) / len(citation_validity):.4f} |"
         if citation_validity
         else "| Citation validity | pending |",
-        f"| Latency P50 full answer | {percentile(latencies, 50):.4f}s |"
+        f"| Latency P50 full answer | {percentile(latencies, 50):.4f}s{note} |"
         if latencies
         else "| Latency P50 full answer | pending |",
-        f"| Latency P95 full answer | {percentile(latencies, 95):.4f}s |"
+        f"| Latency P95 full answer | {percentile(latencies, 95):.4f}s{note} |"
         if latencies
         else "| Latency P95 full answer | pending |",
         (
-            f"| Latency P50 first token | {percentile(first_token_values, 50):.4f}s |"
+            f"| Latency P50 first token | {percentile(first_token_values, 50):.4f}s{note} |"
             if first_token_values
             else "| Latency P50 first token | unavailable |"
         ),
         (
-            f"| Latency P95 first token | {percentile(first_token_values, 95):.4f}s |"
+            f"| Latency P95 first token | {percentile(first_token_values, 95):.4f}s{note} |"
             if first_token_values
             else "| Latency P95 first token | unavailable |"
         ),

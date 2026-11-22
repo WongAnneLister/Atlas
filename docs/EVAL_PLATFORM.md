@@ -60,6 +60,45 @@ data-build, ingestion, order-seed, routing and coverage, near-miss and store
 controls, gate round three, chunking, tool fallback, order grounding and replies,
 safety fixes, model veto, and refund policy and decision reports.
 
+## Faster real-model runs
+
+A real-model end-to-end item takes about 17 seconds. Most of it is four or five
+sequential LLM calls and one cross-encoder rerank. `eval/e2e_eval.py` (and so
+`make eval-smoke`) and `eval/multipart_eval.py` have two opt-in speed-ups. Neither
+changes a measured value, so both stay out of the run's config hash.
+
+| Switch | Config | CLI | Make |
+|---|---|---|---|
+| Rerank score cache | `eval.e2e_speed.rerank_cache` (default `false`) | `--rerank-cache` / `--no-rerank-cache` | `EVAL_RERANK_CACHE=1` |
+| Item workers | upper bound `eval.e2e_speed.max_workers` | `--workers N` (default 1) | `EVAL_WORKERS=N` |
+
+```sh
+make eval-multipart EVAL_WORKERS=4 EVAL_RERANK_CACHE=1 MULTIPART_ARGS='--split test'
+make eval-e2e EVAL_RERANK_CACHE=1 EVAL_E2E_ARGS='--split test --fresh'
+```
+
+- The cache is the release-evidence file, `index.release.rerank_cache.path`, with
+  the same key: reranker model, revision, device, fp16, max tokens, batch size, the
+  installed versions of `key_packages`, the query text and the passage text hash.
+  A score scored in one run is read back by any later run, release or end-to-end.
+  The manifest's `source.rerank_scores` records the file, the key profile and how
+  many logits came from the cache (`from_cache`) or the model (`scored`).
+  As in commit 22c, a pair scored in a smaller batch can differ by float noise
+  (at most 7.13e-09 in [the release measurement](../eval/reports/rerank_cache.md)).
+- Workers share one graph: one reranker worker and the LLM API. The saved items stay
+  in input order, so a run never depends on which item finished first. Each item's
+  latency then includes time spent waiting for the others. The manifest records
+  `source.workers` and `source.latency_comparable: false`, the report marks each
+  latency as not comparable, and `make eval-compare` and `make eval-gate` leave
+  latency out with a note. `make eval-baseline` refuses such a run.
+- A queued rerank call waits inside its own `reliability.timeouts_s.rerank` deadline.
+  Keep `N` small enough that a queue of reranks cannot reach it. A timed-out rerank on
+  the knowledge path hands off and sets `retrieval_error_type`, which the gate's
+  dependency-error check counts, so it shows up rather than passing silently.
+- Chaos runs refuse both switches: their seeded faults follow call order.
+- A resumed `e2e_eval` output keeps the largest worker count it has seen and adds up
+  its cache counts.
+
 ## Interpret a comparison
 
 Read the paired item count first. General comparisons use shared IDs, display

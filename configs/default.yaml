@@ -250,6 +250,15 @@ intent_eval:
 
 eval:
   multipart_min_overlap: 0.25  # minimum word Jaccard when part counts differ
+  # Opt-in speed-ups for the real-model end-to-end evaluators (e2e_eval, multipart_eval).
+  # Neither changes what a run measures, so both stay out of the run's config hash.
+  e2e_speed:
+    # Reuse cross-encoder logits from index.release.rerank_cache.path, keyed exactly as the
+    # release-evidence path keys them. CLI: --rerank-cache / --no-rerank-cache.
+    rerank_cache: false
+    # Upper bound for --workers (default 1). Items share one reranker worker and the API;
+    # each queued rerank call waits inside its own reliability.timeouts_s.rerank deadline.
+    max_workers: 8
   stats:
     n_resamples: 2000
     seed: 17

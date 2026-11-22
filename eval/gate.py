@@ -10,6 +10,7 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, Field, field_validator
 
+from eval.e2e_speed import comparable_rules, latency_comparable
 from eval.paired import Comparison, MetricRule, compare, comparison_lines
 from eval.redteam_gate import RedTeamBudget, RedTeamGateResult, evaluate_redteam
 from eval.redteam_models import BENIGN_CATEGORY, CATEGORIES, Category
@@ -171,7 +172,8 @@ def evaluate(
     if _smoke_dataset(run) != _smoke_dataset(baseline):
         raise ValueError("Smoke dataset versions or hashes differ")
     false_accepts, no_answer = _false_accepts(run)
-    comparisons = compare(baseline, run, _smoke_rules(rules), strict=True)
+    smoke_rules, latency_note = comparable_rules(_smoke_rules(rules), baseline, run)
+    comparisons = compare(baseline, run, smoke_rules, strict=True)
     _check_metric_coverage(run, rules)
     _check_metric_coverage(baseline, rules)
     worse = [row.name for row in comparisons if row.verdict == "worse"]
@@ -183,6 +185,8 @@ def evaluate(
         for name in worse
         if not rules.metrics[name].blocking
     ]
+    if latency_note:
+        warnings.append(latency_note)
     if false_accepts > rules.false_accept_max:
         failures.insert(0, "The smoke run accepted a no-answer item.")
     broken = dependency_error_message(run, rules)
@@ -250,6 +254,8 @@ def promote(run: Run, run_id: str, path: Path) -> None:
         raise ValueError("Baseline promotion requires a clean working tree")
     if run.manifest.git_sha != git("rev-parse", "HEAD") or run.manifest.dirty is not False:
         raise ValueError("Baseline run must have been collected on clean HEAD")
+    if not latency_comparable(run.manifest.source):
+        raise ValueError("Baseline runs must be serial (--workers 1) so latency stays comparable")
     check_frozen_smoke(run)
     rules = load_rules()
     check_dependency_errors(run, rules)

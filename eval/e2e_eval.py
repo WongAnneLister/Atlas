@@ -21,6 +21,15 @@ from eval.e2e_endpoint import endpoint_host
 from eval.e2e_records import E2EMetadata, E2EPart, E2ERecord, load_cached_run
 from eval.e2e_report import render_e2e
 from eval.e2e_runs import prepare_e2e
+from eval.e2e_speed import (
+    SpeedOptions,
+    add_speed_arguments,
+    merge_rerank_scores,
+    rerank_scores,
+    run_config_hash,
+    run_items,
+    speed_options,
+)
 from eval.intent_eval import runtime_versions, source_hash
 from eval.metrics import accepted
 from eval.run_record import (
@@ -33,7 +42,7 @@ from eval.run_record import (
 )
 from eval.thread_ids import EvalThreads
 from support_agent.config import REPO_ROOT, Settings, get_settings
-from support_agent.data.doc_models import digest, json_text, write_text
+from support_agent.data.doc_models import digest, write_text
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.parts import QueryPart
@@ -217,7 +226,7 @@ def _record(
 def _metadata(settings: Settings, split: str, eval_text: str, corpus_hash: str) -> E2EMetadata:
     return E2EMetadata(
         git_sha=_git_sha(),
-        config_hash=digest(json_text(settings.model_dump(mode="json"))),
+        config_hash=run_config_hash(settings),
         eval_file_hash=digest(eval_text),
         corpus_hash=corpus_hash,
         models=_model_names(settings),
@@ -237,6 +246,8 @@ def _metadata(settings: Settings, split: str, eval_text: str, corpus_hash: str) 
                 REPO_ROOT / "eval/e2e_records.py",
                 REPO_ROOT / "eval/e2e_endpoint.py",
                 REPO_ROOT / "eval/e2e_runs.py",
+                REPO_ROOT / "eval/e2e_speed.py",
+                REPO_ROOT / "eval/rerank_cache.py",
             ]
         ),
         prompt_hash=source_hash(list((REPO_ROOT / "src/support_agent/graph/prompts").glob("*"))),
@@ -244,6 +255,15 @@ def _metadata(settings: Settings, split: str, eval_text: str, corpus_hash: str) 
         chaos=settings.chaos if settings.chaos.enabled else None,
         endpoint_host=endpoint_host(settings.llm),
     )
+
+
+def _record_speed(
+    metadata: E2EMetadata, speed: SpeedOptions, scores: dict[str, Any] | None
+) -> None:
+    """Record how items were collected; a resumed run keeps the least comparable setting."""
+    metadata.workers = max(metadata.workers, speed.workers)
+    metadata.latency_comparable = metadata.latency_comparable and speed.workers == 1
+    metadata.rerank_scores = scores
 
 
 def _save_and_render(
@@ -308,6 +328,7 @@ def main(
     )
     parser.add_argument("--fresh", action="store_true", help="start a fresh, uniquely named cache")
     parser.add_argument("--run-pointer", type=Path, help="write the completed run directory here")
+    add_speed_arguments(parser)
     args = parser.parse_args(argv)
     report = REPO_ROOT / args.report
     if args.run_dir:
@@ -331,6 +352,7 @@ def main(
         )
     if settings.chaos.enabled and chaos_settings is None:
         parser.error("Use make chaos to collect a fault-injected run")
+    speed = speed_options(args, settings, parser)
     dirty = is_dirty()
     if settings.gate.threshold is None and not args.allow_untuned:
         raise RuntimeError("gate.threshold is unset; run `make sweep` before e2e evaluation")
@@ -361,12 +383,18 @@ def main(
         raise ValueError("No eval items match the requested split")
     pending = [item for item in items if item.id not in existing]
     threads = EvalThreads(stem)
-    with GraphDeps(
-        settings,
-        allow_untuned_gate=args.allow_untuned,
-    ) as deps:
+    saved_scores = metadata.rerank_scores
+    with (
+        rerank_scores(settings, speed.rerank_cache) as scores,
+        GraphDeps(
+            settings,
+            allow_untuned_gate=args.allow_untuned,
+            reranker_factory=scores.factory(),
+        ) as deps,
+    ):
         graph = build_graph(deps)
-        for item in pending:
+
+        def collect(item: Any) -> E2ERecord:
             thread_id = threads(args.split, item.id)
             trace = (
                 tracing.start_turn(
@@ -382,25 +410,33 @@ def main(
             result, latency, usage = _run_item(
                 graph, item, settings.evaluation.customer_id, thread_id, trace
             )
-            record = _record(item, result, latency, usage.first_token_at, usage.tokens(), usage)
+            return _record(item, result, latency, usage.first_token_at, usage.tokens(), usage)
+
+        def save(item: Any, record: E2ERecord) -> None:
             if record.build_id is not None and record.build_id != metadata.build_id:
                 raise ValueError("Index build changed during collection; choose a fresh output")
             record.estimated_cost_usd = (
                 cost_usd(record.usage_by_model, settings.costs) if record.usage_by_model else None
             )
             existing[item.id] = record
+            _record_speed(metadata, speed, merge_rerank_scores(saved_scores, scores.summary()))
             temporary = output.with_suffix(output.suffix + ".tmp")
             write_text(
                 temporary,
                 "\n".join(
                     [
                         metadata.model_dump_json(),
+                        # Input order, so the file never depends on which item finished first.
                         *[existing[i.id].model_dump_json() for i in items if i.id in existing],
                     ]
                 )
                 + "\n",
             )
             temporary.replace(output)
+
+        run_items(pending, collect, workers=speed.workers, done=save)
+        if pending:
+            _record_speed(metadata, speed, merge_rerank_scores(saved_scores, scores.summary()))
     tracing.flush()
     records = [existing[item.id] for item in items]
     provenance_dirty = dirty if not resumed else None

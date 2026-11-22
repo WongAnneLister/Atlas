@@ -268,9 +268,17 @@ class EvalStatsSettings(BaseModel):
     alpha: float = Field(gt=0, lt=1)
 
 
+class E2ESpeedSettings(BaseModel):
+    """Evaluator speed-ups that must not change a measured value."""
+
+    rerank_cache: bool
+    max_workers: int = Field(gt=0)
+
+
 class EvalPlatformSettings(BaseModel):
     stats: EvalStatsSettings
     multipart_min_overlap: float = Field(gt=0, le=1)
+    e2e_speed: E2ESpeedSettings
 
 
 def _default_eval_platform() -> EvalPlatformSettings:

@@ -63,6 +63,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 23 | Policy versions + metadata | done; evidence pending in 23b | Schema 2 stores section metadata. Dense and BM25 share date and category constraints. Refund retrieval uses the verified order date and adds a cited notice for historical policies. The window holdout derives eligibility expectations from the policy spec. No new live eval results. |
 | 24a | Multipart evaluation | done; live comparison pending in 24b | Registered a frozen, split-pure multipart set and added part metrics, review tooling, and an offline cross-doc replay. In the saved full test run, 23/30 cross-doc items were accepted. Six of seven rejects occurred before knowledge retrieval. The remaining reject failed coverage after the gate passed. See `eval/reports/cross_doc_failures.md`. The review fix aligns planned parts by position or word overlap, balances mixed-pair order in each split, and uses item answerability for no-answer scoring. No new live eval results. |
 | 24 | Query planning | done; evidence pending in 24b | Plans before classification, routes and gates knowledge parts independently, and makes a targeted handoff for unanswered parts. Operational or failed part classification falls back to the whole query. Offline graph tests cover route sequences and legacy switches. The multipart prompt carries the shared evidence rules verbatim. A test also requires the multipart input, output, and per-fact evidence instructions. No new live eval results. |
+| 24c | Faster end-to-end eval runs | done; live speed pending in 24b | `eval/e2e_eval.py` (and `make eval-smoke`) and `eval/multipart_eval.py` gain two opt-in switches that change no measured value and stay out of the run config hash. `--rerank-cache` (`eval.e2e_speed.rerank_cache`, default off) reuses cross-encoder logits from the 22c release-evidence file under the same key; the manifest records `rerank_scores` (`from_cache`, `scored`). `--workers N` (default 1, at most `eval.e2e_speed.max_workers` = 8) runs items concurrently on one graph; saved items stay in input order; the manifest sets `latency_comparable: false`, reports mark latency, compare and gate leave latency out, and baseline promotion refuses such runs. Chaos refuses both. The score cache now serves the guard's reranker thread (one locked connection). Offline tests: cached and uncached graph reranks identical; scores written by the release path are read back; completion order does not change saved runs. No live numbers yet. |
 | 25 | Claim grounding | todo | |
 | 26 | Caching | todo | |
 | 27 | Multi-turn simulator | todo | |
@@ -124,6 +125,12 @@ Agents: update this file in every commit. Keep it short and factual.
 - **Checkpoint 4 waiver (author, 2026-11-19).** The author waives the Checkpoint 4 requirement in `AGENTS.md` §8 so phase 2 can start with commit 17. Checkpoint 4 is **not** passed: the demo video, `docs/img/demo.gif`, `docs/REPO_SETTINGS.md` and making the repo public stay open, and the refund demo step still hands off. Phase-two commits must not claim v1 was shipped.
 
 ## Known issues / follow-ups
+
+- 24c: With `--workers N`, items queue for the single reranker worker, and the wait counts
+  against `reliability.timeouts_s.rerank` (60 s). A long queue can turn into a retrieval-error
+  handoff that a serial run would not see. The gate's dependency-error check counts it, but
+  the safe worker count is not measured yet; check retrieval errors in the first 24b runs.
+  The cache has the 22c float caveat: a pair scored in a smaller batch can differ slightly.
 
 - 23b preparation: The first frozen-label preflight rejected the rebuilt corpus. The fix
   excludes only declared historical section IDs from that comparison and requires each one

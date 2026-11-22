@@ -9,6 +9,9 @@ SPLIT ?= test
 EVAL_RETRIEVAL_ARGS ?=
 EVAL_INTENT_ARGS ?=
 export Q
+# Opt-in speed-ups for eval-e2e, eval-smoke and eval-multipart (docs/EVAL_PLATFORM.md):
+# EVAL_WORKERS=4 runs four items at once; EVAL_RERANK_CACHE=1 reuses cached reranker scores.
+E2E_SPEED_ARGS = $(if $(EVAL_WORKERS),--workers $(EVAL_WORKERS)) $(if $(EVAL_RERANK_CACHE),--rerank-cache)
 COMPOSE_PYTHON ?= $(RUN) python
 
 .PHONY: setup up up-state down migrate data data-download data-licenses data-docs data-validate-docs data-orders \
@@ -159,7 +162,7 @@ eval-intent-draft:
 	$(RUN) python -m eval.intent_draft
 
 eval-e2e:
-	$(RUN) python -m eval.e2e_eval $(EVAL_E2E_ARGS)
+	$(RUN) python -m eval.e2e_eval $(E2E_SPEED_ARGS) $(EVAL_E2E_ARGS)
 
 sweep:
 	$(RUN) python -m eval.sweep $(SWEEP_ARGS)
@@ -238,7 +241,7 @@ eval-smoke-build:
 
 eval-smoke: eval-smoke-build
 	$(RUN) python -m eval.e2e_eval --split test --eval-file eval/sets/smoke.jsonl \
-		--expect-dataset smoke --fresh --report eval/runs/smoke.md $(EVAL_SMOKE_ARGS)
+		--expect-dataset smoke --fresh --report eval/runs/smoke.md $(E2E_SPEED_ARGS) $(EVAL_SMOKE_ARGS)
 
 chaos: $(if $(CHAOS_RUN),,eval-smoke-build)
 	$(RUN) python -m eval.chaos $(if $(CHAOS_RUN),--run-dir "$(CHAOS_RUN)") $(EVAL_CHAOS_ARGS)
@@ -314,4 +317,4 @@ eval-multipart-build:
 	$(RUN) python -m eval.build_multipart
 
 eval-multipart:
-	$(RUN) python -m eval.multipart_eval $(MULTIPART_ARGS)
+	$(RUN) python -m eval.multipart_eval $(E2E_SPEED_ARGS) $(MULTIPART_ARGS)
