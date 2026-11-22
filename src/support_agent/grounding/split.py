@@ -25,13 +25,14 @@ def _break_inline_list(paragraph: str) -> str:
     A lone "40. You ..." is not a list: at least items 1 and 2 must appear in order.
     The order splitter then drops the item numbers as line-start list markers.
     """
-    items = []
+    items: list[re.Match[str]] = []
     for match in _INLINE_ITEM.finditer(paragraph):
         if int(match.group(1)) == len(items) + 1:
             items.append(match)
     if len(items) < 2:
         return paragraph
-    pieces, start = [], 0
+    pieces: list[str] = []
+    start = 0
     for match in items:
         pieces.append(paragraph[start : match.start()].rstrip())
         start = match.start()
