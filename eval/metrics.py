@@ -5,13 +5,15 @@ from __future__ import annotations
 import re
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
+from itertools import product
 from math import isfinite
 from typing import TYPE_CHECKING
 
-from eval.schema import MultipartItem
+from eval.schema import EvalItem, MultipartItem, MultipartPart
+from support_agent.config import get_settings
 
 if TYPE_CHECKING:
-    from eval.e2e_records import E2ERecord
+    from eval.e2e_records import E2EPart, E2ERecord
 
 
 def recall_at_k(ranked_section_ids: Sequence[str], gold: Collection[str], k: int) -> float:
@@ -109,8 +111,44 @@ def _legacy_citations(record: E2ERecord) -> set[str]:
     return {source["section_id"] for source in record.cited_sources if "section_id" in source}
 
 
-def _part_key(text: str) -> tuple[str, ...]:
-    return tuple(re.findall(r"\w+", text.casefold()))
+def _part_words(text: str) -> set[str]:
+    return set(re.findall(r"\w+", text.casefold()))
+
+
+def _jaccard(left: set[str], right: set[str]) -> float:
+    union = left | right
+    return len(left & right) / len(union) if union else 0.0
+
+
+def _align_parts(
+    expected: Sequence[MultipartPart], observed: Sequence[E2EPart]
+) -> list[E2EPart | None]:
+    if len(expected) == len(observed):
+        return list(observed)
+
+    minimum = get_settings().eval.multipart_min_overlap
+    observed_words = [_part_words(part.text) for part in observed]
+    candidates: list[list[tuple[int | None, float]]] = []
+    for part in expected:
+        words = _part_words(part.text)
+        scores = [_jaccard(words, other) for other in observed_words]
+        candidates.append(
+            [(index, score) for index, score in enumerate(scores) if score >= minimum]
+            + [(None, 0.0)]
+        )
+
+    # The schema has two gold parts. Try all assignments without reusing an observed part.
+    best_score = (-1.0, 0)
+    alignment: list[E2EPart | None] = [None] * len(expected)
+    for assignment in product(*candidates):
+        indices = [index for index, _ in assignment if index is not None]
+        if len(indices) != len(set(indices)):
+            continue
+        score = (sum(overlap for _, overlap in assignment), len(indices))
+        if score > best_score:
+            best_score = score
+            alignment = [observed[index] if index is not None else None for index, _ in assignment]
+    return alignment
 
 
 def full_answer(record: E2ERecord) -> bool:
@@ -126,12 +164,11 @@ def full_answer(record: E2ERecord) -> bool:
         return False
     if isinstance(record.item, MultipartItem):
         return all(
-            any(
-                _part_key(observed.text) == _part_key(expected.text)
-                and set(expected.gold_sections).issubset(observed.cited_section_ids)
-                for observed in record.parts
+            observed is not None
+            and set(expected.gold_sections).issubset(observed.cited_section_ids)
+            for expected, observed in zip(
+                record.item.parts, _align_parts(record.item.parts, record.parts), strict=True
             )
-            for expected in record.item.parts
         )
     return gold <= {section for part in record.parts for section in part.cited_section_ids}
 
@@ -159,17 +196,16 @@ def answered_part_correct(record: E2ERecord) -> bool:
     item = record.item
     if not isinstance(item, MultipartItem) or item.group != "half_answerable":
         return False
-    expected = next(part for part in item.parts if part.answerable)
-    gold = set(expected.gold_sections)
+    index = next(index for index, part in enumerate(item.parts) if part.answerable)
+    gold = set(item.parts[index].gold_sections)
     if record.parts is None:
         return record.accepted and gold <= _legacy_citations(record)
-    key = _part_key(expected.text)
-    return any(
-        part.answered
+    part = _align_parts(item.parts, record.parts)[index]
+    return (
+        part is not None
+        and part.answered
         and not part.handed_off
-        and _part_key(part.text) == key
         and gold.issubset(part.cited_section_ids)
-        for part in record.parts
     )
 
 
@@ -186,14 +222,20 @@ def unanswerable_part_handed_off(record: E2ERecord) -> bool:
     parts = record.parts or []
     if not any(part.answered for part in parts):
         return True
-    expected = next(part for part in item.parts if not part.answerable)
-    matches = [part for part in parts if _part_key(part.text) == _part_key(expected.text)]
-    return any(part.handed_off for part in matches) and not any(part.answered for part in matches)
+    index = next(index for index, part in enumerate(item.parts) if not part.answerable)
+    part = _align_parts(item.parts, parts)[index]
+    return part is not None and part.handed_off and not part.answered
+
+
+def _wholly_unanswerable(item: EvalItem | MultipartItem) -> bool:
+    if isinstance(item, EvalItem):
+        return not item.answerable
+    return not any(part.answerable for part in item.parts)
 
 
 def noanswer_false_accept(record: E2ERecord) -> bool:
     """Any rendered part is a false accept on a wholly unanswerable item."""
-    if record.item.group not in {"no_answer", "both_unanswerable"}:
+    if not _wholly_unanswerable(record.item):
         return False
     return record.accepted or any(part.answered for part in record.parts or [])
 
@@ -211,6 +253,6 @@ def part_metric_values(record: E2ERecord) -> dict[str, bool | float]:
     if group == "half_answerable":
         metrics["answered_part_correct"] = answered_part_correct(record)
         metrics["unanswerable_part_handed_off"] = unanswerable_part_handed_off(record)
-    if group in {"no_answer", "both_unanswerable"}:
+    if _wholly_unanswerable(record.item):
         metrics["noanswer_false_accept"] = noanswer_false_accept(record)
     return metrics

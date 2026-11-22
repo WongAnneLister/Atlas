@@ -270,6 +270,7 @@ class EvalStatsSettings(BaseModel):
 
 class EvalPlatformSettings(BaseModel):
     stats: EvalStatsSettings
+    multipart_min_overlap: float = Field(gt=0, le=1)
 
 
 def _default_eval_platform() -> EvalPlatformSettings:

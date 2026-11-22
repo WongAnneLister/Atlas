@@ -173,9 +173,10 @@ answerable and one unanswerable part, and 10 with neither part answerable.
 
 The template joins the source questions with `, and also ` and keeps both source IDs and labels.
 Answerable parts come from the single-section basic-policy and model-number groups. Colloquial
-prefixes can contain extra requests beyond their labelled FAQ, so they are excluded. The
-half-answerable pairs put the answerable part first. All pairs are unreviewed and share source
-questions with v1. Use dev to tune and test to report multipart regression results.
+prefixes can contain extra requests beyond their labelled FAQ, so they are excluded.
+Seeded sampling puts the unanswerable part first in half of the mixed pairs in each split.
+All pairs are unreviewed and share source questions with v1. Use dev to tune and test to
+report multipart regression results.
 
 ## Human review workflow
 

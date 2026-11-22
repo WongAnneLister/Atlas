@@ -249,6 +249,7 @@ intent_eval:
   target_accuracy: 0.9
 
 eval:
+  multipart_min_overlap: 0.25  # minimum word Jaccard when part counts differ
   stats:
     n_resamples: 2000
     seed: 17

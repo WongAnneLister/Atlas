@@ -83,6 +83,8 @@ Keep the review CSV and per-item rows local.
 The saved baseline has one retrieval for the whole question. Its part recall checks whether
 that list contains all gold sections. New records can describe each part's gate,
 retrieved sections, handoff and citations. Full-answer rate requires all gold sections
-to be cited in a fully answered response. The deterministic multipart checks use
-case- and punctuation-normalized part text for attribution. A paraphrase may require the
-judge or a human to verify the match. The judge assesses the evidence supplied with the run.
+to be cited in a fully answered response. The deterministic checks match by position
+when planned and gold part counts agree. When counts differ, they find the one-to-one
+assignment with the highest total Jaccard overlap. Jaccard overlap divides shared words
+by unique words across both texts. Pairs below the configured `eval.multipart_min_overlap`
+are ineligible. The judge assesses the evidence supplied with the run.

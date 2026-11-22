@@ -111,11 +111,11 @@ class MultipartItem(BaseModel):
         if left.source_item_id == right.source_item_id:
             raise ValueError("Multipart items require distinct source item ids")
         expected = {
-            "answerable_pair": (True, True),
-            "half_answerable": (True, False),
-            "both_unanswerable": (False, False),
+            "answerable_pair": 2,
+            "half_answerable": 1,
+            "both_unanswerable": 0,
         }[self.group]
-        if (left.answerable, right.answerable) != expected:
+        if sum(part.answerable for part in self.parts) != expected:
             raise ValueError(f"Part answerability does not match {self.group}")
         return self
 

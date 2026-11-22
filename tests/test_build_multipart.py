@@ -57,6 +57,8 @@ def test_builder_selects_deterministic_pairs_with_frozen_labels() -> None:
             "half_answerable": 20,
             "both_unanswerable": 10,
         }
+        half = [item for item in first if item.split == split and item.group == "half_answerable"]
+        assert Counter(item.parts[0].answerable for item in half) == {True: 10, False: 10}
     for item in first:
         assert item.reviewed is False
         assert ", and also " in item.question
@@ -65,11 +67,14 @@ def test_builder_selects_deterministic_pairs_with_frozen_labels() -> None:
         assert len(item.parts) == 2
         left, right = item.parts
         assert left.source_item_id != right.source_item_id
-        assert [part.answerable for part in item.parts] == {
-            "answerable_pair": [True, True],
-            "half_answerable": [True, False],
-            "both_unanswerable": [False, False],
-        }[item.group]
+        assert (
+            sum(part.answerable for part in item.parts)
+            == {
+                "answerable_pair": 2,
+                "half_answerable": 1,
+                "both_unanswerable": 0,
+            }[item.group]
+        )
         if item.group == "answerable_pair":
             assert sections[left.gold_sections[0]].doc_id != sections[right.gold_sections[0]].doc_id
         for part in item.parts:

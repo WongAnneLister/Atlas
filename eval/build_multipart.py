@@ -83,9 +83,12 @@ def build_items(source: Sequence[EvalItem], sections: dict[str, Section]) -> lis
             if len(pairs) < quota:
                 raise ValueError(f"{split} {group} requires {quota} pairs, found {len(pairs)}")
             rng = Random(f"{SEED}:{split}:{group}")
-            items.extend(
-                make_item(split, group, left, right) for left, right in rng.sample(pairs, quota)
-            )
+            selected = rng.sample(pairs, quota)
+            if group == "half_answerable":
+                for index in rng.sample(range(quota), quota // 2):
+                    left, right = selected[index]
+                    selected[index] = right, left
+            items.extend(make_item(split, group, left, right) for left, right in selected)
     return items
 
 
