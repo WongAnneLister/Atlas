@@ -1,0 +1,8 @@
+{
+  "first": "support_chunks",
+  "second": "support_chunks_bf66917e90d854635a44dbdac16e6e4c1",
+  "chunks": 206,
+  "bit_identical_chunks": 0,
+  "max_abs_difference": 3.822147846221924e-06,
+  "min_cosine": 0.9999999995668327
+}

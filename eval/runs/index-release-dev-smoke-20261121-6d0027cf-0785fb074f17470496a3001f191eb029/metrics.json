@@ -1,0 +1,43 @@
+{
+  "metrics": {
+    "gate_pass": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 151,
+      "count": 151,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "hit_at_5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 151,
+      "count": 151,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "rr_at_5": {
+      "interval": {
+        "point": 0.9966887417218543,
+        "low": 0.9900662251655629,
+        "high": 1.0
+      },
+      "n": 151,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    }
+  },
+  "statistics": {},
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

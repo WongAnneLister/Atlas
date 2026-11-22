@@ -16,6 +16,9 @@ eval/runs/redteam-smoke.md
 # Smoke artifacts remain local so promotion can start with clean main.
 eval/runs/smoke-test-*/
 eval/runs/smoke.md
+# A release check writes the live run, then collects the candidate in the same process,
+# so its run directories must not make the tree dirty. Manifests and metrics are force-added.
+eval/runs/index-release-*/
 *.sqlite
 *.sqlite3
 *.db

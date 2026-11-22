@@ -114,8 +114,10 @@ flowchart LR
 - Standard retrieval evaluation starts from the alias. Ablations use the two configured experiment
   collections. The experiment builder may rebuild only those two, after opting in on its own store.
   The lifecycle (build, release, GC, adoption) can never write to or drop them.
-- Offline tests use scratch registries and fake dependencies. The author runs Milvus freshness,
-  alias and optional PostgreSQL checks in 22b. No live measurements were collected in this change.
+- Offline tests use scratch registries and fake dependencies. The Milvus freshness, alias and
+  PostgreSQL registry checks are integration tests. Live evidence for adoption, a full rebuild,
+  a negative control, a one-section change and rollback is in `eval/reports/index_lifecycle.md`
+  (`make eval-index-lifecycle`).
 
 
 ## Hybrid + RRF

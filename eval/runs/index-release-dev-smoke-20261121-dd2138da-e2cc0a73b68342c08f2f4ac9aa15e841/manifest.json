@@ -1,0 +1,37 @@
+{
+  "kind": "index_release",
+  "split": "dev-smoke",
+  "git_sha": "dd2138da92c4565b3fc703ffdaa273341ddefc1c",
+  "config_hash": "5146cdc6beefe70a8ebee5ada00f3cf76d892e9b5afe9da9d3d1cb84f39e9a56",
+  "models": {
+    "embedding": "BAAI/bge-m3@5617a9f61b028005a4858fdac845db406aefb181",
+    "reranker": "BAAI/bge-reranker-v2-m3@953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e"
+  },
+  "datasets": {
+    "eval_v1": {
+      "version": "v1",
+      "sha256": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9"
+    },
+    "smoke": {
+      "version": "v1",
+      "sha256": "9ed7c618bd6e57767c81da67e106a90dee701ae576ab83102d1485a9bb051424"
+    }
+  },
+  "seed": 17,
+  "dirty": false,
+  "started_at": "2026-11-21T15:55:13.307721Z",
+  "ended_at": "2026-11-21T19:26:34.994051Z",
+  "cost_usd": null,
+  "cost_note": "retrieval and evidence gate only",
+  "command": [
+    "make",
+    "eval-index-release"
+  ],
+  "source": {
+    "collection": "support_chunks_eval_no_heading",
+    "build_id": null,
+    "fingerprint": null,
+    "item_set_hash": "0f013accc10c77ec9ab8897a6789d789632bc9ce3bb847c8fdcaf1b914f4c40f",
+    "reranker_device": "cpu"
+  }
+}

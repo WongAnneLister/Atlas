@@ -1,0 +1,3 @@
+Customer: For the generic store: What is your return policy?
+Agent: You can return products within 45 days of purchase for a full refund, provided they are in their original condition and packaging. Detailed instructions are on the Returns page. [1]
+Trace: input_guard -> rewrite -> classify -> retrieve -> gate -> answer -> output_guard
