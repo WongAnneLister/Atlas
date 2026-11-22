@@ -86,6 +86,8 @@ def test_evaluator_writes_paired_metrics_for_both_paths(tmp_path: Path) -> None:
     assert "| dev | knowledge | 1 | 1/1" in report
     assert "| dev | refund | 1 | 1/1" in report
     assert "[34.24%, 100.00%]" in report
+    assert "Each refund row represents a distinct order date" in report
+    assert "policy version selection depends only on the stored order date" in report
 
 
 @pytest.mark.parametrize("mode", ["date", "date_category"])

@@ -10,7 +10,11 @@ from eval.registry import load_registry
 from eval.schema import Split, TimeSensitiveItem, TimeSensitivePath
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.policy_versions import VersionedPolicy, load_versions
-from support_agent.orders.fixtures import TIME_SENSITIVE_CUSTOMER, TIME_SENSITIVE_ORDER_DATES
+from support_agent.orders.fixtures import (
+    TIME_SENSITIVE_CUSTOMER,
+    TIME_SENSITIVE_DEV_ORDERS,
+    TIME_SENSITIVE_TEST_ORDERS,
+)
 
 SUBJECTS = {"returns": "return window", "refunds": "price adjustment window"}
 KNOWLEDGE: dict[Split, tuple[str, ...]] = {
@@ -19,23 +23,29 @@ KNOWLEDGE: dict[Split, tuple[str, ...]] = {
         "How many days does the current {subject} at the Generic store allow?",
         "I bought it in August. What is the Generic store's {subject} today?",
         "My purchase was back in August. What is the Generic store's {subject}?",
+        "What's the time limit for the Generic store's {subject}?",
+        "Where does the Generic store set the current {subject}, in days?",
+        "I need the number of days in the Generic store's {subject}.",
+        "I ordered in July and want to check the current {subject} at the Generic store.",
+        "Even though I shopped last summer, what's the Generic store's {subject} now?",
+        "I made my purchase earlier this year. What's the Generic store's {subject} today?",
     ),
     "test": (
         "Can you tell me today's {subject} for the Generic store?",
         "How long is the Generic store's {subject} under its latest policy?",
         "Suppose I bought it in August. What's the current {subject} at the Generic store?",
         "I remember buying it in August. How long is the Generic store's {subject} now?",
+        "Under the rules in force today, how many days is the Generic store's {subject}?",
+        "How much time do shoppers have under the Generic store's current {subject}?",
+        "Could you give me the Generic store's {subject} as it stands today?",
+        "I think my purchase was in July. What's today's {subject} at the Generic store?",
+        "My receipt is from last summer. What {subject} does the Generic store publish now?",
+        "I placed an order earlier this year. How long is the Generic store's {subject} today?",
     ),
 }
-REFUND: dict[Split, tuple[str, ...]] = {
-    "dev": (
-        "For my Generic store order {order_id}, what {subject} applies?",
-        "Please check the {subject} for Generic store order {order_id}.",
-    ),
-    "test": (
-        "How long was the {subject} when I placed Generic store order {order_id}?",
-        "I need help with Generic store order {order_id}. Which {subject} covers it?",
-    ),
+REFUND_ORDERS: dict[Split, dict[str, date]] = {
+    "dev": TIME_SENSITIVE_DEV_ORDERS,
+    "test": TIME_SENSITIVE_TEST_ORDERS,
 }
 
 
@@ -45,7 +55,7 @@ def make_item(
     path: TimeSensitivePath,
     question: str,
     as_of: date,
-    index: int,
+    case_key: str,
     order_id: str | None = None,
 ) -> TimeSensitiveItem:
     gold = entry.section_at(as_of)
@@ -55,7 +65,7 @@ def make_item(
         raise ValueError(f"Expected one policy window in {entry.base_section_id}")
     topic = entry.base_section_id.split(".", 1)[0]
     return TimeSensitiveItem(
-        id=f"ts-{split}-{topic}-{path}-{order_id or 'current'}-{index}",
+        id=f"ts-{split}-{topic}-{path}-{case_key}",
         split=split,
         path=path,
         question=question,
@@ -75,7 +85,8 @@ def build_items(settings: Settings) -> list[TimeSensitiveItem]:
     items = []
     for split, templates in KNOWLEDGE.items():
         for entry in versions.entries:
-            subject = SUBJECTS[entry.base_section_id.split(".", 1)[0]]
+            topic = entry.base_section_id.split(".", 1)[0]
+            subject = SUBJECTS[topic]
             if entry.section_at(settings.orders.today) != entry.base_section_id:
                 raise ValueError("Configured today must use the current policy")
             items.extend(
@@ -85,22 +96,22 @@ def build_items(settings: Settings) -> list[TimeSensitiveItem]:
                     "knowledge",
                     template.format(subject=subject),
                     settings.orders.today,
-                    index,
+                    f"current-{index}",
                 )
                 for index, template in enumerate(templates, start=1)
             )
-            for order_id, order_date in TIME_SENSITIVE_ORDER_DATES.items():
+            if topic == "returns":
                 items.extend(
                     make_item(
                         entry,
                         split,
                         "refund",
-                        template.format(subject=subject, order_id=order_id),
+                        f"What is the return window for Generic store order {order_id}?",
                         order_date,
-                        index,
                         order_id,
+                        order_id=order_id,
                     )
-                    for index, template in enumerate(REFUND[split], start=1)
+                    for order_id, order_date in REFUND_ORDERS[split].items()
                 )
     return items
 

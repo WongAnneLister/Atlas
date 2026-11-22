@@ -229,15 +229,20 @@ Emails use example.com. No real customer data or payment integration is involved
 The seed appends delivered generic-store orders for the fake customer `CUST-TS01`
 (`policy.demo@example.com`). These use fixed facts and do not draw from the random seed.
 `orders.n_orders` and `orders.n_customers` count the original seeded records.
-The two dates on either side of 2026-09-01 check the policy boundary. The other dates
-give examples farther from the boundary. The August 20 order is within the old return window.
+Each order has a plain demo product with blank model and category fields.
+Dev uses the exact policy boundary. Test uses distinct nearby dates.
+Each split also includes an earlier order and a later order.
 
-| Order | Placed | Policy version |
-|---|---|---|
-| `ORD-999996` | 2026-08-20 | Historical |
-| `ORD-999997` | 2026-08-31 | Historical |
-| `ORD-999998` | 2026-09-01 | Current |
-| `ORD-999999` | 2026-10-15 | Current |
+| Split | Order | Placed | Policy version |
+|---|---|---|---|
+| dev | `ORD-999996` | 2026-08-20 | Historical |
+| dev | `ORD-999997` | 2026-08-31 | Historical |
+| dev | `ORD-999998` | 2026-09-01 | Current |
+| dev | `ORD-999999` | 2026-10-15 | Current |
+| test | `ORD-999992` | 2026-07-25 | Historical |
+| test | `ORD-999993` | 2026-08-30 | Historical |
+| test | `ORD-999994` | 2026-09-02 | Current |
+| test | `ORD-999995` | 2026-10-25 | Current |
 
 ## Schema
 

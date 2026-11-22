@@ -44,18 +44,21 @@ Tune later retrieval/gate choices on dev only. Report final quality on held-out 
 
 ## Time-sensitive policy group
 
-`make eval-time-sensitive-build` writes local-only `eval_v2.jsonl`. It copies the frozen
-`eval_v1` as an exact prefix and appends `time_sensitive` cases with distinct dev and test phrasing.
-The index release check and frozen smoke selection continue to use v1.
+`make eval-time-sensitive-build` writes local-only `eval_v2.jsonl`. It keeps the frozen
+`eval_v1` as an exact prefix and appends 24 cases per split, with 20 knowledge cases and 4 refund
+cases. The index release check and frozen smoke selection continue to use v1.
 
-- Knowledge templates ask about the current returns or price-adjustment window. Some claim
-  a purchase in August. Both kinds use `orders.today` and expect the current section ID.
-- Refund templates refer to delivered fixture orders for `CUST-TS01`. The stored order date
-  selects the historical or current gold section, with 2026-09-01 included in the current period.
+- Knowledge cases use distinct dev and test phrasings for the returns and price-adjustment
+  windows. Some claim an earlier purchase. All use `orders.today` and expect the current version.
+- Refund cases cover returns only. Every delivered fixture uses the same default return-policy
+  query built from order facts. The question text is unused, so price-adjustment cases belong
+  on the knowledge path and alternate refund phrasings would repeat the same search.
+- Each refund row represents one distinct date. The stored order date alone selects the gold
+  version. Dev covers 2026-08-31 and 2026-09-01. Test covers 2026-08-30 and 2026-09-02.
+  Each split also has an earlier and a later order.
 
-These unreviewed templates cover two synthetic policy histories and reuse fixture orders across
-splits. They measure version selection on these cases. They cannot establish generalization to
-other policies, stores, or order facts. Use dev for tuning and reserve test for reporting.
+These unreviewed cases cover two synthetic policy histories. Other policies, stores, and order
+facts need separate tests. Use dev for tuning and reserve test for reporting.
 
 `make eval-time-sensitive` writes one run record per split plus a report with Wilson confidence
 intervals by split and path. It checks top-five version hits, wrong-version hits, gate passes,

@@ -128,7 +128,9 @@ def _items(
 
 def generate_dataset(settings: Settings, catalog_path: Path | None = None) -> SeedDataset:
     config = settings.orders
-    if f"ORD-{config.n_orders:06d}" in TIME_SENSITIVE_ORDER_DATES or config.n_orders > 999999:
+    if config.n_orders >= min(
+        int(order_id.removeprefix("ORD-")) for order_id in TIME_SENSITIVE_ORDER_DATES
+    ):
         raise ValueError("orders.n_orders overlaps reserved dated fixture order ids")
     cases = scenarios(config)
     if config.n_orders < len(cases):

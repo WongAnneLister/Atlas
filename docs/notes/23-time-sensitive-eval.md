@@ -3,7 +3,7 @@
 **What**
 I added test questions for policies that change over time.
 I wrote older versions of the return and price rules for the test.
-I added fake orders on both sides of the change.
+I added fake orders with different dates for the two sets.
 
 **Why**
 A search can find the right topic and still find the wrong rule.
@@ -14,8 +14,8 @@ A refund should use the date from the order record.
 No number yet. I will measure it in commit 23b.
 
 **Trade-off**
-I reused the same fake orders with different wording across the two sets.
-That makes the date boundary easy to check.
+I used one refund case per order date.
+I kept price changes in general questions because refund search asks about returns.
 It leaves other stores and policy changes untested.
 
 **Likely follow-up question**

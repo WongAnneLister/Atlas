@@ -81,9 +81,7 @@ def measure(
         result = refund.retrieve_policy(
             ConversationState(
                 customer_id=order.customer_id,
-                intent=Intent.RETURN_EXCHANGE
-                if entry.base_section_id.startswith("returns.")
-                else Intent.REFUND_REQUEST,
+                intent=Intent.RETURN_EXCHANGE,
                 order_context={"order": order.model_dump(mode="json")},
             )
         )
@@ -188,6 +186,8 @@ def write_report(paths: list[Path], output: Path) -> None:
         "",
         "Generated from run records by `make eval-time-sensitive`.",
         "",
+        "Each refund row represents a distinct order date and uses the same return-policy query.",
+        "For these rows, policy version selection depends only on the stored order date.",
         "Version hits and wrong-version hits can both occur in one row.",
         "The gate is evaluated without an LLM. This does not measure decision or answer quality.",
         "",

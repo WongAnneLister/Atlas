@@ -5,7 +5,7 @@ def test_parity_detects_a_different_customer(seeded) -> None:
     from eval.orders_parity import compare_orders
 
     settings, service = seeded
-    assert compare_orders(service, service, settings.orders.n_orders) == (5, 34, [])
+    assert compare_orders(service, service, settings.orders.n_orders) == (5, 38, [])
 
     class RenamedCustomer:
         def list_customers(self, limit: int) -> list[CustomerSummary]:

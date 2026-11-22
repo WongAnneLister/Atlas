@@ -84,12 +84,19 @@ TIME_SENSITIVE_CUSTOMER = Customer(
     name="Policy Demo Customer",
     email="policy.demo@example.com",
 )
-TIME_SENSITIVE_ORDER_DATES = {
+TIME_SENSITIVE_DEV_ORDERS = {
     "ORD-999996": date(2026, 8, 20),
     "ORD-999997": date(2026, 8, 31),
     "ORD-999998": date(2026, 9, 1),
     "ORD-999999": date(2026, 10, 15),
 }
+TIME_SENSITIVE_TEST_ORDERS = {
+    "ORD-999992": date(2026, 7, 25),
+    "ORD-999993": date(2026, 8, 30),
+    "ORD-999994": date(2026, 9, 2),
+    "ORD-999995": date(2026, 10, 25),
+}
+TIME_SENSITIVE_ORDER_DATES = TIME_SENSITIVE_DEV_ORDERS | TIME_SENSITIVE_TEST_ORDERS
 
 
 def time_sensitive_fixtures(settings: OrdersSettings) -> tuple[list[Order], list[Shipment]]:
@@ -101,10 +108,10 @@ def time_sensitive_fixtures(settings: OrdersSettings) -> tuple[list[Order], list
         delivered_at = order_date + 2 * lead
         item = OrderItem(
             item_id=f"{order_id}-ITEM",
-            product_id="demo-w40",
-            model="W40",
-            name="Demo W40 Fan",
-            category="home",
+            product_id="demo-policy-item",
+            model="",
+            name="Demo Item",
+            category="",
             quantity=1,
             unit_price=Decimal("49.99"),
             final_sale=False,

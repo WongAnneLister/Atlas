@@ -47,7 +47,7 @@ def test_seed_repeats_exact_records_and_database(order_settings: Settings) -> No
     assert rows(order_settings.orders.db_path) == original
     assert first.metadata.catalog_source == "built_in"
     assert len(first.customers) == order_settings.orders.n_customers + 1
-    assert len(first.orders) == order_settings.orders.n_orders + 4
+    assert len(first.orders) == order_settings.orders.n_orders + 8
     assert {order.status for order in first.orders} == set(OrderStatus)
     assert all(customer.email.endswith("@example.com") for customer in first.customers)
     assert all(order.order_date <= order_settings.orders.today for order in first.orders)
@@ -321,7 +321,14 @@ def test_dated_fixture_orders_preserve_original_seed(tmp_path: Path) -> None:
         "2026-08-31",
         "2026-09-01",
         "2026-10-15",
+        "2026-07-25",
+        "2026-08-30",
+        "2026-09-02",
+        "2026-10-25",
     ]
+    assert {
+        (item.name, item.model, item.category) for order in fixtures for item in order.items
+    } == {("Demo Item", "", "")}
     assert {order.customer_id for order in fixtures} == {"CUST-TS01"}
     assert all(order.status == OrderStatus.DELIVERED for order in fixtures)
     assert dataset.customers[-1].email.endswith("@example.com")

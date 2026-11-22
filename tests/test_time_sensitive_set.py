@@ -6,6 +6,8 @@ from eval.build_time_sensitive import build_items, extend_dataset
 from eval.schema import GROUPS, EvalItem, TimeSensitiveItem
 
 from support_agent.config import get_settings
+from support_agent.graph.refund_query import policy_query
+from support_agent.orders.fixtures import time_sensitive_fixtures
 
 V1_ROW = (
     b'{"id":"frozen","group":"basic_policy","split":"test","question":"How long?",'
@@ -27,10 +29,10 @@ def test_generated_labels_follow_trusted_dates_on_both_splits():
     settings = get_settings()
     items = build_items(settings)
     assert Counter((item.split, item.path) for item in items) == {
-        ("dev", "knowledge"): 8,
-        ("test", "knowledge"): 8,
-        ("dev", "refund"): 16,
-        ("test", "refund"): 16,
+        ("dev", "knowledge"): 20,
+        ("test", "knowledge"): 20,
+        ("dev", "refund"): 4,
+        ("test", "refund"): 4,
     }
     assert len({item.id for item in items}) == len({item.question for item in items}) == 48
     for item in items:
@@ -39,15 +41,7 @@ def test_generated_labels_follow_trusted_dates_on_both_splits():
             assert item.customer_id is item.order_id is None
         else:
             assert item.customer_id == "CUST-TS01"
-            assert (
-                item.order_id
-                == {
-                    date(2026, 8, 20): "ORD-999996",
-                    date(2026, 8, 31): "ORD-999997",
-                    date(2026, 9, 1): "ORD-999998",
-                    date(2026, 10, 15): "ORD-999999",
-                }[item.as_of]
-            )
+            assert item.version_of.startswith("returns.")
         old = item.as_of < date(2026, 9, 1)
         assert item.gold_sections == [f"{item.version_of}@2026-01-01" if old else item.version_of]
         if item.version_of.startswith("returns."):
@@ -64,6 +58,26 @@ def test_generated_labels_follow_trusted_dates_on_both_splits():
         ]
         assert len(claimed) == 4
         assert all(item.gold_sections == [item.version_of] for item in claimed)
+
+
+def test_refund_cases_use_one_order_per_date_and_never_share_dates_between_splits():
+    items = [item for item in build_items(get_settings()) if item.path == "refund"]
+    assert len({item.order_id for item in items}) == len({item.as_of for item in items}) == 8
+    assert {
+        split: sorted(item.as_of.isoformat() for item in items if item.split == split)
+        for split in ("dev", "test")
+    } == {
+        "dev": ["2026-08-20", "2026-08-31", "2026-09-01", "2026-10-15"],
+        "test": ["2026-07-25", "2026-08-30", "2026-09-02", "2026-10-25"],
+    }
+    orders, _ = time_sensitive_fixtures(get_settings().orders)
+    assert {item.order_id: item.as_of for item in items} == {
+        order.order_id: order.order_date for order in orders
+    }
+    assert {policy_query(order, "return_exchange", get_settings()) for order in orders} == {
+        f"{get_settings().refund.store_label}: What is your return policy? "
+        "Can I return a product for a refund?"
+    }
 
 
 def test_refund_record_requires_both_order_and_customer_ids():

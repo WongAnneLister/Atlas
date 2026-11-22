@@ -115,7 +115,7 @@ datasets:
 - name: eval_v2
   version: v2
   path: eval/sets/eval_v2.jsonl
-  sha256: e3a6d164fb89a6c9ccee1b1f2fe2cc64e99a6719e577b2694a48f8e0d6f6f4c6
+  sha256: 9d526bd4326975dcb39818052b7d469f6c461bd4dabf385c0386ef9a023844a8
   items: 348
   splits:
     dev: 174
@@ -124,3 +124,4 @@ datasets:
   license_scope: local_only
   changelog:
   - Preserve every frozen v1 record and append synthetic time-sensitive policy cases.
+  - Pre-evidence review keeps 20 knowledge and 4 distinct-date returns cases per split.
