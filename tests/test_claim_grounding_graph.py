@@ -112,7 +112,7 @@ def supported(number, source=1, quote=MAIN):
     return {
         "number": number,
         "verdict": "supported",
-        "evidence": {"source": source, "quote": quote},
+        "evidence": [{"source": source, "quote": quote}],
     }
 
 

@@ -35,7 +35,7 @@ def claims() -> list[Claim]:
 SUPPORT = {
     "number": 1,
     "verdict": "supported",
-    "evidence": {"source": 1, "quote": "returns take 30 days"},
+    "evidence": [{"source": 1, "quote": "returns take 30 days"}],
 }
 UNSUPPORTED = {"number": 3, "verdict": "partial"}
 
@@ -114,8 +114,12 @@ def test_verifier_does_not_call_model_without_claims(monkeypatch: pytest.MonkeyP
 @pytest.mark.parametrize(
     "evidence",
     [
-        {"source": 2, "quote": "Shipping costs 10 dollars."},
-        {"source": 1, "quote": "90 days"},
+        [{"source": 2, "quote": "Shipping costs 10 dollars."}],
+        [{"source": 1, "quote": "90 days"}],
+        # Fragments joined with an ellipsis are not one verbatim excerpt.
+        [{"source": 1, "quote": "returns ... 30 days"}],
+        # Every excerpt must be verbatim, not just one of them.
+        [{"source": 1, "quote": "returns take 30 days"}, {"source": 1, "quote": "90 days"}],
     ],
 )
 def test_verifier_marks_only_the_claim_with_an_invalid_quote(monkeypatch, evidence):
@@ -125,3 +129,24 @@ def test_verifier_marks_only_the_claim_with_an_invalid_quote(monkeypatch, eviden
     assert len(calls) == 1
     assert (result[1].verdict, result[1].reason) == ("unsupported", "invalid_quote")
     assert result[3].verdict == "partial"
+
+
+def test_verifier_accepts_one_verbatim_excerpt_per_fact(monkeypatch):
+    two_facts = {
+        **SUPPORT,
+        "evidence": [
+            {"source": 1, "quote": "returns take 30 days"},
+            {"source": 1, "quote": "30 days"},
+        ],
+    }
+    with GraphDeps(Settings()) as deps:
+        verifier(monkeypatch, deps.models, [two_facts, UNSUPPORTED])
+        result = verify_claims(deps.models, "fast", claims())
+    assert (result[1].verdict, result[1].reason) == ("supported", "verified_quote")
+
+
+def test_supported_without_any_excerpt_is_a_structural_failure(monkeypatch):
+    with GraphDeps(Settings()) as deps:
+        verifier(monkeypatch, deps.models, [{**SUPPORT, "evidence": []}, UNSUPPORTED])
+        with pytest.raises(ValueError, match="quote"):
+            verify_claims(deps.models, "fast", claims())

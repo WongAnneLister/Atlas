@@ -26,7 +26,8 @@ class Verification(BaseModel):
 
     number: int = Field(gt=0, strict=True)
     verdict: Verdict
-    evidence: SourceQuote | None = None
+    # One verbatim excerpt per fact: a claim with several facts needs several excerpts.
+    evidence: list[SourceQuote] = Field(default_factory=list)
 
 
 class VerificationBatch(BaseModel):
@@ -73,15 +74,13 @@ def verify_claims(
         claim = by_number[number]
         verdict = result.verdict
         reason = "verified_quote" if verdict == "supported" else f"verifier_{verdict}"
-        evidence = result.evidence
-        if evidence is None:
-            if verdict == "supported":
+        if verdict == "supported":
+            if not result.evidence:
                 raise ValueError("A supported verdict must include a source quote")
-        else:
-            quote = " ".join(evidence.quote.split())
-            if not any(
-                evidence.source == source.n and quote in " ".join(source.text.split())
-                for source in claim.sources
+            texts = {source.n: " ".join(source.text.split()) for source in claim.sources}
+            if not all(
+                " ".join(quote.quote.split()) in texts.get(quote.source, "")
+                for quote in result.evidence
             ):
                 verdict, reason = "unsupported", "invalid_quote"
         assessments[number] = ClaimAssessment(

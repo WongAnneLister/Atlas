@@ -139,7 +139,7 @@ async def test_knowledge_stream(seeded: Any, monkeypatch, grounding: bool) -> No
                     {
                         "number": claim["number"],
                         "verdict": "supported",
-                        "evidence": {"source": source["n"], "quote": source["text"]},
+                        "evidence": [{"source": source["n"], "quote": source["text"]}],
                     }
                 ]
             }
