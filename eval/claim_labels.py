@@ -13,7 +13,7 @@ from eval.schema import ClaimItem
 from support_agent.config import REPO_ROOT
 
 LABELS_PATH = REPO_ROOT / "eval/sets/claims_v1_labels.csv"
-FIELDS = ("id", "split", "claim", "sources", "label", "note")
+FIELDS = ("id", "split", "question", "claim", "sources", "label", "note")
 
 
 def _sources(item: ClaimItem) -> str:
@@ -30,6 +30,7 @@ def export_labels(items: list[ClaimItem], path: Path) -> None:
                     {
                         "id": item.id,
                         "split": item.split,
+                        "question": item.question,
                         "claim": item.claim,
                         "sources": _sources(item),
                         "label": "",
@@ -50,12 +51,13 @@ def import_labels(items: list[ClaimItem], path: Path) -> list[ClaimItem]:
             if key not in expected or key in reviewed:
                 raise ValueError(f"Unknown or duplicate claim id: {key}")
             item = expected[key]
-            if (row["claim"], row["split"], row["sources"]) != (
+            if (row["question"], row["claim"], row["split"], row["sources"]) != (
+                item.question,
                 item.claim,
                 item.split,
                 _sources(item),
             ):
-                raise ValueError(f"Claim text, split or sources changed for {key}")
+                raise ValueError(f"Claim question, text, split or sources changed for {key}")
             if row["label"] not in {"supported", "unsupported"}:
                 raise ValueError(f"Missing or invalid human label for {key}")
             if row["note"] is None or None in row:

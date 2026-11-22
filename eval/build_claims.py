@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from collections import Counter
 from collections.abc import Sequence
+from itertools import islice
 from pathlib import Path
 from random import Random
 
@@ -14,7 +16,7 @@ from eval.claims import extract_claims
 from eval.common import load_sections
 from eval.e2e_runs import load_e2e
 from eval.registry import bump, file_hash, inspect_dataset, load_registry, write_registry
-from eval.schema import ClaimItem, Section, Split
+from eval.schema import CLAIM_PERTURBATIONS, ClaimItem, ClaimPerturbation, Section, Split
 from support_agent.config import REPO_ROOT, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 
@@ -43,22 +45,33 @@ def _real_sample(items: list[ClaimItem], cap: int, target: int, rng: Random) -> 
 
 
 def _synthetic_sample(
-    real: list[ClaimItem], perturbations: Perturbations, quota: int, rng: Random
+    claims: list[ClaimItem], perturbations: Perturbations, quota: int, rng: Random
 ) -> list[ClaimItem]:
     candidates = [
         (item, kind, text)
-        for item in real
+        for item in sorted(claims, key=lambda row: row.id)
         for kind, text in perturbations.variants(item, rng)
         if text != item.claim
     ]
     rng.shuffle(candidates)
+    config = get_settings().eval.claims
+    distinct = {(item.source_item, text): (item, kind, text) for item, kind, text in candidates}
+    preferred = [
+        candidate
+        for kind, minimum in (("duration", config.min_duration), ("amount", config.min_amount))
+        for candidate in islice((row for row in distinct.values() if row[1] == kind), minimum)
+    ]
+    caps = {kind: quota for kind in CLAIM_PERTURBATIONS}
+    caps["uncited_sentence"] = quota // config.uncited_cap_divisor
+    counts: Counter[ClaimPerturbation] = Counter()
     selected = []
     seen: set[tuple[str, str]] = set()
-    for item, kind, text in candidates:
+    for item, kind, text in [*preferred, *distinct.values()]:
         key = (item.source_item, text)
-        if key in seen:
+        if key in seen or counts[kind] >= caps[kind]:
             continue
         seen.add(key)
+        counts[kind] += 1
         selected.append(
             ClaimItem(
                 **{
@@ -96,12 +109,11 @@ def build_claim_set(
     perturbations = Perturbations(sections, support_overlap)
     for split in splits:
         rng = Random(f"{seed}:{split}")
-        real = _real_sample(
-            [item for item in claims if item.split == split], cap, real_targets[split], rng
-        )
+        split_claims = [item for item in claims if item.split == split]
+        real = _real_sample(split_claims, cap, real_targets[split], rng)
         if len(real) < real_targets[split]:
             raise ValueError(f"{split}: need {real_targets[split]} real claims, found {len(real)}")
-        synthetic = _synthetic_sample(real, perturbations, synthetic_per_split, rng)
+        synthetic = _synthetic_sample(split_claims, perturbations, synthetic_per_split, rng)
         if len(synthetic) < synthetic_per_split:
             raise ValueError(
                 f"{split}: need {synthetic_per_split} synthetic claims, found {len(synthetic)}"
@@ -111,12 +123,31 @@ def build_claim_set(
     return output
 
 
+def synthetic_build_lines(
+    items: list[ClaimItem], *, min_duration: int, min_amount: int
+) -> list[str]:
+    lines = []
+    for split in sorted({item.split for item in items}):
+        counts = Counter(
+            item.perturbation for item in items if item.split == split and item.group == "synthetic"
+        )
+        distribution = ", ".join(f"{kind}={counts[kind]}" for kind in CLAIM_PERTURBATIONS)
+        lines.append(f"{split} synthetic: {distribution}")
+        for kind, minimum in (("duration", min_duration), ("amount", min_amount)):
+            if counts[kind] < minimum:
+                lines.append(f"{split} {kind} shortfall: {counts[kind]} of {minimum}")
+    return lines
+
+
 def read_claims(path: Path = CLAIMS_PATH) -> list[ClaimItem]:
-    return [
-        ClaimItem.model_validate_json(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
+    rows = [
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
+    if any(isinstance(row, dict) and "question" not in row for row in rows):
+        raise ValueError(
+            "The tooling draft must be rebuilt from 24b runs before labelling or scoring"
+        )
+    return [ClaimItem.model_validate(row) for row in rows]
 
 
 def publish_claims(items: list[ClaimItem], *, version: str | None, note: str) -> None:
@@ -224,7 +255,10 @@ def main(argv: list[str] | None = None) -> int:
         )
     except (ValueError, OSError) as error:
         parser.error(str(error))
-    sys.stdout.write(f"Wrote {len(items)} claims to {CLAIMS_PATH}\n")
+    lines = synthetic_build_lines(
+        items, min_duration=config.min_duration, min_amount=config.min_amount
+    )
+    sys.stdout.write("\n".join([f"Wrote {len(items)} claims to {CLAIMS_PATH}", *lines]) + "\n")
     return 0
 
 

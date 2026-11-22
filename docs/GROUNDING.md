@@ -3,16 +3,19 @@
 ## Claim evaluation (25a)
 
 The evaluation reads saved knowledge answers, including the released parts of partial
-answers. It splits those paragraphs into sentences and keeps the observed part index
-and the original numbered citation texts. Fixed notices and handoff text are excluded.
+answers. It keeps the observed part index, question and numbered citation texts.
+Whole-question records use the original item question. Multipart records use the
+planned part question. The question supplies context only. Evidence comes solely
+from the cited text. The splitter keeps abbreviations intact and joins short
+fragments to a neighbour in the same paragraph. Fixed notices, handoff text and
+phrases listed in `grounding.generic_phrases` are excluded.
 Each claim has access to the chunks cited by its paragraph. The extraction uses the
 saved citation order and checks the saved section identifiers, so it can recover the
 numbered chunks without performing retrieval.
 
-The current local-only registry entry is an unreviewed test draft. Rebuild it from
-the same existing inputs with:
-
-    make eval-claims-build CLAIMS_BUILD_ARGS="--split test --run eval/runs/baseline-001-e2e-test.jsonl --run eval/runs/e2e-test-c15.jsonl"
+**Do not label the current registered `claims_v1`.** It is a test-only tooling draft.
+25b will rebuild it from the saved 24b dev and test runs before human review.
+The label and scoring commands require the rebuilt schema with question context.
 
 `claims_v1_sources.json` records paths and hashes for the saved inputs and the
 unlabelled set. The builder accepts both standard run directories and legacy E2E JSONL.
@@ -24,13 +27,18 @@ fails when a split falls short of its configured quotas.
 `make eval-claims-label` exports a fresh blind CSV with empty `label` and `note` fields.
 It refuses to overwrite an existing review file. When all real claims have human
 labels, run `make eval-claims-label CLAIMS_LABEL_ARGS="--import --version vN"` with the
-next registry version. Import requires the original IDs, text, split and sources. The
+next registry version. The CSV shows the question, claim and cited text. Import
+requires the original IDs, question, claim text, split and sources. The
 dataset, provenance and review CSV stay local.
 
 Synthetic negatives change a number, duration, amount or model, or replace a sentence
-with one from a different document. Each keeps its original cited sources. The
-builder uses lexical overlap to select source claims that look supported. This is a
-sampling heuristic. The synthetic group alone supplies its unsupported class by
+with one from a different document. Each keeps its original question and cited
+sources. Foreign sentences must be factual prose with at least six words and
+sentence-final punctuation. A text heuristic excludes links, navigation lines and
+heading fragments. The builder uses lexical overlap to find claims that look
+supported. Uncited sentences are capped at one third of each split's synthetic
+sample. The builder prints every perturbation count and reports duration or amount
+shortfalls below five per split. The synthetic group alone supplies its unsupported class by
 construction at scoring time. Its label fields remain null and it stays out of the
 review CSV. Report its metrics separately from human-labelled claims.
 
@@ -39,7 +47,7 @@ scores a saved verifier run against the registered dataset hash. The JSON object
 `git_sha`, `config_hash`, `dataset_sha256`, `models`, `date`, `split`, and a
 `predictions` list with claim `id` and `verdict`. It reports precision, recall and F1
 for unsupported claims by split and group, with Wilson intervals and the configured
-recall target. Partial verdicts count as unsupported. No live verifier runs in 25a.
+recall target. Synthetic rows also report counts and scores per perturbation kind. Partial verdicts count as unsupported. No live verifier runs in 25a.
 
 Saved E2E records can carry an optional claim-verdict list. The run-level support rate
 counts supported claims over all recorded claims. The unsupported and removal metrics
@@ -57,8 +65,9 @@ confirmation on final answers. That measurement is distinct from verifier verdic
 - The verifier will check model-written text. Code-generated notices and handoff
   templates stay outside verification. A short configured list will cover generic
   phrases from the model.
-- Each claim uses its paragraph's cited chunks. The verifier will never retrieve more
-  evidence.
+- Each claim uses its paragraph's cited chunks. The verifier gets the part question
+  or original item question as context only. It uses the cited chunks as evidence
+  and performs no further retrieval.
 - The fast model will make one structured call per answer and supply a verbatim
   quote for each supported claim. The existing stack can validate those quotes
   without downloading a separate natural language inference model.

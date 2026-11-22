@@ -4,7 +4,7 @@ from collections import Counter
 from random import Random
 
 import pytest
-from eval.build_claims import build_claim_set
+from eval.build_claims import build_claim_set, synthetic_build_lines
 from eval.claim_labels import export_labels, import_labels
 from eval.claim_perturbations import Perturbations
 from eval.claims import extract_claims
@@ -49,10 +49,10 @@ def record(split="test", **changes):
 def test_splitter_handles_abbreviations_lists_decimals_and_model_ids():
     assert answer_sentences(
         "1. The Philips BHD340/10 weighs 1.25 kg, e.g. without its cable. [2]\n"
-        "- It costs $4.50. It is covered in the U.S. under this plan. [3]"
+        "- It costs only $4.50. It is covered in the U.S. under this plan. [3]"
     ) == [
         "The Philips BHD340/10 weighs 1.25 kg, e.g. without its cable. [2]",
-        "It costs $4.50.",
+        "It costs only $4.50.",
         "It is covered in the U.S. under this plan. [3]",
     ]
 
@@ -89,6 +89,7 @@ def test_extraction_uses_only_released_paragraphs_and_their_citations():
         (1, 1, "The fee is $4.50."),
         (2, 0, "Try the BHD340/10."),
     ]
+    assert [claim.question for claim in claims] == ["When?", "When?", "What model?"]
     assert [[source.n for source in c.sources] for c in claims] == [[2], [2], [4]]
     assert extract_claims(row.model_copy(update={"answer_status": None}), "run") == []
     assert extract_claims(row.model_copy(update={"path": "C"}), "run") == []
@@ -103,7 +104,9 @@ def test_extraction_ignores_historical_template_and_reads_legacy_rows():
     )
     legacy = E2ERecord.model_validate(row.model_dump(exclude={"claims"}))
     assert legacy.claims is None
-    assert [c.claim for c in extract_claims(legacy, "run")] == ["Returns take 30 days."]
+    [claim] = extract_claims(legacy, "run")
+    assert claim.claim == "Returns take 30 days."
+    assert claim.question == legacy.item.question
 
 
 def make_claim_set():
@@ -111,7 +114,9 @@ def make_claim_set():
     sections = {
         "returns": Section(section_id="returns", doc_id="same-doc", text=rows[0].sources[0].text),
         "foreign": Section(
-            section_id="foreign", doc_id="other-doc", text="Product pickup closes at noon."
+            section_id="foreign",
+            doc_id="other-doc",
+            text="Product pickup closes at noon every Saturday.",
         ),
     }
     options = dict(
@@ -155,6 +160,7 @@ def test_csv_carries_only_human_inputs_and_refuses_invalid_labels(tmp_path):
         csv_rows = list(csv.DictReader(handle))
     assert len(csv_rows) == 4
     assert all(row["label"] == row["note"] == "" for row in csv_rows)
+    assert {row["question"] for row in csv_rows} == {"What are the terms?"}
     assert not {"group", "verdict", "prediction"} & csv_rows[0].keys()
 
     def write(rows):
@@ -171,6 +177,7 @@ def test_csv_carries_only_human_inputs_and_refuses_invalid_labels(tmp_path):
     for field, value, match in (
         ("id", "unknown", "Unknown"),
         ("claim", "edited", "changed"),
+        ("question", "edited", "changed"),
     ):
         write([{**csv_rows[0], field: value}, *csv_rows[1:]])
         with pytest.raises(ValueError, match=match):
@@ -221,7 +228,12 @@ def test_perturbations_keep_units_and_do_not_introduce_cited_values():
         "other": Section(
             section_id="other",
             doc_id="other",
-            text="Pickup closes at noon. HD999/21 has a safety switch.",
+            text=(
+                "Click here to check when the service starts. "
+                "Our options for new customers and shops. "
+                "See https://example.com for the complete product options. "
+                "Pickup closes at noon. HD999/21 has a safety switch for overheating."
+            ),
         ),
     }
     variants = dict(Perturbations(sections, 0.65).variants(item, Random(1)))
@@ -230,6 +242,7 @@ def test_perturbations_keep_units_and_do_not_introduce_cited_values():
     assert "31 business days" in variants["duration"]
     assert "3 attachments" in variants["number"]
     assert "HD999/21" in variants["model"]
+    assert variants["uncited_sentence"] == "HD999/21 has a safety switch for overheating."
 
 
 def test_run_metrics_summarize_claims_and_preserve_acceptance():
@@ -259,3 +272,86 @@ def test_run_metrics_summarize_claims_and_preserve_acceptance():
     assert report["answers_with_any_unsupported_claim"].count == 1
     assert report["low_grounding_handoff_rate"].count == 1
     assert [row.metrics["pass_rate"] for row in run.items] == [True, True, False]
+
+
+def test_splitter_keeps_currency_and_units_with_their_values():
+    assert answer_sentences(
+        "It costs Rs. 349. The previous price was Rs 499. "
+        "The package weighs approx. 2 kg. with the cable. Check item no. 8 for details."
+    ) == [
+        "It costs Rs. 349.",
+        "The previous price was Rs 499.",
+        "The package weighs approx. 2 kg. with the cable.",
+        "Check item no. 8 for details.",
+    ]
+
+
+def test_splitter_merges_fragments_within_each_paragraph():
+    assert answer_sentences(
+        "Yes.\nThe dryer draws up to 1,600 watts. 1600 W.\n\n"
+        "No.\nThe charger does not come with it.\n\nOkay."
+    ) == [
+        "Yes. The dryer draws up to 1,600 watts. 1600 W.",
+        "No. The charger does not come with it.",
+        "Okay.",
+    ]
+
+
+def test_extraction_drops_configured_generic_phrases_before_merging(monkeypatch):
+    from support_agent.config import get_settings
+
+    monkeypatch.setattr(get_settings().grounding, "generic_phrases", ["Thanks."])
+    [claim] = extract_claims(record(answer="THANKS! Returns take 30 days. [2]"), "run")
+    assert claim.claim == "Returns take 30 days."
+
+
+def test_builder_caps_uncited_and_reports_soft_perturbation_shortfalls():
+    rows, sections, options = make_claim_set()
+    items = build_claim_set(rows, sections, **options)
+    for split in ("dev", "test"):
+        negatives = [row for row in items if row.split == split and row.group == "synthetic"]
+        assert sum(row.perturbation == "uncited_sentence" for row in negatives) <= 1
+    lines = synthetic_build_lines(items, min_duration=5, min_amount=5)
+    assert any("uncited_sentence=1" in line for line in lines)
+    assert any("dev" in line and "duration" in line and "shortfall" in line for line in lines)
+    assert any("test" in line and "amount" in line and "shortfall" in line for line in lines)
+    scores = score_claims(items, {item.id: "unsupported" for item in items}, alpha=0.05)
+    assert scores["test", "synthetic / uncited_sentence"].total == 1
+    assert scores["test", "synthetic / number"].total == 0
+
+
+def test_tooling_draft_without_question_requires_rebuild(tmp_path):
+    from eval.build_claims import read_claims
+
+    [item, *_] = extract_claims(record(), "run")
+    path = tmp_path / "claims.jsonl"
+    path.write_text(item.model_dump_json(exclude={"question"}) + "\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="tooling draft"):
+        read_claims(path)
+
+
+def test_synthetic_sampling_meets_available_duration_and_amount_minima():
+    answer = "Returns take 30 days and cost Rs. 349."
+    [claim] = extract_claims(
+        record(answer=f"{answer} [2]", cited_sources=[{"section_id": "returns", "text": answer}]),
+        "run",
+    )
+    claims = [
+        claim.model_copy(update={"id": f"c{index}", "source_item": f"item{index}"})
+        for index in range(5)
+    ]
+    items = build_claim_set(
+        claims,
+        {},
+        seed=8,
+        real_targets={"test": 1},
+        synthetic_per_split=10,
+        cap=1,
+        support_overlap=0.65,
+        splits=["test"],
+    )
+    assert Counter(item.perturbation for item in items if item.group == "synthetic") == {
+        "duration": 5,
+        "amount": 5,
+    }
+    assert len(synthetic_build_lines(items, min_duration=5, min_amount=5)) == 1

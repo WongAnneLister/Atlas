@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validator
 
@@ -125,6 +125,9 @@ ClaimLabel = Literal["supported", "unsupported"]
 ClaimPerturbation = Literal["number", "duration", "amount", "model", "uncited_sentence"]
 
 
+CLAIM_PERTURBATIONS: tuple[ClaimPerturbation, ...] = get_args(ClaimPerturbation)
+
+
 class ClaimSource(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -143,6 +146,7 @@ class ClaimItem(BaseModel):
     source_item: str = Field(min_length=1)
     part: int = Field(ge=0)
     sentence: int = Field(ge=0)
+    question: str = Field(min_length=1)
     claim: str = Field(min_length=1)
     sources: list[ClaimSource]
     label: ClaimLabel | None = None

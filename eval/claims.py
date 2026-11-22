@@ -8,6 +8,7 @@ from string import Formatter
 
 from eval.e2e_records import E2ERecord
 from eval.schema import ClaimItem, ClaimSource
+from support_agent.config import get_settings
 from support_agent.data.doc_models import digest
 from support_agent.graph.handoff import PROMPTS
 from support_agent.graph.intents import Path
@@ -101,6 +102,7 @@ def extract_claims(record: E2ERecord, source_run: str) -> list[ClaimItem]:
     numbered = _numbered_sources(record)
     claims: list[ClaimItem] = []
     offsets: dict[int, int] = {}
+    generic_phrases = get_settings().grounding.generic_phrases
     for part, text in zip(indices, paragraphs, strict=True):
         numbers = list(dict.fromkeys(int(n) for n in CITATION.findall(text)))
         if any(n not in numbered for n in numbers):
@@ -111,7 +113,9 @@ def extract_claims(record: E2ERecord, source_run: str) -> list[ClaimItem]:
         ):
             raise ValueError(f"Cannot match cited text to {record.item.id}, part {part}")
         clean = re.sub(r"\s+([,.!?;:])", r"\1", CITATION.sub("", text))
-        for sentence, claim in enumerate(answer_sentences(clean), start=offsets.get(part, 0)):
+        question = record.parts[part].text if record.parts is not None else record.item.question
+        sentences = answer_sentences(clean, generic_phrases=generic_phrases)
+        for sentence, claim in enumerate(sentences, start=offsets.get(part, 0)):
             offsets[part] = sentence + 1
             identifier = digest(f"{source_run}\n{record.item.id}\n{part}\n{sentence}")
             claims.append(
@@ -123,6 +127,7 @@ def extract_claims(record: E2ERecord, source_run: str) -> list[ClaimItem]:
                     source_item=record.item.id,
                     part=part,
                     sentence=sentence,
+                    question=question,
                     claim=claim,
                     sources=sources,
                     label_source="human",

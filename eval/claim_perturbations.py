@@ -9,16 +9,45 @@ from random import Random
 
 from eval.common import normalised
 from eval.schema import ClaimItem, ClaimPerturbation, Section
+from support_agent.config import get_settings
 from support_agent.gate.signals import model_terms
-from support_agent.grounding.split import answer_sentences
+from support_agent.grounding.split import sentence_candidates
 
 _CODE = re.compile(r"\b[\w/-]+\b")
 _NUMBER = re.compile(
-    r"(?<![\w/])(?P<currency>[$£€₹]|USD\s+)?(?P<value>\d+(?:\.\d+)?)"
-    r"(?![\w/]|\.\d)(?P<unit>[\s-]*(?:business days?|days?|weeks?|months?|years?|hours?|USD|%))?",
+    r"(?<![\w/])(?P<currency>[$£€₹]|(?:USD|EUR|GBP|INR|Rs\.?)\s+)?(?P<value>\d+(?:\.\d+)?)"
+    r"(?![\w/]|\.\d)(?P<unit>[\s-]*(?:business days?|days?|weeks?|months?|years?|hours?|"
+    r"minutes?|seconds?|USD|EUR|GBP|INR|Rs\.?|%))?",
     re.IGNORECASE,
 )
-_MONEY = frozenset({"usd", "$", "£", "€", "₹"})
+_MONEY = frozenset({"usd", "eur", "gbp", "inr", "rs", "rs.", "$", "£", "€", "₹"})
+
+_LINK = re.compile(r"https?://|www\.|\[[^\]]+\]\(|<a\b", re.IGNORECASE)
+_NAVIGATION = re.compile(
+    r"^(?:click|tap|read more|learn more|see also|visit|go to|refer to|for more)\b", re.IGNORECASE
+)
+_PREDICATE = re.compile(
+    r"\b(?:is|are|was|were|has|have|can|may|must|will|includes?|takes?|costs?|covers?|"
+    r"ships?|closes?|opens?|requires?|supports?|provides?|applies|expires?)\b",
+    re.IGNORECASE,
+)
+
+
+def _factual_sentences(text: str, min_words: int) -> Iterable[tuple[str, set[str]]]:
+    for line in text.splitlines():
+        if line.lstrip().startswith("#"):
+            continue
+        for sentence in sentence_candidates(line):
+            words = normalised(sentence).split()
+            if (
+                len(words) >= min_words
+                and sentence[0].isalnum()
+                and sentence[-1] in ".!"
+                and _PREDICATE.search(sentence)
+                and not _LINK.search(sentence)
+                and not _NAVIGATION.match(sentence)
+            ):
+                yield sentence, set(words)
 
 
 class Perturbations:
@@ -35,11 +64,11 @@ class Perturbations:
             },
             key=lambda model: (model.casefold(), model),
         )
+        min_words = get_settings().eval.claims.foreign_min_words
         self.sentences = [
-            (section.doc_id, sentence, set(normalised(sentence).split()))
+            (section.doc_id, sentence, words)
             for section in sections_in_order
-            for sentence in answer_sentences(section.text)
-            if sentence[0].isalpha() and sentence[-1] in ".!?" and " " in sentence
+            for sentence, words in _factual_sentences(section.text, min_words)
         ]
 
     def variants(self, item: ClaimItem, rng: Random) -> Iterable[tuple[ClaimPerturbation, str]]:
@@ -89,7 +118,6 @@ class Perturbations:
                 sentence
                 for doc, sentence, words in self.sentences
                 if doc not in documents
-                and words
                 and len(words & evidence_words) / len(words) < self.support_overlap
                 and not present(sentence)
             ]

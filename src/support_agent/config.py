@@ -273,10 +273,16 @@ class ClaimSamplingSettings(BaseModel):
     dev_target: int = Field(gt=0)
     test_target: int = Field(gt=0)
     synthetic_per_split: int = Field(gt=0)
+    foreign_min_words: int = Field(ge=6)
+    uncited_cap_divisor: int = Field(ge=3)
+    min_duration: int = Field(ge=0)
+    min_amount: int = Field(ge=0)
     max_per_item: int = Field(gt=0)
 
 
 class GroundingEvalSettings(BaseModel):
+    generic_phrases: list[str] = Field(max_length=9)
+    short_sentence_words: int = Field(ge=0)
     target_recall: float = Field(gt=0, le=1)
 
 

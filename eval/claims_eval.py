@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from eval.build_claims import CLAIMS_PATH, NAME, read_claims
 from eval.registry import file_hash, load_registry
-from eval.schema import ClaimItem, ClaimVerdict, Split
+from eval.schema import CLAIM_PERTURBATIONS, ClaimItem, ClaimVerdict, Split
 from eval.stats import Interval, wilson_interval
 from support_agent.config import REPO_ROOT, get_settings
 from support_agent.data.doc_models import write_text
@@ -69,6 +69,11 @@ def score_claims(
     groups: dict[tuple[Split, str], list[ClaimItem]] = defaultdict(list)
     for item in items:
         groups[item.split, item.group].append(item)
+        if item.perturbation is not None:
+            groups[item.split, f"synthetic / {item.perturbation}"].append(item)
+    for split in {item.split for item in items if item.group == "synthetic"}:
+        for kind in CLAIM_PERTURBATIONS:
+            groups.setdefault((split, f"synthetic / {kind}"), [])
     results = {}
     for key, rows in sorted(groups.items()):
         tp = fp = fn = labelled = 0

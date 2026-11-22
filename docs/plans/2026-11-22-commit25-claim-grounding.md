@@ -144,7 +144,10 @@ Each one goes in the final message and in `docs/GROUNDING.md` (new).
   compound splitter, decision 9), `exact.py` (decision 5), `verify.py` (decision 4, one call,
   prompt `graph/prompts/verify_claims.md`, schema with one verdict per numbered claim; code
   rejects a reply that skips or adds claim numbers).
-- The verifier receives only the claim texts and the cited chunks of each claim's part.
+- The verifier receives each claim, its question as context, and the cited chunks of its part.
+  Use the planned part question for multipart answers or the original item question otherwise.
+  Only the cited chunks count as evidence. Use the same `grounding.generic_phrases` list as
+  extraction to skip generic phrases.
 
 ### 4.2 Graph (`graph/nodes/knowledge.py`, `graph/build.py`)
 - A `ground` step after rendering and before `output_guard`, on the knowledge path only, for
