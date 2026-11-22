@@ -232,7 +232,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     base = get_settings()
     service = OrderService(settings=base.orders)
-    orders = all_orders(service, base.orders.n_customers)
+    orders = all_orders(service, base.orders.n_customers + 1)
     rows: list[Row] = []
     with GraphDeps(base) as deps:
         retriever = CachingRetriever(deps.knowledge_retriever())

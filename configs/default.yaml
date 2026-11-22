@@ -314,6 +314,12 @@ milvus:
   bm25_b: 0.75
   analyzer: {tokenizer: standard, filter: [lowercase]}
 
+policy_versions:
+  enabled: false
+  default_effective_from: 2026-01-01
+  open_end_day: 99991231
+  spec_path: src/support_agent/data/policy_versions.yaml
+
 orders:
   db_path: data/orders.sqlite
   seed: 42

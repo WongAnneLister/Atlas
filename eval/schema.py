@@ -1,13 +1,18 @@
-"""Version-one evaluation records and build-only provenance."""
+"""Evaluation records and build-only provenance."""
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validator
 
-Group = Literal["basic_policy", "model_number", "colloquial", "cross_doc", "no_answer"]
+Group = Literal[
+    "basic_policy", "model_number", "colloquial", "cross_doc", "no_answer", "time_sensitive"
+]
+TimeSensitivePath = Literal["knowledge", "refund"]
 Split = Literal["dev", "test"]
+# Frozen v1 strata for v1 generation, validation and smoke sampling.
 GROUPS: tuple[Group, ...] = ("basic_policy", "model_number", "colloquial", "cross_doc", "no_answer")
 
 
@@ -44,6 +49,26 @@ class EvalItem(BaseModel):
             documents = {info.context["section_docs"].get(sid) for sid in self.gold_sections}
             if None in documents or len(documents) < 2:
                 raise ValueError("cross_doc needs sections from different documents")
+        return self
+
+
+class TimeSensitiveItem(EvalItem):
+    group: Literal["time_sensitive"] = "time_sensitive"
+    path: TimeSensitivePath
+    as_of: date
+    version_of: str = Field(min_length=1)
+    order_id: str | None = Field(default=None, min_length=1)
+    customer_id: str | None = Field(default=None, min_length=1)
+
+    @model_validator(mode="after")
+    def _validate_policy_case(self) -> TimeSensitiveItem:
+        if self.path == "refund":
+            if self.order_id is None or self.customer_id is None:
+                raise ValueError("Refund path requires order_id and customer_id")
+        elif self.order_id is not None or self.customer_id is not None:
+            raise ValueError("Knowledge path does not accept order or customer ids")
+        if len(self.gold_sections) != 1:
+            raise ValueError("Time-sensitive cases require a single gold version")
         return self
 
 

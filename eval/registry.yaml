@@ -112,3 +112,15 @@ datasets:
   license_scope: local_only
   changelog:
   - Preserve v1 and add synthetic identity and benign look-alike cases.
+- name: eval_v2
+  version: v2
+  path: eval/sets/eval_v2.jsonl
+  sha256: e3a6d164fb89a6c9ccee1b1f2fe2cc64e99a6719e577b2694a48f8e0d6f6f4c6
+  items: 348
+  splits:
+    dev: 174
+    test: 174
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Preserve every frozen v1 record and append synthetic time-sensitive policy cases.

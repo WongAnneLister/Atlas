@@ -17,11 +17,10 @@ from support_agent.data.doc_models import (
     DocumentStats,
     Product,
     ValidationSummary,
-    digest,
-    json_text,
     numeric_tokens,
 )
 from support_agent.data.faq_docs import deduplicate, load_faqs
+from support_agent.data.policy_versions import PolicySection, docs_config_hash, load_versions
 from support_agent.data.product_docs import extract_products, product_section_id
 
 log = logging.getLogger(__name__)
@@ -67,7 +66,8 @@ def validate_docs(settings: Settings) -> ValidationSummary:
     built_at, input_hash = verify_inputs(settings)
     if (built_at, input_hash) != (index.built_at, index.input_hash):
         raise ValueError("Build inputs changed; run make data-docs")
-    if index.config_hash != digest(json_text(settings.model_dump(mode="json"))):
+    versions = load_versions(settings.policy_versions) if settings.policy_versions.enabled else None
+    if index.config_hash != docs_config_hash(settings, versions):
         raise ValueError("Build config changed; run make data-docs")
     provenance = json.loads((docs_dir / "provenance.json").read_text(encoding="utf-8"))
     sections: dict[str, str] = {}
@@ -129,6 +129,16 @@ def validate_docs(settings: Settings) -> ValidationSummary:
     for sid, paragraphs in expected_prose.items():
         if sections[sid] != "\n\n".join(paragraphs):
             raise ValueError(f"Unexpected prose beyond source facts: {sid}")
+    if versions is not None:
+        bases = {
+            sid: PolicySection(heading="", prose="\n\n".join(paragraphs))
+            for sid, paragraphs in expected_prose.items()
+        }
+        historical = versions.apply_versions(bases)
+        for entry in versions.entries:
+            if sections[entry.old_id] != historical[entry.old_id].prose:
+                raise ValueError(f"Unexpected synthetic policy text: {entry.old_id}")
+            expected_sources[entry.old_id] = expected_sources[entry.base_section_id]
     products = [
         Product.model_validate_json(line)
         for line in (processed / "catalog/products.jsonl").read_text(encoding="utf-8").splitlines()

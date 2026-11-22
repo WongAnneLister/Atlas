@@ -1,0 +1,15 @@
+entries:
+  - base_section_id: returns.maktek_faqs.generic-store.5c8d1db88fb2b1a907bd1a2f6b2bc37ade7502357c8948e1c118e2ebce589b43
+    effective_from: 2026-09-01
+    old:
+      effective_from: 2026-01-01
+      effective_to: 2026-09-01
+      find: Our return policy allows you to return products within 30 days of purchase for a full refund, provided they are in their original condition and packaging.
+      replace: Our return policy allows you to return products within 90 days of purchase for a full refund, provided they are in their original condition and packaging.
+  - base_section_id: refunds.maktek_faqs.generic-store.5c8d1db88fb2b1a907bd1a2f6b2bc37ade7502357c8948e1c118e2ebce589b43
+    effective_from: 2026-09-01
+    old:
+      effective_from: 2026-01-01
+      effective_to: 2026-09-01
+      find: If the price of a product drops within 7 days of your purchase, you may be eligible for a price adjustment.
+      replace: If the price of a product drops within 14 days of your purchase, you may be eligible for a price adjustment.

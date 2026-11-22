@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, date, datetime, time, timedelta
+from decimal import Decimal
 from pathlib import Path
 
 from pydantic import BaseModel
 
 from support_agent.config import OrdersSettings, SeedProduct, Settings
-from support_agent.orders.models import OrderStatus
+from support_agent.orders.models import Customer, Order, OrderItem, OrderStatus, Shipment
 
 
 class Scenario(BaseModel):
@@ -75,3 +77,63 @@ def load_products(settings: Settings, catalog_path: Path) -> tuple[list[SeedProd
     if not products or len({p.product_id for p in products}) != len(products):
         raise ValueError("Catalog must have products with unique product ids")
     return sorted(products, key=lambda p: p.product_id), "processed_catalog"
+
+
+TIME_SENSITIVE_CUSTOMER = Customer(
+    customer_id="CUST-TS01",
+    name="Policy Demo Customer",
+    email="policy.demo@example.com",
+)
+TIME_SENSITIVE_ORDER_DATES = {
+    "ORD-999996": date(2026, 8, 20),
+    "ORD-999997": date(2026, 8, 31),
+    "ORD-999998": date(2026, 9, 1),
+    "ORD-999999": date(2026, 10, 15),
+}
+
+
+def time_sensitive_fixtures(settings: OrdersSettings) -> tuple[list[Order], list[Shipment]]:
+    """Use fixed mock facts independent of the catalog and the random seed."""
+    orders: list[Order] = []
+    shipments: list[Shipment] = []
+    lead = timedelta(days=settings.shipping_lead_days)
+    for order_id, order_date in TIME_SENSITIVE_ORDER_DATES.items():
+        delivered_at = order_date + 2 * lead
+        item = OrderItem(
+            item_id=f"{order_id}-ITEM",
+            product_id="demo-w40",
+            model="W40",
+            name="Demo W40 Fan",
+            category="home",
+            quantity=1,
+            unit_price=Decimal("49.99"),
+            final_sale=False,
+            refunded_quantity=0,
+        )
+        orders.append(
+            Order(
+                order_id=order_id,
+                customer_id=TIME_SENSITIVE_CUSTOMER.customer_id,
+                status=OrderStatus.DELIVERED,
+                order_date=order_date,
+                delivered_at=delivered_at,
+                currency=settings.currency,
+                total=item.unit_price,
+                paid_with_coupon=False,
+                coupon_code=None,
+                items=[item],
+            )
+        )
+        shipments.append(
+            Shipment(
+                order_id=order_id,
+                carrier="Mock Carrier",
+                tracking_number=f"MOCK-{order_id}",
+                status="delivered",
+                shipped_at=order_date + lead,
+                expected_delivery=delivered_at,
+                last_event_at=datetime.combine(delivered_at, time.min, UTC),
+                last_event="Delivered to the mock customer.",
+            )
+        )
+    return orders, shipments

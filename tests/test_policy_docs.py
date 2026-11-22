@@ -262,3 +262,45 @@ def test_validator_rejects_output_corruption(build_settings: Settings, corruptio
         path.write_text(path.read_text(encoding="utf-8").replace("W400", "W999"), encoding="utf-8")
     with pytest.raises(ValueError):
         validate_docs(build_settings)
+
+
+def test_disabled_versions_keep_build_bytes_and_do_not_read_the_spec(
+    build_settings: Settings,
+) -> None:
+    assert not build_settings.policy_versions.enabled
+    build_docs(build_settings)
+    processed = Path(build_settings.data.processed_dir)
+    original = snapshot(processed)
+    build_settings.policy_versions.spec_path = "missing-spec.yaml"
+    build_docs(build_settings)
+    validate_docs(build_settings)
+    assert snapshot(processed) == original
+
+
+def test_enabled_versions_generate_validated_synthetic_sections(
+    build_settings: Settings, tmp_path: Path
+) -> None:
+    from support_agent.data.doc_models import digest
+
+    base_id = f"returns.maktek_faqs.generic-store.{digest('Generic store')}"
+    spec = tmp_path / "policy-versions.yaml"
+    spec.write_text(
+        f"""entries:
+  - base_section_id: {base_id}
+    effective_from: 2026-09-01
+    old:
+      effective_from: 2026-01-01
+      effective_to: 2026-09-01
+      find: Return within 10 days.
+      replace: Return within 90 days.
+""",
+        encoding="utf-8",
+    )
+    build_settings.policy_versions.enabled = True
+    build_settings.policy_versions.spec_path = str(spec)
+    build_docs(build_settings)
+    validate_docs(build_settings)
+    text = (Path(build_settings.data.processed_dir) / "docs/returns.md").read_text()
+    parsed, _ = parse_document(text)
+    assert "Return within 10 days." in parsed[base_id]
+    assert "Return within 90 days." in parsed[f"{base_id}@2026-01-01"]

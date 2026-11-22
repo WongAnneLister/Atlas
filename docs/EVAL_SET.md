@@ -42,6 +42,28 @@ Re-running the builder preserves human review flags and refuses changed inputs o
 Use a new output directory for a new version; never relabel questions to improve a score.
 Tune later retrieval/gate choices on dev only. Report final quality on held-out test.
 
+## Time-sensitive policy group
+
+`make eval-time-sensitive-build` writes local-only `eval_v2.jsonl`. It copies the frozen
+`eval_v1` as an exact prefix and appends `time_sensitive` cases with distinct dev and test phrasing.
+The index release check and frozen smoke selection continue to use v1.
+
+- Knowledge templates ask about the current returns or price-adjustment window. Some claim
+  a purchase in August. Both kinds use `orders.today` and expect the current section ID.
+- Refund templates refer to delivered fixture orders for `CUST-TS01`. The stored order date
+  selects the historical or current gold section, with 2026-09-01 included in the current period.
+
+These unreviewed templates cover two synthetic policy histories and reuse fixture orders across
+splits. They measure version selection on these cases. They cannot establish generalization to
+other policies, stores, or order facts. Use dev for tuning and reserve test for reporting.
+
+`make eval-time-sensitive` writes one run record per split plus a report with Wilson confidence
+intervals by split and path. It checks top-five version hits, wrong-version hits, gate passes,
+and whether filters were applied. In 23a only `--filters off` is available. The refund evaluator
+reads real fixture order rows and follows the production policy retrieval query for those orders.
+It evaluates retrieval and the gate without an LLM or a refund decision. Use
+`TIME_SENSITIVE_ARGS="--report-from <run> ..."` to rebuild the report from saved runs.
+
 ## Human review workflow
 
 Open `eval/sets/review.csv`. Compare the question, gold section text and answer points.

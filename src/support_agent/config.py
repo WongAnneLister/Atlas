@@ -314,6 +314,13 @@ class SeedProduct(BaseModel):
     category: str = Field(min_length=1)
 
 
+class PolicyVersionSettings(BaseModel):
+    enabled: bool
+    default_effective_from: date
+    open_end_day: int
+    spec_path: str
+
+
 class OrdersSettings(BaseModel):
     db_path: str
     seed: int
@@ -421,6 +428,7 @@ class Settings(BaseSettings):
     milvus: MilvusSettings
     index: IndexSettings
     orders: OrdersSettings
+    policy_versions: PolicyVersionSettings
     refund: RefundSettings = Field(default_factory=RefundSettings)
     memory: MemorySettings
     tracing: TracingSettings

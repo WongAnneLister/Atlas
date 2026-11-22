@@ -29,6 +29,21 @@ The validator reloads raw FAQs and requires each covered question and answer to 
 It also rejects new numeric tokens or units, missing facts, bad provenance and duplicate ids.
 Every section has a source mapping, even though no rewriting model is used.
 
+## Synthetic policy versions
+
+The version fixture invents historical rules for the generic store to test date selection.
+The current sections keep their real wording and section IDs so frozen v1 labels still apply.
+The synthetic history changes the returns window from 90 to 30 days and the price-adjustment
+window from 14 to 7 days. Both changes take effect on 2026-09-01.
+The historical interval runs from 2026-01-01 through 2026-08-31.
+Its section ID ends in `@2026-01-01`, and its heading ends in ` (policy before 2026-09-01)`.
+
+The source sentences and replacements live in `src/support_agent/data/policy_versions.yaml`.
+The builder requires each source sentence to occur exactly once before it creates the copy.
+`policy_versions.enabled` defaults to false in 23a, which preserves the existing build bytes.
+When enabled, validation checks the synthetic copies against the version spec and preserves their
+source provenance. Ordinary source checks still apply to the current sections.
+
 ## Products and limits
 
 Models come from PDF cover text. Filenames are not authoritative.
@@ -36,7 +51,6 @@ Each cover model gets a separate catalog row and section with its exact model co
 Descriptions retain the full extracted manual or leaflet text, including caveats.
 Attributes retain explicit key:value lines; shared manuals leave attributes empty.
 Shared monitor manual text remains shared evidence, not model-specific specifications.
-No synthetic products or policy facts were added.
 Model-question diversity needs review in commit 05.
 PDF text extraction loses table layout. Manual descriptions are long and need chunking in commit 06.
 Store names, India-specific conditions and conflicting policies remain visible.

@@ -12,6 +12,7 @@ from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import BuildIndex, FAQGroup, digest, json_text, write_text
 from support_agent.data.faq_docs import TopicClassifier, deduplicate, load_faqs
 from support_agent.data.manifest import is_current, load_manifest
+from support_agent.data.policy_versions import PolicySection, docs_config_hash, load_versions
 from support_agent.data.product_docs import extract_products, product_category, product_section_id
 
 log = logging.getLogger(__name__)
@@ -63,16 +64,7 @@ def build_docs(settings: Settings) -> BuildIndex:
     raw_dir = REPO_ROOT / settings.data.raw_dir
     processed = REPO_ROOT / settings.data.processed_dir
     docs_dir = processed / "docs"
-    # Refuse to erase user files; only replace files from a previous build index.
-    previous = processed / "document_files.json"
-    if previous.exists():
-        import json
-
-        for name in json.loads(previous.read_text(encoding="utf-8")):
-            path = docs_dir / name
-            if path.parent.resolve() != docs_dir.resolve() or path.suffix != ".md":
-                raise ValueError("Unsafe previous document path")
-            path.unlink(missing_ok=True)
+    versions = load_versions(settings.policy_versions) if settings.policy_versions.enabled else None
     groups, excluded, counts = deduplicate(
         load_faqs(raw_dir),
         settings.data.docs.near_duplicate_threshold,
@@ -82,7 +74,7 @@ def build_docs(settings: Settings) -> BuildIndex:
     index = BuildIndex(
         built_at=built_at,
         input_hash=input_hash,
-        config_hash=digest(json_text(settings.model_dump(mode="json"))),
+        config_hash=docs_config_hash(settings, versions),
         excluded=excluded,
         dedupe_counts=counts,
     )
@@ -96,20 +88,43 @@ def build_docs(settings: Settings) -> BuildIndex:
     classifier.save()
     index.topic_methods = dict(classifier.methods)
     index.topic_models = sorted(classifier.models)
-    files: list[str] = []
-    for topic, sections in sorted(buckets.items()):
-        rendered: list[str] = []
-        sources: set[str] = set()
-        for sid, section_groups in sorted(sections.items()):
+    sections: dict[str, PolicySection] = {}
+    topics: dict[str, list[str]] = defaultdict(list)
+    sources: dict[str, set[str]] = defaultdict(set)
+    for topic, bucket in sorted(buckets.items()):
+        for sid, section_groups in sorted(bucket.items()):
             faq = section_groups[0].records[0]
-            rendered.append(
-                f"## {faq.dataset} / {faq.category}\n<!-- section: {sid} -->\n\n"
-                + "\n\n".join(render_group(g) for g in section_groups)
+            sections[sid] = PolicySection(
+                heading=f"{faq.dataset} / {faq.category}",
+                prose="\n\n".join(render_group(g) for g in section_groups),
             )
+            topics[topic].append(sid)
             provenance[sid] = sorted(f.source_id for g in section_groups for f in g.records)
-            sources.update(f.dataset for g in section_groups for f in g.records)
+            sources[topic].update(f.dataset for g in section_groups for f in g.records)
+    if versions is not None:
+        sections.update(versions.apply_versions(sections))
+        for entry in versions.entries:
+            topic = entry.base_section_id.split(".", 1)[0]
+            topics[topic].append(entry.old_id)
+            provenance[entry.old_id] = provenance[entry.base_section_id]
+
+    # Refuse to erase user files; only replace files from a previous build index.
+    previous = processed / "document_files.json"
+    if previous.exists():
+        import json
+
+        for name in json.loads(previous.read_text(encoding="utf-8")):
+            path = docs_dir / name
+            if path.parent.resolve() != docs_dir.resolve() or path.suffix != ".md":
+                raise ValueError("Unsafe previous document path")
+            path.unlink(missing_ok=True)
+    files: list[str] = []
+    for topic, ids in topics.items():
         files.append(f"{topic}.md")
-        write_text(docs_dir / files[-1], document(topic, sorted(sources), built_at, rendered))
+        rendered = [sections[sid].render(sid) for sid in ids]
+        write_text(
+            docs_dir / files[-1], document(topic, sorted(sources[topic]), built_at, rendered)
+        )
     products = extract_products(raw_dir, settings.data.docs)
     catalogs: dict[str, list[str]] = defaultdict(list)
     for product in products:

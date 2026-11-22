@@ -11,7 +11,14 @@ from pathlib import Path
 from support_agent.config import REPO_ROOT, OrdersSettings, SeedProduct, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text
 from support_agent.db.migrate import ensure_atlas_schema, require_write_target
-from support_agent.orders.fixtures import Scenario, load_products, scenarios
+from support_agent.orders.fixtures import (
+    TIME_SENSITIVE_CUSTOMER,
+    TIME_SENSITIVE_ORDER_DATES,
+    Scenario,
+    load_products,
+    scenarios,
+    time_sensitive_fixtures,
+)
 from support_agent.orders.models import (
     Customer,
     Order,
@@ -121,6 +128,8 @@ def _items(
 
 def generate_dataset(settings: Settings, catalog_path: Path | None = None) -> SeedDataset:
     config = settings.orders
+    if f"ORD-{config.n_orders:06d}" in TIME_SENSITIVE_ORDER_DATES or config.n_orders > 999999:
+        raise ValueError("orders.n_orders overlaps reserved dated fixture order ids")
     cases = scenarios(config)
     if config.n_orders < len(cases):
         raise ValueError(f"orders.n_orders must be at least {len(cases)} to cover all edge cases")
@@ -178,6 +187,10 @@ def generate_dataset(settings: Settings, catalog_path: Path | None = None) -> Se
             shipments.append(shipment)
         if fixed:
             edge_cases[case.name] = order_id
+    dated_orders, dated_shipments = time_sensitive_fixtures(config)
+    customers.append(TIME_SENSITIVE_CUSTOMER.model_copy())
+    orders.extend(dated_orders)
+    shipments.extend(dated_shipments)
     return SeedDataset(
         customers=customers,
         orders=orders,

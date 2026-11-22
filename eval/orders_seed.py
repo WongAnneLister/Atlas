@@ -224,6 +224,21 @@ All named edge cases belong to the first demo customer. Other orders cycle throu
 Named cases isolate coupon and final-sale flags; random orders use the configured distributions.
 Emails use example.com. No real customer data or payment integration is involved.
 
+## Dated policy fixture orders
+
+The seed appends delivered generic-store orders for the fake customer `CUST-TS01`
+(`policy.demo@example.com`). These use fixed facts and do not draw from the random seed.
+`orders.n_orders` and `orders.n_customers` count the original seeded records.
+The two dates on either side of 2026-09-01 check the policy boundary. The other dates
+give examples farther from the boundary. The August 20 order is within the old return window.
+
+| Order | Placed | Policy version |
+|---|---|---|
+| `ORD-999996` | 2026-08-20 | Historical |
+| `ORD-999997` | 2026-08-31 | Historical |
+| `ORD-999998` | 2026-09-01 | Current |
+| `ORD-999999` | 2026-10-15 | Current |
+
 ## Schema
 
 The executable schema is `src/support_agent/orders/schema.sql`.

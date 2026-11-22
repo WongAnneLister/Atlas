@@ -1,0 +1,95 @@
+from datetime import date
+from pathlib import Path
+
+import pytest
+from eval.build_time_sensitive import build_items
+from eval.run_record import read_run
+from eval.time_sensitive_eval import collect_run, main, write_report
+
+from support_agent.config import get_settings
+from support_agent.data.policy_versions import load_versions
+from support_agent.graph.deps import GraphDeps
+from support_agent.orders.fixtures import time_sensitive_fixtures
+from support_agent.orders.models import Order
+from support_agent.retrieval.types import RetrievedChunk
+
+
+def chunk(section_id: str) -> RetrievedChunk:
+    return RetrievedChunk(
+        chunk_id=section_id,
+        doc_id="returns",
+        section_id=section_id,
+        title="Generic store",
+        heading_path="Returns",
+        text="The generic store return policy allows a full refund.",
+        n_tokens=10,
+        scores={"rerank": 10.0},
+    )
+
+
+def test_evaluator_writes_paired_metrics_for_both_paths(tmp_path: Path) -> None:
+    settings = get_settings()
+    versions = load_versions(settings.policy_versions)
+    cases = [
+        item
+        for item in build_items(settings)
+        if item.split == "dev" and item.version_of.startswith("returns.")
+    ]
+    knowledge = next(item for item in cases if "August" in item.question)
+    refund = next(item for item in cases if item.as_of == date(2026, 8, 31))
+    old_id = refund.gold_sections[0]
+    current_id = knowledge.gold_sections[0]
+    order = next(
+        order
+        for order in time_sensitive_fixtures(settings.orders)[0]
+        if order.order_id == refund.order_id
+    )
+    calls: list[str] = []
+
+    class Retriever:
+        def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]:
+            calls.append(query)
+            if query == knowledge.question:
+                return [chunk(current_id)]
+            # Both versions can count at the same time.
+            return [chunk(current_id), chunk(old_id)]
+
+    class OrderService:
+        def get_order(self, order_id: str, customer_id: str) -> Order:
+            assert (order_id, customer_id) == (order.order_id, order.customer_id)
+            return order
+
+    with GraphDeps(settings, retriever=Retriever()) as deps:
+        path = collect_run(deps, OrderService(), [knowledge, refund], versions, run_root=tmp_path)
+
+    run = read_run(path)
+    assert run.manifest.split == "dev"
+    assert run.manifest.datasets["eval_v2"].version == "v2"
+    assert calls[0] == knowledge.question
+    assert calls[1] != refund.question
+    assert run.items[0].metrics == {
+        "version_hit_at_5": True,
+        "wrong_version_at_5": False,
+        "gate_pass": True,
+        "filters_applied": False,
+    }
+    assert run.items[1].metrics == {
+        "version_hit_at_5": True,
+        "wrong_version_at_5": True,
+        "gate_pass": True,
+        "filters_applied": False,
+    }
+    output = tmp_path / "report.md"
+    write_report([path], output)
+    report = output.read_text()
+    assert "| dev | all | 2 | 2/2" in report
+    assert "| dev | knowledge | 1 | 1/1" in report
+    assert "| dev | refund | 1 | 1/1" in report
+    assert "[34.24%, 100.00%]" in report
+
+
+@pytest.mark.parametrize("mode", ["date", "date_category"])
+def test_unavailable_filter_modes_fail_before_opening_dependencies(mode, capsys) -> None:
+    with pytest.raises(SystemExit, match="2"):
+        main(["--filters", mode])
+    assert "only --filters off" in capsys.readouterr().err

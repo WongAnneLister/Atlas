@@ -21,4 +21,4 @@ def test_seeded_orders_stay_in_sqlite_when_env_is_dev(dev_environment: None, see
     settings, service = seeded
     assert settings.db.backend == "sqlite"
     assert service.repository.engine.dialect.name == "sqlite"
-    assert len(service.list_customers(10)) == settings.orders.n_customers
+    assert len(service.list_customers(10)) == settings.orders.n_customers + 1

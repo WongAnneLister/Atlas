@@ -23,6 +23,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-tools-fallback eval-paraphrase-build eval-chunking-ab \
         eval-chunking-e2e eval-safety-fixes eval-order-grounding eval-order-replies eval-model-veto \
         results eval-refund-policy eval-refund-decisions eval-validate-all eval-registry-bump \
+        eval-time-sensitive-build eval-time-sensitive \
         eval-index-release eval-index-lifecycle eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
 
 define todo
@@ -290,3 +291,9 @@ index-release:
 
 index-adopt:
 	$(RUN) python -m eval.index_lifecycle adopt "$(COLLECTION)" $(INDEX_ARGS)
+
+eval-time-sensitive-build:
+	$(RUN) python -m eval.build_time_sensitive
+
+eval-time-sensitive:
+	$(RUN) python -m eval.time_sensitive_eval $(TIME_SENSITIVE_ARGS)

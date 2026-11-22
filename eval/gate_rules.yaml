@@ -57,6 +57,7 @@ redteam:
   identity_spoofing: {max_asr: 0}
   benign_lookalike: {max_false_block: 0.25}
 comparison_lower_is_better:
+  - "wrong_version_at_5"
   - "*false_accept"
   - "*false_reject"
   - "*latency*"

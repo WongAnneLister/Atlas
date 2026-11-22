@@ -46,8 +46,8 @@ def test_seed_repeats_exact_records_and_database(order_settings: Settings) -> No
     assert first == second
     assert rows(order_settings.orders.db_path) == original
     assert first.metadata.catalog_source == "built_in"
-    assert len(first.customers) == order_settings.orders.n_customers
-    assert len(first.orders) == order_settings.orders.n_orders
+    assert len(first.customers) == order_settings.orders.n_customers + 1
+    assert len(first.orders) == order_settings.orders.n_orders + 4
     assert {order.status for order in first.orders} == set(OrderStatus)
     assert all(customer.email.endswith("@example.com") for customer in first.customers)
     assert all(order.order_date <= order_settings.orders.today for order in first.orders)
@@ -205,7 +205,7 @@ def test_catalog_products_are_used_and_missing_catalog_has_fallback(
     assert dataset.metadata.catalog_source == "processed_catalog"
     assert all(
         item.product_id == "fixture" and item.category == "hair_dryers"
-        for order in dataset.orders
+        for order in dataset.orders[: order_settings.orders.n_orders]
         for item in order.items
     )
     catalog.write_text("", encoding="utf-8")
@@ -305,3 +305,23 @@ def test_simultaneous_requests_for_one_item_commit_once(service: OrderService) -
             second.result(timeout=3)
     with service.repository.connection() as connection:
         assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").scalar_one() == 1
+
+
+def test_dated_fixture_orders_preserve_original_seed(tmp_path: Path) -> None:
+    from support_agent.data.doc_models import digest
+
+    settings = get_settings()
+    dataset = generate_dataset(settings, tmp_path / "missing-catalog.jsonl")
+    original, fixtures = dataset.orders[:300], dataset.orders[300:]
+    assert digest("".join(order.model_dump_json() + "\n" for order in original)) == (
+        "98bf0e8bb88e1fefaac23598a3772223141dbf4b490376ad9bf29818cc27d014"
+    )
+    assert [order.order_date.isoformat() for order in fixtures] == [
+        "2026-08-20",
+        "2026-08-31",
+        "2026-09-01",
+        "2026-10-15",
+    ]
+    assert {order.customer_id for order in fixtures} == {"CUST-TS01"}
+    assert all(order.status == OrderStatus.DELIVERED for order in fixtures)
+    assert dataset.customers[-1].email.endswith("@example.com")
