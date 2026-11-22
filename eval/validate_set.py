@@ -18,6 +18,7 @@ from eval.common import (
 from eval.schema import GROUPS, Candidate, EvalItem, Section
 from support_agent.config import REPO_ROOT, EvalSettings, get_settings
 from support_agent.data.doc_models import digest, json_text
+from support_agent.data.policy_versions import load_versions
 
 log = logging.getLogger(__name__)
 
@@ -83,7 +84,20 @@ def validate_current() -> list[str]:
     manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
     if manifest["set_hash"] != set_hash(items):
         errors.append("Frozen questions or labels changed")
-    if manifest["corpus_hash"] != digest(json_text([s.model_dump() for s in sections.values()])):
+    declared_history: set[str] = set()
+    if settings.policy_versions.enabled:
+        declared_history = {
+            entry.old_id for entry in load_versions(settings.policy_versions).entries
+        }
+        missing_history = declared_history - sections.keys()
+        if missing_history:
+            errors.append(
+                f"Missing declared historical sections: {', '.join(sorted(missing_history))}"
+            )
+    frozen_sections = [
+        section.model_dump() for sid, section in sections.items() if sid not in declared_history
+    ]
+    if manifest["corpus_hash"] != digest(json_text(frozen_sections)):
         errors.append("Corpus changed since eval labels were frozen")
     candidates = [
         Candidate.model_validate_json(line)

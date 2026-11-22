@@ -124,6 +124,10 @@ Agents: update this file in every commit. Keep it short and factual.
 
 ## Known issues / follow-ups
 
+- 23b preparation: The first frozen-label preflight rejected the rebuilt corpus. The fix
+  excludes only declared historical section IDs from that comparison and requires each one
+  when policy versions are enabled. The frozen manifest and cache keys stay intact.
+
 - 23 review fix: Filtered retrieval now requires a callable capability probe with a boolean
   result. Both hybrid sources must agree. Unfiltered fallback requires an explicit legacy
   result and records `filters_applied: false`. The refund eval cache and red-team overlay
