@@ -68,3 +68,6 @@ comparison_lower_is_better:
   - "wrongly_blocked"
   - "judge_flagged"
   - "human_confirmed"
+  - "answers_with_any_unsupported_claim"
+  - "claims_removed_per_answer"
+  - "low_grounding_handoff_rate"

@@ -5,7 +5,14 @@ from pathlib import Path
 from typing import Literal
 
 from eval.e2e_records import E2EMetadata, E2ERecord
-from eval.metrics import mrr, noanswer_false_accept, part_metric_values, recall_at_k
+from eval.metrics import (
+    claim_answer_metrics,
+    claim_support_observations,
+    mrr,
+    noanswer_false_accept,
+    part_metric_values,
+    recall_at_k,
+)
 from eval.run_record import (
     RUNS,
     Run,
@@ -13,6 +20,7 @@ from eval.run_record import (
     RunManifest,
     dataset_version,
     read_run,
+    summarize,
     summarize_metrics,
     write_run,
 )
@@ -66,6 +74,7 @@ def project(records: list[E2ERecord], *, chaos: bool = False) -> list[RunItem]:
         elif isinstance(item, EvalItem):
             metrics["false_accept"] = noanswer_false_accept(record)
         metrics.update(part_metric_values(record))
+        metrics.update(claim_answer_metrics(record))
         if record.estimated_cost_usd is not None:
             metrics["cost_usd"] = record.estimated_cost_usd
         if chaos:
@@ -135,7 +144,12 @@ def prepare_e2e(
         command=command or [],
         source=metadata.model_dump(mode="json"),
     )
-    return Run(manifest=manifest, items=items, metrics=summarize_metrics(items, STATISTICS))
+    metrics = summarize_metrics(items, STATISTICS)
+    if support := claim_support_observations(records):
+        metrics.metrics["claim_support_rate"] = summarize(
+            support, **settings.eval.stats.model_dump()
+        )
+    return Run(manifest=manifest, items=items, metrics=metrics)
 
 
 def unpack(run: Run) -> tuple[E2EMetadata, list[E2ERecord]]:

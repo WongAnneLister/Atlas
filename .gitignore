@@ -5,6 +5,7 @@ data/processed/
 # Derived FAQ/manual/Bitext text inherits the mixed source redistribution limits.
 eval/sets/*.jsonl
 eval/sets/*.csv
+eval/sets/claims_v1_sources.json
 eval/sets/manifest.json
 eval/sets/intent_manifest.json
 eval/sets/draft_cache.json

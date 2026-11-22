@@ -138,3 +138,14 @@ datasets:
   changelog:
   - Freeze seeded pairs of same-split eval_v1 questions for part-level scoring.
   - Balance which part comes first in half-answerable pairs within each split.
+- name: claims_v1
+  version: v1
+  path: eval/sets/claims_v1.jsonl
+  sha256: 1c428364425fbe78e090617bba042da015b603c00978aed1603719e23af28419
+  items: 210
+  splits:
+    test: 210
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Build claim set for test.

@@ -135,7 +135,9 @@ def render_e2e(run: Run, path: Path) -> None:
         "|---|---|",
     ]
     for name, metric in run.metrics.metrics.items():
-        rate = not name.startswith(("latency_", "first_token_", "cost_"))
+        rate = name != "claims_removed_per_answer" and not name.startswith(
+            ("latency_", "first_token_", "cost_")
+        )
         lines.append(f"| {name} | {format_summary(metric, rate=rate)} |")
     lines += ["", f"Judge calibration for the separate hallucination audit ({read_kappa()}).", ""]
     write_text(path, path.read_text(encoding="utf-8") + "\n".join(lines))

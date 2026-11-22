@@ -268,9 +268,27 @@ class EvalStatsSettings(BaseModel):
     alpha: float = Field(gt=0, lt=1)
 
 
+class ClaimSamplingSettings(BaseModel):
+    seed: int = Field(ge=0)
+    dev_target: int = Field(gt=0)
+    test_target: int = Field(gt=0)
+    synthetic_per_split: int = Field(gt=0)
+    max_per_item: int = Field(gt=0)
+
+
+class GroundingEvalSettings(BaseModel):
+    target_recall: float = Field(gt=0, le=1)
+
+
+def _default_grounding_eval() -> GroundingEvalSettings:
+    config = yaml.safe_load(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
+    return GroundingEvalSettings.model_validate(config["grounding"])
+
+
 class EvalPlatformSettings(BaseModel):
     stats: EvalStatsSettings
     multipart_min_overlap: float = Field(gt=0, le=1)
+    claims: ClaimSamplingSettings
 
 
 def _default_eval_platform() -> EvalPlatformSettings:
@@ -439,6 +457,7 @@ class Settings(BaseSettings):
     graph: GraphSettings
     planning: PlanningSettings
     knowledge: KnowledgeSettings
+    grounding: GroundingEvalSettings = Field(default_factory=_default_grounding_eval)
     intent_eval: IntentEvalSettings
     evaluation: EvalSettings
     eval: EvalPlatformSettings = Field(default_factory=_default_eval_platform)

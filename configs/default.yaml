@@ -248,7 +248,16 @@ intent_eval:
   max_concurrency: 4
   target_accuracy: 0.9
 
+grounding:
+  target_recall: 0.90   # preregistered verifier recall target
+
 eval:
+  claims:
+    seed: 25
+    dev_target: 80
+    test_target: 150
+    synthetic_per_split: 60
+    max_per_item: 3
   multipart_min_overlap: 0.25  # minimum word Jaccard when part counts differ
   stats:
     n_resamples: 2000
