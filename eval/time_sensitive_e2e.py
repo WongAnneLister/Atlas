@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Protocol
 from uuid import uuid4
 
+from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 
@@ -258,6 +259,9 @@ def main(argv: list[str] | None = None, *, graph_factory: Callable[..., Any] | N
     if args.report_from:
         write_report(args.report_from)
         return 0
+    # Real models need the LLM_* variables, as the other real-model evaluators do.
+    load_dotenv(REPO_ROOT / ".env", override=False)
+    get_settings.cache_clear()
     base = get_settings()
     versions = load_versions(base.policy_versions)
     items = [item for item in load_items(load_registry()["eval_v2"]) if item.path == "refund"]
@@ -268,6 +272,8 @@ def main(argv: list[str] | None = None, *, graph_factory: Callable[..., Any] | N
             graph = (graph_factory or build_graph)(deps)
             rows = collect(graph, items, versions)
             build_id = deps.current_build_id()
+    if not any(row.metrics["refund_path"] for row in rows):
+        raise RuntimeError("No conversation reached the refund path; check the model settings")
     path = write_record(rows, settings, versions, started_at, sha, dirty, build_id)
     write_report(path)
     sys.stdout.write(f"{path}\n")
