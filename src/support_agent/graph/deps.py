@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import ExitStack
 from dataclasses import dataclass, field
 from functools import cached_property
@@ -27,7 +28,7 @@ from support_agent.reliability.stores import GuardedMilvusSearch, GuardedOrders,
 from support_agent.reliability.timeouts import BoundedExecutor
 from support_agent.retrieval.embed import BgeM3Embedder
 from support_agent.retrieval.factory import build_retriever
-from support_agent.retrieval.rerank import BgeReranker
+from support_agent.retrieval.rerank import BgeReranker, Reranker
 from support_agent.retrieval.types import Retriever
 
 
@@ -42,6 +43,9 @@ class GraphDeps:
     observer: ReliabilityObserver | None = None
     llm_fault: LLMFault | None = None
     model_messages: ModelMessages | None = None
+    # Builds the reranker behind the guard; None means the pinned BGE cross-encoder.
+    # Offline evaluators use it to reuse cached logits; the API never sets it.
+    reranker_factory: Callable[[], Reranker] | None = None
     chaos_injector: ChaosInjector = field(init=False, repr=False)
     circuits: CircuitRegistry = field(init=False, repr=False)
     model_workers: BoundedExecutor = field(init=False, repr=False)
@@ -159,7 +163,8 @@ class GraphDeps:
                     store=store,
                     embedder=BgeM3Embedder(self.settings.retrieval),
                     reranker=GuardedReranker(
-                        lambda: BgeReranker(self.settings.retrieval), self.dependency_guards
+                        self.reranker_factory or (lambda: BgeReranker(self.settings.retrieval)),
+                        self.dependency_guards,
                     ),
                 )
             return self.retriever

@@ -4,12 +4,12 @@ from types import SimpleNamespace
 import pytest
 import yaml
 from eval import chaos, e2e_eval, registry
+from eval.e2e_speed import run_config_hash
 from eval.run_record import read_run
 from eval.schema import EvalItem
 from eval.smoke import SMOKE_PATH, SmokeSpec
 
 from support_agent.config import get_settings
-from support_agent.data.doc_models import digest, json_text
 from support_agent.observability.cost import UsageLedger
 from support_agent.reliability.events import ReliabilityEvent
 
@@ -142,7 +142,7 @@ def test_chaos_records_validated_overlay_provenance_and_full_outcomes(
     assert "main_fallback_2" not in run.manifest.models
     assert run.manifest.source["chaos"]["seed"] == 24
     assert run.manifest.source["endpoint_host"] == "fake-relay.example"
-    assert run.manifest.config_hash == digest(json_text(settings_seen[0].model_dump(mode="json")))
+    assert run.manifest.config_hash == run_config_hash(settings_seen[0])
     assert settings_seen[0].chaos.llm_timeout_rate == 0.2
     assert run.items[0].payload["retrieval_error_type"] == "InjectedTimeout"
     result = report.read_text()

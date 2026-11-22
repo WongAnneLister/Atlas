@@ -32,6 +32,10 @@ class E2EMetadata(BaseModel):
     chaos: ChaosSettings | None = None
     endpoint_host: str | None = None
     build_id: str | None = None
+    # How items were collected (eval/e2e_speed.py). Older runs were serial and uncached.
+    workers: int = Field(default=1, ge=1)
+    latency_comparable: bool = True
+    rerank_scores: dict[str, Any] | None = None
 
 
 class E2EPart(BaseModel):

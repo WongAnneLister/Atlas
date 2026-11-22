@@ -11,6 +11,7 @@ from typing import Any
 
 from eval.e2e_records import E2EMetadata, E2ERecord
 from eval.e2e_runs import load_e2e, prepare_e2e
+from eval.e2e_speed import comparable_rules
 from eval.gate import load_rules
 from eval.legacy_pairing import rows_for_legacy_core
 from eval.metrics import noanswer_false_accept, outcome_rates
@@ -151,7 +152,7 @@ def main(argv: list[str] | None = None) -> int:
     reference = next((read_run(path) for path in (a, b) if path.is_dir()), None)
     before, after = _read(a, reference), _read(b, reference)
     ids_a, ids_b = ({row.id for row in run.items} for run in (before, after))
-    rules = _rules(before, after)
+    rules, latency_note = comparable_rules(_rules(before, after), before, after)
     results = compare(before, after, rules)
     if not results:
         raise ValueError("Runs have no shared metrics to compare")
@@ -179,6 +180,7 @@ def main(argv: list[str] | None = None) -> int:
             f"- Shared items: {len(ids_a & ids_b)}",
             f"- Only in A: {len(ids_a - ids_b)}",
             f"- Only in B: {len(ids_b - ids_a)}",
+            *([f"- {latency_note}"] if latency_note else []),
             "",
             "## Metric deltas (B minus A)",
             "",

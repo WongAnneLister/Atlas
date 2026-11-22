@@ -18,9 +18,20 @@ from uuid import uuid4
 from dotenv import load_dotenv
 
 from eval.common import load_sections
-from eval.e2e_eval import _metadata, _record, _run_item
+from eval.e2e_eval import _metadata, _record, _record_speed, _run_item
 from eval.e2e_records import E2ERecord, JudgeRecord
 from eval.e2e_runs import prepare_e2e, unpack
+from eval.e2e_speed import (
+    NOT_COMPARABLE,
+    SpeedOptions,
+    add_speed_arguments,
+    is_latency_metric,
+    latency_comparable,
+    rerank_scores,
+    run_items,
+    speed_lines,
+    speed_options,
+)
 from eval.judge import judge_partial_record, partial_payload
 from eval.metrics import partial_answer
 from eval.registry import load_registry
@@ -67,20 +78,28 @@ def collect(
     items: Sequence[MultipartItem],
     settings: Settings,
     build_id: str | None,
+    *,
+    workers: int = 1,
 ) -> list[E2ERecord]:
+    """Run every item; records come back in input order whatever order items finish in."""
     threads = EvalThreads("multipart")
-    records = []
-    for item in items:
+    done: dict[str, E2ERecord] = {}
+
+    def run(item: MultipartItem) -> E2ERecord:
         result, latency, usage = _run_item(
             graph, item, settings.evaluation.customer_id, threads(item.split, item.id), TurnTrace()
         )
-        record = _record(item, result, latency, usage.first_token_at, usage.tokens(), usage)
+        return _record(item, result, latency, usage.first_token_at, usage.tokens(), usage)
+
+    def keep(item: MultipartItem, record: E2ERecord) -> None:
         if record.build_id is not None and record.build_id != build_id:
             raise ValueError("Index build changed during multipart collection")
         if record.usage_by_model:
             record.estimated_cost_usd = cost_usd(record.usage_by_model, settings.costs)
-        records.append(record)
-    return records
+        done[item.id] = record
+
+    run_items(items, run, workers=workers, done=keep)
+    return [done[item.id] for item in items]
 
 
 def write_report(run: Run, output: Path) -> None:
@@ -98,6 +117,7 @@ def write_report(run: Run, output: Path) -> None:
         f"- Dataset versions: {manifest.datasets}",
         f"- Index build: {manifest.source.get('build_id') or 'unknown'}",
         f"- Models: {manifest.models}",
+        *speed_lines(manifest.source),
         "- Counts include the routing outcomes of the full graph.",
         "",
         "| Split | Group | Metric | Estimate and confidence interval |",
@@ -109,10 +129,13 @@ def write_report(run: Run, output: Path) -> None:
         for name, value in row.metrics.items():
             groups[split, row.group or "unknown", name].append(value)
     bootstrap = (run.metrics.bootstrap or get_settings().eval.stats).model_dump()
+    comparable = latency_comparable(manifest.source)
     for (split, group, name), values in sorted(groups.items()):
         statistic = resolve_statistic(run.metrics.statistics.get(name, "mean"))
         summary = summarize(values, statistic, **bootstrap)
         formatted = format_summary(summary, rate=summary.count is not None)
+        if not comparable and is_latency_metric(name):
+            formatted += f" ({NOT_COMPARABLE})"
         lines.append(f"| {split} | {group} | {name} | {formatted} |")
     write_text(output, "\n".join(lines) + "\n")
 
@@ -182,6 +205,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--judge", action="store_true", help="judge saved partial answers with the main model"
     )
+    add_speed_arguments(parser)
     args = parser.parse_args(argv)
     if (args.judge or args.sample_output) and not args.run_dir:
         parser.error("Use --run-dir with --judge or --sample-output")
@@ -228,14 +252,21 @@ def main(argv: list[str] | None = None) -> int:
     settings = get_settings()
     if settings.chaos.enabled or settings.gate.threshold is None:
         parser.error("Multipart collection requires a tuned gate with chaos disabled")
+    speed: SpeedOptions = speed_options(args, settings, parser)
     dirty = is_dirty()
     corpus_hash = digest(json_text([s.model_dump() for s in load_sections(settings).values()]))
     metadata = _metadata(settings, args.split, text, corpus_hash)
     metadata.build_id = configured_build_id(settings)
     with TemporaryDirectory(prefix="atlas-multipart-") as folder:
         scratch = scratch_settings(settings, Path(folder))
-        with GraphDeps(scratch) as deps:
-            records = collect(build_graph(deps), items, scratch, metadata.build_id)
+        with (
+            rerank_scores(scratch, speed.rerank_cache) as scores,
+            GraphDeps(scratch, reranker_factory=scores.factory()) as deps,
+        ):
+            records = collect(
+                build_graph(deps), items, scratch, metadata.build_id, workers=speed.workers
+            )
+            _record_speed(metadata, speed, scores.summary())
     command = ["eval-multipart", *(sys.argv[1:] if argv is None else argv)]
     run = prepare_e2e(metadata, records, dirty=dirty, command=command)
     path = write_run(

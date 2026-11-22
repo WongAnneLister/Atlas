@@ -7,7 +7,8 @@ pair is the same as in the live run, so its logit can be read back instead of re
 The key holds everything the logit depends on: reranker model and revision, device, fp16
 flag, max tokens, batch size (padding is per batch), the installed versions of the
 configured packages, the exact query text and the passage text hash. Anything else is a
-miss. The serving path never uses this module.
+miss. The real-model end-to-end evaluators may opt in to the same file and key
+(``eval.e2e_speed.rerank_cache``); the serving path never uses this module.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from __future__ import annotations
 import hashlib
 import math
 import sqlite3
+import threading
 from collections.abc import Callable, Mapping
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -93,21 +95,31 @@ def text_sha256(text: str) -> str:
 
 
 def cache_path(settings: Settings) -> Path | None:
-    cache = settings.index.release.rerank_cache
-    if not cache.enabled:
+    """The release-evidence cache file, or None when release runs score every pair."""
+    if not settings.index.release.rerank_cache.enabled:
         return None
-    path = Path(cache.path)
+    return shared_cache_path(settings)
+
+
+def shared_cache_path(settings: Settings) -> Path:
+    """The one logit file that release evidence and opted-in e2e runs share."""
+    path = Path(settings.index.release.rerank_cache.path)
     return path if path.is_absolute() else REPO_ROOT / path
 
 
 class ScoreCache:
-    """SQLite file of logits; writes are committed per query so a dropped run keeps its work."""
+    """SQLite file of logits; writes are committed per query so a dropped run keeps its work.
+
+    The graph reranks on a guard worker thread, so one connection serves several threads
+    behind a lock.
+    """
 
     def __init__(self, path: Path, profile: ScoreProfile) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.path = path
         self.profile = profile
-        self._connection = sqlite3.connect(path)
+        self._lock = threading.Lock()
+        self._connection = sqlite3.connect(path, check_same_thread=False)
         self._connection.executescript(_SCHEMA)
         with self._connection:
             self._connection.execute(
@@ -121,16 +133,17 @@ class ScoreCache:
         if not hashes:
             return {}
         marks = ",".join("?" * len(hashes))
-        rows = self._connection.execute(
-            "SELECT passage_sha256, logit FROM scores WHERE profile_hash = ? "
-            f"AND query_sha256 = ? AND passage_sha256 IN ({marks})",
-            (self.profile.key, text_sha256(query), *hashes),
-        )
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT passage_sha256, logit FROM scores WHERE profile_hash = ? "
+                f"AND query_sha256 = ? AND passage_sha256 IN ({marks})",
+                (self.profile.key, text_sha256(query), *hashes),
+            ).fetchall()
         return {passage: float(logit) for passage, logit in rows}
 
     def put(self, query: str, logits: Mapping[str, float]) -> None:
         query_hash = text_sha256(query)
-        with self._connection:
+        with self._lock, self._connection:
             self._connection.executemany(
                 "INSERT OR IGNORE INTO scores VALUES (?, ?, ?, ?)",
                 [
@@ -140,7 +153,8 @@ class ScoreCache:
             )
 
     def close(self) -> None:
-        self._connection.close()
+        with self._lock:
+            self._connection.close()
 
 
 class CachedReranker:
@@ -155,12 +169,13 @@ class CachedReranker:
         self.cache = cache
         self.from_cache = 0
         self.scored = 0
+        self._counts = threading.Lock()
 
     def rerank(self, query: str, chunks: list[RetrievedChunk]) -> list[RetrievedChunk]:
         if not chunks:
             return []
         if self.cache is None:
-            self.scored += len(chunks)
+            self._count(0, len(chunks))
             return rank_by_logits(chunks, self.scorer.logits(query, [c.text for c in chunks]))
         hashes = [text_sha256(chunk.text) for chunk in chunks]
         known = self.cache.get(query, hashes)
@@ -172,21 +187,25 @@ class CachedReranker:
                 raise ValueError("Reranker must return one finite logit per missing pair")
             fresh = dict(zip(missing, values, strict=True))
             self.cache.put(query, {hashes[i]: value for i, value in fresh.items()})
-        self.from_cache += len(chunks) - len(missing)
-        self.scored += len(missing)
+        self._count(len(chunks) - len(missing), len(missing))
         logits = [fresh[i] if i in fresh else known[passage] for i, passage in enumerate(hashes)]
         return rank_by_logits(chunks, logits)
 
+    def _count(self, from_cache: int, scored: int) -> None:
+        with self._counts:
+            self.from_cache += from_cache
+            self.scored += scored
+
     def summary(self) -> dict[str, Any]:
         return {
-            "cache": _display(self.cache.path) if self.cache else None,
+            "cache": display_path(self.cache.path) if self.cache else None,
             "profile": self.cache.profile.key if self.cache else None,
             "from_cache": self.from_cache,
             "scored": self.scored,
         }
 
 
-def _display(path: Path) -> str:
+def display_path(path: Path) -> str:
     resolved = path.resolve()
     root = REPO_ROOT.resolve()
     return str(resolved.relative_to(root)) if resolved.is_relative_to(root) else resolved.name
