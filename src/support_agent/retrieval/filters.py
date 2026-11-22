@@ -74,8 +74,15 @@ def knowledge_filters(question: str, settings: Settings) -> RetrievalFilters | N
 
 
 def supports_filters(source: object) -> bool:
+    """Require an explicit capability report before allowing legacy fallback."""
     probe = getattr(source, "supports_filters", None)
-    return bool(probe()) if probe is not None else False
+    name = type(source).__name__
+    if not callable(probe):
+        raise TypeError(f"{name} must implement supports_filters() for filtered retrieval")
+    supported = probe()
+    if not isinstance(supported, bool):
+        raise TypeError(f"{name}.supports_filters() must return bool")
+    return supported
 
 
 def filter_scope(source: object) -> AbstractContextManager[None]:

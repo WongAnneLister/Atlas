@@ -76,6 +76,7 @@ def test_fake_retrieval_records_matching_run_for_reuse(tmp_path, monkeypatch) ->
     from eval.index_release import ReleaseSet, collect_run, find_live_run
     from eval.schema import EvalItem
 
+    from retrieval_fakes import LegacyFilterSupport
     from support_agent.config import Settings
     from support_agent.retrieval.embed import FakeEmbedder
     from support_agent.retrieval.factory import build_retriever
@@ -88,7 +89,7 @@ def test_fake_retrieval_records_matching_run_for_reuse(tmp_path, monkeypatch) ->
     hit = SearchHit(**chunk.model_dump(exclude={"scores", "ranks"}), score=0.9)
     settings.gate.threshold = 0.99
 
-    class Store:
+    class Store(LegacyFilterSupport):
         def search_dense(self, vector, limit):
             return [hit]
 

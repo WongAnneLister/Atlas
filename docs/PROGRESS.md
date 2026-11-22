@@ -124,6 +124,12 @@ Agents: update this file in every commit. Keep it short and factual.
 
 ## Known issues / follow-ups
 
+- 23 review fix: Filtered retrieval now requires a callable capability probe with a boolean
+  result. Both hybrid sources must agree. Unfiltered fallback requires an explicit legacy
+  result and records `filters_applied: false`. The refund eval cache and red-team overlay
+  forward the probe and collection scope. Offline tests cover missing probes, mismatched
+  sources, and the legacy search path.
+
 - 23: With the processed catalog, 76 of the original 300 mock orders predate 2026-09-01,
   including five delivered orders. Order-date filtering makes the historical 90-day return
   policy applicable to them, changing the evidence behind decisions. The five delivered

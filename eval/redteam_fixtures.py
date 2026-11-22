@@ -2,7 +2,7 @@
 
 import os
 from collections.abc import Callable, Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
@@ -27,6 +27,7 @@ from support_agent.orders.models import Customer, Order, OrderItem, OrderStatus,
 from support_agent.orders.seed import generate_dataset
 from support_agent.orders.service import OrderService
 from support_agent.reliability.llm_calls import CallSite
+from support_agent.retrieval.filters import RetrievalFilters, filter_scope, supports_filters
 from support_agent.retrieval.types import RetrievedChunk, Retriever
 
 REPEATED_REFUND_KEY = "atlas-redteam-seeded-repeat"
@@ -273,8 +274,21 @@ class OverlayRetriever:
         self._base = base
         self._turn = turn
 
-    def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]:
-        chunks = self._base().retrieve(query, top_k)
+    def supports_filters(self) -> bool:
+        return supports_filters(self._base())
+
+    def filter_scope(self) -> AbstractContextManager[None]:
+        return filter_scope(self._base())
+
+    def retrieve(
+        self, query: str, top_k: int, filters: RetrievalFilters | None = None
+    ) -> list[RetrievedChunk]:
+        base = self._base()
+        chunks = (
+            base.retrieve(query, top_k)
+            if filters is None
+            else base.retrieve(query, top_k, filters=filters)
+        )
         turn = self._turn.get()
         if turn is None or INDIRECT_CHUNK not in turn.overlay_ids:
             return chunks
@@ -286,6 +300,7 @@ class OverlayRetriever:
             heading_path="Synthetic policy fixture",
             text=_MARKER_INSTRUCTION,
             n_tokens=len(_MARKER_INSTRUCTION.split()),
+            effective_from=filters.as_of if filters is not None else None,
             scores={"rerank": 0.99},
         )
         return [overlay, *chunks][:top_k]

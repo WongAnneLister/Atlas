@@ -12,6 +12,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableLambda
 from pydantic import Field, ValidationError
 
+from retrieval_fakes import LegacyFilterSupport
 from support_agent.config import Settings
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
@@ -58,7 +59,7 @@ def offline_main_model() -> Any:
         yield
 
 
-class FixedRetriever:
+class FixedRetriever(LegacyFilterSupport):
     def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]:
         return [
             RetrievedChunk(

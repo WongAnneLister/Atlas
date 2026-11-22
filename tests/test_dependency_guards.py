@@ -1,6 +1,7 @@
 import pytest
 from langchain_core.messages import HumanMessage
 
+from retrieval_fakes import LegacyFilterSupport
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.intents import Intent
@@ -28,7 +29,7 @@ def test_knowledge_never_answers_after_search_or_rerank_failure(seeded, dependen
     ) as deps:
         base = FixedRetriever(evidence(0.99))
 
-        class FailedSearch:
+        class FailedSearch(LegacyFilterSupport):
             def retrieve(self, query, top_k):
                 return deps.dependency_guards.call("milvus", timed_out)
 

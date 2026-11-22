@@ -16,7 +16,11 @@ class HybridRetriever:
         self.config = config
 
     def supports_filters(self) -> bool:
-        return supports_filters(self.dense) and supports_filters(self.bm25)
+        dense = supports_filters(self.dense)
+        bm25 = supports_filters(self.bm25)
+        if dense != bm25:
+            raise TypeError("Hybrid retrieval sources disagree on filter support")
+        return dense
 
     @contextmanager
     def filter_scope(self) -> Iterator[None]:

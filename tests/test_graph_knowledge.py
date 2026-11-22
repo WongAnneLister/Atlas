@@ -7,6 +7,7 @@ from langchain_core.language_models.fake_chat_models import FakeListChatModel
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableLambda
 
+from retrieval_fakes import LegacyFilterSupport
 from support_agent.config import Settings
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
@@ -17,7 +18,7 @@ from support_agent.retrieval.filters import RetrievalFilters
 from support_agent.retrieval.types import RetrievedChunk
 
 
-class FixedRetriever:
+class FixedRetriever(LegacyFilterSupport):
     def __init__(self, chunks: list[RetrievedChunk]) -> None:
         self.chunks = chunks
         self.calls: list[tuple[str, int]] = []
@@ -27,7 +28,7 @@ class FixedRetriever:
         return self.chunks[:top_k]
 
 
-class BrokenRetriever:
+class BrokenRetriever(LegacyFilterSupport):
     def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]:
         raise ConnectionError("private backend detail")
 
@@ -526,7 +527,7 @@ def test_coverage_part_requires_the_explicit_flag() -> None:
 
 
 def test_bad_retrieval_result_keeps_retrieval_error_reason() -> None:
-    class InvalidRetriever:
+    class InvalidRetriever(LegacyFilterSupport):
         def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]:
             raise ValueError("invalid data")
 

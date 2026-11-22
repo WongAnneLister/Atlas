@@ -17,7 +17,7 @@ from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
@@ -31,7 +31,7 @@ from support_agent.orders.service import OrderService
 from support_agent.retrieval.filters import RetrievalFilters, filter_scope, supports_filters
 from support_agent.retrieval.index_snapshot import build_chunk_hash
 from support_agent.retrieval.scope import section_store
-from support_agent.retrieval.types import RetrievedChunk
+from support_agent.retrieval.types import RetrievedChunk, Retriever
 
 REPORT = Path("eval/reports/refund_policy.md")
 MODES: tuple[Literal["order_fields", "store_faq"], ...] = ("order_fields", "store_faq")
@@ -60,7 +60,7 @@ class Row:
 class CachingRetriever:
     """Share results across modes and orders with identical retrieval inputs."""
 
-    def __init__(self, inner: Any, attempts: int = RETRIEVAL_ATTEMPTS) -> None:
+    def __init__(self, inner: Retriever, attempts: int = RETRIEVAL_ATTEMPTS) -> None:
         self.inner = inner
         self.attempts = attempts
         self.cache: dict[tuple[str, int, str | None], list[RetrievedChunk]] = {}

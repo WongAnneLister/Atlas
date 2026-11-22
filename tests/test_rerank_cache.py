@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from eval.rerank_cache import CachedReranker, ScoreCache, ScoreProfile, score_profile, text_sha256
 
+from retrieval_fakes import LegacyFilterSupport
 from support_agent.config import Settings
 from support_agent.retrieval.rerank import BgeReranker
 from test_retrieval import item
@@ -152,7 +153,7 @@ def test_cached_and_uncached_release_runs_give_identical_rows(tmp_path: Path, mo
     settings = Settings()
     chunks = [item(key) for key in ("w40", "w50", "returns", "warranty", "shipping")]
 
-    class Store:
+    class Store(LegacyFilterSupport):
         def __init__(self, revised: bool) -> None:
             self.hits = [
                 SearchHit(

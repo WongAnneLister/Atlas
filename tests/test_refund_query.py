@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 from langchain_core.messages import HumanMessage
 
+from retrieval_fakes import LegacyFilterSupport
 from support_agent.config import Settings
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.intents import Intent
@@ -108,7 +109,7 @@ def _chunk(section_id: str, score: float) -> RetrievedChunk:
     )
 
 
-class RecordingRetriever:
+class RecordingRetriever(LegacyFilterSupport):
     def __init__(self) -> None:
         self.calls: list[tuple[str, int]] = []
 

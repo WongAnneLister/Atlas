@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from retrieval_fakes import LegacyFilterSupport
 from support_agent.config import get_settings
 from support_agent.retrieval.bm25 import Bm25Retriever, normalise_model_numbers
 from support_agent.retrieval.dense import DenseRetriever
@@ -114,7 +115,7 @@ def test_model_normaliser(query: str, expected: str) -> None:
     assert normalise_model_numbers(expected) == expected
 
 
-class SearchStore:
+class SearchStore(LegacyFilterSupport):
     def __init__(self) -> None:
         self.calls: list[tuple[str, object, int]] = []
 

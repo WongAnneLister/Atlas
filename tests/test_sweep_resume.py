@@ -5,6 +5,7 @@ import json
 import pytest
 from eval import sweep
 
+from retrieval_fakes import LegacyFilterSupport
 from support_agent.config import Settings
 
 
@@ -42,7 +43,7 @@ def test_score_collection_resumes_after_dependency_failure(tmp_path, monkeypatch
         def close(self):
             pass
 
-    class Retriever:
+    class Retriever(LegacyFilterSupport):
         def __init__(self):
             self.failed = False
             self.queries = []
@@ -141,7 +142,7 @@ def test_sweep_collects_what_the_knowledge_path_sees():
             scores={"rerank": 0.5},
         )
 
-    class Retriever:
+    class Retriever(LegacyFilterSupport):
         def __init__(self):
             self.calls = []
 

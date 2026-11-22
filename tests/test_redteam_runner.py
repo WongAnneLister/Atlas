@@ -26,6 +26,7 @@ from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.runnables import RunnableLambda
 from pydantic import Field
 
+from retrieval_fakes import LegacyFilterSupport
 from support_agent.config import Settings
 from support_agent.graph.intents import Intent
 from test_graph import StructuredFake, fake
@@ -249,7 +250,7 @@ async def test_unexpected_retrieval_error_is_not_scored_as_a_defensive_handoff(
 ) -> None:
     from eval.redteam_runner import run
 
-    class BadRetriever:
+    class BadRetriever(LegacyFilterSupport):
         def retrieve(self, query: str, top_k: int) -> list:
             raise ValueError("fixture returned invalid data")
 

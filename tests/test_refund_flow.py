@@ -10,6 +10,7 @@ from langchain_core.runnables import RunnableLambda
 from langgraph.types import Command
 from pydantic import Field
 
+from retrieval_fakes import LegacyFilterSupport
 from support_agent.config import Settings
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
@@ -47,7 +48,7 @@ class DecisionFake(FakeListChatModel):
         return RunnableLambda(decide)
 
 
-class FixedRetriever:
+class FixedRetriever(LegacyFilterSupport):
     def __init__(self, score: float = 0.99, text: str = "Refund and return policy.") -> None:
         self.score = score
         self.text = text
