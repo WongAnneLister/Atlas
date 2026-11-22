@@ -8,7 +8,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from eval.schema import EvalItem, MultipartItem
+from eval.schema import ClaimVerdict, EvalItem, MultipartItem
 from support_agent.observability.cost import ModelUsage
 from support_agent.reliability.events import ReliabilityEvent
 from support_agent.reliability.settings import ChaosSettings
@@ -51,6 +51,14 @@ class E2EPart(BaseModel):
     cited_section_ids: list[str] = Field(default_factory=list)
 
 
+class E2EClaim(BaseModel):
+    part: int = Field(ge=0)
+    text: str = Field(min_length=1)
+    verdict: ClaimVerdict
+    reason: str
+    removed: bool
+
+
 class E2ERecord(BaseModel):
     record_type: Literal["item"] = "item"
     build_id: str | None = None
@@ -67,6 +75,7 @@ class E2ERecord(BaseModel):
     answer_status: str | None = None
     answer_error_type: str | None = None
     coverage: dict[str, Any] | None = None
+    claims: list[E2EClaim] | None = None
     answer: str = ""
     citations: list[dict[str, Any]] = Field(default_factory=list)
     cited_sources: list[dict[str, str]] = Field(default_factory=list)

@@ -36,6 +36,7 @@ class SequenceCoverage(CoverageFake):
 @pytest.mark.parametrize("forged", [False, True])
 def test_answer_repair_still_checks_citations_and_quotes(forged: bool) -> None:
     settings = Settings()
+    settings.grounding.enabled = False
     settings.gate.threshold = 0.7
     reply = part(evidence=[{"source": 1, "quote": "forged quote"}]) if forged else part()
     model = SequenceCoverage(

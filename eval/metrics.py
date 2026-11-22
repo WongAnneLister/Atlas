@@ -283,3 +283,22 @@ def part_metric_values(record: E2ERecord) -> dict[str, bool | float]:
     if _wholly_unanswerable(record.item):
         metrics["noanswer_false_accept"] = noanswer_false_accept(record)
     return metrics
+
+
+def claim_support_observations(records: Sequence[E2ERecord]) -> list[bool]:
+    """Use individual claims, so long and short answers carry their actual claim counts."""
+    return [claim.verdict == "supported" for row in records for claim in row.claims or []]
+
+
+def claim_answer_metrics(record: E2ERecord) -> dict[str, bool | float]:
+    if record.claims is None:
+        return {}
+    metrics: dict[str, bool | float] = {
+        "low_grounding_handoff_rate": record.handoff_reason == "low_grounding",
+    }
+    if record.claims:
+        metrics["answers_with_any_unsupported_claim"] = any(
+            claim.verdict != "supported" for claim in record.claims
+        )
+        metrics["claims_removed_per_answer"] = float(sum(claim.removed for claim in record.claims))
+    return metrics

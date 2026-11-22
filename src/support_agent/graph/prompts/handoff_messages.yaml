@@ -1,6 +1,7 @@
 user_requested: "I'll pass your request to a human support agent."
 complaint: "I'll pass your complaint to a human support agent."
 low_evidence: "I don't have enough verified information. I'll pass your question to a human support agent."
+low_grounding: "I couldn't verify the answer from the available sources. I'll pass your question to a human support agent."
 retrieval_error: "I couldn't access the information needed to verify your question. I'll pass it to a human support agent."
 dependency_unavailable: "A service I need is temporarily unavailable. I will pass your request to a human support agent."
 answer_error: "I couldn't complete a verified answer. I'll pass your question to a human support agent."

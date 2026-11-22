@@ -132,9 +132,11 @@ def test_routes_both_parts_and_only_answers_the_supported_part(monkeypatch, seco
     source = chunk()
     foreign = chunk("foreign", dataset="flipkart_faqs")
     retriever = Retriever({RETURNS: [source, foreign], other: [foreign]})
+    settings = Settings()
+    settings.grounding.enabled = False
     result, calls = graph_result(
         monkeypatch,
-        Settings(),
+        settings,
         question,
         [RETURNS, other],
         {RETURNS: Intent.POLICY_QUESTION, other: second},

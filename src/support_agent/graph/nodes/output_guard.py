@@ -31,7 +31,10 @@ class OutputGuard:
     def __init__(self, deps: GraphDeps) -> None:
         self.deps = deps
         self.settings = deps.settings.guardrails.output
-        self.checks = OutputChecks(self.settings, PROMPTS)
+        excluded = (
+            () if deps.settings.grounding.enabled else ("verify_claims.md", "split_claims.md")
+        )
+        self.checks = OutputChecks(self.settings, PROMPTS, exclude_prompts=excluded)
 
     def _violation(self, state: ConversationState) -> OutputFlag | None:
         if self.settings.prompt_leak and self.checks.prompt_leaked(state.answer):

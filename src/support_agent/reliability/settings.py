@@ -26,6 +26,7 @@ class TimeoutSettings(BaseModel):
     decide: Seconds
     order_extract: Seconds
     grounding: Seconds
+    verify: Seconds
     complaint: Seconds
     tools: Seconds
     rerank: Seconds
@@ -41,6 +42,7 @@ class TimeoutSettings(BaseModel):
             self.decide,
             self.order_extract,
             self.grounding,
+            self.verify,
             self.complaint,
             self.tools,
         )

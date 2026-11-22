@@ -75,6 +75,7 @@ async def test_overlay_marker_is_scored_through_the_chat_api(tmp_path: Path, fol
         },
     )
     settings = Settings()
+    settings.grounding.enabled = False
     settings.gate.threshold = 0.5
     [result] = await run(
         [item],

@@ -275,10 +275,37 @@ class E2ESpeedSettings(BaseModel):
     max_workers: int = Field(gt=0)
 
 
+class ClaimSamplingSettings(BaseModel):
+    seed: int = Field(ge=0)
+    dev_target: int = Field(gt=0)
+    test_target: int = Field(gt=0)
+    synthetic_per_split: int = Field(gt=0)
+    foreign_min_words: int = Field(ge=6)
+    uncited_cap_divisor: int = Field(ge=3)
+    min_duration: int = Field(ge=0)
+    min_amount: int = Field(ge=0)
+    max_per_item: int = Field(gt=0)
+
+
+class GroundingSettings(BaseModel):
+    enabled: bool
+    split_compound: bool
+    verifier_role: Literal["fast", "main"]
+    generic_phrases: list[str] = Field(max_length=9)
+    short_sentence_words: int = Field(ge=0)
+    target_recall: float = Field(gt=0, le=1)
+
+
+def _default_grounding() -> GroundingSettings:
+    config = yaml.safe_load(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
+    return GroundingSettings.model_validate(config["grounding"])
+
+
 class EvalPlatformSettings(BaseModel):
     stats: EvalStatsSettings
     multipart_min_overlap: float = Field(gt=0, le=1)
     e2e_speed: E2ESpeedSettings
+    claims: ClaimSamplingSettings
 
 
 def _default_eval_platform() -> EvalPlatformSettings:
@@ -447,6 +474,7 @@ class Settings(BaseSettings):
     graph: GraphSettings
     planning: PlanningSettings
     knowledge: KnowledgeSettings
+    grounding: GroundingSettings = Field(default_factory=_default_grounding)
     intent_eval: IntentEvalSettings
     evaluation: EvalSettings
     eval: EvalPlatformSettings = Field(default_factory=_default_eval_platform)

@@ -15,6 +15,7 @@ from support_agent.graph.handoff import HandoffPayload, HandoffReason
 from support_agent.graph.intents import Intent, Path
 from support_agent.graph.parts import PartRetrievalRequest, PartRetrievalResult, QueryPart
 from support_agent.graph.state import CitationRecord
+from support_agent.grounding.claims import ClaimAssessment, GroundingDraft
 from support_agent.orders.models import Order, OrderItem, OrderStatus, RefundRequest, Shipment
 from support_agent.reliability.events import ReliabilityEvent
 from support_agent.retrieval.filters import RetrievalFilters
@@ -28,8 +29,10 @@ if TYPE_CHECKING:
 def checkpoint_serializer() -> JsonPlusSerializer:
     state_types = (
         CitationRecord,
+        ClaimAssessment,
         CoverageAnswer,
         GateResult,
+        GroundingDraft,
         HandoffPayload,
         HandoffReason,
         Intent,

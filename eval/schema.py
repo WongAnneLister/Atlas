@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validator
 
@@ -117,6 +117,63 @@ class MultipartItem(BaseModel):
         }[self.group]
         if sum(part.answerable for part in self.parts) != expected:
             raise ValueError(f"Part answerability does not match {self.group}")
+        return self
+
+
+ClaimVerdict = Literal["supported", "partial", "unsupported"]
+ClaimLabel = Literal["supported", "unsupported"]
+ClaimPerturbation = Literal["number", "duration", "amount", "model", "uncited_sentence"]
+
+
+CLAIM_PERTURBATIONS: tuple[ClaimPerturbation, ...] = get_args(ClaimPerturbation)
+
+
+class ClaimSource(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    n: int = Field(gt=0)
+    section_id: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+
+
+class ClaimItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(min_length=1)
+    split: Split
+    group: Literal["real", "synthetic"]
+    source_run: str = Field(min_length=1)
+    source_item: str = Field(min_length=1)
+    part: int = Field(ge=0)
+    sentence: int = Field(ge=0)
+    question: str = Field(min_length=1)
+    claim: str = Field(min_length=1)
+    sources: list[ClaimSource]
+    label: ClaimLabel | None = None
+    label_source: Literal["human", "construction"]
+    perturbation: ClaimPerturbation | None = None
+    reviewed: bool = False
+    note: str = ""
+
+    @model_validator(mode="after")
+    def _consistent_provenance(self) -> ClaimItem:
+        if len({source.n for source in self.sources}) != len(self.sources):
+            raise ValueError("Claim source numbers must be unique")
+        if self.group == "synthetic":
+            if (
+                self.label_source != "construction"
+                or self.perturbation is None
+                or self.label is not None
+                or self.reviewed
+                or self.note
+            ):
+                raise ValueError("Synthetic claims require a perturbation and blank human labels")
+        elif (
+            self.label_source != "human"
+            or self.perturbation is not None
+            or self.reviewed != (self.label is not None)
+        ):
+            raise ValueError("Real claims require consistent human label provenance")
         return self
 
 

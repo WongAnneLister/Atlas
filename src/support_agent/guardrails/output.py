@@ -1,7 +1,7 @@
 """Check the final reply against private prompts and this turn's evidence."""
 
 import re
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from pathlib import Path
 from typing import Literal
 
@@ -91,12 +91,15 @@ def _backed(sentence: str, kinds: set[str], sources: list[str]) -> bool:
 
 
 class OutputChecks:
-    def __init__(self, settings: OutputGuardSettings, prompts: Path) -> None:
+    def __init__(
+        self, settings: OutputGuardSettings, prompts: Path, *, exclude_prompts: Collection[str] = ()
+    ) -> None:
         self.settings = settings
         self.private_windows = (
             {
                 window
                 for prompt in sorted(prompts.glob("*.md"))
+                if prompt.name not in exclude_prompts
                 for window in _windows(
                     prompt.read_text(encoding="utf-8"), settings.prompt_word_window
                 )

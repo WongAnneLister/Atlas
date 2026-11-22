@@ -196,6 +196,12 @@ def _record(
         answer_status=result.get("answer_status"),
         answer_error_type=result.get("answer_error_type"),
         route_source=result.get("route_source"),
+        claims=[
+            claim.model_dump() if hasattr(claim, "model_dump") else claim
+            for claim in result["claims"]
+        ]
+        if result.get("claims") is not None
+        else None,
         parts=_observed_parts(result),
         coverage=result["coverage"].model_dump()
         if hasattr(result.get("coverage"), "model_dump")

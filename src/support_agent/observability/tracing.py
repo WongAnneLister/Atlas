@@ -6,6 +6,7 @@ Otherwise nothing here imports `langfuse`, and every call is a no-op.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from collections.abc import Mapping
@@ -16,13 +17,14 @@ from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
 
 from support_agent.config import Settings, TracingSettings
+from support_agent.grounding.claims import ClaimAssessment
 from support_agent.guardrails.pii import redact_pii
 
 logger = logging.getLogger(__name__)
 REDACTED = "[redacted]"
 _KEY_VARS = ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY")
 # State fields that hold customer text (or a rewrite of it).
-_CUSTOMER_TEXT_KEYS = frozenset({"rewritten_query"})
+_CUSTOMER_TEXT_KEYS = frozenset({"rewritten_query", "question"})
 _CUSTOMER_ROLES = frozenset({"human", "user"})
 _TRIMMED_CHUNK_KEYS = {"chunk_id", "section_id", "scores"}
 _LANGFUSE: Any = None
@@ -101,6 +103,15 @@ def turn_tags(values: Mapping[str, Any]) -> tuple[list[str], dict[str, str]]:
     tags.extend(f"guardrail:{flag}" for flag in values.get("guardrail_flags", []))
     if isinstance(build_id := values.get("retrieval_build_id"), str):
         metadata["retrieval_build_id"] = build_id
+    if isinstance(claims := values.get("claims"), list):
+        metadata["claim_verdicts"] = json.dumps(
+            [
+                {"part": row.part, "verdict": row.verdict, "removed": row.removed}
+                for row in claims
+                if isinstance(row, ClaimAssessment)
+            ],
+            separators=(",", ":"),
+        )
     return tags, metadata
 
 

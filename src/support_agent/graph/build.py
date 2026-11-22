@@ -14,6 +14,7 @@ from support_agent.graph.intents import INTENT_TO_PATH, PATH_NODES, Path
 from support_agent.graph.nodes.classify import Classifier
 from support_agent.graph.nodes.complaint import ComplaintPath
 from support_agent.graph.nodes.fixed import fixed_reply
+from support_agent.graph.nodes.ground import GroundingPath
 from support_agent.graph.nodes.input_guard import InputGuard
 from support_agent.graph.nodes.knowledge import KnowledgePath, route_after_gate
 from support_agent.graph.nodes.output_guard import OutputGuard
@@ -158,7 +159,16 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
     add_node("handoff", knowledge.handoff)
     graph.add_edge("retrieve", "gate")
     graph.add_conditional_edges("gate", route_after_gate, ["answer", "handoff"])
-    graph.add_edge("answer", "output_guard")
+    if deps.settings.grounding.enabled:
+        add_node("ground", GroundingPath(deps))
+        graph.add_conditional_edges(
+            "answer",
+            lambda state: "ground" if state.grounding_drafts else "output_guard",
+            ["ground", "output_guard"],
+        )
+        graph.add_edge("ground", "output_guard")
+    else:
+        graph.add_edge("answer", "output_guard")
     graph.add_edge("handoff", "output_guard")
     add_node("refund_load", refund.load_order)
     add_node("refund_retrieve", refund.retrieve_policy)

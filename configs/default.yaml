@@ -76,6 +76,7 @@ reliability:
     decide: 30
     order_extract: 30
     grounding: 30
+    verify: 30
     complaint: 30
     tools: 30
     rerank: 60
@@ -248,7 +249,27 @@ intent_eval:
   max_concurrency: 4
   target_accuracy: 0.9
 
+grounding:
+  enabled: true
+  split_compound: false
+  verifier_role: fast
+  short_sentence_words: 3
+  generic_phrases:
+    - "You can contact support for help."
+    - "I can connect you with an agent."
+  target_recall: 0.90   # preregistered verifier recall target
+
 eval:
+  claims:
+    seed: 25
+    dev_target: 80
+    test_target: 150
+    synthetic_per_split: 60
+    foreign_min_words: 6
+    uncited_cap_divisor: 3
+    min_duration: 5
+    min_amount: 5
+    max_per_item: 3
   multipart_min_overlap: 0.25  # minimum word Jaccard when part counts differ
   # Opt-in speed-ups for the real-model end-to-end evaluators (e2e_eval, multipart_eval).
   # Neither changes what a run measures, so both stay out of the run's config hash.
