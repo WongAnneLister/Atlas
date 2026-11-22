@@ -1,0 +1,12 @@
+{
+  "cache_file": "measure-ce7e5958487e4108a89e5a1ba7952f0b.sqlite",
+  "candidate_collection": "support_chunks_bef8bc336eb7d4e00946007771ff96a1b",
+  "device": "mps",
+  "ended_at": "2026-11-22T05:40:01.442394+00:00",
+  "live_collection": "support_chunks_bf66917e90d854635a44dbdac16e6e4c1",
+  "runs": {
+    "candidate_uncached": "index-release-dev-smoke-20261122-904f6ae5-7665e1c78a4e48f48698b2b1f99667df",
+    "candidate_warm": "index-release-dev-smoke-20261122-904f6ae5-1cc92503ea674a7f929443ccd6506d01",
+    "live_cold": "index-release-dev-smoke-20261122-904f6ae5-040a8c321b384467a9256f21febf1722"
+  }
+}

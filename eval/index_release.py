@@ -14,6 +14,7 @@ from eval.common import load_items
 from eval.gate import GateRules, load_rules
 from eval.paired import Comparison, compare, comparison_lines
 from eval.registry import file_hash, load_registry
+from eval.rerank_cache import CachedReranker, ScoreCache, cache_path, score_profile
 from eval.run_record import (
     RUNS,
     DatasetVersion,
@@ -36,6 +37,7 @@ from support_agent.reliability.guards import DependencyUnavailable, diagnostic_t
 from support_agent.reliability.retry import retry_call
 from support_agent.retrieval.factory import build_retriever
 from support_agent.retrieval.milvus_store import MilvusStore, milvus_transport_failure
+from support_agent.retrieval.rerank import BgeReranker
 from support_agent.retrieval.types import RetrievedChunk, Retriever
 
 _ANSWER_METRICS = ("hit_at_5", "rr_at_5", "gate_pass")
@@ -170,8 +172,10 @@ def collect_run(
     release_set: ReleaseSet | None = None,
     reranker_device: str | None = None,
     retriever: Retriever | None = None,
+    reranker: CachedReranker | None = None,
     run_root: Path = RUNS,
 ) -> Path:
+    """Collect one evidence run; an injected ``retriever`` may share its ``reranker`` counts."""
     config = settings.model_copy(deep=True)
     config.milvus.collection = collection
     if reranker_device is not None:
@@ -181,12 +185,19 @@ def collect_run(
     dirty = is_dirty()
     sha = git("rev-parse", "HEAD")
     if retriever is None:
+        path = cache_path(config)
+        cache = ScoreCache(path, score_profile(config)) if path else None
         store = MilvusStore(config)
         try:
-            retriever = build_retriever("hybrid_rerank", settings=config, store=store)
+            reranker = CachedReranker(BgeReranker(config.retrieval), cache)
+            retriever = build_retriever(
+                "hybrid_rerank", settings=config, store=store, reranker=reranker
+            )
             rows = [_collect_item(retriever, item, config) for item in selected.items]
         finally:
             store.close()
+            if cache is not None:
+                cache.close()
     else:
         rows = [_collect_item(retriever, item, config) for item in selected.items]
     retrieval = config.retrieval
@@ -214,6 +225,8 @@ def collect_run(
                 "fingerprint": fingerprint,
                 "item_set_hash": selected.item_set_hash,
                 "reranker_device": config.retrieval.reranker_device,
+                # Counts (query, passage) logits; the cache never changes a row.
+                "rerank_scores": reranker.summary() if reranker else None,
             },
         ),
         rows,
@@ -421,6 +434,9 @@ def main() -> int:
     collect = commands.add_parser("collect")
     collect.add_argument("collection")
     collect.add_argument("--reranker-device")
+    cache = collect.add_mutually_exclusive_group()
+    cache.add_argument("--rerank-cache", type=Path, help="score cache file (default: config)")
+    cache.add_argument("--no-rerank-cache", action="store_true", help="score every pair")
     check = commands.add_parser("check")
     check.add_argument("candidate", type=Path)
     check.add_argument("--live", type=Path)
@@ -428,7 +444,13 @@ def main() -> int:
     check.add_argument("--override-reason")
     args = parser.parse_args()
     if args.command == "collect":
-        path = collect_run(get_settings(), args.collection, reranker_device=args.reranker_device)
+        settings = get_settings().model_copy(deep=True)
+        cache_settings = settings.index.release.rerank_cache
+        if args.no_rerank_cache:
+            cache_settings.enabled = False
+        elif args.rerank_cache:
+            cache_settings.enabled, cache_settings.path = True, str(args.rerank_cache)
+        path = collect_run(settings, args.collection, reranker_device=args.reranker_device)
         sys.stdout.write(f"{path}\n")
         return 0
     settings = get_settings()

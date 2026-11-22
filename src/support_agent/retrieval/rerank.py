@@ -14,7 +14,7 @@ class Reranker(Protocol):
     def rerank(self, query: str, chunks: list[RetrievedChunk]) -> list[RetrievedChunk]: ...
 
 
-def _scored(chunks: list[RetrievedChunk], logits: list[float]) -> list[RetrievedChunk]:
+def rank_by_logits(chunks: list[RetrievedChunk], logits: list[float]) -> list[RetrievedChunk]:
     if len(chunks) != len(logits) or not all(math.isfinite(value) for value in logits):
         raise ValueError("Reranker must return one finite logit per chunk")
     output: list[RetrievedChunk] = []
@@ -66,15 +66,18 @@ class BgeReranker:
     def rerank(self, query: str, chunks: list[RetrievedChunk]) -> list[RetrievedChunk]:
         if not chunks:
             return []
+        return rank_by_logits(chunks, self.logits(query, [chunk.text for chunk in chunks]))
+
+    def logits(self, query: str, texts: list[str]) -> list[float]:
+        """Raw cross-encoder logits for (query, text) pairs, in input order."""
         values = self.backend.compute_score(
-            [(query, chunk.text) for chunk in chunks],
+            [(query, text) for text in texts],
             batch_size=self.config.reranker_batch_size,
             max_length=self.config.reranker_max_tokens,
             normalize=False,
         )
         values = values.tolist() if hasattr(values, "tolist") else values
-        logits = [float(values)] if isinstance(values, (int, float)) else list(map(float, values))
-        return _scored(chunks, logits)
+        return [float(values)] if isinstance(values, (int, float)) else list(map(float, values))
 
 
 class FakeReranker:
@@ -82,7 +85,7 @@ class FakeReranker:
         self.logits = logits or {}
 
     def rerank(self, query: str, chunks: list[RetrievedChunk]) -> list[RetrievedChunk]:
-        return _scored(chunks, [self.logits.get(chunk.chunk_id, 0.0) for chunk in chunks])
+        return rank_by_logits(chunks, [self.logits.get(chunk.chunk_id, 0.0) for chunk in chunks])
 
 
 class RerankingRetriever:
