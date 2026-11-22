@@ -250,3 +250,37 @@ def test_no_answer_uses_eval_item_answerability_for_scoring_and_denominator():
     row.item = row.item.model_copy(update={"group": "basic_policy"})
     assert metrics.noanswer_false_accept(row)
     assert metrics.part_metric_values(row) == {"noanswer_false_accept": True}
+
+
+def test_graph_recall_and_mrr_read_each_part_top_five_when_the_question_was_split():
+    # The merged list shows only the first part's chunks in its first five places.
+    split = _legacy(
+        "cross_doc",
+        ["returns", "care"],
+        retrieved=["returns", "a", "b", "c", "d"],
+        parts=[
+            {"text": "Policy returns?", "retrieved_section_ids": ["returns", "a", "b", "c", "d"]},
+            {"text": "Product care?", "retrieved_section_ids": ["x", "care", "y"]},
+        ],
+    )
+    assert metrics.graph_recall_at_5(split) == 1.0
+    assert metrics.graph_mrr_at_5(split) == 1.0
+    missing = split.model_copy(deep=True)
+    missing.parts[1].retrieved_section_ids = ["x", "y", "z", "w", "v", "care"]
+    assert metrics.graph_recall_at_5(missing) == 0.5
+
+
+def test_graph_recall_and_mrr_are_unchanged_for_whole_questions():
+    whole = _legacy(
+        "cross_doc", ["returns", "care"], retrieved=["a", "returns", "b", "c", "d", "care"]
+    )
+    assert (
+        metrics.graph_recall_at_5(whole)
+        == metrics.recall_at_k(whole.retrieved_section_ids, ["returns", "care"], 5)
+        == 0.5
+    )
+    assert (
+        metrics.graph_mrr_at_5(whole)
+        == metrics.mrr(whole.retrieved_section_ids, ["returns", "care"])
+        == 0.5
+    )

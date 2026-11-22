@@ -8,7 +8,13 @@ from eval.e2e_diagnostics import diagnostic_lines
 from eval.e2e_records import E2EMetadata, E2ERecord
 from eval.e2e_runs import unpack
 from eval.judge_calibration import read_kappa
-from eval.metrics import mrr, noanswer_false_accept, outcome_rates, percentile, recall_at_k
+from eval.metrics import (
+    graph_mrr_at_5,
+    graph_recall_at_5,
+    noanswer_false_accept,
+    outcome_rates,
+    percentile,
+)
 from eval.run_record import Run, confidence_level, format_summary
 from support_agent.data.doc_models import write_text
 
@@ -20,10 +26,7 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
     false_accepts = [record for record in records if noanswer_false_accept(record)]
     false_accept_rate = len(false_accepts) / rates.no_answer_count if rates.no_answer_count else 0.0
     answerable = [record for record in records if record.item.answerable]
-    recalls = [
-        recall_at_k(record.retrieved_section_ids, record.item.gold_sections, 5)
-        for record in answerable
-    ]
+    recalls = [graph_recall_at_5(record) for record in answerable]
     citation_validity = [
         (
             len(
@@ -36,9 +39,7 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
         )
         for record in answerable
     ]
-    reciprocal_ranks = [
-        mrr(record.retrieved_section_ids, record.item.gold_sections) for record in answerable
-    ]
+    reciprocal_ranks = [graph_mrr_at_5(record) for record in answerable]
     latencies = [record.latency_full_answer_s for record in records]
     first_token_values = [
         record.latency_first_token_s

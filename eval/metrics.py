@@ -173,6 +173,33 @@ def full_answer(record: E2ERecord) -> bool:
     return gold <= {section for part in record.parts for section in part.cited_section_ids}
 
 
+def _graph_lists(record: E2ERecord) -> list[Sequence[str]]:
+    """The ranked lists the answer step saw: one per retrieved part when the question was split."""
+    lists = [
+        part.retrieved_section_ids for part in record.parts or [] if part.retrieved_section_ids
+    ]
+    return lists or [record.retrieved_section_ids]
+
+
+def graph_recall_at_5(record: E2ERecord) -> float:
+    """Share of gold sections in the top five of the graph's retrieval.
+
+    A split question is retrieved once per part, and the stored merged list puts the first
+    part's chunks first, so its first five places say nothing about the second part.
+    """
+    gold = set(_gold_sections(record))
+    if not gold:
+        return 0.0
+    seen = {section for ranked in _graph_lists(record) for section in ranked[:5]}
+    return len(gold & seen) / len(gold)
+
+
+def graph_mrr_at_5(record: E2ERecord) -> float:
+    """Best reciprocal rank of a gold section across the lists the answer step saw."""
+    gold = _gold_sections(record)
+    return max(mrr(list(ranked[:5]), gold) for ranked in _graph_lists(record))
+
+
 def part_recall_at_5(record: E2ERecord) -> bool:
     """Count a question only when every gold section appears in some part's top five."""
     gold = _gold_sections(record)

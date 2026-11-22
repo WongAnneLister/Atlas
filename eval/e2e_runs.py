@@ -5,7 +5,12 @@ from pathlib import Path
 from typing import Literal
 
 from eval.e2e_records import E2EMetadata, E2ERecord
-from eval.metrics import mrr, noanswer_false_accept, part_metric_values, recall_at_k
+from eval.metrics import (
+    graph_mrr_at_5,
+    graph_recall_at_5,
+    noanswer_false_accept,
+    part_metric_values,
+)
 from eval.run_record import (
     RUNS,
     Run,
@@ -57,11 +62,11 @@ def project(records: list[E2ERecord], *, chaos: bool = False) -> list[RunItem]:
             cited = {source["section_id"] for source in record.cited_sources}
             metrics.update(
                 false_reject=not record.accepted,
-                graph_recall_at_5=recall_at_k(record.retrieved_section_ids, item.gold_sections, 5),
+                graph_recall_at_5=graph_recall_at_5(record),
                 citation_validity=len(cited & set(item.gold_sections)) / len(cited)
                 if cited
                 else 0.0,
-                graph_mrr_at_5=mrr(record.retrieved_section_ids, item.gold_sections),
+                graph_mrr_at_5=graph_mrr_at_5(record),
             )
         elif isinstance(item, EvalItem):
             metrics["false_accept"] = noanswer_false_accept(record)
