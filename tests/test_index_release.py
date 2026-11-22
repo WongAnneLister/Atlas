@@ -258,3 +258,90 @@ def test_matching_candidate_evidence_is_reused(monkeypatch) -> None:
     monkeypatch.setattr(runner, "collect_run", collect)
     decision, evidence = runner.check_for(settings)(build, None)
     assert decision.outcome == "release" and evidence == "saved"
+
+
+def _release_item(answerable: bool = False):
+    from eval.schema import EvalItem
+
+    return EvalItem(
+        id="item",
+        group="no_answer" if not answerable else "basic_policy",
+        split="dev",
+        question="Is this supported?",
+        gold_sections=[] if not answerable else ["section"],
+        answer_points=[] if not answerable else ["Point"],
+        answerable=answerable,
+        source="fixture",
+    )
+
+
+def _flaky_search(monkeypatch, failures: list[Exception]) -> list[int]:
+    calls: list[int] = []
+
+    def search(retriever, question, settings):
+        calls.append(1)
+        if failures:
+            raise failures.pop(0)
+        return []
+
+    monkeypatch.setattr("eval.index_release.production_chunks", search)
+    return calls
+
+
+def _short_retry(settings) -> None:
+    from support_agent.reliability.settings import RetrySettings
+
+    settings.index.release.retry = RetrySettings(
+        max_attempts=3, base_delay_s=1, max_delay_s=2, jitter_ratio=0, budget_s=100
+    )
+
+
+def _link_down() -> Exception:
+    from pymilvus.client.types import Status
+    from pymilvus.exceptions import MilvusException
+
+    return MilvusException(code=Status.CONNECT_FAILED, message="Fail connecting to server")
+
+
+def test_item_survives_a_short_milvus_outage(monkeypatch) -> None:
+    """A tunnel drop during a two-hour evidence run must not turn an item into an error."""
+    from eval.index_release import _collect_item
+
+    from support_agent.config import Settings
+
+    settings = Settings()
+    _short_retry(settings)
+    calls = _flaky_search(monkeypatch, [_link_down(), _link_down()])
+    waits: list[float] = []
+    row = _collect_item(object(), _release_item(), settings, sleep=waits.append)
+    assert "error_type" not in row.payload
+    assert row.payload["retries"] == 2
+    assert row.metrics == {"noanswer_gate_pass": False}
+    assert len(calls) == 3 and waits == [1, 2]
+
+
+def test_item_records_the_outage_after_the_retry_limit(monkeypatch) -> None:
+    from eval.index_release import _collect_item
+
+    from support_agent.config import Settings
+
+    settings = Settings()
+    _short_retry(settings)
+    calls = _flaky_search(monkeypatch, [_link_down() for _ in range(5)])
+    row = _collect_item(object(), _release_item(), settings, sleep=lambda _: None)
+    assert row.payload == {"error_type": "MilvusException", "retries": 2}
+    assert len(calls) == 3 and not row.metrics
+
+
+def test_item_does_not_retry_a_non_transport_error(monkeypatch) -> None:
+    from eval.index_release import _collect_item
+
+    from support_agent.config import Settings
+
+    settings = Settings()
+    _short_retry(settings)
+    calls = _flaky_search(monkeypatch, [ValueError("bad schema")])
+    waits: list[float] = []
+    row = _collect_item(object(), _release_item(), settings, sleep=waits.append)
+    assert row.payload == {"error_type": "ValueError"}
+    assert len(calls) == 1 and not waits

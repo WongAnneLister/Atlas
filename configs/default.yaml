@@ -286,6 +286,15 @@ index:
     # Other no-answer items must not newly pass against the live build (gate_rules.yaml).
     absolute_splits: [dev]
     hit_k: 5
+    # An evidence run takes about two hours and may cross a remote link that drops for minutes.
+    # A Milvus transport failure retries the same read-only question; ranking is deterministic,
+    # so a retry cannot change a result. Waits total about eight minutes before the item errors.
+    retry:
+      max_attempts: 12
+      base_delay_s: 5
+      max_delay_s: 60
+      jitter_ratio: 0.1
+      budget_s: 900
 
 milvus:
   uri: http://localhost:19530

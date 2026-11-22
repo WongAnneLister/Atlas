@@ -4,11 +4,14 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from support_agent.reliability.settings import RetrySettings
+
 
 class IndexReleaseSettings(BaseModel):
     sets: list[Literal["dev", "smoke"]] = Field(min_length=1)
     absolute_splits: list[Literal["dev", "test"]] = Field(min_length=1)
     hit_k: int = Field(gt=0)
+    retry: RetrySettings
 
     @field_validator("sets")
     @classmethod

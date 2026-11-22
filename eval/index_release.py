@@ -2,10 +2,11 @@
 
 import argparse
 import sys
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from time import sleep as sleep_seconds
 from typing import Literal
 from uuid import uuid4
 
@@ -31,9 +32,11 @@ from eval.sweep import production_chunks
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.gate.evidence import evaluate
+from support_agent.reliability.guards import DependencyUnavailable, diagnostic_type
+from support_agent.reliability.retry import retry_call
 from support_agent.retrieval.factory import build_retriever
-from support_agent.retrieval.milvus_store import MilvusStore
-from support_agent.retrieval.types import Retriever
+from support_agent.retrieval.milvus_store import MilvusStore, milvus_transport_failure
+from support_agent.retrieval.types import RetrievedChunk, Retriever
 
 _ANSWER_METRICS = ("hit_at_5", "rr_at_5", "gate_pass")
 _NOANSWER = "noanswer_gate_pass"
@@ -104,16 +107,46 @@ def evidence_config_hash(settings: Settings) -> str:
     )
 
 
-def _collect_item(retriever: Retriever, item: EvalItem, settings: Settings) -> RunItem:
+def _collect_item(
+    retriever: Retriever,
+    item: EvalItem,
+    settings: Settings,
+    sleep: Callable[[float], None] = sleep_seconds,
+) -> RunItem:
     row = RunItem(id=item.id, group=item.group, answerable=item.answerable)
+    retries = 0
+
+    def count_retry() -> None:
+        nonlocal retries
+        retries += 1
+
+    def search(_remaining: float) -> list[RetrievedChunk]:
+        # Only a broken link is retried; any other error is recorded on the first attempt.
+        try:
+            return production_chunks(retriever, item.question, settings)
+        except Exception as error:
+            if milvus_transport_failure(error):
+                raise DependencyUnavailable("milvus", error) from error
+            raise
+
     try:
-        chunks = production_chunks(retriever, item.question, settings)
+        chunks = retry_call(
+            search,
+            policy=settings.index.release.retry,
+            is_idempotent=True,
+            sleep=sleep,
+            on_retry=count_retry,
+        )
         gate = evaluate(item.question, chunks, settings.gate)
     except Exception as error:
-        row.payload["error_type"] = type(error).__name__
+        row.payload["error_type"] = diagnostic_type(error)
+        if retries:
+            row.payload["retries"] = retries
         return row
     top = chunks[: settings.index.release.hit_k]
     row.payload = {"gate_score": gate.score, "top_chunk_ids": [chunk.chunk_id for chunk in top]}
+    if retries:
+        row.payload["retries"] = retries
     if item.answerable:
         rank = next(
             (i for i, chunk in enumerate(top, 1) if chunk.section_id in item.gold_sections), None

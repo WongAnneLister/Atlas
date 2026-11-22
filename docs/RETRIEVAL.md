@@ -83,7 +83,8 @@ flowchart LR
   passes on the live build: the serving index passes one at the gate today, and the LLM coverage
   check stops it later in the app. A first release has no live build, so it judges dev only and
   lists other passes. An unassessed candidate no-answer item also prevents release.
-  Runs above the configured retrieval-error limit are invalid. A paired regression may be
+  Each question retries a Milvus transport failure under `index.release.retry`; other errors
+  are recorded at once. Runs above the configured retrieval-error limit are invalid. A paired regression may be
   overridden with a written `--override-reason`; the registry and report retain it. It cannot
   override a no-answer rule or an invalid run. Matching clean evidence for a build is reused
   as either the live or the candidate side.
