@@ -1,0 +1,101 @@
+{
+  "kind": "retrieval",
+  "split": "all",
+  "git_sha": "bed2ad57dd2df3570e563e92fd97573057bdea6e",
+  "config_hash": "4f9fe7bb129587c8658f0927a260309534876055fdf25932ae99f205211516bc",
+  "models": {
+    "embedding": "BAAI/bge-m3@5617a9f61b028005a4858fdac845db406aefb181",
+    "reranker": "BAAI/bge-reranker-v2-m3@953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e"
+  },
+  "datasets": {
+    "eval_v1": {
+      "version": "v1",
+      "sha256": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9"
+    }
+  },
+  "seed": 17,
+  "dirty": false,
+  "started_at": "2026-11-22T08:47:30.753680Z",
+  "ended_at": "2026-11-22T10:24:56.595077Z",
+  "cost_usd": null,
+  "cost_note": "price not set",
+  "command": [
+    "python",
+    "-m",
+    "eval.retrieval_eval",
+    "--split",
+    "all"
+  ],
+  "source": {
+    "metadata": {
+      "git_sha": "bed2ad57dd2df3570e563e92fd97573057bdea6e",
+      "code_hash": "dea461959ddbe662aab1fe1e78f8c70d9bc817c19223d833aad821e5b5b5dc39",
+      "config_hash": "4f9fe7bb129587c8658f0927a260309534876055fdf25932ae99f205211516bc",
+      "eval_file_hash": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9",
+      "frozen_set_hash": "3251efeb1e6d42b236c6b506fa1b7a3c8e980a24188c04e7274e01f55bfc69a7",
+      "corpus_hash": "60e259f600ed4ae895106d14385edcb6cfcf12071ec0219a32a936a209c5c6fd",
+      "date": "2026-11-22T08:47:30.753680+00:00",
+      "dataset_versions": {
+        "bitext": "bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443",
+        "flipkart_faqs": "NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228",
+        "maktek_faqs": "MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240",
+        "philips_manuals": "InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84"
+      },
+      "models": {
+        "embedding": "BAAI/bge-m3@5617a9f61b028005a4858fdac845db406aefb181",
+        "reranker": "BAAI/bge-reranker-v2-m3@953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e"
+      },
+      "settings": {
+        "retrieval": {
+          "embedding_device": "cpu",
+          "reranker_device": "mps",
+          "reranker_batch_size": 4,
+          "reranker_max_tokens": 512
+        },
+        "retrieval_eval": {
+          "metric_ks": [
+            1,
+            3,
+            5
+          ],
+          "baseline_collection": "support_chunks_eval_heading_on",
+          "heading_ablation_collection": "support_chunks_eval_no_heading",
+          "local_chunk_text": true,
+          "target_recall_at_5": 0.95
+        }
+      },
+      "reviewed": 0,
+      "total_items": 300,
+      "build_id": "4aece1a3ed4f4905837a125c9249857e",
+      "index_identities": {
+        "baseline": "470342815315830458",
+        "heading_off": "470342815315876610"
+      },
+      "runtime": {
+        "platform": "macOS-27.0.1-arm64-arm-64bit",
+        "FlagEmbedding": "1.4.2",
+        "transformers": "5.22.2",
+        "torch": "2.15.0",
+        "tokenizers": "0.23.3",
+        "pymilvus": "3.0.2",
+        "milvus_server": "2.5.10"
+      },
+      "variant_config_hashes": {
+        "dense": "f26cc389e57e0a3e8af40a92518df0e0ffd82c179005e042dfc09bebc631de07",
+        "bm25": "f26cc389e57e0a3e8af40a92518df0e0ffd82c179005e042dfc09bebc631de07",
+        "hybrid": "f26cc389e57e0a3e8af40a92518df0e0ffd82c179005e042dfc09bebc631de07",
+        "hybrid_rerank": "f26cc389e57e0a3e8af40a92518df0e0ffd82c179005e042dfc09bebc631de07",
+        "hybrid_heading_off": "518c23adeb519bc9f3de5ce1a2a89f9d7bd7a4e9503d26e94fe36086b98fb365",
+        "hybrid_normaliser_off": "0f116df8b837efc0c2c47c226890dba65404403ae11e0d9c95d105ba3f3e37df",
+        "hybrid_rerank_filters_off": "f26cc389e57e0a3e8af40a92518df0e0ffd82c179005e042dfc09bebc631de07",
+        "hybrid_rerank_filters_date": "32cdf285e53f67a291af7e070d979387a27bcb7505854010052f427118db523b",
+        "hybrid_rerank_filters_date_category": "4f9fe7bb129587c8658f0927a260309534876055fdf25932ae99f205211516bc"
+      }
+    },
+    "statistics": {
+      "n_resamples": 2000,
+      "seed": 17,
+      "alpha": 0.05
+    }
+  }
+}

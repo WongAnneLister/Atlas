@@ -16,7 +16,7 @@ Now the report matches the code on main.
 The audit still counts 300 orders and 749 order items.
 It still blocks 900 cross-customer operations.
 Every count is the same as before the move.
-Source: eval/reports/orders_seed.md
+Source: eval/reports/archive/orders_seed-5fbeb90.md
 
 **Trade-off**
 The dataset hash changed, but the order data did not.

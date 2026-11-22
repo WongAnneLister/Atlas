@@ -262,12 +262,15 @@ Source: eval/reports/retrieval.md
 
 | Mode | Group | n | Recall@1 | Recall@3 | Recall@5 | MRR@5 | cross_doc hit_all@5 | mean latency (s) |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| dense | overall | 120 | 0.7375 | 0.9292 | 0.9667 | 0.9125 | 0.7333 | 2.2001 |
-| bm25 | overall | 120 | 0.6958 | 0.9667 | 0.9875 | 0.9069 | 0.9000 | 1.5659 |
-| hybrid | overall | 120 | 0.7792 | 0.9667 | 0.9958 | 0.9458 | 0.9667 | 3.7754 |
-| hybrid_rerank | overall | 120 | 0.8667 | 0.9833 | 1.0000 | 0.9938 | 1.0000 | 9.4737 |
-| hybrid_heading_off | overall | 120 | 0.7667 | 0.9542 | 0.9875 | 0.9378 | 0.9000 | 3.5782 |
-| hybrid_normaliser_off | overall | 120 | 0.7792 | 0.9667 | 0.9958 | 0.9458 | 0.9667 | 3.6986 |
+| dense | overall | 120 | 0.7375 | 0.9292 | 0.9667 | 0.9125 | 0.7333 | 3.1413 |
+| bm25 | overall | 120 | 0.6875 | 0.9625 | 0.9875 | 0.9028 | 0.9000 | 0.4806 |
+| hybrid | overall | 120 | 0.7792 | 0.9583 | 0.9917 | 0.9458 | 0.9333 | 3.6229 |
+| hybrid_rerank | overall | 120 | 0.8667 | 0.9833 | 1.0000 | 0.9938 | 1.0000 | 10.2582 |
+| hybrid_heading_off | overall | 120 | 0.7583 | 0.9417 | 0.9792 | 0.9299 | 0.8667 | 3.8068 |
+| hybrid_normaliser_off | overall | 120 | 0.7792 | 0.9583 | 0.9917 | 0.9458 | 0.9333 | 3.6066 |
+| hybrid_rerank_filters_off | overall | 120 | 0.8667 | 0.9833 | 1.0000 | 0.9938 | 1.0000 | 10.2582 |
+| hybrid_rerank_filters_date | overall | 120 | 0.8667 | 0.9833 | 1.0000 | 0.9938 | 1.0000 | 8.2425 |
+| hybrid_rerank_filters_date_category | overall | 120 | 0.8667 | 0.9833 | 1.0000 | 0.9938 | 1.0000 | 8.8620 |
 
 ## What this means
 

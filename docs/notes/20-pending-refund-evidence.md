@@ -15,7 +15,7 @@ Attacks succeeded in 0 of 65 cases.
 Refund fraud went from 3/10 in the baseline to 0/10.
 The same three repeat requests now go to a human.
 No other case got worse.
-Source: eval/reports/redteam.md
+Source: eval/reports/archive/redteam-5536e70.md
 
 **Trade-off**
 Ten cases per category is a small sample.

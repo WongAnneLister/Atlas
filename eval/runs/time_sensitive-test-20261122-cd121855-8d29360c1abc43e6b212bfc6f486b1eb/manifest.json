@@ -1,0 +1,37 @@
+{
+  "kind": "time_sensitive",
+  "split": "test",
+  "git_sha": "cd1218553498c7dd22e77547e9c82cc3cf1855f1",
+  "config_hash": "44d7d139eb5db8c1ac3a788bf36dac0eec0b4e4827cf6c16810c2275801a34a9",
+  "models": {
+    "embedding": "BAAI/bge-m3@5617a9f61b028005a4858fdac845db406aefb181",
+    "reranker": "BAAI/bge-reranker-v2-m3@953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e"
+  },
+  "datasets": {
+    "eval_v2": {
+      "version": "v2",
+      "sha256": "9d526bd4326975dcb39818052b7d469f6c461bd4dabf385c0386ef9a023844a8"
+    }
+  },
+  "seed": 17,
+  "dirty": false,
+  "started_at": "2026-11-22T07:41:52.075227Z",
+  "ended_at": "2026-11-22T07:44:51.937923Z",
+  "cost_usd": null,
+  "cost_note": "retrieval and evidence gate only",
+  "command": [
+    "python",
+    "-m",
+    "eval.time_sensitive_eval",
+    "--split",
+    "test",
+    "--filters",
+    "off"
+  ],
+  "source": {
+    "filters": "off",
+    "collection": "support_chunks_live",
+    "build_id": "4aece1a3ed4f4905837a125c9249857e",
+    "reranker_device": "mps"
+  }
+}

@@ -8,7 +8,7 @@ Public datasets do not contain the orders my demo needs. Fixed dates and a fixed
 
 **Number**
 I seeded 300 orders for 50 fake customers. The audit blocked 900 attempts to access another customer's orders. I covered 14 named edge cases.
-Source: eval/reports/orders_seed.md
+Source: eval/reports/archive/orders_seed-5fbeb90.md
 
 **Trade-off**
 I chose SQLite, a small database stored in a local file. That keeps the demo easy to run. It does not model a real payment system. Prices are made up even when products come from the catalog.

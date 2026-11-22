@@ -1,0 +1,65 @@
+{
+  "metrics": {
+    "cites_gold_version": {
+      "interval": {
+        "point": 0.6875,
+        "low": 0.4375,
+        "high": 0.9375
+      },
+      "n": 16,
+      "count": 11,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "cites_wrong_version": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 16,
+      "count": 0,
+      "wilson_upper": 0.19360768053443644,
+      "rule_of_three_upper": 0.1875
+    },
+    "filter_uses_order_date": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 16,
+      "count": 16,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "notice_correct": {
+      "interval": {
+        "point": 0.8125,
+        "low": 0.625,
+        "high": 1.0
+      },
+      "n": 16,
+      "count": 13,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "refund_path": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 16,
+      "count": 16,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    }
+  },
+  "statistics": {},
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

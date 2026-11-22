@@ -39,12 +39,12 @@ The labels are drafts that a human has not reviewed yet.
 
 | Mode | Recall@5 | MRR@5 | Mean latency (s) |
 |---|---:|---:|---:|
-| Dense only (BGE-M3) | 0.9667 | 0.9125 | 2.2001 |
-| BM25 only | 0.9875 | 0.9069 | 1.5659 |
-| Hybrid (dense + BM25, RRF) | 0.9958 | 0.9458 | 3.7754 |
-| Hybrid + rerank (shipped) | 1.0000 | 0.9938 | 9.4737 |
-| Hybrid, heading prefix off | 0.9875 | 0.9378 | 3.5782 |
-| Hybrid, model-number normaliser off | 0.9958 | 0.9458 | 3.6986 |
+| Dense only (BGE-M3) | 0.9667 | 0.9125 | 3.1413 |
+| BM25 only | 0.9875 | 0.9028 | 0.4806 |
+| Hybrid (dense + BM25, RRF) | 0.9917 | 0.9458 | 3.6229 |
+| Hybrid + rerank (shipped) | 1.0000 | 0.9938 | 10.2582 |
+| Hybrid, heading prefix off | 0.9792 | 0.9299 | 3.8068 |
+| Hybrid, model-number normaliser off | 0.9917 | 0.9458 | 3.6066 |
 
 **Evidence gate alone** (no LLM), threshold `0.15` picked on dev ([`threshold_sweep.md`](eval/reports/threshold_sweep.md)):
 
@@ -58,7 +58,7 @@ The labels are drafts that a human has not reviewed yet.
 | Report | Git SHA | Date (UTC) |
 |---|---|---|
 | [`e2e.md`](eval/reports/e2e.md) | `266c1e8` | 2026-11-17 |
-| [`retrieval.md`](eval/reports/retrieval.md) | `351f0d9` | 2026-11-09 |
+| [`retrieval.md`](eval/reports/retrieval.md) | `bed2ad5` | 2026-11-22 |
 | [`intent.md`](eval/reports/intent.md) | `fbbbfd3` | 2026-11-10 |
 | [`hallucination_review.md`](eval/reports/hallucination_review.md) | `9ed1d57` | 2026-11-10 |
 | [`threshold_sweep.md`](eval/reports/threshold_sweep.md) | `9d9ee8e` | 2026-11-14 |

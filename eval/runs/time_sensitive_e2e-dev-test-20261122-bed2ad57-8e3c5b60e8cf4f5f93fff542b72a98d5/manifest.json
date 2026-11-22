@@ -1,0 +1,30 @@
+{
+  "kind": "time_sensitive_e2e",
+  "split": "dev-test",
+  "git_sha": "bed2ad57dd2df3570e563e92fd97573057bdea6e",
+  "config_hash": "e90b9d99d3ab765a0365ff3768cfd8c0a160ec519552c66b54097a29b12dd3de",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash"
+  },
+  "datasets": {
+    "eval_v2": {
+      "version": "v2",
+      "sha256": "9d526bd4326975dcb39818052b7d469f6c461bd4dabf385c0386ef9a023844a8"
+    }
+  },
+  "seed": 17,
+  "dirty": false,
+  "started_at": "2026-11-22T10:28:44.732643Z",
+  "ended_at": "2026-11-22T10:32:48.996243Z",
+  "cost_usd": null,
+  "cost_note": "real models; cost not tracked by this evaluator",
+  "command": [
+    "make",
+    "eval-time-sensitive-e2e"
+  ],
+  "source": {
+    "build_id": "4aece1a3ed4f4905837a125c9249857e",
+    "customer_id": "CUST-TS01"
+  }
+}

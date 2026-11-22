@@ -8,7 +8,7 @@ Single FAQs make search tests too easy. Long documents make later chunking tests
 
 **Number**
 I built 12 documents with 122 sections. FAQ coverage reached 99.65%. I kept 7 product models.
-Source: eval/reports/docs_build.md
+Source: eval/reports/archive/docs_build-30f15f9.md
 
 **Trade-off**
 I kept source wording instead of asking a model to rewrite policies. The text is less polished, but facts stay intact. Without a configured model, unmatched FAQs stay under other. Unclear licenses mean generated text stays local.

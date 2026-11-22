@@ -1,0 +1,54 @@
+{
+  "metrics": {
+    "filters_applied": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 24,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "gate_pass": {
+      "interval": {
+        "point": 0.16666666666666666,
+        "low": 0.041666666666666664,
+        "high": 0.3333333333333333
+      },
+      "n": 24,
+      "count": 4,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "version_hit_at_5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 24,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "wrong_version_at_5": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 24,
+      "count": 0,
+      "wilson_upper": 0.13797620467498012,
+      "rule_of_three_upper": 0.125
+    }
+  },
+  "statistics": {},
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

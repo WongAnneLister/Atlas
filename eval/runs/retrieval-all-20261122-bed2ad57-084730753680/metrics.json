@@ -1,0 +1,5356 @@
+{
+  "metrics": {
+    "dev.bm25.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 0.5157149820025855,
+        "low": 0.4738991758672879,
+        "high": 0.562485879517723
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.8666666666666667,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.basic_policy.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.basic_policy.recall@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 0.46824335143028295,
+        "low": 0.4349447145600667,
+        "high": 0.5052651600427635
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.8944444444444444,
+        "low": 0.8111111111111112,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.colloquial.recall@1": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.6666666666666666,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": 23,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 0.47237363340294297,
+        "low": 0.44190191514688193,
+        "high": 0.50460706886702
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.75,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.8833333333333333,
+        "low": 0.8,
+        "high": 0.95
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.model_number.mean_latency_s": {
+      "interval": {
+        "point": 0.4903284334325387,
+        "low": 0.45316157443106936,
+        "high": 0.5310564602622374
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.model_number.mrr@5": {
+      "interval": {
+        "point": 0.65,
+        "low": 0.5666666666666667,
+        "high": 0.7333333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.model_number.recall@1": {
+      "interval": {
+        "point": 0.3,
+        "low": 0.13333333333333333,
+        "high": 0.4666666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": 23,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.overall.mean_latency_s": {
+      "interval": {
+        "point": 0.4866651000670875,
+        "low": 0.4674728756767945,
+        "high": 0.5066412827713793
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.overall.mrr@5": {
+      "interval": {
+        "point": 0.8736111111111112,
+        "low": 0.8319444444444445,
+        "high": 0.9125
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.overall.recall@1": {
+      "interval": {
+        "point": 0.6333333333333333,
+        "low": 0.5583333333333333,
+        "high": 0.7042708333333328
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.overall.recall@3": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.9208333333333333,
+        "high": 0.9791666666666666
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.bm25.overall.recall@5": {
+      "interval": {
+        "point": 0.9625,
+        "low": 0.9333333333333333,
+        "high": 0.9875
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 0.9020893443996708,
+        "low": 0.8463949516291419,
+        "high": 0.9611278958770951
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 2.4790530958009187,
+        "low": 1.2369863187712085,
+        "high": 4.361907084500805
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.8955555555555554,
+        "low": 0.8044166666666667,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.colloquial.recall@1": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.7,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.colloquial.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.6666666666666666,
+        "low": 0.5,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": 20,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 1.8630676111672073,
+        "low": 1.2967476506387174,
+        "high": 2.6138031555369032
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.cross_doc.mrr@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.4666666666666667,
+        "low": 0.4166666666666667,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.75,
+        "low": 0.6666666666666666,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.75,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.model_number.mean_latency_s": {
+      "interval": {
+        "point": 3.095411088768742,
+        "low": 2.4096248853688786,
+        "high": 3.8609786835916746
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.model_number.mrr@5": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6833333333333333,
+        "high": 0.85
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.model_number.recall@1": {
+      "interval": {
+        "point": 0.5333333333333333,
+        "low": 0.36666666666666664,
+        "high": 0.7
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.6666666666666666,
+        "low": 0.5,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": 20,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.overall.mean_latency_s": {
+      "interval": {
+        "point": 2.0849052850341345,
+        "low": 1.6531426896965726,
+        "high": 2.6272618858689745
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.overall.mrr@5": {
+      "interval": {
+        "point": 0.8947222222222222,
+        "low": 0.855548611111111,
+        "high": 0.9311319444444444
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.overall.recall@1": {
+      "interval": {
+        "point": 0.6833333333333333,
+        "low": 0.6083333333333333,
+        "high": 0.7541666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.overall.recall@3": {
+      "interval": {
+        "point": 0.9291666666666667,
+        "low": 0.8958333333333334,
+        "high": 0.9583333333333334
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.dense.overall.recall@5": {
+      "interval": {
+        "point": 0.9583333333333334,
+        "low": 0.9333333333333333,
+        "high": 0.9833333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 1.4182230791028512,
+        "low": 1.3596675231801783,
+        "high": 1.4822824291490058
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9777777777777777,
+        "low": 0.9333333333333332,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 2.9479426457973505,
+        "low": 1.6998991351243602,
+        "high": 4.837821412036935
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9444444444444444,
+        "low": 0.8777777777777778,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.6333333333333333,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 2.336288021003323,
+        "low": 1.7659024457929628,
+        "high": 3.0838859873257745
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.75,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8166666666666667,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.model_number.mean_latency_s": {
+      "interval": {
+        "point": 3.5865186152708097,
+        "low": 2.894902759824181,
+        "high": 4.355145326482864
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.model_number.mrr@5": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6833333333333333,
+        "high": 0.85
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.model_number.recall@1": {
+      "interval": {
+        "point": 0.5333333333333333,
+        "low": 0.36666666666666664,
+        "high": 0.7
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.6333333333333333,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.overall.mean_latency_s": {
+      "interval": {
+        "point": 2.5722430902935836,
+        "low": 2.139060708304993,
+        "high": 3.1100854602557773
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.overall.mrr@5": {
+      "interval": {
+        "point": 0.9222222222222222,
+        "low": 0.8875,
+        "high": 0.9528124999999998
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.overall.recall@1": {
+      "interval": {
+        "point": 0.725,
+        "low": 0.6583333333333333,
+        "high": 0.7875
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.overall.recall@3": {
+      "interval": {
+        "point": 0.9583333333333334,
+        "low": 0.9333333333333333,
+        "high": 0.9792708333333328
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid.overall.recall@5": {
+      "interval": {
+        "point": 0.975,
+        "low": 0.9541666666666667,
+        "high": 0.9916666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 1.4097761735698442,
+        "low": 1.2787912446388994,
+        "high": 1.5928545703163157
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9777777777777777,
+        "low": 0.9333333333333332,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 1.9427405389666093,
+        "low": 1.5534558908138327,
+        "high": 2.3696201105301347
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9027777777777779,
+        "low": 0.8194444444444444,
+        "high": 0.975
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.colloquial.recall@1": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.7,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.colloquial.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.6666666666666666,
+        "low": 0.5,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": 20,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 2.337953526403483,
+        "low": 1.7256115651859727,
+        "high": 3.0653693727177354
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6833333333333333,
+        "high": 0.85
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.75,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.model_number.mean_latency_s": {
+      "interval": {
+        "point": 3.192156009997901,
+        "low": 2.7178444326784423,
+        "high": 3.630525449140429
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.model_number.mrr@5": {
+      "interval": {
+        "point": 0.7333333333333333,
+        "low": 0.65,
+        "high": 0.8166666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.model_number.recall@1": {
+      "interval": {
+        "point": 0.4666666666666667,
+        "low": 0.3,
+        "high": 0.6333333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.6666666666666666,
+        "low": 0.5,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": 20,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.overall.mean_latency_s": {
+      "interval": {
+        "point": 2.2206565622344594,
+        "low": 1.9711825464485202,
+        "high": 2.515791125768968
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.overall.mrr@5": {
+      "interval": {
+        "point": 0.9034722222222221,
+        "low": 0.8659722222222221,
+        "high": 0.9381944444444446
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.overall.recall@1": {
+      "interval": {
+        "point": 0.6916666666666667,
+        "low": 0.6208333333333333,
+        "high": 0.7583333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.overall.recall@3": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.9,
+        "high": 0.9666666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_heading_off.overall.recall@5": {
+      "interval": {
+        "point": 0.9583333333333334,
+        "low": 0.9333333333333333,
+        "high": 0.9833333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 1.390476717998778,
+        "low": 1.3170042423031314,
+        "high": 1.46769322468516
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9777777777777777,
+        "low": 0.9333333333333332,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 2.9496298763348023,
+        "low": 1.7158227446324357,
+        "high": 4.82430526057816
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9444444444444444,
+        "low": 0.8777777777777778,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.6333333333333333,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 2.370472432030753,
+        "low": 1.7917400541139552,
+        "high": 3.1557899303196364
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.75,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8166666666666667,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.model_number.mean_latency_s": {
+      "interval": {
+        "point": 3.555954256868184,
+        "low": 2.873765211809417,
+        "high": 4.310135471288182
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.model_number.mrr@5": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6833333333333333,
+        "high": 0.85
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.model_number.recall@1": {
+      "interval": {
+        "point": 0.5333333333333333,
+        "low": 0.36666666666666664,
+        "high": 0.7
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.6333333333333333,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.overall.mean_latency_s": {
+      "interval": {
+        "point": 2.5666333208081293,
+        "low": 2.1328044711046457,
+        "high": 3.106146789181917
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.overall.mrr@5": {
+      "interval": {
+        "point": 0.9222222222222222,
+        "low": 0.8875,
+        "high": 0.9528124999999998
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.overall.recall@1": {
+      "interval": {
+        "point": 0.725,
+        "low": 0.6583333333333333,
+        "high": 0.7875
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.overall.recall@3": {
+      "interval": {
+        "point": 0.9583333333333334,
+        "low": 0.9333333333333333,
+        "high": 0.9792708333333328
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_normaliser_off.overall.recall@5": {
+      "interval": {
+        "point": 0.975,
+        "low": 0.9541666666666667,
+        "high": 0.9916666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 6.803673354034739,
+        "low": 6.519914256058279,
+        "high": 7.2167624692886845
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 8.758864440228596,
+        "low": 7.268090790479812,
+        "high": 10.89001173003249
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8333333333333334,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.colloquial.recall@1": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.6666666666666666,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 8.508214475234855,
+        "low": 7.637417089463149,
+        "high": 9.6022959985073
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8666666666666667,
+        "high": 0.9833333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.model_number.mean_latency_s": {
+      "interval": {
+        "point": 10.564965862504323,
+        "low": 9.631398769150763,
+        "high": 11.543479074650023
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.model_number.mrr@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.model_number.recall@1": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.overall.mean_latency_s": {
+      "interval": {
+        "point": 8.658929533000627,
+        "low": 8.070672385574648,
+        "high": 9.34093424747402
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.overall.mrr@5": {
+      "interval": {
+        "point": 0.9625,
+        "low": 0.9375,
+        "high": 0.9833333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.overall.recall@1": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.7416666666666667,
+        "high": 0.8501041666666661
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.overall.recall@3": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9666666666666667,
+        "high": 0.9958333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank.overall.recall@5": {
+      "interval": {
+        "point": 0.9916666666666667,
+        "low": 0.9791666666666666,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 6.654346342896073,
+        "low": 6.447441921253849,
+        "high": 6.869640840194406
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.basic_policy.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.basic_policy.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 7.4131791955946635,
+        "low": 7.132007764432711,
+        "high": 7.681178042016473
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 7.752678010965853,
+        "low": 7.337626730903819,
+        "high": 8.208928677416552
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8666666666666667,
+        "high": 0.9833333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.model_number.mean_latency_s": {
+      "interval": {
+        "point": 8.79835795146743,
+        "low": 8.423292033122513,
+        "high": 9.281553158805206
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.model_number.mrr@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.model_number.recall@1": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.overall.mean_latency_s": {
+      "interval": {
+        "point": 7.654640375231005,
+        "low": 7.436223777965867,
+        "high": 7.884967601247991
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.overall.mrr@5": {
+      "interval": {
+        "point": 0.9875,
+        "low": 0.9708333333333333,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.overall.recall@1": {
+      "interval": {
+        "point": 0.85,
+        "low": 0.8041666666666667,
+        "high": 0.8916666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.overall.recall@3": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9666666666666667,
+        "high": 0.9958333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date.overall.recall@5": {
+      "interval": {
+        "point": 0.9916666666666667,
+        "low": 0.9791666666666666,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 6.654346342896073,
+        "low": 6.447441921253849,
+        "high": 6.869640840194406
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.basic_policy.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.basic_policy.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 7.4131791955946635,
+        "low": 7.132007764432711,
+        "high": 7.681178042016473
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 7.752678010965853,
+        "low": 7.337626730903819,
+        "high": 8.208928677416552
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8666666666666667,
+        "high": 0.9833333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.model_number.mean_latency_s": {
+      "interval": {
+        "point": 10.459785380664592,
+        "low": 9.724034940623849,
+        "high": 11.22903194979328
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.model_number.mrr@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.model_number.recall@1": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.overall.mean_latency_s": {
+      "interval": {
+        "point": 8.069997232530294,
+        "low": 7.727783878800565,
+        "high": 8.428871351791075
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.overall.mrr@5": {
+      "interval": {
+        "point": 0.9875,
+        "low": 0.9708333333333333,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.overall.recall@1": {
+      "interval": {
+        "point": 0.85,
+        "low": 0.8041666666666667,
+        "high": 0.8916666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.overall.recall@3": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9666666666666667,
+        "high": 0.9958333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_date_category.overall.recall@5": {
+      "interval": {
+        "point": 0.9916666666666667,
+        "low": 0.9791666666666666,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 6.803673354034739,
+        "low": 6.519914256058279,
+        "high": 7.2167624692886845
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 8.758864440228596,
+        "low": 7.268090790479812,
+        "high": 10.89001173003249
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8333333333333334,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.colloquial.recall@1": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.6666666666666666,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 8.508214475234855,
+        "low": 7.637417089463149,
+        "high": 9.6022959985073
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8666666666666667,
+        "high": 0.9833333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.model_number.mean_latency_s": {
+      "interval": {
+        "point": 10.564965862504323,
+        "low": 9.631398769150763,
+        "high": 11.543479074650023
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.model_number.mrr@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.model_number.recall@1": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.overall.mean_latency_s": {
+      "interval": {
+        "point": 8.658929533000627,
+        "low": 8.070672385574648,
+        "high": 9.34093424747402
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.overall.mrr@5": {
+      "interval": {
+        "point": 0.9625,
+        "low": 0.9375,
+        "high": 0.9833333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.overall.recall@1": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.7416666666666667,
+        "high": 0.8501041666666661
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.overall.recall@3": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9666666666666667,
+        "high": 0.9958333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "dev.hybrid_rerank_filters_off.overall.recall@5": {
+      "interval": {
+        "point": 0.9916666666666667,
+        "low": 0.9791666666666666,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 0.5047680402669357,
+        "low": 0.47706971561601674,
+        "high": 0.5347179794149998
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.8833333333333333,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.7666666666666667,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 0.4566029930031315,
+        "low": 0.42619722669975696,
+        "high": 0.49031460389325127
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.7666666666666667,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 27,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 0.5051423790961659,
+        "low": 0.4416538550180121,
+        "high": 0.6006791898633188
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.cross_doc.mrr@5": {
+      "interval": {
+        "point": 0.9777777777777777,
+        "low": 0.9333333333333332,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.48333333333333334,
+        "low": 0.45,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.85,
+        "low": 0.7666666666666667,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.8833333333333333,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.model_number.mean_latency_s": {
+      "interval": {
+        "point": 0.455851165332327,
+        "low": 0.4186456934855475,
+        "high": 0.491982179289868
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.model_number.mrr@5": {
+      "interval": {
+        "point": 0.7166666666666667,
+        "low": 0.6333333333333333,
+        "high": 0.8
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.model_number.recall@1": {
+      "interval": {
+        "point": 0.43333333333333335,
+        "low": 0.26666666666666666,
+        "high": 0.6
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.7666666666666667,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 27,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.overall.mean_latency_s": {
+      "interval": {
+        "point": 0.48059114442464,
+        "low": 0.4575561914326439,
+        "high": 0.5077424611475908
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.overall.mrr@5": {
+      "interval": {
+        "point": 0.9027777777777779,
+        "low": 0.8638888888888889,
+        "high": 0.9375
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.overall.recall@1": {
+      "interval": {
+        "point": 0.6875,
+        "low": 0.6123958333333334,
+        "high": 0.7583333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.overall.recall@3": {
+      "interval": {
+        "point": 0.9625,
+        "low": 0.9375,
+        "high": 0.9833333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.bm25.overall.recall@5": {
+      "interval": {
+        "point": 0.9875,
+        "low": 0.9708333333333333,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 3.1268512569008937,
+        "low": 2.6526653803499354,
+        "high": 3.611912949449785
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.8833333333333333,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.7666666666666667,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 2.5196406596670085,
+        "low": 1.8356351930474193,
+        "high": 3.372922884706737
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.7333333333333333,
+        "low": 0.5666666666666667,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": 22,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 3.6077832179308946,
+        "low": 3.0403331109512512,
+        "high": 4.30768972632594
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.cross_doc.mrr@5": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.7833333333333332,
+        "high": 0.95
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.38333333333333336,
+        "low": 0.31625000000000003,
+        "high": 0.45
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.7166666666666667,
+        "low": 0.6333333333333333,
+        "high": 0.8
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.7833333333333333,
+        "high": 0.95
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.model_number.mean_latency_s": {
+      "interval": {
+        "point": 3.311116279298828,
+        "low": 2.5766466825986085,
+        "high": 4.232173055644234
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.model_number.mrr@5": {
+      "interval": {
+        "point": 0.85,
+        "low": 0.7666666666666667,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.model_number.recall@1": {
+      "interval": {
+        "point": 0.7,
+        "low": 0.5333333333333333,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.7333333333333333,
+        "low": 0.5666666666666667,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": 22,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.overall.mean_latency_s": {
+      "interval": {
+        "point": 3.141347853449406,
+        "low": 2.8075034398496244,
+        "high": 3.5215333352449605
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.overall.mrr@5": {
+      "interval": {
+        "point": 0.9125,
+        "low": 0.875,
+        "high": 0.9458333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.overall.recall@1": {
+      "interval": {
+        "point": 0.7375,
+        "low": 0.6666666666666666,
+        "high": 0.8041666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.overall.recall@3": {
+      "interval": {
+        "point": 0.9291666666666667,
+        "low": 0.8958333333333334,
+        "high": 0.9583333333333334
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.dense.overall.recall@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9416666666666667,
+        "high": 0.9875
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 3.632321847168108,
+        "low": 3.156244824103099,
+        "high": 4.119336168703182
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 2.9771842611352137,
+        "low": 2.297343682314628,
+        "high": 3.8328686988867653
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.colloquial.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.colloquial.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 4.113718220760347,
+        "low": 3.5370473435989456,
+        "high": 4.8159911572945795
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.cross_doc.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.8833333333333333,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.45,
+        "low": 0.38333333333333336,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.75,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.model_number.mean_latency_s": {
+      "interval": {
+        "point": 3.7683027794943578,
+        "low": 3.023206189246703,
+        "high": 4.688043398800436
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.model_number.mrr@5": {
+      "interval": {
+        "point": 0.85,
+        "low": 0.7666666666666667,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.model_number.recall@1": {
+      "interval": {
+        "point": 0.7,
+        "low": 0.5333333333333333,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.overall.mean_latency_s": {
+      "interval": {
+        "point": 3.6228817771395065,
+        "low": 3.2867998749084957,
+        "high": 4.007364784343996
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.overall.mrr@5": {
+      "interval": {
+        "point": 0.9458333333333333,
+        "low": 0.9166666666666666,
+        "high": 0.9708333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.overall.recall@1": {
+      "interval": {
+        "point": 0.7791666666666667,
+        "low": 0.7166666666666667,
+        "high": 0.8416666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.overall.recall@3": {
+      "interval": {
+        "point": 0.9583333333333334,
+        "low": 0.9333333333333333,
+        "high": 0.9833333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid.overall.recall@5": {
+      "interval": {
+        "point": 0.9916666666666667,
+        "low": 0.9791666666666666,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 3.5274056041060247,
+        "low": 3.082108649006356,
+        "high": 3.971701621745863
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 2.5916194234382903,
+        "low": 2.0837267045939853,
+        "high": 3.185735743747645
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.9361111111111111,
+        "low": 0.861111111111111,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.colloquial.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.7333333333333333,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": 26,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 4.359255433337724,
+        "low": 3.876980778055101,
+        "high": 4.912491227839249
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.cross_doc.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.8666666666666667,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.4666666666666667,
+        "low": 0.4166666666666667,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.7,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9166666666666666,
+        "low": 0.8333333333333334,
+        "high": 0.9833333333333333
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.model_number.mean_latency_s": {
+      "interval": {
+        "point": 4.74893573053414,
+        "low": 3.7942079754183213,
+        "high": 5.958844765563067
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.model_number.mrr@5": {
+      "interval": {
+        "point": 0.8833333333333333,
+        "low": 0.8,
+        "high": 0.95
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.model_number.recall@1": {
+      "interval": {
+        "point": 0.7666666666666667,
+        "low": 0.6,
+        "high": 0.9
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.7333333333333333,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": 26,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.overall.mean_latency_s": {
+      "interval": {
+        "point": 3.806804047854045,
+        "low": 3.459822278511171,
+        "high": 4.205672917920734
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.overall.mrr@5": {
+      "interval": {
+        "point": 0.929861111111111,
+        "low": 0.8951388888888889,
+        "high": 0.9625
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.overall.recall@1": {
+      "interval": {
+        "point": 0.7583333333333333,
+        "low": 0.6958333333333333,
+        "high": 0.825
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.overall.recall@3": {
+      "interval": {
+        "point": 0.9416666666666667,
+        "low": 0.9083333333333333,
+        "high": 0.9708333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_heading_off.overall.recall@5": {
+      "interval": {
+        "point": 0.9791666666666666,
+        "low": 0.9541666666666667,
+        "high": 0.9958333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 3.59484191533896,
+        "low": 3.119868540854683,
+        "high": 4.088533154071167
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.basic_policy.mrr@5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.95,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.basic_policy.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 2.9870246375357965,
+        "low": 2.3079821822430917,
+        "high": 3.836425600501122
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.colloquial.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.colloquial.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.colloquial.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 4.054166552698007,
+        "low": 3.4786922829619047,
+        "high": 4.776030606568456
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.cross_doc.mrr@5": {
+      "interval": {
+        "point": 0.95,
+        "low": 0.8833333333333333,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.45,
+        "low": 0.38333333333333336,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.75,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.cross_doc.recall@5": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.model_number.mean_latency_s": {
+      "interval": {
+        "point": 3.79020831406815,
+        "low": 3.0495682096784247,
+        "high": 4.704640795743908
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.model_number.mrr@5": {
+      "interval": {
+        "point": 0.85,
+        "low": 0.7666666666666667,
+        "high": 0.9166666666666666
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.model_number.recall@1": {
+      "interval": {
+        "point": 0.7,
+        "low": 0.5333333333333333,
+        "high": 0.8333333333333334
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 0.9333333333333333,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 28,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.overall.mean_latency_s": {
+      "interval": {
+        "point": 3.6065603549102283,
+        "low": 3.26885239593792,
+        "high": 3.9910588364083193
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.overall.mrr@5": {
+      "interval": {
+        "point": 0.9458333333333333,
+        "low": 0.9166666666666666,
+        "high": 0.9708333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.overall.recall@1": {
+      "interval": {
+        "point": 0.7791666666666667,
+        "low": 0.7166666666666667,
+        "high": 0.8416666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.overall.recall@3": {
+      "interval": {
+        "point": 0.9583333333333334,
+        "low": 0.9333333333333333,
+        "high": 0.9833333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_normaliser_off.overall.recall@5": {
+      "interval": {
+        "point": 0.9916666666666667,
+        "low": 0.9791666666666666,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 10.177768359734909,
+        "low": 9.526155225252053,
+        "high": 10.7844569370193
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.basic_policy.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.basic_policy.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 9.03004628616812,
+        "low": 8.10150058966055,
+        "high": 10.142949795484915
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.975,
+        "low": 0.925,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.colloquial.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 11.05300660826324,
+        "low": 10.361150248201568,
+        "high": 11.801929248836338
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.cross_doc.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.model_number.mean_latency_s": {
+      "interval": {
+        "point": 10.772052158694715,
+        "low": 9.917248022750695,
+        "high": 11.75071905169054
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.model_number.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.model_number.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.overall.mean_latency_s": {
+      "interval": {
+        "point": 10.258218353215247,
+        "low": 9.81756633503103,
+        "high": 10.725117616607925
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.overall.mrr@5": {
+      "interval": {
+        "point": 0.99375,
+        "low": 0.98125,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.overall.recall@1": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.825,
+        "high": 0.9083333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.overall.recall@3": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9625,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank.overall.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 8.083221386029617,
+        "low": 7.876341998796197,
+        "high": 8.29259639139714
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.basic_policy.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.basic_policy.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 7.611471824935871,
+        "low": 7.219819857362914,
+        "high": 8.013334862320844
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.975,
+        "low": 0.925,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.colloquial.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 8.888792055328183,
+        "low": 8.349119011092649,
+        "high": 9.550576452015763
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.cross_doc.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.model_number.mean_latency_s": {
+      "interval": {
+        "point": 8.386447134766302,
+        "low": 8.14464321413012,
+        "high": 8.707670913292969
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.model_number.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.model_number.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.overall.mean_latency_s": {
+      "interval": {
+        "point": 8.242483100264993,
+        "low": 8.039392862379888,
+        "high": 8.463586523296367
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.overall.mrr@5": {
+      "interval": {
+        "point": 0.99375,
+        "low": 0.98125,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.overall.recall@1": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.825,
+        "high": 0.9083333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.overall.recall@3": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9625,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date.overall.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 8.083221386029617,
+        "low": 7.876341998796197,
+        "high": 8.29259639139714
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.basic_policy.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.basic_policy.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 7.611471824935871,
+        "low": 7.219819857362914,
+        "high": 8.013334862320844
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.975,
+        "low": 0.925,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.colloquial.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 8.888792055328183,
+        "low": 8.349119011092649,
+        "high": 9.550576452015763
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.cross_doc.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.model_number.mean_latency_s": {
+      "interval": {
+        "point": 10.864391333632133,
+        "low": 9.949804248300982,
+        "high": 11.81673276433207
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.model_number.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.model_number.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.overall.mean_latency_s": {
+      "interval": {
+        "point": 8.861969149981451,
+        "low": 8.513175017697117,
+        "high": 9.25365145020224
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.overall.mrr@5": {
+      "interval": {
+        "point": 0.99375,
+        "low": 0.98125,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.overall.recall@1": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.825,
+        "high": 0.9083333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.overall.recall@3": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9625,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_date_category.overall.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.basic_policy.mean_latency_s": {
+      "interval": {
+        "point": 10.177768359734909,
+        "low": 9.526155225252053,
+        "high": 10.7844569370193
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.basic_policy.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.basic_policy.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.basic_policy.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.basic_policy.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.colloquial.mean_latency_s": {
+      "interval": {
+        "point": 9.03004628616812,
+        "low": 8.10150058966055,
+        "high": 10.142949795484915
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.colloquial.mrr@5": {
+      "interval": {
+        "point": 0.975,
+        "low": 0.925,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.colloquial.recall@1": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.colloquial.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.colloquial.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.cross_doc.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.cross_doc.mean_latency_s": {
+      "interval": {
+        "point": 11.05300660826324,
+        "low": 10.361150248201568,
+        "high": 11.801929248836338
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.cross_doc.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.cross_doc.recall@1": {
+      "interval": {
+        "point": 0.5,
+        "low": 0.5,
+        "high": 0.5
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.cross_doc.recall@3": {
+      "interval": {
+        "point": 0.9666666666666667,
+        "low": 0.9166666666666666,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.cross_doc.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.model_number.mean_latency_s": {
+      "interval": {
+        "point": 10.772052158694715,
+        "low": 9.917248022750695,
+        "high": 11.75071905169054
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.model_number.mrr@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.model_number.recall@1": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.model_number.recall@3": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.model_number.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.overall.cross_doc_hit_all@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.overall.mean_latency_s": {
+      "interval": {
+        "point": 10.258218353215247,
+        "low": 9.81756633503103,
+        "high": 10.725117616607925
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.overall.mrr@5": {
+      "interval": {
+        "point": 0.99375,
+        "low": 0.98125,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.overall.recall@1": {
+      "interval": {
+        "point": 0.8666666666666667,
+        "low": 0.825,
+        "high": 0.9083333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.overall.recall@3": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9625,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "test.hybrid_rerank_filters_off.overall.recall@5": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    }
+  },
+  "statistics": {},
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

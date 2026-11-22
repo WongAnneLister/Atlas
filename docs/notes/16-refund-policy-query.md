@@ -16,7 +16,7 @@ So the demo could never show a refund decision.
 I ran both queries on all 300 mock orders, without any LLM.
 The old query passed the gate for 47 of 300 orders.
 The new query passed for 300 of 300, all from the right store.
-Source: eval/reports/refund_policy.md
+Source: eval/reports/archive/refund_policy-d318d2d.md
 
 **Trade-off**
 The five questions are hand-written, and they assume one store sells every order.
