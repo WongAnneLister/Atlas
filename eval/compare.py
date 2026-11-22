@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Iterable
 from dataclasses import replace
 from fnmatch import fnmatch
 from pathlib import Path
@@ -12,7 +13,7 @@ from eval.e2e_records import E2EMetadata, E2ERecord
 from eval.e2e_runs import load_e2e, prepare_e2e
 from eval.gate import load_rules
 from eval.legacy_pairing import rows_for_legacy_core
-from eval.metrics import outcome_rates
+from eval.metrics import noanswer_false_accept, outcome_rates
 from eval.paired import Comparison, MetricRule, compare, comparison_lines
 from eval.redteam_models import CATEGORIES
 from eval.run_record import Run, read_run
@@ -57,7 +58,10 @@ def compare_runs(a: dict[str, E2ERecord], b: dict[str, E2ERecord]) -> dict[str, 
             [record.accepted for record in selected],
         )
         rates[label] = {
-            "false_accept": metrics.false_accept,
+            "false_accept": sum(noanswer_false_accept(record) for record in selected)
+            / metrics.no_answer_count
+            if metrics.no_answer_count
+            else 0.0,
             "false_reject": metrics.false_reject,
             "pass_rate": metrics.pass_rate,
         }
@@ -120,9 +124,11 @@ def _rules(before: Run, after: Run) -> dict[str, MetricRule]:
     return rules
 
 
-def _redteam_categories(before: Run, after: Run, rules: dict[str, MetricRule]) -> list[Comparison]:
+def _group_comparisons(
+    before: Run, after: Run, rules: dict[str, MetricRule], groups: Iterable[str]
+) -> list[Comparison]:
     results = []
-    for category in CATEGORIES:
+    for category in groups:
         a, b = (
             run.model_copy(update={"items": [row for row in run.items if row.group == category]})
             for run in (before, after)
@@ -150,7 +156,10 @@ def main(argv: list[str] | None = None) -> int:
     if not results:
         raise ValueError("Runs have no shared metrics to compare")
     if before.manifest.kind == after.manifest.kind == "redteam":
-        results.extend(_redteam_categories(before, after, rules))
+        results.extend(_group_comparisons(before, after, rules, CATEGORIES))
+    if before.manifest.kind == after.manifest.kind == "multipart":
+        groups = sorted({row.group for row in before.items if row.group is not None})
+        results.extend(_group_comparisons(before, after, rules, groups))
 
     lines = ["# Eval run comparison", ""]
     for label, path, run in (("A", args.a, before), ("B", args.b, after)):

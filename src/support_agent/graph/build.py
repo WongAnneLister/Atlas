@@ -7,18 +7,22 @@ from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableLambda
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
+from langgraph.types import Send
 
 from support_agent.graph.deps import GraphDeps
-from support_agent.graph.intents import PATH_NODES, Path
+from support_agent.graph.intents import INTENT_TO_PATH, PATH_NODES, Path
 from support_agent.graph.nodes.classify import Classifier
 from support_agent.graph.nodes.complaint import ComplaintPath
 from support_agent.graph.nodes.fixed import fixed_reply
 from support_agent.graph.nodes.input_guard import InputGuard
 from support_agent.graph.nodes.knowledge import KnowledgePath, route_after_gate
 from support_agent.graph.nodes.output_guard import OutputGuard
+from support_agent.graph.nodes.part_retrieval import PartKnowledgeRetrieval, route_after_parts_gate
+from support_agent.graph.nodes.plan import Planner
 from support_agent.graph.nodes.refund import RefundPath
 from support_agent.graph.nodes.rewrite import make_rewrite_node
 from support_agent.graph.nodes.tools_path import ToolsPath
+from support_agent.graph.parts import PartRetrievalRequest
 from support_agent.graph.state import ConversationState
 from support_agent.reliability.events import collect_events
 
@@ -30,6 +34,21 @@ def route_by_path(state: ConversationState) -> str:
     if state.path == Path.KNOWLEDGE:
         return "retrieve"
     return PATH_NODES[state.path]
+
+
+def dispatch_after_classify(state: ConversationState) -> str | list[Send]:
+    if state.route_source != "parts":
+        return route_by_path(state)
+    return [
+        Send(
+            "retrieve_part",
+            PartRetrievalRequest(
+                index=index, text=part.text, rewritten_query=state.rewritten_query
+            ),
+        )
+        for index, part in enumerate(state.parts)
+        if part.intent is not None and INTENT_TO_PATH[part.intent] == Path.KNOWLEDGE
+    ]
 
 
 def route_after_tools(state: ConversationState) -> str:
@@ -105,11 +124,17 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
         lambda state: "output_guard" if state.input_guard_action == "block" else "rewrite",
         ["rewrite", "output_guard"],
     )
-    graph.add_edge("rewrite", "classify")
+    if deps.settings.planning.enabled:
+        add_node("plan", Planner(deps))
+        graph.add_edge("rewrite", "plan")
+        graph.add_edge("plan", "classify")
+    else:
+        graph.add_edge("rewrite", "classify")
     graph.add_conditional_edges(
         "classify",
-        route_by_path,
-        [name for path, name in PATH_NODES.items() if path != Path.KNOWLEDGE] + ["retrieve"],
+        dispatch_after_classify,
+        [name for path, name in PATH_NODES.items() if path != Path.KNOWLEDGE]
+        + ["retrieve", "retrieve_part"],
     )
     implementations: dict[Path, Callable[[ConversationState], dict[str, Any]]] = {
         Path.TOOLS: ToolsPath(deps),
@@ -118,6 +143,15 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
     }
     knowledge = KnowledgePath(deps)
     refund = RefundPath(deps)
+    parts = PartKnowledgeRetrieval(deps)
+    graph.add_node(
+        "retrieve_part", RunnableLambda(parts.retrieve_part), input_schema=PartRetrievalRequest
+    )
+    add_node("merge", parts.merge)
+    add_node("gate_parts", parts.gate_parts)
+    graph.add_edge("retrieve_part", "merge")
+    graph.add_edge("merge", "gate_parts")
+    graph.add_conditional_edges("gate_parts", route_after_parts_gate, ["answer", "handoff"])
     add_node("retrieve", knowledge.retrieve)
     add_node("gate", knowledge.gate)
     add_node("answer", knowledge.answer)

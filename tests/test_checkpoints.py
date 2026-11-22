@@ -54,3 +54,40 @@ def test_checkpoint_serializer_keeps_retrieval_filters() -> None:
     filters = RetrievalFilters(as_of=date(2026, 9, 1), product_category="hair_dryers")
     serde = checkpoint_serializer()
     assert serde.loads_typed(serde.dumps_typed(filters)) == filters
+
+
+def test_checkpoint_serializers_keep_part_routing_and_evidence(tmp_path: Path) -> None:
+    from langgraph.checkpoint.sqlite import SqliteSaver
+    from langgraph.graph import END, START, StateGraph
+
+    from support_agent.graph.intents import Intent
+    from support_agent.graph.parts import PartRetrievalResult, QueryPart
+    from support_agent.graph.postgres import checkpoint_serializer
+    from support_agent.graph.state import ConversationState
+    from support_agent.retrieval.filters import RetrievalFilters
+
+    filters = RetrievalFilters(as_of=date(2026, 11, 9))
+    part = QueryPart(
+        text="What is the returns policy?",
+        key_terms=["returns"],
+        intent=Intent.POLICY_QUESTION,
+        filters=filters,
+        source_numbers=[1],
+    )
+    retrieval = PartRetrievalResult(index=0, filters=filters)
+    serde = checkpoint_serializer()
+    assert serde.loads_typed(serde.dumps_typed(part)) == part
+    assert serde.loads_typed(serde.dumps_typed(retrieval)) == retrieval
+
+    state = StateGraph(ConversationState)
+    state.add_node("keep", lambda _: {"route_source": "parts"})
+    state.add_edge(START, "keep")
+    state.add_edge("keep", END)
+    config = {"configurable": {"thread_id": "multipart-checkpoint"}}
+    with SqliteSaver.from_conn_string(str(tmp_path / "parts.sqlite")) as saver:
+        graph = state.compile(checkpointer=saver)
+        graph.invoke({"parts": [part], "part_retrievals": [retrieval]}, config)
+        restored = graph.get_state(config).values
+    assert restored["route_source"] == "parts"
+    assert restored["parts"] == [part]
+    assert restored["part_retrievals"] == [retrieval]

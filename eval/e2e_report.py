@@ -8,7 +8,7 @@ from eval.e2e_diagnostics import diagnostic_lines
 from eval.e2e_records import E2EMetadata, E2ERecord
 from eval.e2e_runs import unpack
 from eval.judge_calibration import read_kappa
-from eval.metrics import mrr, outcome_rates, percentile, recall_at_k
+from eval.metrics import mrr, noanswer_false_accept, outcome_rates, percentile, recall_at_k
 from eval.run_record import Run, confidence_level, format_summary
 from support_agent.data.doc_models import write_text
 
@@ -17,6 +17,8 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
     labels = [record.item.answerable for record in records]
     outcomes = [record.accepted for record in records]
     rates = outcome_rates(labels, outcomes)
+    false_accepts = [record for record in records if noanswer_false_accept(record)]
+    false_accept_rate = len(false_accepts) / rates.no_answer_count if rates.no_answer_count else 0.0
     answerable = [record for record in records if record.item.answerable]
     recalls = [
         recall_at_k(record.retrieved_section_ids, record.item.gold_sections, 5)
@@ -71,7 +73,7 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
         "",
         "| Metric | Value |",
         "|---|---:|",
-        f"| False accept | {rates.false_accept:.2%} |",
+        f"| False accept | {false_accept_rate:.2%} |",
         f"| False reject | {rates.false_reject:.2%} |",
         f"| Accepted | {rates.pass_rate:.2%} ({rates.accepted_count}/{len(records)}) |",
         f"| Recall@5 from graph retrieval | {sum(recalls) / len(recalls):.4f} |"
@@ -115,8 +117,7 @@ def _write_report(records: list[E2ERecord], metadata: E2EMetadata, path: Path) -
     )
     lines.extend(
         f"| {record.item.id} | {record.intent} | {record.path} | {' -> '.join(record.trace)} |"
-        for record in records
-        if not record.item.answerable and record.accepted
+        for record in false_accepts
     )
     lines.extend(diagnostic_lines(records))
     write_text(path, "\n".join(lines) + "\n")

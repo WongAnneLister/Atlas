@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from eval.schema import EvalItem
+from eval.schema import EvalItem, MultipartItem
 from support_agent.observability.cost import ModelUsage
 from support_agent.reliability.events import ReliabilityEvent
 from support_agent.reliability.settings import ChaosSettings
@@ -33,14 +34,29 @@ class E2EMetadata(BaseModel):
     build_id: str | None = None
 
 
+class E2EPart(BaseModel):
+    """Observed outcome for one planned part, including its validated citation sections."""
+
+    text: str = Field(min_length=1)
+    intent: str | None = None
+    gate: dict[str, Any] | None = None
+    retrieved_section_ids: list[str] = Field(default_factory=list)
+    retrieved_sources: list[dict[str, str]] = Field(default_factory=list)
+    answered: bool = False
+    handed_off: bool = False
+    cited_section_ids: list[str] = Field(default_factory=list)
+
+
 class E2ERecord(BaseModel):
     record_type: Literal["item"] = "item"
     build_id: str | None = None
-    item: EvalItem
+    item: EvalItem | MultipartItem
     intent: str | None = None
     path: str | None = None
+    route_source: Literal["whole", "parts"] | None = None
     trace: list[str] = Field(default_factory=list)
     gate: dict[str, Any] | None = None
+    parts: list[E2EPart] | None = None
     classification_failed: bool | None = None
     classification_error_type: str | None = None
     retrieval_error_type: str | None = None
@@ -72,7 +88,7 @@ class JudgeRecord(BaseModel):
 
 
 def load_cached_run(
-    path: Path, metadata: E2EMetadata, items: list[EvalItem]
+    path: Path, metadata: E2EMetadata, items: Sequence[EvalItem | MultipartItem]
 ) -> tuple[E2EMetadata, dict[str, E2ERecord]]:
     lines = path.read_text(encoding="utf-8").splitlines()
     saved = E2EMetadata.model_validate_json(lines[0])

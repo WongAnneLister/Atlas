@@ -36,6 +36,15 @@ OrderService. Both dense and lexical searches use the same date criteria before
 fusion and reranking. Handoff snapshots record the requested filters and whether
 the index applied them.
 
+## Graph routing
+
+Input checks and rewriting precede query planning and classification. With planning enabled,
+the graph classifies each grounded part of a possible multi-part question. A multipart
+knowledge route runs `retrieve_part → merge → gate_parts → answer` or hands off.
+Single questions and the order-tools fallback retain `retrieve → gate → answer` on the
+knowledge path. Every customer reply passes through `output_guard`. See [Query planning](QUERY_PLANNING.md)
+for the routing fallback and targeted handoff rules.
+
 ## State ownership
 
 | State | Owner | Reason |

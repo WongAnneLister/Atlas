@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import math
+from threading import Lock
 from typing import Any, Protocol
 
 from support_agent.config import REPO_ROOT, RetrievalSettings, get_settings
@@ -88,8 +89,14 @@ class BgeM3Embedder:
             )
         self.backend = backend
         self.window_count = 0
+        self._encode_lock = Lock()
 
     def embed(self, texts: list[str]) -> list[list[float]]:
+        # Parallel query parts share the backend and its worker state.
+        with self._encode_lock:
+            return self._embed(texts)
+
+    def _embed(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
         # Reserve the encoder's leading/trailing special tokens within the configured total budget.

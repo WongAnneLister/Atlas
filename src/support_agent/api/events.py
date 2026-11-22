@@ -32,11 +32,16 @@ def events_for_update(node_name: str, update: dict[str, Any], chunk_words: int) 
         return [SseEvent(name="interrupt", data=update)]
     if node_name != "output_guard" or not (answer := update.get("answer")):
         return []
+    handoff_events = []
     if handoff := update.get("handoff"):
-        data = {"reason": handoff.reason, "message": answer}
+        message = handoff.customer_message
+        data = {"reason": handoff.reason, "message": message or answer}
         if handoff.trace_id:
             data["trace_id"] = handoff.trace_id
-        return [SseEvent(name="handoff", data=data)]
+        handoff_events.append(SseEvent(name="handoff", data=data))
+        if message is None:
+            return handoff_events
+        answer = answer.removesuffix(f"\n\n{message}")
 
     events = []
     start = 0
@@ -50,4 +55,4 @@ def events_for_update(node_name: str, update: dict[str, Any], chunk_words: int) 
         CitationRecord.model_validate(item).model_dump(mode="json")
         for item in update.get("citations", [])
     ]
-    return [*events, SseEvent(name="citations", data=citations)]
+    return [*events, SseEvent(name="citations", data=citations), *handoff_events]

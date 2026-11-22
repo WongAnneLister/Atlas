@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -32,24 +34,42 @@ class CoverageAnswer(BaseModel):
     parts: list[CoveredPart] = Field(min_length=1)
 
 
+CoverageStatus = Literal[
+    "answered", "insufficient_coverage", "implied_by_absence", "invalid_output", "invalid_evidence"
+]
+
+
+def render_covered_part(
+    part: CoveredPart, sources: Mapping[int, RetrievedChunk]
+) -> tuple[CoverageStatus, str, list[int]]:
+    """Verify quotations against the sources assigned to this part."""
+    if not part.supported:
+        return "insufficient_coverage", "", []
+    if not part.explicit:
+        return "implied_by_absence", "", []
+    if not part.answer.strip() or not part.evidence or re.search(r"\[\d+\]", part.answer):
+        return "invalid_output", "", []
+    for quote in part.evidence:
+        chunk = sources.get(quote.source)
+        if chunk is None or " ".join(quote.quote.split()) not in " ".join(chunk.text.split()):
+            return "invalid_evidence", "", []
+    numbers = sorted({quote.source for quote in part.evidence})
+    return "answered", part.answer.strip() + " " + " ".join(f"[{n}]" for n in numbers), numbers
+
+
 def render_covered_answer(
     decision: CoverageAnswer, chunks: list[RetrievedChunk]
-) -> tuple[str, str]:
+) -> tuple[CoverageStatus, str]:
     """Quote membership checks provenance, not semantic entailment or query completeness."""
     if any(not part.supported for part in decision.parts):
         return "insufficient_coverage", ""
     if any(not part.explicit for part in decision.parts):
         return "implied_by_absence", ""
+    sources = dict(enumerate(chunks, 1))
     paragraphs = []
     for part in decision.parts:
-        if not part.answer.strip() or not part.evidence or re.search(r"\[\d+\]", part.answer):
-            return "invalid_output", ""
-        for quote in part.evidence:
-            if quote.source > len(chunks):
-                return "invalid_evidence", ""
-            text = " ".join(chunks[quote.source - 1].text.split())
-            if " ".join(quote.quote.split()) not in text:
-                return "invalid_evidence", ""
-        numbers = sorted({q.source for q in part.evidence})
-        paragraphs.append(part.answer.strip() + " " + " ".join(f"[{n}]" for n in numbers))
+        status, paragraph, _ = render_covered_part(part, sources)
+        if status != "answered":
+            return status, ""
+        paragraphs.append(paragraph)
     return "answered", "\n\n".join(paragraphs)

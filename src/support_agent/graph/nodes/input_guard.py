@@ -53,7 +53,7 @@ class InputGuard:
         if decision.action != "block":
             return update
         # Keep the original in the private handoff, but exclude it from future model history.
-        blocked = state.model_copy(update=update)
+        blocked = state.model_copy(update={**update, "part_retrievals": []})
         reply = make_handoff(blocked, HandoffReason.GUARDRAIL_BLOCKED)
         redacted = current.model_copy(update={"content": "[blocked message]"})
         reply["messages"] = [redacted, *reply["messages"]]

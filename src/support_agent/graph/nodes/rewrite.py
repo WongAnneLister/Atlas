@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langgraph.types import Overwrite
 
 from support_agent.config import Settings
 from support_agent.graph.state import ConversationState
@@ -24,6 +25,9 @@ def reset_turn() -> dict[str, Any]:
         "intent": None,
         "intent_confidence": 0,
         "path": None,
+        "route_source": "whole",
+        "parts": [],
+        "part_retrievals": Overwrite([]),
         "intent_low_confidence": False,
         "classification_failed": False,
         "classification_error_type": None,

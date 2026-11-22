@@ -388,3 +388,30 @@ async def test_unchecked_reply_never_reaches_the_stream(
     assert stream[1][1]["reason"] == "guardrail_blocked"
     assert stream[-1][1]["trace"][-2:] == ["answer", "output_guard"]
     assert pending not in str(stream)
+
+
+def test_partial_answer_publishes_citations_and_targeted_handoff() -> None:
+    from types import SimpleNamespace
+
+    answer = "The return window is 30 days. [2]"
+    summary = "I will pass this question to a human support agent: “Can I pay with gold?”"
+    citation = {"n": 2, "chunk_id": "window", "section_id": "returns", "heading_path": "Returns"}
+    events = events_for_update(
+        "output_guard",
+        {
+            "answer": answer + "\n\n" + summary,
+            "citations": [citation],
+            "handoff": SimpleNamespace(
+                reason="unsupported_part", trace_id="trace", customer_message=summary
+            ),
+        },
+        10,
+    )
+    assert [event.name for event in events] == ["token", "citations", "handoff"]
+    assert events[0].data == {"text": answer}
+    assert events[1].data == [citation]
+    assert events[2].data == {
+        "reason": "unsupported_part",
+        "message": summary,
+        "trace_id": "trace",
+    }

@@ -43,10 +43,31 @@ class JudgeDecision(BaseModel):
 def judge_record(model: Any, prompt: str, record: E2ERecord) -> JudgeRecord:
     if not record.accepted or not record.cited_sources:
         return JudgeRecord(item_id=record.item.id, flagged=False)
-    payload = {
+    return _judge(
+        model,
+        prompt,
+        record.item.id,
+        {
+            "answer": record.answer,
+            "cited_sources": record.cited_sources,
+        },
+    )
+
+
+def partial_payload(record: E2ERecord) -> dict[str, Any]:
+    return {
+        "question": record.item.question,
         "answer": record.answer,
         "cited_sources": record.cited_sources,
+        "parts": [part.model_dump(mode="json") for part in record.parts or []],
     }
+
+
+def judge_partial_record(model: Any, prompt: str, record: E2ERecord) -> JudgeRecord:
+    return _judge(model, prompt, record.item.id, partial_payload(record))
+
+
+def _judge(model: Any, prompt: str, item_id: str, payload: dict[str, Any]) -> JudgeRecord:
     response = model.invoke(
         [
             SystemMessage(content=prompt),
@@ -57,7 +78,7 @@ def judge_record(model: Any, prompt: str, record: E2ERecord) -> JudgeRecord:
     if not isinstance(content, str):
         raise ValueError("Judge returned no text")
     decision = JudgeDecision.model_validate_json(content)
-    return JudgeRecord(item_id=record.item.id, flagged=decision.flagged, claims=decision.claims)
+    return JudgeRecord(item_id=item_id, flagged=decision.flagged, claims=decision.claims)
 
 
 def export_csv(records: list[JudgeRecord], path: Path) -> None:
