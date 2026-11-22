@@ -125,3 +125,15 @@ datasets:
   changelog:
   - Preserve every frozen v1 record and append synthetic time-sensitive policy cases.
   - Pre-evidence review keeps 20 knowledge and 4 distinct-date returns cases per split.
+- name: multipart_v1
+  version: v1
+  path: eval/sets/multipart_v1.jsonl
+  sha256: b4b5389e74a2f1fd5806c8a1f3e5a1f3c719f6c5db62673cf096b65b9a309107
+  items: 100
+  splits:
+    dev: 50
+    test: 50
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Freeze seeded pairs of same-split eval_v1 questions for part-level scoring.

@@ -154,6 +154,7 @@ def _record(
         retrieval_error_type=result.get("retrieval_error_type"),
         answer_status=result.get("answer_status"),
         answer_error_type=result.get("answer_error_type"),
+        parts=result.get("parts"),
         coverage=result["coverage"].model_dump()
         if hasattr(result.get("coverage"), "model_dump")
         else result.get("coverage"),
@@ -168,9 +169,8 @@ def _record(
         cited_sources=cited_sources,
         retrieved_section_ids=[chunk.section_id for chunk in retrieval[:5]],
         handoff_reason=_handoff_reason(handoff),
-        accepted=accepted(
-            result.get("trace", []), str(result.get("answer", "")), handoff is not None
-        ),
+        accepted=result.get("answer_status") != "partial"
+        and accepted(result.get("trace", []), str(result.get("answer", "")), handoff is not None),
         latency_first_token_s=first_token_latency,
         latency_full_answer_s=latency,
         input_tokens=input_tokens,

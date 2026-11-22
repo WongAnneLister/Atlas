@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Literal
 
 from eval.e2e_records import E2EMetadata, E2ERecord
-from eval.metrics import mrr, recall_at_k
+from eval.metrics import mrr, noanswer_false_accept, part_metric_values, recall_at_k
 from eval.run_record import (
     RUNS,
     Run,
@@ -16,6 +16,7 @@ from eval.run_record import (
     summarize_metrics,
     write_run,
 )
+from eval.schema import EvalItem
 from support_agent.config import get_settings
 
 STATISTICS: dict[str, Literal["mean", "p95", "p50"]] = {
@@ -47,7 +48,12 @@ def project(records: list[E2ERecord], *, chaos: bool = False) -> list[RunItem]:
                 first_token_p50=record.latency_first_token_s,
                 first_token_p95=record.latency_first_token_s,
             )
-        if item.answerable:
+        answerable = (
+            item.answerable
+            if isinstance(item, EvalItem)
+            else all(part.answerable for part in item.parts)
+        )
+        if isinstance(item, EvalItem) and item.answerable:
             cited = {source["section_id"] for source in record.cited_sources}
             metrics.update(
                 false_reject=not record.accepted,
@@ -57,8 +63,9 @@ def project(records: list[E2ERecord], *, chaos: bool = False) -> list[RunItem]:
                 else 0.0,
                 graph_mrr_at_5=mrr(record.retrieved_section_ids, item.gold_sections),
             )
-        else:
-            metrics["false_accept"] = record.accepted
+        elif isinstance(item, EvalItem):
+            metrics["false_accept"] = noanswer_false_accept(record)
+        metrics.update(part_metric_values(record))
         if record.estimated_cost_usd is not None:
             metrics["cost_usd"] = record.estimated_cost_usd
         if chaos:
@@ -78,7 +85,7 @@ def project(records: list[E2ERecord], *, chaos: bool = False) -> list[RunItem]:
             RunItem(
                 id=item.id,
                 group=item.group,
-                answerable=item.answerable,
+                answerable=answerable,
                 handoff_reason=record.handoff_reason,
                 metrics=metrics,
                 payload=record.model_dump(mode="json"),
@@ -105,7 +112,13 @@ def prepare_e2e(
     chaos = metadata.chaos is not None and metadata.chaos.enabled
     items = project(records, chaos=chaos)
     datasets = dataset_version(metadata.eval_file_hash)
-    kind = "chaos" if chaos else "smoke" if "smoke" in datasets else "e2e"
+    kind = "e2e"
+    if chaos:
+        kind = "chaos"
+    elif "smoke" in datasets:
+        kind = "smoke"
+    elif "multipart_v1" in datasets:
+        kind = "multipart"
     manifest = RunManifest(
         kind=kind,
         split=metadata.split,
@@ -126,7 +139,7 @@ def prepare_e2e(
 
 
 def unpack(run: Run) -> tuple[E2EMetadata, list[E2ERecord]]:
-    if run.manifest.kind not in {"e2e", "smoke"}:
+    if run.manifest.kind not in {"e2e", "smoke", "multipart"}:
         raise ValueError("Expected an E2E run")
     return E2EMetadata.model_validate(run.manifest.source), [
         E2ERecord.model_validate(row.payload) for row in run.items

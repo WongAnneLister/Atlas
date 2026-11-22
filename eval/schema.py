@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validat
 Group = Literal[
     "basic_policy", "model_number", "colloquial", "cross_doc", "no_answer", "time_sensitive"
 ]
+MultipartGroup = Literal["answerable_pair", "half_answerable", "both_unanswerable"]
 TimeSensitivePath = Literal["knowledge", "refund"]
 Split = Literal["dev", "test"]
 # Frozen v1 strata for v1 generation, validation and smoke sampling.
@@ -69,6 +70,53 @@ class TimeSensitiveItem(EvalItem):
             raise ValueError("Knowledge path does not accept order or customer ids")
         if len(self.gold_sections) != 1:
             raise ValueError("Time-sensitive cases require a single gold version")
+        return self
+
+
+class MultipartPart(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    text: str = Field(min_length=1)
+    gold_sections: list[str]
+    answer_points: list[str]
+    answerable: bool = Field(strict=True)
+    source_item_id: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _consistent_labels(self) -> MultipartPart:
+        if self.answerable:
+            if len(self.gold_sections) != 1 or not self.answer_points:
+                raise ValueError("Answerable parts require one gold section and answer points")
+            if any(not value.strip() for value in [*self.gold_sections, *self.answer_points]):
+                raise ValueError("Empty gold section or answer point")
+        elif self.gold_sections or self.answer_points:
+            raise ValueError("Unanswerable parts require empty gold sections and answer points")
+        return self
+
+
+class MultipartItem(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    id: str = Field(min_length=1)
+    split: Split
+    group: MultipartGroup
+    question: str = Field(min_length=1)
+    source: str = Field(min_length=1)
+    parts: list[MultipartPart] = Field(min_length=2, max_length=2)
+    reviewed: bool = Field(default=False, strict=True)
+
+    @model_validator(mode="after")
+    def _consistent_parts(self) -> MultipartItem:
+        left, right = self.parts
+        if left.source_item_id == right.source_item_id:
+            raise ValueError("Multipart items require distinct source item ids")
+        expected = {
+            "answerable_pair": (True, True),
+            "half_answerable": (True, False),
+            "both_unanswerable": (False, False),
+        }[self.group]
+        if (left.answerable, right.answerable) != expected:
+            raise ValueError(f"Part answerability does not match {self.group}")
         return self
 
 

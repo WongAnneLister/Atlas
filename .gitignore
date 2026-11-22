@@ -11,6 +11,7 @@ eval/sets/draft_cache.json
 eval/runs/*.jsonl
 eval/runs/*/items.jsonl
 eval/runs/redteam-*/review.csv
+eval/runs/multipart-*/*.csv
 eval/runs/redteam-dev.md
 eval/runs/redteam-smoke.md
 # Smoke artifacts remain local so promotion can start with clean main.

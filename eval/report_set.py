@@ -164,6 +164,19 @@ reads real fixture order rows and follows the production policy retrieval query 
 It evaluates retrieval and the gate without an LLM or a refund decision. Use
 `TIME_SENSITIVE_ARGS="--report-from <run> ..."` to rebuild the report from saved runs.
 
+## Multipart benchmark
+
+`make eval-multipart-build` uses the frozen `eval_v1` and the processed documents to build
+local-only `eval/sets/multipart_v1.jsonl`. Seeded sampling selects distinct pairs within each
+split. Each split contains 20 pairs with gold sections from two documents, 20 with one
+answerable and one unanswerable part, and 10 with neither part answerable.
+
+The template joins the source questions with `, and also ` and keeps both source IDs and labels.
+Answerable parts come from the single-section basic-policy and model-number groups. Colloquial
+prefixes can contain extra requests beyond their labelled FAQ, so they are excluded. The
+half-answerable pairs put the answerable part first. All pairs are unreviewed and share source
+questions with v1. Use dev to tune and test to report multipart regression results.
+
 ## Human review workflow
 
 Open `eval/sets/review.csv`. Compare the question, gold section text and answer points.
