@@ -355,3 +355,24 @@ def test_synthetic_sampling_meets_available_duration_and_amount_minima():
         "amount": 5,
     }
     assert len(synthetic_build_lines(items, min_duration=5, min_amount=5)) == 1
+
+
+def test_splitter_breaks_inline_numbered_lists_without_gluing_item_numbers():
+    from support_agent.grounding.split import sentence_candidates
+
+    steps = "To change it: 1. Go to My Account. 2. Choose Update Email. 3. Enter the code."
+    assert sentence_candidates(steps) == [
+        "To change it:",
+        "Go to My Account.",
+        "Choose Update Email.",
+        "Enter the code.",
+    ]
+    inline = "You can return it 1. Go to My Orders 2. Choose the item 3. Submit the request."
+    assert all(
+        not sentence.rstrip(".").endswith((" 2", " 3")) for sentence in sentence_candidates(inline)
+    )
+    # A lone number before a capital letter is not a list.
+    assert sentence_candidates("The fee is 40. You can pay online.") == [
+        "The fee is 40.",
+        "You can pay online.",
+    ]

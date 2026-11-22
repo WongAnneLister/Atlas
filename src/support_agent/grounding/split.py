@@ -15,12 +15,34 @@ _ABBREVIATION = re.compile(
 )
 _LEADING_CITATIONS = re.compile(r"(?:\[\d+\]\s*)+")
 _WORDS = re.compile(r"\w+(?:[.,/-]\w+)*")
+# An inline list item number: "1. Go to ...", inside a sentence rather than at a line start.
+_INLINE_ITEM = re.compile(r"(?:(?<=\s)|^)(\d{1,2})\.\s+(?=[A-Z])")
+
+
+def _break_inline_list(paragraph: str) -> str:
+    """Start a new line at each item of an inline list numbered 1, 2, 3 ...
+
+    A lone "40. You ..." is not a list: at least items 1 and 2 must appear in order.
+    The order splitter then drops the item numbers as line-start list markers.
+    """
+    items = []
+    for match in _INLINE_ITEM.finditer(paragraph):
+        if int(match.group(1)) == len(items) + 1:
+            items.append(match)
+    if len(items) < 2:
+        return paragraph
+    pieces, start = [], 0
+    for match in items:
+        pieces.append(paragraph[start : match.start()].rstrip())
+        start = match.start()
+    pieces.append(paragraph[start:])
+    return "\n".join(piece for piece in pieces if piece)
 
 
 def sentence_candidates(paragraph: str) -> list[str]:
     """Reuse the order splitter and keep abbreviations and citation suffixes intact."""
     sentences: list[str] = []
-    for sentence in order_sentences(paragraph):
+    for sentence in order_sentences(_break_inline_list(paragraph)):
         if sentences and (markers := _LEADING_CITATIONS.match(sentence)):
             sentences[-1] += " " + markers.group().strip()
             sentence = sentence[markers.end() :].strip()
