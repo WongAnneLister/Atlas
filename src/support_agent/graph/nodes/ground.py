@@ -146,16 +146,15 @@ class GroundingPath:
         assessments = {}
         for claim in claims:
             if claim.number in rejected:
-                verdict, reason = "unsupported", rejected[claim.number]
+                assessments[claim.number] = ClaimAssessment(
+                    part=claim.part,
+                    text=claim.text,
+                    verdict="unsupported",
+                    reason=rejected[claim.number],
+                )
             elif claim.number in verdicts:
-                verdict = verdicts[claim.number].verdict
-                reason = "verified_quote" if verdict == "supported" else f"verifier_{verdict}"
-            else:
-                # The part's first claim already failed its exact checks.
-                continue
-            assessments[claim.number] = ClaimAssessment(
-                part=claim.part, text=claim.text, verdict=verdict, reason=reason
-            )
+                assessments[claim.number] = verdicts[claim.number]
+        # Claims skipped after their part's exact main-claim failure are unassessed.
         return assessments
 
     def __call__(self, state: ConversationState) -> dict[str, Any]:

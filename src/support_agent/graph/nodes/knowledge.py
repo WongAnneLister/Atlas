@@ -148,24 +148,16 @@ class KnowledgePath:
         trace = [*state.trace, "answer"]
         if not self.deps.settings.grounding.enabled:
             return whole_reply(current, [text], trace)
-        question = next(
-            (
-                message.content
-                for message in reversed(state.messages)
-                if isinstance(message, HumanMessage) and isinstance(message.content, str)
-            ),
-            state.rewritten_query,
-        )
         return {
             "coverage": coverage,
             "grounding_drafts": [
                 GroundingDraft(
-                    part=0,
-                    question=question,
+                    part=index,
+                    question=decision.question,
                     text=decision.answer,
                     source_numbers=sorted({quote.source for quote in decision.evidence}),
                 )
-                for decision in coverage.parts
+                for index, decision in enumerate(coverage.parts)
             ],
             "trace": trace,
         }

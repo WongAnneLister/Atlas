@@ -70,9 +70,10 @@ as the evaluation. Fixed notices and handoff text are outside the check. Generic
 phrases may accompany a verified answer. A paragraph needs a supported substantive
 claim to be released.
 
-Each claim gets the original customer question or the planned part question for
-context. Its evidence consists of the numbered chunks cited by its paragraph. A
-claim receives neither sibling sources nor additional retrieval. Exact checks
+Each claim gets its coverage part's question on the whole route or its planned
+part question on the multipart route. The question supplies context. Evidence
+comes from the numbered chunks cited by that paragraph. A claim receives neither
+sibling sources nor additional retrieval. Exact checks
 first compare numbers, durations, amounts, percentages, and model identifiers
 against that evidence. They normalize case, punctuation, and equivalent literal
 formats such as “30-day” and “30 days.” They do not infer conversions or parse
@@ -81,17 +82,21 @@ spelled-out numbers.
 Claims that pass the literal checks go into one structured call using the configured
 verifier role, which defaults to `fast`. Each claim needs an explicit verdict.
 A supported verdict must give a verbatim quote from one of that claim's cited chunks.
-Code checks claim IDs and quote membership. This reuses the existing model stack
+Code checks claim IDs and quote membership. A quote absent from its claim's
+cited source, including a quote attributed to the wrong source number, makes that
+claim unsupported with reason `invalid_quote`. Missing, extra or duplicate claim
+numbers, schema errors, and supported verdicts without quotes invalidate the
+whole batch and trigger a handoff. This reuses the existing model stack
 and avoids a second model download. Quote membership proves provenance. Semantic
 support still depends on the verifier and needs live calibration.
 
 Partial and unsupported verdicts remove the claim. Losing the first substantive
-claim or all substantive content fails that part. With partial answers enabled,
-supported sibling parts can still be released, and failed parts keep their
-`low_grounding` reason. A whole grounding handoff carries `low_grounding`. An
-unavailable dependency gives `dependency_unavailable`. Missing, duplicate or invalid
-verdicts fail closed. Retained paragraphs keep their verified coverage citations.
-The reply rebuilds its citation list from those paragraphs.
+claim or all substantive content fails that part. On the whole route, every
+coverage part must pass its own main-claim check. A failure hands off the entire
+question with `low_grounding`. On the multipart route with partial answers enabled,
+supported sibling parts can still be released. Failed parts keep their
+`low_grounding` reason. An unavailable dependency gives `dependency_unavailable`.
+The reply rebuilds its citation list from retained paragraphs.
 
 The graph records assessed claims, their verdicts and removals. The trace records
 verdict summaries without claim text. Claims skipped after an exact failure of the

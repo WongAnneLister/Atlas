@@ -116,7 +116,7 @@ def supported(number, source=1, quote=MAIN):
     }
 
 
-def test_ground_retains_only_supported_claims_and_uses_original_question(monkeypatch):
+def test_ground_retains_only_supported_claims_and_uses_coverage_question(monkeypatch):
     result, inputs, calls = run_graph(
         monkeypatch,
         followup=True,
@@ -130,7 +130,7 @@ def test_ground_retains_only_supported_claims_and_uses_original_question(monkeyp
     assert result["claims_removed"] == 1
     assert [claim.removed for claim in result["claims"]] == [False, True]
     assert calls.count("verify") == 1
-    assert all(row["question"] == "And the deadline?" for row in inputs["verify"])
+    assert all(row["question"] == RETURNS for row in inputs["verify"])
     assert all(row["sources"] == [{"n": 1, "text": MAIN}] for row in inputs["verify"])
     assert isinstance(result["messages"][-1], AIMessage)
     assert SIDE not in result["messages"][-1].content
@@ -175,7 +175,14 @@ def test_ground_removes_a_failed_part_and_rebuilds_citations(monkeypatch, partia
 
 @pytest.mark.parametrize(
     ("verdicts", "reason"),
-    [([], "low_grounding"), (ConnectionError("fixture"), "dependency_unavailable")],
+    [
+        ([], "low_grounding"),
+        ([supported(1), supported(2)], "low_grounding"),
+        ([supported(1), supported(1)], "low_grounding"),
+        ([{"number": 1, "verdict": "supported"}], "low_grounding"),
+        ([{"number": 1, "verdict": "unknown"}], "low_grounding"),
+        (ConnectionError("fixture"), "dependency_unavailable"),
+    ],
 )
 def test_ground_invalid_or_unavailable_verifier_does_not_publish(monkeypatch, verdicts, reason):
     result, _, calls = run_graph(
@@ -257,3 +264,34 @@ def test_unsupported_main_withholds_even_a_supported_secondary_claim(monkeypatch
     assert all(claim.removed for claim in result["claims"])
     assert SIDE not in result["answer"]
     assert calls.count("verify") == 1
+
+
+def test_whole_route_hands_off_when_second_covered_parts_main_claim_fails(monkeypatch):
+    result, inputs, _ = run_graph(
+        monkeypatch,
+        answer=[decision(RETURNS, MAIN, (1, MAIN)), decision(SHIPPING, SHIPPING_FACT, (1, MAIN))],
+        verdicts=[supported(1), {"number": 2, "verdict": "unsupported"}],
+    )
+    assert result["trace"] == [*WHOLE, "ground", "handoff", "output_guard"]
+    assert [row["question"] for row in inputs["verify"]] == [RETURNS, SHIPPING]
+    assert [row.part for row in result["claims"]] == [0, 1]
+    assert all(row.removed for row in result["claims"])
+    assert result["handoff"].reason == "low_grounding"
+    assert result["citations"] == []
+    assert all(MAIN not in message.content for message in result["messages"])
+    assert all(SHIPPING_FACT not in message.content for message in result["messages"])
+
+
+def test_bad_secondary_quote_removes_that_claim_without_handoff(monkeypatch):
+    result, _, _ = run_graph(
+        monkeypatch,
+        answer=[decision(RETURNS, f"{MAIN} {SIDE}", (1, MAIN))],
+        verdicts=[supported(1), supported(2, source=2, quote="Unused facts are confidential.")],
+    )
+    assert result["trace"] == [*WHOLE, "ground", "output_guard"]
+    assert result["answer"] == f"{MAIN} [1]"
+    assert result["handoff"] is None
+    main, secondary = result["claims"]
+    assert main.verdict == "supported" and not main.removed
+    assert (secondary.verdict, secondary.reason) == ("unsupported", "invalid_quote")
+    assert secondary.removed

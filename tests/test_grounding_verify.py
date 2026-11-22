@@ -91,25 +91,10 @@ def test_one_verifier_call_preserves_each_claims_context_and_citations(
         [SUPPORT, SUPPORT],  # Duplicate number
         [SUPPORT, UNSUPPORTED, {"number": 4, "verdict": "unsupported"}],  # Extra claim
         [{"number": 1, "verdict": "supported"}, UNSUPPORTED],  # Missing quote
-        [
-            {
-                "number": 1,
-                "verdict": "supported",
-                "evidence": {"source": 2, "quote": "Shipping costs 10 dollars."},
-            },
-            UNSUPPORTED,
-        ],  # Evidence for another claim
-        [
-            {
-                "number": 1,
-                "verdict": "supported",
-                "evidence": {"source": 1, "quote": "90 days"},
-            },
-            UNSUPPORTED,
-        ],  # Quote appears only in the question
+        [{"number": 1, "verdict": "unknown"}, UNSUPPORTED],  # Schema error
     ],
 )
-def test_verifier_rejects_invalid_coverage_or_evidence(
+def test_verifier_rejects_structurally_invalid_batches(
     monkeypatch: pytest.MonkeyPatch, rows: list[dict[str, Any]]
 ) -> None:
     with GraphDeps(Settings()) as deps:
@@ -124,3 +109,19 @@ def test_verifier_does_not_call_model_without_claims(monkeypatch: pytest.MonkeyP
         calls = verifier(monkeypatch, deps.models, [])
         assert verify_claims(deps.models, "fast", []) == {}
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    "evidence",
+    [
+        {"source": 2, "quote": "Shipping costs 10 dollars."},
+        {"source": 1, "quote": "90 days"},
+    ],
+)
+def test_verifier_marks_only_the_claim_with_an_invalid_quote(monkeypatch, evidence):
+    with GraphDeps(Settings()) as deps:
+        calls = verifier(monkeypatch, deps.models, [{**SUPPORT, "evidence": evidence}, UNSUPPORTED])
+        result = verify_claims(deps.models, "fast", claims())
+    assert len(calls) == 1
+    assert (result[1].verdict, result[1].reason) == ("unsupported", "invalid_quote")
+    assert result[3].verdict == "partial"

@@ -11,7 +11,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, ConfigDict, Field
 
 from support_agent.graph.coverage import SourceQuote
-from support_agent.grounding.claims import Verdict
+from support_agent.grounding.claims import ClaimAssessment, Verdict
 
 if TYPE_CHECKING:
     from support_agent.grounding.claims import Claim
@@ -37,7 +37,7 @@ class VerificationBatch(BaseModel):
 
 def verify_claims(
     models: ReliableModels, role: Role, claims: Sequence[Claim]
-) -> dict[int, Verification]:
+) -> dict[int, ClaimAssessment]:
     """Require an individual verdict for every submitted claim in one structured call."""
     if not claims:
         return {}
@@ -68,16 +68,23 @@ def verify_claims(
     if len(results) != len(response.value.verdicts) or results.keys() != by_number.keys():
         raise ValueError("Verifier must return each submitted claim number exactly once")
 
+    assessments = {}
     for number, result in results.items():
+        claim = by_number[number]
+        verdict = result.verdict
+        reason = "verified_quote" if verdict == "supported" else f"verifier_{verdict}"
         evidence = result.evidence
         if evidence is None:
-            if result.verdict == "supported":
+            if verdict == "supported":
                 raise ValueError("A supported verdict must include a source quote")
-            continue
-        quote = " ".join(evidence.quote.split())
-        if not any(
-            evidence.source == source.n and quote in " ".join(source.text.split())
-            for source in by_number[number].sources
-        ):
-            raise ValueError("Verifier quote is absent from the claimed source")
-    return results
+        else:
+            quote = " ".join(evidence.quote.split())
+            if not any(
+                evidence.source == source.n and quote in " ".join(source.text.split())
+                for source in claim.sources
+            ):
+                verdict, reason = "unsupported", "invalid_quote"
+        assessments[number] = ClaimAssessment(
+            part=claim.part, text=claim.text, verdict=verdict, reason=reason
+        )
+    return assessments
