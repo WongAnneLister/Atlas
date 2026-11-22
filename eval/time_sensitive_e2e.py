@@ -24,6 +24,7 @@ from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 
+from eval.e2e_eval import _model_names
 from eval.registry import load_registry
 from eval.run_record import (
     RUNS,
@@ -190,10 +191,7 @@ def write_record(
                     }
                 )
             ),
-            models={
-                "fast": settings.llm.fast_model or "unset",
-                "main": settings.llm.main_model or "unset",
-            },
+            models=_model_names(settings),
             datasets={dataset.name: DatasetVersion(version=dataset.version, sha256=dataset.sha256)},
             started_at=started_at,
             ended_at=datetime.now(UTC),
