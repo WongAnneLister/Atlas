@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "plan.md"
 SENTENCE_CONNECTOR = re.compile(r"(?:^|[.!?])\s*(?:also|and)\b", re.IGNORECASE)
 CLAUSE_CONNECTOR = re.compile(
-    r"\b(?:and|or|but|yet)\s+"
+    # An adverb such as "also" may sit between the conjunction and the second clause.
+    r"\b(?:and|or|but|yet)\s+(?:also\s+|then\s+)?"
     r"(?:how|what|when|where|who|why|which|do|does|did|can|could|would|should|"
     r"will|is|are|was|were|has|have|may|might|must|i|we|you|they|he|she|it)\b",
     re.IGNORECASE,

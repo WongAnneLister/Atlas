@@ -54,6 +54,9 @@ class PlanningModel(FakeListChatModel):
         ("Can I return this and who pays shipping?", True),
         ("What is covered, and will you pay my shipping?", True),
         ("Also, who pays return shipping?", True),
+        ("How do refunds work for gift cards, and also what is the warranty?", True),
+        ("Can I cancel my order, and also can I change the address?", True),
+        ("I want the black one and also the charger.", False),
         ("word " * 60 + "?", True),
     ],
 )
