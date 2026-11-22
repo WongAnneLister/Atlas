@@ -295,6 +295,14 @@ index:
       max_delay_s: 60
       jitter_ratio: 0.1
       budget_s: 900
+    # Release evidence reuses cross-encoder logits for (query, passage) pairs it already scored.
+    # A score is keyed by reranker model, revision, device, fp16, max tokens, batch size, the
+    # installed versions of key_packages, the query text and the passage text hash.
+    # The file is local and gitignored (.cache/); the serving path never reads it.
+    rerank_cache:
+      enabled: true
+      path: .cache/rerank_scores/scores.sqlite
+      key_packages: [FlagEmbedding, torch, transformers]
 
 milvus:
   uri: http://localhost:19530

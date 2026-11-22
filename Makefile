@@ -24,7 +24,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-chunking-e2e eval-safety-fixes eval-order-grounding eval-order-replies eval-model-veto \
         results eval-refund-policy eval-refund-decisions eval-validate-all eval-registry-bump \
         eval-time-sensitive-build eval-time-sensitive \
-        eval-index-release eval-index-lifecycle eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
+        eval-index-release eval-index-lifecycle eval-rerank-cache eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -282,6 +282,11 @@ eval-index-release:
 # Commit 22b evidence: `vectors <first> <second> --output <path>` or `report` (the default).
 eval-index-lifecycle:
 	$(RUN) python -m eval.index_lifecycle_report $(or $(LIFECYCLE_ARGS),report)
+
+# Rerank score cache evidence: `measure --live <collection> --candidate <collection>
+# --reranker-device <device>` collects three runs; `report` (the default) renders them.
+eval-rerank-cache:
+	$(RUN) python -m eval.rerank_cache_report $(or $(RERANK_CACHE_ARGS),report)
 
 index-plan index-build index-rollback index-status index-gc:
 	$(RUN) python -m eval.index_lifecycle $(@:index-%=%) $(INDEX_ARGS)
