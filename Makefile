@@ -24,7 +24,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-chunking-e2e eval-safety-fixes eval-order-grounding eval-order-replies eval-model-veto \
         results eval-refund-policy eval-refund-decisions eval-validate-all eval-registry-bump \
         eval-time-sensitive-build eval-time-sensitive eval-time-sensitive-e2e eval-policy-versions-report \
-        eval-cross-doc-failures eval-multipart-build eval-multipart \
+        eval-cross-doc-failures eval-multipart-build eval-multipart eval-query-planning-report \
         eval-index-release eval-index-lifecycle eval-rerank-cache eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
 
 define todo
@@ -318,3 +318,6 @@ eval-multipart-build:
 
 eval-multipart:
 	$(RUN) python -m eval.multipart_eval $(MULTIPART_ARGS)
+
+eval-query-planning-report:
+	$(RUN) python -m eval.query_planning_report $(QUERY_PLANNING_REPORT_ARGS)

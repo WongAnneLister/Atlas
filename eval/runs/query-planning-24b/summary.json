@@ -1,0 +1,165 @@
+{
+  "reach": {
+    "v1-test-off": {
+      "n": 150,
+      "planner": 0,
+      "parts": 0,
+      "whole": 150
+    },
+    "v1-test-pp": {
+      "n": 150,
+      "planner": 33,
+      "parts": 26,
+      "whole": 124
+    },
+    "v1-dev-off": {
+      "n": 150,
+      "planner": 0,
+      "parts": 0,
+      "whole": 150
+    },
+    "v1-dev-pp": {
+      "n": 150,
+      "planner": 32,
+      "parts": 27,
+      "whole": 123
+    },
+    "mp-test-off": {
+      "n": 50,
+      "planner": 0,
+      "parts": 0,
+      "whole": 50
+    },
+    "mp-test-plan": {
+      "n": 50,
+      "planner": 39,
+      "parts": 38,
+      "whole": 12
+    },
+    "mp-test-pp": {
+      "n": 50,
+      "planner": 39,
+      "parts": 38,
+      "whole": 12
+    },
+    "mp-dev-off": {
+      "n": 50,
+      "planner": 0,
+      "parts": 0,
+      "whole": 50
+    },
+    "mp-dev-plan": {
+      "n": 50,
+      "planner": 43,
+      "parts": 41,
+      "whole": 9
+    },
+    "mp-dev-pp": {
+      "n": 50,
+      "planner": 43,
+      "parts": 42,
+      "whole": 8
+    },
+    "latency-off": {
+      "n": 70,
+      "planner": 0,
+      "parts": 0,
+      "whole": 70
+    },
+    "latency-pp": {
+      "n": 70,
+      "planner": 11,
+      "parts": 9,
+      "whole": 61
+    }
+  },
+  "usage": {
+    "v1-test-off": {
+      "calls": 1.8733333333333333,
+      "input_tokens": 3583.2733333333335,
+      "output_tokens": 260.54
+    },
+    "v1-test-pp": {
+      "calls": 2.3533333333333335,
+      "input_tokens": 4575.446666666667,
+      "output_tokens": 298.49333333333334
+    },
+    "v1-dev-off": {
+      "calls": 1.84,
+      "input_tokens": 3541.28,
+      "output_tokens": 270.97333333333336
+    },
+    "v1-dev-pp": {
+      "calls": 2.2466666666666666,
+      "input_tokens": 4267.393333333333,
+      "output_tokens": 306.6
+    },
+    "mp-test-off": {
+      "calls": 1.76,
+      "input_tokens": 3361.84,
+      "output_tokens": 261.46
+    },
+    "mp-test-plan": {
+      "calls": 3.14,
+      "input_tokens": 4898.86,
+      "output_tokens": 355.2
+    },
+    "mp-test-pp": {
+      "calls": 3.42,
+      "input_tokens": 5788.86,
+      "output_tokens": 402.42
+    },
+    "mp-dev-off": {
+      "calls": 1.74,
+      "input_tokens": 3688.54,
+      "output_tokens": 267.46
+    },
+    "mp-dev-plan": {
+      "calls": 3.08,
+      "input_tokens": 4674.1,
+      "output_tokens": 359.04
+    },
+    "mp-dev-pp": {
+      "calls": 3.42,
+      "input_tokens": 5707.32,
+      "output_tokens": 407.98
+    },
+    "latency-off": {
+      "calls": 1.6,
+      "input_tokens": 2832.3571428571427,
+      "output_tokens": 179.18571428571428
+    },
+    "latency-pp": {
+      "calls": 1.9142857142857144,
+      "input_tokens": 3403.7428571428572,
+      "output_tokens": 207.45714285714286
+    }
+  },
+  "precheck_miss": {
+    "mp-test-pp": {
+      "n": 50,
+      "missed": 11,
+      "for_store": 11
+    },
+    "mp-dev-pp": {
+      "n": 50,
+      "missed": 7,
+      "for_store": 7
+    }
+  },
+  "discarded": {
+    "v1-dev-off-remote": {
+      "n": 150,
+      "dependency_unavailable": 36
+    },
+    "mp-dev-pp-remote": {
+      "n": 50,
+      "dependency_unavailable": 16
+    }
+  },
+  "judge": {
+    "judged": 13,
+    "flagged": 13,
+    "unnecessary_handoff_mentions": 10
+  }
+}

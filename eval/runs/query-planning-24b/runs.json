@@ -1,0 +1,16 @@
+{
+  "v1-test-off": "e2e-test-20261122-b864da21-19944fe3",
+  "v1-test-pp": "e2e-test-20261122-b864da21-8e795e59",
+  "v1-dev-off": "e2e-dev-20261122-b864da21-88303db6",
+  "v1-dev-pp": "e2e-dev-20261122-b864da21-36d4db0f",
+  "mp-test-off": "multipart-test-20261122-b864da21-6bdbc4adfb494004b31164dc2d4c9f60",
+  "mp-test-plan": "multipart-test-20261122-b864da21-eb8a5eab2dda4345acdbdd02c108526d",
+  "mp-test-pp": "multipart-test-20261122-b864da21-bd4771a5cef74b64b1ca58428b680bdd",
+  "mp-dev-off": "multipart-dev-20261122-b864da21-ce1b5b7ddc97494e8a56314ed4b3becf",
+  "mp-dev-plan": "multipart-dev-20261122-b864da21-d81ee2f53b724c03b420363a158460a2",
+  "mp-dev-pp": "multipart-dev-20261122-b864da21-f6d445896d61418f904f8d018330e0c6",
+  "smoke-gate": "smoke-test-20261122-b864da21-da47f069",
+  "redteam-smoke": "redteam-test-20261122-b864da21-7f306df2",
+  "latency-off": "smoke-test-20261122-b864da21-f018cc45",
+  "latency-pp": "smoke-test-20261122-788ab308-8a239fce"
+}

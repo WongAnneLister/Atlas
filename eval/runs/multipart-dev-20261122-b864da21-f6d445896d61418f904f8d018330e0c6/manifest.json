@@ -1,0 +1,65 @@
+{
+  "kind": "multipart",
+  "split": "dev",
+  "git_sha": "b864da21b6e6f9edc74a9f00791077199c374b91",
+  "config_hash": "685145093d902001fd07f2f073dcc05df3c76236fa8ea2d8c92b1d43e6fc538b",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash"
+  },
+  "datasets": {
+    "multipart_v1": {
+      "version": "v1",
+      "sha256": "8344a1acfc7619ef5f4f973a9c07f98a305df6bf3f6d1b11e9c2b23ccfd9d4cc"
+    }
+  },
+  "seed": 17,
+  "dirty": false,
+  "started_at": "2026-11-22T12:50:05.609439Z",
+  "ended_at": "2026-11-22T13:10:20.505392Z",
+  "cost_usd": null,
+  "cost_note": "price not set",
+  "command": [
+    "eval-multipart",
+    "--split",
+    "dev",
+    "--run-root",
+    "/tmp/atlas-24b/runs",
+    "--report",
+    "/tmp/atlas-24b/reports/mp-dev-pp.md"
+  ],
+  "source": {
+    "record_type": "metadata",
+    "git_sha": "b864da21b6e6f9edc74a9f00791077199c374b91",
+    "config_hash": "685145093d902001fd07f2f073dcc05df3c76236fa8ea2d8c92b1d43e6fc538b",
+    "eval_file_hash": "8344a1acfc7619ef5f4f973a9c07f98a305df6bf3f6d1b11e9c2b23ccfd9d4cc",
+    "corpus_hash": "16f16e6f75dff01730d573910f75f7049f2ab01bd6a9742d5d4568ce1f979339",
+    "models": {
+      "fast": "deepseek-flash",
+      "main": "deepseek-flash"
+    },
+    "dataset_versions": {
+      "flipkart_faqs": "NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228",
+      "philips_manuals": "InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84",
+      "maktek_faqs": "MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240",
+      "bitext": "bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443"
+    },
+    "split": "dev",
+    "date": "2026-11-22T12:50:05.609439+00:00",
+    "customer_id": "CUST-0001",
+    "threshold": 0.15,
+    "code_hash": "6f0eb3d921cabd3b144ab22a849deec0aee8485ec53b0f5bf81ef9a39b1dac7a",
+    "prompt_hash": "d7750b0203fe6b79d57e59f332620b4ac3f8f83de88c5abd9f7d0fbfe031009d",
+    "runtime": {
+      "langchain": "1.4.9",
+      "langchain-core": "1.7.6",
+      "langgraph": "1.2.20",
+      "langchain-deepseek": "1.1.1",
+      "langchain-openai": "1.7.4",
+      "openai": "3.48.0"
+    },
+    "chaos": null,
+    "endpoint_host": "api.deepseek.com",
+    "build_id": "4aece1a3ed4f4905837a125c9249857e"
+  }
+}

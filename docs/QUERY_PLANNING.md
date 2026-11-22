@@ -88,3 +88,13 @@ when planned and gold part counts agree. When counts differ, they find the one-t
 assignment with the highest total Jaccard overlap. Jaccard overlap divides shared words
 by unique words across both texts. Pairs below the configured `eval.multipart_min_overlap`
 are ineligible. The judge assesses the evidence supplied with the run.
+
+## Results (commit 24b)
+
+The measured numbers are in [`eval/reports/query_planning.md`](../eval/reports/query_planning.md).
+In short: the gain comes from partial answers on questions that mix an answerable and an
+unanswerable request; splitting alone did not significantly change full-answer rates, and it
+did not fix cross-document questions that the classifier sends to an operational path. Split
+questions cost an extra planner call and per-part classify and rerank, which shows in P95
+latency. No-answer false accepts stayed at zero in every run. Known limits and follow-ups are
+listed under 24b in `docs/PROGRESS.md`.
