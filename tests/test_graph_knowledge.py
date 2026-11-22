@@ -13,6 +13,7 @@ from support_agent.graph.deps import GraphDeps
 from support_agent.graph.intents import Intent
 from support_agent.graph.nodes.knowledge import KnowledgePath
 from support_agent.graph.state import ConversationState
+from support_agent.retrieval.filters import RetrievalFilters
 from support_agent.retrieval.types import RetrievedChunk
 
 
@@ -29,6 +30,21 @@ class FixedRetriever:
 class BrokenRetriever:
     def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]:
         raise ConnectionError("private backend detail")
+
+
+class FilterRecordingRetriever:
+    def __init__(self, supported: bool = True) -> None:
+        self.supported = supported
+        self.calls: list[RetrievalFilters | None] = []
+
+    def supports_filters(self) -> bool:
+        return self.supported
+
+    def retrieve(
+        self, query: str, top_k: int, filters: RetrievalFilters | None = None
+    ) -> list[RetrievedChunk]:
+        self.calls.append(filters)
+        return []
 
 
 def evidence(score: float) -> list[RetrievedChunk]:
@@ -125,6 +141,66 @@ def test_low_evidence_hands_off_without_calling_answer_model() -> None:
     assert main.responses == ["This must never be called"]
 
 
+@pytest.mark.parametrize(
+    ("question", "category"),
+    [
+        ("I bought it in August. Can I return a hair dryer?", "hair_dryers"),
+        ("Can I return a hair dryer and headphones?", None),
+    ],
+)
+def test_empty_filtered_retrieval_hands_off_without_retry(
+    question: str, category: str | None
+) -> None:
+    settings = Settings()
+    retriever = FilterRecordingRetriever()
+    main = CoverageFake(responses=["unused"], payload={"parts": [part()]})
+    with GraphDeps(settings, fast_model=fast_model(), main_model=main, retriever=retriever) as deps:
+        result = invoke(build_graph(deps), question)
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "retrieve",
+        "gate",
+        "handoff",
+        "output_guard",
+    ]
+    assert main.calls == 0
+    assert result["gate"].reason == "empty_retrieval"
+    assert result["handoff"].reason == "low_evidence"
+    assert len(retriever.calls) == 1
+    filters = retriever.calls[0]
+    assert filters is not None
+    assert filters.as_of == settings.orders.today
+    assert filters.product_category == category
+    assert result["filters"] == result["handoff"].filters == filters
+    assert result["filters_applied"] is result["handoff"].filters_applied is True
+
+
+def test_disabled_retrieval_filters_make_one_unfiltered_search() -> None:
+    settings = Settings()
+    settings.retrieval.filters.enabled = False
+    retriever = FilterRecordingRetriever()
+    with GraphDeps(settings, fast_model=fast_model(), retriever=retriever) as deps:
+        result = invoke(build_graph(deps), "Can I return an item?")
+    assert result["trace"][-4:] == ["retrieve", "gate", "handoff", "output_guard"]
+    assert retriever.calls == [None]
+    assert result["filters"] is result["handoff"].filters is None
+    assert result["filters_applied"] is result["handoff"].filters_applied is False
+
+
+def test_legacy_retrieval_records_requested_filters_without_applying_them() -> None:
+    settings = Settings()
+    retriever = FilterRecordingRetriever(supported=False)
+    with GraphDeps(settings, fast_model=fast_model(), retriever=retriever) as deps:
+        result = invoke(build_graph(deps), "Can I return an item?")
+    assert result["trace"][-4:] == ["retrieve", "gate", "handoff", "output_guard"]
+    assert retriever.calls == [None]
+    assert result["filters"].as_of == settings.orders.today
+    assert result["handoff"].filters == result["filters"]
+    assert result["filters_applied"] is result["handoff"].filters_applied is False
+
+
 def test_retrieval_failure_fails_closed_to_handoff(caplog: Any) -> None:
     settings = Settings()
     settings.gate.threshold = 0.8
@@ -203,8 +279,10 @@ def test_generation_connection_error_does_not_claim_low_evidence(caplog: Any) ->
 
 class CoverageFake(FakeListChatModel):
     payload: dict[str, Any]
+    calls: int = 0
 
     def with_structured_output(self, schema: Any, **kwargs: Any) -> Any:
+        self.calls += 1
         return RunnableLambda(
             lambda messages: {
                 "parsed": self.payload,
@@ -351,12 +429,14 @@ def test_next_turn_clears_coverage_and_answer_failure_fields() -> None:
         graph = build_graph(deps)
         first = invoke(graph, "What is the return window?")
         assert first["coverage"] is not None
+        assert first["filters"] is not None
         graph.update_state(
             {"configurable": {"thread_id": "knowledge-test"}},
             {
                 "answer_status": "model_error",
                 "answer_error_type": "ConnectionError",
                 "retrieval_error_type": "TimeoutError",
+                "filters_applied": True,
             },
         )
         second = invoke(graph, "hello")
@@ -364,6 +444,8 @@ def test_next_turn_clears_coverage_and_answer_failure_fields() -> None:
     assert second["answer_status"] == "not_attempted"
     assert second["answer_error_type"] is None
     assert second["retrieval_error_type"] is None
+    assert second["filters"] is None
+    assert second["filters_applied"] is False
 
 
 def store_chunk(chunk_id: str, section_id: str, text: str, score: float) -> RetrievedChunk:

@@ -1,3 +1,4 @@
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -6,7 +7,14 @@ from eval.retrieval_index import prepare_experiment_index, prepare_heading_ablat
 from support_agent.config import get_settings
 from support_agent.retrieval.embed import FakeEmbedder
 from support_agent.retrieval.milvus_store import MilvusStore
-from test_milvus_store import Client, chunk
+from test_milvus_store import Client
+from test_milvus_store import chunk as fixture_chunk
+
+
+def chunk():
+    return fixture_chunk().model_copy(
+        update={"topic": "returns", "effective_from": date(2026, 1, 1)}
+    )
 
 
 def test_heading_ablation_reembeds_body_only_and_reuses_verified_index(tmp_path: Path) -> None:

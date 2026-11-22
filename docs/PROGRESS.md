@@ -60,7 +60,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 22b | Index lifecycle evidence | done | `eval/reports/index_lifecycle.md` (MPS reranker, clean `5ccd15a`). Identical full rebuild: 206/206 chunks re-embedded in 269.5 s; stored vectors differ from the adopted index by at most 3.82e-06 (minimum cosine 0.9999999996); the paired check against the adopted build released it with every metric identical (hit@5 160/160, RR@5 0.9906, gate pass 160/160, no-answer gate pass 1/60) and identical top-5 lists on 220/220 items. Negative control (heading-off collection): released with no significant change, as written down before the run; 10/220 top-5 lists changed, largest gate-score change 6.66e-05, so the check cannot see a change this small. One-section change (return window 30 to 45 days): plan 1 changed, 121 unchanged; incremental build embedded 3 chunks and copied 203 in 26.2 s; released; the real app answered 45 days through the gate, and 30 days after `make index-rollback`. Under the planned all-items no-answer rule every one of these releases would have been refused by the same known test item (see known issues). Five earlier CPU collections were cut short by SSH tunnel drops; each failed closed and the alias never moved. Integration tests: Milvus plus a scratch PostgreSQL registry on 5433 3/3, SQLite registry 2/2. |
 | 22c | Rerank score cache | done | `eval/reports/rerank_cache.md` (MPS, one-section incremental build `ef8bc336` against live `f66917e9`): the release-evidence run took 25.8 min without the cache and 6.6 min with a warm one (19.1 min saved, 3.9x). It reused 10915/11000 (query, passage) logits and scored 85. Metrics and top-5 lists were identical on 220/220 items; 4 rows differ only in gate score, by at most 7.13e-09. Filling the cache on the live collection took 28.6 min. Runs collected with the 22c code uncommitted (`dirty: true`). |
 | 23a | Time-sensitive policy eval and fixtures | done; evidence pending | Frozen v2 extends v1 with a synthetic returns and price-adjustment group. Review fixes keep price adjustments on the knowledge path. Each split has 20 knowledge cases and 4 returns cases at distinct stored order dates. Offline tests cover generation and the retrieval-only evaluator. Historical document generation defaults off. No new eval results. |
-| 23 | Policy versions + metadata | todo | |
+| 23 | Policy versions + metadata | done; evidence pending in 23b | Schema 2 stores section metadata. Dense and BM25 share date and category constraints. Refund retrieval uses the verified order date and adds a cited notice for historical policies. The window holdout derives eligibility expectations from the policy spec. No new live eval results. |
 | 24 | Query planning | todo | |
 | 25 | Claim grounding | todo | |
 | 26 | Caching | todo | |
@@ -123,6 +123,14 @@ Agents: update this file in every commit. Keep it short and factual.
 - **Checkpoint 4 waiver (author, 2026-11-19).** The author waives the Checkpoint 4 requirement in `AGENTS.md` §8 so phase 2 can start with commit 17. Checkpoint 4 is **not** passed: the demo video, `docs/img/demo.gif`, `docs/REPO_SETTINGS.md` and making the repo public stay open, and the refund demo step still hands off. Phase-two commits must not claim v1 was shipped.
 
 ## Known issues / follow-ups
+
+- 23: With the processed catalog, 76 of the original 300 mock orders predate 2026-09-01,
+  including five delivered orders. Order-date filtering makes the historical 90-day return
+  policy applicable to them, changing the evidence behind decisions. The five delivered
+  orders are all 96 days old on the configured date and still exceed that window. Refund
+  outcomes can change when the applicable window changes eligibility, as in the August 20
+  fixture. In 23b rerun `refund_policy_eval`, `refund_decision_eval` and the red-team refund
+  cases to measure the overall impact.
 
 - 22b: the release check has little power for small retrieval changes. The heading-off negative control changed 10/220 top-5 lists but no paired metric, because every answerable item already hits at 5. It catches broken or badly wrong indexes, not small quality shifts; `make eval-retrieval` stays the tool for those.
 - 22b: `make index-rollback` prints the restored build as read before the switch, so its `status` shows `retired`. The registry itself is correct (`make index-status` shows it `released`). Not changed here.

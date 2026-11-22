@@ -93,6 +93,12 @@ class StoreScopeSettings(BaseModel):
     stores: dict[str, StoreSettings] = Field(default_factory=dict)
 
 
+class RetrievalFilterSettings(BaseModel):
+    enabled: bool = False
+    category: bool = False
+    category_terms: dict[str, list[str]] = Field(default_factory=dict)
+
+
 class RetrievalSettings(BaseModel):
     embedding_model: str
     embedding_revision: str
@@ -123,6 +129,7 @@ class RetrievalSettings(BaseModel):
     # Drop a reranked chunk whose text repeats a higher-ranked one (same FAQ filed twice).
     dedupe_text: bool = False
     store_scope: StoreScopeSettings = Field(default_factory=StoreScopeSettings)
+    filters: RetrievalFilterSettings = Field(default_factory=RetrievalFilterSettings)
 
     @model_validator(mode="after")
     def _valid_embedding_window(self) -> RetrievalSettings:
@@ -298,6 +305,7 @@ class MilvusSettings(BaseModel):
     section_max_bytes: int = Field(gt=0)
     heading_max_bytes: int = Field(gt=0)
     text_max_bytes: int = Field(gt=0, le=65535)
+    metadata_max_bytes: int = Field(gt=0, le=65535)
     hnsw_m: int = Field(gt=0)
     hnsw_ef_construction: int = Field(gt=0)
     hnsw_ef_search: int = Field(gt=0)

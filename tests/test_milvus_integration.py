@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from uuid import uuid4
 
 import pytest
@@ -8,6 +9,7 @@ from support_agent.config import get_settings
 from support_agent.retrieval.chunking import Chunk
 from support_agent.retrieval.embed import FakeEmbedder
 from support_agent.retrieval.factory import build_retriever
+from support_agent.retrieval.filters import RetrievalFilters
 from support_agent.retrieval.milvus_store import MilvusStore
 
 
@@ -31,6 +33,8 @@ def test_dense_and_bm25_roundtrip_in_temporary_collection() -> None:
             heading_path=f"Fixture > {index}",
             text=text,
             n_tokens=len(text.split()),
+            topic="fixture",
+            effective_from=settings.policy_versions.default_effective_from,
         )
         for index, text in enumerate(texts)
     ]
@@ -64,6 +68,51 @@ def test_dense_and_bm25_roundtrip_in_temporary_collection() -> None:
         assert fused[0].scores["rrf"] == pytest.approx(2 / (settings.retrieval.rrf_k + 1))
         store.upsert(chunks, vectors)
         assert store.count() == len(texts)
+    finally:
+        store.drop()
+        store.close()
+
+
+@pytest.mark.integration
+def test_date_filter_on_both_milvus_searches() -> None:
+    settings = get_settings().model_copy(deep=True)
+    settings.milvus.collection = "support_chunks_policy_it_" + uuid4().hex
+    boundary = date(2026, 9, 1)
+    current = Chunk(
+        chunk_id="policy-current",
+        doc_id="returns",
+        section_id="returns.test",
+        title="Returns",
+        heading_path="Returns > Test",
+        text="Returns allowed within 30 days.",
+        n_tokens=5,
+        topic="returns",
+        effective_from=boundary,
+    )
+    historical = current.model_copy(
+        update={
+            "chunk_id": "policy-historical",
+            "section_id": "returns.test@2026-01-01",
+            "text": "Returns allowed within 90 days.",
+            "effective_from": date(2026, 1, 1),
+            "effective_to": boundary,
+        }
+    )
+    embedder = FakeEmbedder(settings.retrieval.embedding_dim)
+    vector = embedder.embed(["returns"])[0]
+    store = MilvusStore(settings)
+    try:
+        store.create()
+        store.upsert([current, historical], [vector, vector])
+        assert store.supports_filters()
+        for day, expected in ((date(2026, 8, 31), historical), (boundary, current)):
+            filters = RetrievalFilters(as_of=day)
+            assert [hit.section_id for hit in store.search_dense(vector, filters=filters)] == [
+                expected.section_id
+            ]
+            assert [hit.section_id for hit in store.search_bm25("returns", filters=filters)] == [
+                expected.section_id
+            ]
     finally:
         store.drop()
         store.close()

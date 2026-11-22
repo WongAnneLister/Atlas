@@ -8,6 +8,7 @@ from pydantic import BaseModel, JsonValue
 
 from support_agent.config import REPO_ROOT, Settings
 from support_agent.data.doc_models import digest, json_text
+from support_agent.data.section_metadata import load_section_metadata, require_section_metadata
 from support_agent.data.validate_docs import SECTION, parse_document
 from support_agent.retrieval.chunking import CHUNKER_VERSION, Chunk, chunk_section
 from support_agent.retrieval.index_models import (
@@ -58,21 +59,26 @@ def embedding_profile(settings: Settings) -> dict[str, JsonValue]:
     return settings.retrieval.model_dump(mode="json", include=_EMBEDDING_FIELDS)
 
 
-def index_fingerprint(settings: Settings) -> str:
+def index_fingerprint(settings: Settings, *, legacy_schema: bool = False) -> str:
+    schema = settings.milvus.model_dump(mode="json", include=_SCHEMA_FIELDS)
+    if not legacy_schema:
+        schema["metadata_max_bytes"] = settings.milvus.metadata_max_bytes
+        schema["open_end_day"] = settings.policy_versions.open_end_day
     return digest(
         json_text(
             {
                 "embedding": embedding_profile(settings),
                 "chunk": settings.chunk.model_dump(mode="json"),
-                "index_schema": settings.milvus.model_dump(mode="json", include=_SCHEMA_FIELDS),
+                "index_schema": schema,
                 "chunker_version": CHUNKER_VERSION,
-                "store_schema_version": STORE_SCHEMA_VERSION,
+                "store_schema_version": "1" if legacy_schema else STORE_SCHEMA_VERSION,
             }
         )
     )
 
 
 def load_corpus(docs_dir: Path) -> Corpus:
+    metadata = load_section_metadata(docs_dir)
     documents: dict[str, SourceDocument] = {}
     sections: dict[str, SourceSection] = {}
     for path in sorted(docs_dir.glob("*.md")):
@@ -86,14 +92,26 @@ def load_corpus(docs_dir: Path) -> Corpus:
         documents[doc.doc_id] = doc
         headings = {match[2].strip(): match[1].strip() for match in SECTION.finditer(text)}
         for sid, prose in parsed.items():
+            section_metadata = require_section_metadata(metadata, sid)
             fields = {"doc_id": doc.doc_id, "heading": headings[sid], "text": prose}
             sections[sid] = SourceSection(
                 section_id=sid,
-                content_hash=digest(json_text({**fields, "title": doc.title})),
+                content_hash=digest(
+                    json_text(
+                        {
+                            **fields,
+                            "title": doc.title,
+                            "metadata": section_metadata.model_dump(mode="json"),
+                        }
+                    )
+                ),
+                metadata=section_metadata,
                 **fields,
             )
     if not sections:
         raise ValueError("No source documents or sections")
+    if sections.keys() != metadata.keys():
+        raise ValueError("Section metadata contains sections outside the source documents")
     identity = json_text(
         {
             "documents": {key: doc.model_dump() for key, doc in documents.items()},
@@ -148,5 +166,6 @@ def chunks_for(
             corpus.sections[sid].heading,
             settings.chunk,
             tokenizer,
+            metadata=corpus.sections[sid].metadata,
         )
     ]

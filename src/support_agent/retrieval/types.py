@@ -1,10 +1,15 @@
 """Shared retrieval results and the query interface, independent of Milvus."""
 
-from typing import Protocol
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Protocol
 
 from pydantic import Field
 
 from support_agent.retrieval.chunking import Chunk
+
+if TYPE_CHECKING:
+    from support_agent.retrieval.filters import RetrievalFilters
 
 
 class RetrievedChunk(Chunk):
@@ -13,4 +18,6 @@ class RetrievedChunk(Chunk):
 
 
 class Retriever(Protocol):
-    def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]: ...
+    def retrieve(
+        self, query: str, top_k: int, filters: RetrievalFilters | None = None
+    ) -> list[RetrievedChunk]: ...

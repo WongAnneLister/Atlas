@@ -15,6 +15,7 @@ from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.retrieval.chunking import Chunk, embedding_text, load_chunks
 from support_agent.retrieval.embed import BgeM3Embedder, Embedder
+from support_agent.retrieval.index_plan import default_docs_dir, load_corpus
 from support_agent.retrieval.milvus_store import ChunkStore, MilvusStore
 from support_agent.retrieval.tokenization import BgeTokenizer, Tokenizer
 
@@ -90,12 +91,7 @@ def run(settings: Settings, *, chunks_only: bool = False) -> IngestRun:
         write_text(output / "chunks.jsonl", text)
         run_info.chunk_count = len(chunks)
         run_info.chunk_hash = digest(text)
-        run_info.corpus_hash = digest(
-            "".join(
-                path.name + digest(path.read_text(encoding="utf-8"))
-                for path in sorted((output / "docs").glob("*.md"))
-            )
-        )
+        run_info.corpus_hash = load_corpus(default_docs_dir(settings)).docs_hash
         run_info.timings_s["chunking"] = perf_counter() - started
         if chunks_only:
             run_info.status = "chunks_only"

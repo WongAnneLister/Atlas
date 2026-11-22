@@ -113,6 +113,9 @@ def main(*, preview: bool = False) -> None:
         "",
     ]
     report = "\n".join(lines)
+    if preview:
+        write_text(output / "ingestion.md", report)
+        return
     write_text(REPO_ROOT / "eval/reports/ingestion.md", report)
     guide_path = REPO_ROOT / "docs/RETRIEVAL.md"
     guide = guide_path.read_text(encoding="utf-8").split("## Measured ingestion", 1)[0]

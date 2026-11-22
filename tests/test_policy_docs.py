@@ -146,6 +146,7 @@ def pdf_bytes(text: str) -> bytes:
 @pytest.fixture
 def build_settings(tmp_path: Path) -> Settings:
     settings = get_settings().model_copy(deep=True)
+    settings.policy_versions.enabled = False
     raw = tmp_path / "raw"
     settings.data.raw_dir = str(raw)
     settings.data.processed_dir = str(tmp_path / "processed")
@@ -222,6 +223,16 @@ def test_build_is_valid_and_byte_identical(build_settings: Settings) -> None:
     assert snapshot(processed) == first
     text = (processed / "docs/catalog_fixture.md").read_text(encoding="utf-8")
     assert set(parse_document(text)[0]) == {"product.W40", "product.W40 Pro", "product.W400"}
+    metadata = json.loads((processed / "docs/section_metadata.json").read_text())
+    assert metadata.keys() == json.loads((processed / "docs/provenance.json").read_text()).keys()
+    assert metadata["product.W40"] == {
+        "doc_type": "catalog",
+        "topic": "catalog",
+        "product_category": "fixture",
+        "effective_from": "2026-01-01",
+        "effective_to": None,
+        "region": "global",
+    }
     assert set(load_faqs(Path(build_settings.data.raw_dir))[i].answer for i in (0, 4)) == {
         "Return within 30 days.",
         "Return within 10 days.",
@@ -238,6 +249,7 @@ def test_build_is_valid_and_byte_identical(build_settings: Settings) -> None:
         "catalog",
         "new_promise",
         "preamble",
+        "section_metadata",
     ],
 )
 def test_validator_rejects_output_corruption(build_settings: Settings, corruption: str) -> None:
@@ -257,6 +269,11 @@ def test_validator_rejects_output_corruption(build_settings: Settings, corruptio
         path.write_text(text + "\nWe always refund every purchase.\n", encoding="utf-8")
     elif corruption == "preamble":
         path.write_text(text.replace("\n## ", "\nUnconditional refunds.\n## ", 1), encoding="utf-8")
+    elif corruption == "section_metadata":
+        path = processed / "docs/section_metadata.json"
+        metadata = json.loads(path.read_text(encoding="utf-8"))
+        metadata["product.W40"]["effective_from"] = "2026-02-01"
+        path.write_text(json.dumps(metadata), encoding="utf-8")
     else:
         path = processed / "catalog/products.jsonl"
         path.write_text(path.read_text(encoding="utf-8").replace("W400", "W999"), encoding="utf-8")
@@ -300,7 +317,22 @@ def test_enabled_versions_generate_validated_synthetic_sections(
     build_settings.policy_versions.spec_path = str(spec)
     build_docs(build_settings)
     validate_docs(build_settings)
-    text = (Path(build_settings.data.processed_dir) / "docs/returns.md").read_text()
+    docs = Path(build_settings.data.processed_dir) / "docs"
+    text = (docs / "returns.md").read_text()
     parsed, _ = parse_document(text)
     assert "Return within 10 days." in parsed[base_id]
     assert "Return within 90 days." in parsed[f"{base_id}@2026-01-01"]
+    metadata = json.loads((docs / "section_metadata.json").read_text())
+    assert metadata[base_id] == {
+        "doc_type": "policy",
+        "topic": "returns",
+        "product_category": "",
+        "effective_from": "2026-09-01",
+        "effective_to": None,
+        "region": "global",
+    }
+    assert metadata[f"{base_id}@2026-01-01"] == {
+        **metadata[base_id],
+        "effective_from": "2026-01-01",
+        "effective_to": "2026-09-01",
+    }

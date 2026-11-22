@@ -128,9 +128,26 @@ Its section ID ends in `@2026-01-01`, and its heading ends in ` (policy before 2
 
 The source sentences and replacements live in `src/support_agent/data/policy_versions.yaml`.
 The builder requires each source sentence to occur exactly once before it creates the copy.
-`policy_versions.enabled` defaults to false in 23a, which preserves the existing build bytes.
-When enabled, validation checks the synthetic copies against the version spec and preserves their
-source provenance. Ordinary source checks still apply to the current sections.
+`policy_versions.enabled` includes the historical sections in the default build. Validation
+checks the synthetic copies against the version spec and preserves their source provenance.
+Ordinary source checks still apply to the current sections.
+
+## Section metadata
+
+`make data-docs` writes `data/processed/docs/section_metadata.json` with a record for each
+Markdown section ID. Policy sections use the FAQ topic and an empty product category. Catalog
+sections use the `catalog` topic and the category assigned from the product model. All regions
+are `global`.
+
+The validity window includes `effective_from` and excludes `effective_to`. A null end is open.
+Unversioned sections start on `policy_versions.default_effective_from` (2026-01-01 in the
+default config). The version spec supplies both dates for historical sections and the start
+date for their current sections.
+
+Preview chunking and index builds require complete section metadata. Run `make data-docs`
+to regenerate the sidecar before building an index from older documents. The index registry
+stores the metadata alongside the heading. A date or other metadata edit changes the
+section's content hash and triggers an update even when the prose and heading stay the same.
 
 ## Products and limits
 

@@ -94,9 +94,15 @@ def order_block(text: str) -> str:
     return f"<order_data>\n{_escape(text)}\n</order_data>"
 
 
-def source_blocks(chunks: Sequence[RetrievedChunk]) -> str:
+def source_blocks(chunks: Sequence[RetrievedChunk], *, include_validity: bool = False) -> str:
+    def validity(chunk: RetrievedChunk) -> str:
+        if not include_validity or chunk.effective_from is None:
+            return ""
+        end = f" until {chunk.effective_to} (end excluded)" if chunk.effective_to else ""
+        return f"Validity from {chunk.effective_from}{end}.\n"
+
     return "\n\n".join(
         f'<source n="{number}">\n[{number}] {_escape(chunk.heading_path)}\n'
-        f"{_escape(chunk.text)}\n</source>"
+        f"{validity(chunk)}{_escape(chunk.text)}\n</source>"
         for number, chunk in enumerate(chunks, start=1)
     )

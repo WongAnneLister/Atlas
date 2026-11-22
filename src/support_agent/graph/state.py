@@ -12,6 +12,7 @@ from support_agent.graph.handoff import HandoffPayload
 from support_agent.graph.intents import Intent, Path
 from support_agent.guardrails.input import InputAction
 from support_agent.reliability.events import ReliabilityEvent
+from support_agent.retrieval.filters import RetrievalFilters
 from support_agent.retrieval.types import RetrievedChunk
 
 
@@ -40,6 +41,8 @@ class ConversationState(BaseModel):
     reliability_events: list[ReliabilityEvent] = Field(default_factory=list)
     retrieval_build_id: str | None = None
     retrieval: list[RetrievedChunk] = Field(default_factory=list)
+    filters: RetrievalFilters | None = None
+    filters_applied: bool = False
     gate: GateResult | None = None
     retrieval_error_type: str | None = None
     retrieval_dependency_unavailable: bool = False

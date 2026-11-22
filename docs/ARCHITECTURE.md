@@ -6,7 +6,7 @@ flowchart LR
     API --> Graph["Synchronous LangGraph"]
     API --> Orders["OrderService"]
     Graph --> Orders
-    Graph --> Retrieve["Hybrid retrieval, reranker, evidence gate"]
+    Graph --> Retrieve["Metadata-filtered hybrid retrieval, reranker, evidence gate"]
     Retrieve --> Milvus["Milvus on VPS via SSH tunnel"]
     Graph --> Saver["LangGraph checkpoint saver"]
     Orders --> PG["PostgreSQL"]
@@ -28,6 +28,13 @@ that thread and continue it when the client posts the selected order to
 `/api/resume`. The refund path looks up the order again and evaluates retrieved
 policy before recording a pending request. The persisted user message ID makes
 replaying that write return the same request.
+
+Knowledge requests search policies in force on the configured current date. A
+recognized product category limits the catalog candidates and policy candidates
+remain eligible. The refund path searches by the purchase date read from
+OrderService. Both dense and lexical searches use the same date criteria before
+fusion and reranking. Handoff snapshots record the requested filters and whether
+the index applied them.
 
 ## State ownership
 

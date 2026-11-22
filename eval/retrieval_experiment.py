@@ -12,6 +12,7 @@ from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.retrieval.bm25 import Bm25Retriever
 from support_agent.retrieval.dense import DenseRetriever
 from support_agent.retrieval.embed import Embedder
+from support_agent.retrieval.filters import RetrievalFilters, retrieve_with_filters
 from support_agent.retrieval.hybrid import HybridRetriever
 from support_agent.retrieval.milvus_store import SearchStore
 from support_agent.retrieval.rerank import Reranker, RerankingRetriever
@@ -45,15 +46,31 @@ class Experiment:
         self.component_sources = {"dense": dense_source, "bm25": bm25_source}
         self.provenance = digest(snapshot + json_text(settings.model_dump(mode="json")))
 
-    def retrieve(self, mode: str, item: EvalItem) -> SearchRecord:
+    def retrieve(
+        self, mode: str, item: EvalItem, *, filters: RetrievalFilters | None = None
+    ) -> SearchRecord:
         source = self.component_sources.get(mode)
         if source is not None:
-            return source.retrieve(mode, item)
-        key = digest(json_text([mode, self.provenance, item.question]))
+            return source.retrieve(mode, item, filters=filters)
+        key = digest(
+            json_text(
+                [
+                    mode,
+                    self.provenance,
+                    item.question,
+                    filters.model_dump(mode="json") if filters else None,
+                ]
+            )
+        )
         path = self.cache_dir / f"{key}.json"
         if path.exists():
             cached = SearchRecord.model_validate_json(path.read_text(encoding="utf-8"))
-            if cached.provenance != self.provenance or cached.item != item or cached.mode != mode:
+            if (
+                cached.provenance != self.provenance
+                or cached.item != item
+                or cached.mode != mode
+                or cached.filters != filters
+            ):
                 raise ValueError("Retrieval cache provenance mismatch")
             return cached.model_copy(update={"cache_hit": True})
         config = self.settings.retrieval
@@ -65,10 +82,11 @@ class Experiment:
             )
             depth = config.dense_top_k if mode == "dense" else config.bm25_top_k
             started = perf_counter()
-            chunks = retriever.retrieve(item.question, depth)
+            chunks, applied = retrieve_with_filters(retriever, item.question, depth, filters)
             components = {mode: perf_counter() - started}
         elif mode == "hybrid":
-            dense, lexical = self.retrieve("dense", item), self.retrieve("bm25", item)
+            dense = self.retrieve("dense", item, filters=filters)
+            lexical = self.retrieve("bm25", item, filters=filters)
             started = perf_counter()
             chunks = HybridRetriever(
                 FrozenRetriever(dense.chunks), FrozenRetriever(lexical.chunks), config
@@ -78,8 +96,9 @@ class Experiment:
                 **lexical.components_s,
                 "fusion": perf_counter() - started,
             }
+            applied = dense.filters_applied and lexical.filters_applied
         elif mode == "hybrid_rerank":
-            base = self.retrieve("hybrid", item)
+            base = self.retrieve("hybrid", item, filters=filters)
             started = perf_counter()
             chunks = RerankingRetriever(
                 FrozenRetriever(base.chunks),
@@ -88,6 +107,7 @@ class Experiment:
                 config.rerank_top_k,
             ).retrieve(item.question, config.rerank_top_k)
             components = {**base.components_s, "rerank": perf_counter() - started}
+            applied = base.filters_applied
         else:
             raise ValueError(f"Unknown retrieval mode: {mode}")
         record = SearchRecord(
@@ -97,6 +117,8 @@ class Experiment:
             latency_s=sum(components.values()),
             components_s=components,
             provenance=self.provenance,
+            filters=filters,
+            filters_applied=applied,
         )
         write_text(path, record.model_dump_json() + "\n")
         return record

@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from statistics import mean
 
+from eval.common import FILTER_VARIANT_PREFIX
 from eval.metrics import hit_all_at_k, mrr, recall_at_k
 from eval.retrieval_records import RetrievalReportRun, RetrievalRun, SearchRecord, SearchReportRow
 from support_agent.data.doc_models import write_text
@@ -115,6 +116,11 @@ def write_reports(run: RetrievalRun | RetrievalReportRun, folder: Path, guide_pa
     ks = meta.settings["retrieval_eval"]["metric_ks"]
     cutoff = max(ks)
     splits = list(dict.fromkeys(r.item.split for r in run.records))
+    filter_modes = list(
+        dict.fromkeys(
+            record.mode for record in run.records if record.mode.startswith(FILTER_VARIANT_PREFIX)
+        )
+    )
     header = [
         "# Retrieval comparison",
         "",
@@ -179,6 +185,25 @@ def write_reports(run: RetrievalRun | RetrievalReportRun, folder: Path, guide_pa
     for split in splits:
         rows = [r for r in run.records if r.item.split == split]
         tables += [f"## {split}", "", table(rows, ks, groups=True), ""]
+    if filter_modes:
+        tables += [
+            "## Metadata filter ablation",
+            "",
+            "These modes use the same corpus, hybrid search and reranker. Date filters use the",
+            "configured current date. The category mode adds a category when exactly one is",
+            "detected. Both searches must apply the filters for a row to count as applied.",
+            "Older collections can be read without metadata filters.",
+            "",
+            "| Split | Mode | Filters applied |",
+            "|---|---|---:|",
+        ]
+        for split in splits:
+            for mode in filter_modes:
+                rows = [r for r in run.records if r.item.split == split and r.mode == mode]
+                if rows:
+                    applied = sum(row.filters_applied for row in rows)
+                    tables.append(f"| {split} | {mode} | {applied}/{len(rows)} |")
+        tables.append("")
     test = [r for r in run.records if r.item.split == "test" and r.mode == "hybrid_rerank"]
     target = meta.settings["retrieval_eval"]["target_recall_at_5"]
     passed = bool(test) and summary(test, ks)["Recall@5"] >= target
@@ -218,6 +243,8 @@ def write_reports(run: RetrievalRun | RetrievalReportRun, folder: Path, guide_pa
             "latency_s",
             "cache_hit",
         ]
+        if filter_modes:
+            fields.extend(("filters", "filters_applied"))
         writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for record in run.records:
@@ -237,6 +264,9 @@ def write_reports(run: RetrievalRun | RetrievalReportRun, folder: Path, guide_pa
                 "latency_s": record.latency_s,
                 "cache_hit": record.cache_hit,
             }
+            if filter_modes:
+                row["filters"] = record.filters.model_dump_json() if record.filters else ""
+                row["filters_applied"] = record.filters_applied
             row.update(
                 {f"recall@{k}": recall_at_k(sections, record.item.gold_sections, k) for k in ks}
             )

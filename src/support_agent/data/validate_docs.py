@@ -21,7 +21,8 @@ from support_agent.data.doc_models import (
 )
 from support_agent.data.faq_docs import deduplicate, load_faqs
 from support_agent.data.policy_versions import PolicySection, docs_config_hash, load_versions
-from support_agent.data.product_docs import extract_products, product_section_id
+from support_agent.data.product_docs import extract_products, product_category, product_section_id
+from support_agent.data.section_metadata import build_section_metadata, load_section_metadata
 
 log = logging.getLogger(__name__)
 SECTION = re.compile(r"^## ([^\n]+)\n<!-- section: ([^\n]+) -->\n(.*?)(?=^## |\Z)", re.M | re.S)
@@ -71,6 +72,7 @@ def validate_docs(settings: Settings) -> ValidationSummary:
         raise ValueError("Build config changed; run make data-docs")
     provenance = json.loads((docs_dir / "provenance.json").read_text(encoding="utf-8"))
     sections: dict[str, str] = {}
+    section_documents: dict[str, str] = {}
     stats: list[DocumentStats] = []
     for path in sorted(docs_dir.glob("*.md")):
         text = path.read_text(encoding="utf-8")
@@ -80,6 +82,7 @@ def validate_docs(settings: Settings) -> ValidationSummary:
         if metadata.doc_id != path.stem or metadata.built_at != built_at:
             raise ValueError(f"Incorrect metadata: {path.name}")
         sections.update(parsed)
+        section_documents.update(dict.fromkeys(parsed, metadata.doc_id))
         stats.append(
             DocumentStats(
                 doc_id=path.stem,
@@ -145,13 +148,25 @@ def validate_docs(settings: Settings) -> ValidationSummary:
     ]
     if products != extract_products(raw_dir, settings.data.docs):
         raise ValueError("Catalog differs from source PDFs")
+    catalog_categories: dict[str, str] = {}
     for product in products:
         sid = product_section_id(product.model)
         if sections[sid] != product.description:
             raise ValueError(f"Product text differs from source: {product.model}")
         expected_sources[sid].append(product.source_id)
+        catalog_categories[sid] = product_category(product.model, settings.data.docs)
     if {k: sorted(v) for k, v in expected_sources.items()} != provenance:
         raise ValueError("Incorrect source-to-section provenance")
+    expected_metadata = build_section_metadata(
+        {sid: section_documents[sid] for sid in expected_prose},
+        catalog_categories,
+        settings.policy_versions.default_effective_from,
+        versions,
+    )
+    if load_section_metadata(docs_dir) != expected_metadata:
+        raise ValueError(
+            "Section metadata differs from the source and policy version configuration"
+        )
     coverage = covered / len(faqs) if faqs else 0.0
     if coverage < settings.data.docs.minimum_coverage:
         raise ValueError(f"FAQ coverage below configured minimum: {coverage:.2%}")

@@ -3,8 +3,8 @@
 Runs `RefundPath.retrieve_policy` (real retrieval, rerank, store scope and gate) for each
 seeded order under both `refund.policy_query` modes. No LLM calls: the decision step is
 not run, so this measures whether the refund path can reach a decision, not whether the
-decision is right. The query depends only on order facts, so many orders share a query;
-each distinct query is retrieved once.
+decision is right. The query depends only on order facts, so many orders share a query.
+The retrieval cache keys the query and its filters, including the stored order date.
 """
 
 from __future__ import annotations
@@ -12,7 +12,8 @@ from __future__ import annotations
 import argparse
 import statistics
 import subprocess
-from collections import Counter
+from collections import defaultdict
+from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -27,7 +28,8 @@ from support_agent.graph.refund_query import template_key
 from support_agent.graph.state import ConversationState
 from support_agent.orders.models import Order
 from support_agent.orders.service import OrderService
-from support_agent.retrieval.index_snapshot import load_build_chunks
+from support_agent.retrieval.filters import RetrievalFilters, filter_scope, supports_filters
+from support_agent.retrieval.index_snapshot import build_chunk_hash
 from support_agent.retrieval.scope import section_store
 from support_agent.retrieval.types import RetrievedChunk
 
@@ -52,27 +54,38 @@ class Row:
     policy_store_in_top5: bool
     other_store_in_top5: int
     retrieval_error: bool = False
+    filters_applied: bool = False
 
 
 class CachingRetriever:
-    """Retrieve each distinct query once; both modes and all orders share the cache."""
+    """Share results across modes and orders with identical retrieval inputs."""
 
     def __init__(self, inner: Any, attempts: int = RETRIEVAL_ATTEMPTS) -> None:
         self.inner = inner
         self.attempts = attempts
-        self.cache: dict[tuple[str, int], list[RetrievedChunk]] = {}
-        self.failed: set[str] = set()
+        self.cache: dict[tuple[str, int, str | None], list[RetrievedChunk]] = {}
 
-    def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]:
-        key = (query, top_k)
+    def supports_filters(self) -> bool:
+        return supports_filters(self.inner)
+
+    def filter_scope(self) -> AbstractContextManager[None]:
+        return filter_scope(self.inner)
+
+    def retrieve(
+        self, query: str, top_k: int, filters: RetrievalFilters | None = None
+    ) -> list[RetrievedChunk]:
+        key = (query, top_k, filters.model_dump_json() if filters is not None else None)
         if key not in self.cache:
             for attempt in range(1, self.attempts + 1):
                 try:
-                    self.cache[key] = self.inner.retrieve(query, top_k)
+                    self.cache[key] = (
+                        self.inner.retrieve(query, top_k)
+                        if filters is None
+                        else self.inner.retrieve(query, top_k, filters=filters)
+                    )
                     break
                 except Exception:
                     if attempt == self.attempts:
-                        self.failed.add(query)
                         raise
         return [chunk.model_copy(deep=True) for chunk in self.cache[key]]
 
@@ -86,7 +99,7 @@ def all_orders(service: OrderService, n_customers: int) -> list[Order]:
     return sorted(orders, key=lambda order: order.order_id)
 
 
-def measure(path: RefundPath, order: Order, mode: str, settings: Settings, failed: set[str]) -> Row:
+def measure(path: RefundPath, order: Order, mode: str, settings: Settings) -> Row:
     state = ConversationState(
         customer_id=order.customer_id,
         intent=Intent.REFUND_REQUEST,
@@ -110,7 +123,8 @@ def measure(path: RefundPath, order: Order, mode: str, settings: Settings, faile
         top_store=stores[0] if stores else "empty",
         policy_store_in_top5=policy in stores,
         other_store_in_top5=sum(store not in (policy, "none") for store in stores),
-        retrieval_error=result["refund_policy_query"] in failed,
+        retrieval_error=bool(result.get("retrieval_error_type")),
+        filters_applied=result["filters_applied"],
     )
 
 
@@ -155,15 +169,20 @@ def by_status_lines(rows: list[Row]) -> list[str]:
 
 def query_lines(rows: list[Row]) -> list[str]:
     lines = [
-        "| Question key | Query | Orders | Gate score | Passed | Gate reason | Top-1 store |",
-        "|---|---|---:|---:|---|---|---|",
+        "| Question key | Query | Orders | Median score | Passed | Gate reasons | Top-1 stores |",
+        "|---|---|---:|---:|---:|---|---|",
     ]
-    part = [row for row in rows if row.mode == "store_faq"]
-    for query, count in sorted(Counter(row.query for row in part).items()):
-        row = next(r for r in part if r.query == query)
+    groups: dict[str, list[Row]] = defaultdict(list)
+    for row in rows:
+        if row.mode == "store_faq":
+            groups[row.query].append(row)
+    for query, part in sorted(groups.items()):
+        reasons = ", ".join(sorted({row.reason for row in part}))
+        stores = ", ".join(sorted({row.top_store for row in part}))
         lines.append(
-            f"| {row.key} | {query} | {count} | {row.score:.4f} | {row.passed} "
-            f"| {row.reason} | {row.top_store} |"
+            f"| {part[0].key} | {query} | {len(part)} "
+            f"| {statistics.median(row.score for row in part):.4f} "
+            f"| {_rate(sum(row.passed for row in part), len(part))} | {reasons} | {stores} |"
         )
     return lines
 
@@ -173,15 +192,7 @@ def write_report(
 ) -> None:
     variant = settings.model_dump(mode="json")
     variant.pop("refund", None)
-    corpus = (
-        digest(
-            "".join(
-                chunk.model_dump_json() + "\n" for chunk in load_build_chunks(settings, build_id)
-            )
-        )
-        if build_id
-        else "unresolved"
-    )
+    corpus = build_chunk_hash(settings, build_id) if build_id else "unresolved"
     sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
     retrieval = settings.retrieval
     lines = [
@@ -198,6 +209,8 @@ def write_report(
         f"- Collection: `{settings.milvus.collection}`; gate threshold {settings.gate.threshold};"
         f" policy store `{settings.refund.policy_store}`.",
         "- Orders: every seeded mock order (all customers). There is no dev/test split here.",
+        f"- Date filter applied on {sum(row.filters_applied for row in rows)}/{len(rows)} rows."
+        " A legacy collection has no filter fields.",
         "- The store_faq questions were written after reading the generic store FAQ questions",
         "  and probing a few fixed queries by hand. They were not tuned on these orders.",
         "",
@@ -240,7 +253,7 @@ def main(argv: list[str] | None = None) -> int:
             settings = base.model_copy(deep=True)
             settings.refund.policy_query = mode
             path = RefundPath(GraphDeps(settings, retriever=retriever, order_service=service))
-            rows += [measure(path, order, mode, settings, retriever.failed) for order in orders]
+            rows += [measure(path, order, mode, settings) for order in orders]
         build_id = deps.current_build_id()
     write_report(rows, base, REPO_ROOT / args.report, build_id)
     return 0

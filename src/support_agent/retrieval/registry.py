@@ -308,12 +308,15 @@ def finish_build(
             or previous["is_deleted"]
         ):
             version += 1
-            fields = section.model_dump(exclude={"heading"})
+            fields = section.model_dump(exclude={"heading", "metadata"})
             connection.execute(
                 sections.insert().values(
                     **fields,
                     version=version,
-                    metadata={"heading": section.heading},
+                    metadata={
+                        "heading": section.heading,
+                        **section.metadata.model_dump(mode="json"),
+                    },
                     is_deleted=False,
                     created_at=timestamp,
                 )

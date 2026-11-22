@@ -271,3 +271,60 @@ def test_cache_follows_config_and_can_be_disabled(monkeypatch) -> None:
     assert cache_path(settings) == REPO_ROOT / settings.index.release.rerank_cache.path
     settings.index.release.rerank_cache.enabled = False
     assert cache_path(settings) is None
+
+
+def test_filtered_evidence_reuses_pair_scores_and_preserves_its_results(tmp_path: Path) -> None:
+    from datetime import date
+
+    from eval.index_release import evidence_config_hash
+    from eval.sweep import production_retrieval, score_config_hash
+
+    from support_agent.retrieval.filters import RetrievalFilters
+    from support_agent.retrieval.rerank import RerankingRetriever
+    from support_agent.retrieval.types import RetrievedChunk
+
+    settings = Settings()
+    unfiltered = settings.model_copy(deep=True)
+    unfiltered.retrieval.filters.enabled = False
+    assert evidence_config_hash(settings) != evidence_config_hash(unfiltered)
+    assert score_config_hash(settings) != score_config_hash(unfiltered)
+    assert score_profile(settings) == score_profile(unfiltered)
+    cutoff = date(2026, 9, 1)
+    chunks = [
+        item("past").model_copy(
+            update={"effective_from": date(2026, 1, 1), "effective_to": cutoff}
+        ),
+        item("current").model_copy(update={"effective_from": cutoff}),
+    ]
+
+    class Candidates:
+        def supports_filters(self) -> bool:
+            return True
+
+        def retrieve(
+            self, query: str, top_k: int, filters: RetrievalFilters | None = None
+        ) -> list[RetrievedChunk]:
+            return [chunk for chunk in chunks if filters is None or filters.matches(chunk)][:top_k]
+
+    config = settings.retrieval
+    expected = production_retrieval(
+        RerankingRetriever(Candidates(), BgeReranker(config, backend=Backend()), 5, 5),
+        "Return policy?",
+        settings,
+    )
+    cache = ScoreCache(tmp_path / "scores.sqlite", _profile())
+    try:
+        backend = Backend()
+        reranker = CachedReranker(BgeReranker(config, backend=backend), cache)
+        retriever = RerankingRetriever(Candidates(), reranker, 5, 5)
+        before, _, applied = production_retrieval(retriever, "Return policy?", unfiltered)
+        assert not applied
+        assert {chunk.chunk_id for chunk in before} == {"past", "current"}
+        after = production_retrieval(retriever, "Return policy?", settings)
+        assert after == expected
+        assert [chunk.chunk_id for chunk in after[0]] == ["current"]
+        assert after[2]
+        assert (reranker.from_cache, reranker.scored) == (1, 2)
+        assert len(backend.calls) == 1
+    finally:
+        cache.close()

@@ -29,13 +29,14 @@ from eval.run_record import (
 )
 from eval.schema import EvalItem
 from eval.smoke import load_smoke_spec
-from eval.sweep import production_chunks
+from eval.sweep import production_retrieval
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.gate.evidence import evaluate
 from support_agent.reliability.guards import DependencyUnavailable, diagnostic_type
 from support_agent.reliability.retry import retry_call
 from support_agent.retrieval.factory import build_retriever
+from support_agent.retrieval.filters import RetrievalFilters
 from support_agent.retrieval.milvus_store import MilvusStore, milvus_transport_failure
 from support_agent.retrieval.rerank import BgeReranker
 from support_agent.retrieval.types import RetrievedChunk, Retriever
@@ -104,6 +105,9 @@ def evidence_config_hash(settings: Settings) -> str:
                 "gate": settings.gate.model_dump(mode="json"),
                 "milvus": milvus,
                 "hit_k": settings.index.release.hit_k,
+                "policy_day": settings.orders.today.isoformat(),
+                "policy_open_end_day": settings.policy_versions.open_end_day,
+                "catalog_categories": settings.data.docs.product_categories,
             }
         )
     )
@@ -122,17 +126,17 @@ def _collect_item(
         nonlocal retries
         retries += 1
 
-    def search(_remaining: float) -> list[RetrievedChunk]:
+    def search(_remaining: float) -> tuple[list[RetrievedChunk], RetrievalFilters | None, bool]:
         # Only a broken link is retried; any other error is recorded on the first attempt.
         try:
-            return production_chunks(retriever, item.question, settings)
+            return production_retrieval(retriever, item.question, settings)
         except Exception as error:
             if milvus_transport_failure(error):
                 raise DependencyUnavailable("milvus", error) from error
             raise
 
     try:
-        chunks = retry_call(
+        chunks, filters, filters_applied = retry_call(
             search,
             policy=settings.index.release.retry,
             is_idempotent=True,
@@ -146,7 +150,12 @@ def _collect_item(
             row.payload["retries"] = retries
         return row
     top = chunks[: settings.index.release.hit_k]
-    row.payload = {"gate_score": gate.score, "top_chunk_ids": [chunk.chunk_id for chunk in top]}
+    row.payload = {
+        "gate_score": gate.score,
+        "top_chunk_ids": [chunk.chunk_id for chunk in top],
+        "filters": filters.model_dump(mode="json") if filters is not None else None,
+        "filters_applied": filters_applied,
+    }
     if retries:
         row.payload["retries"] = retries
     if item.answerable:

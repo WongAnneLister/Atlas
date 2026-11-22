@@ -62,10 +62,17 @@ facts need separate tests. Use dev for tuning and reserve test for reporting.
 
 `make eval-time-sensitive` writes one run record per split plus a report with Wilson confidence
 intervals by split and path. It checks top-five version hits, wrong-version hits, gate passes,
-and whether filters were applied. In 23a only `--filters off` is available. The refund evaluator
-reads real fixture order rows and follows the production policy retrieval query for those orders.
-It evaluates retrieval and the gate without an LLM or a refund decision. Use
+and whether filters were applied. Set `TIME_SENSITIVE_ARGS="--filters off"` for the unfiltered
+baseline, `--filters date` for validity dates, or `--filters date_category` to also narrow the
+knowledge search when it detects one product category. The refund evaluator reads the fixture
+order rows and uses their dates with the production policy query. On a legacy index the run
+records the requested filters and marks them as unapplied. This evaluates retrieval and the gate
+without an LLM or a refund decision. Use
 `TIME_SENSITIVE_ARGS="--report-from <run> ..."` to rebuild the report from saved runs.
+
+`make eval-retrieval` includes the three metadata filter ablations on the answerable v1 items when
+ablations are enabled. The modes share the same index, hybrid search and reranker. The heading
+ablation also needs a chunk snapshot with validity metadata.
 
 ## Human review workflow
 

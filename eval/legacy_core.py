@@ -186,6 +186,8 @@ def retrieval_items(records: list[SearchRecord], ks: list[int]) -> list[RunItem]
                     ],
                     "latency_s": record.latency_s,
                     "cache_hit": record.cache_hit,
+                    "filters": record.filters.model_dump(mode="json") if record.filters else None,
+                    "filters_applied": record.filters_applied,
                 },
             )
         )

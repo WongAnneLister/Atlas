@@ -31,7 +31,7 @@ from support_agent.retrieval.registry import IndexRegistry
 from support_agent.retrieval.rerank import FakeReranker
 from support_agent.retrieval.tokenization import WhitespaceTokenizer
 from test_graph_knowledge import CoverageFake, fast_model, part
-from test_index_plan import document
+from test_index_plan import write_docs
 
 
 @contextmanager
@@ -105,7 +105,6 @@ def test_freshness_after_release_rollback_and_delete(tmp_path: Path) -> None:
     other = next(key for key in sections if key != sid)
     docs = tmp_path / "docs"
     docs.mkdir()
-    path = docs / "returns.md"
     settings = isolated_settings(tmp_path / "processed")
     settings.gate.threshold = 0.25  # Synthetic fixture only.
     embedder = RecordingEmbedder(settings.retrieval.embedding_dim)
@@ -115,7 +114,7 @@ def test_freshness_after_release_rollback_and_delete(tmp_path: Path) -> None:
         selected = [(sid, "Generic return window", text)]
         if include_other:
             selected.append((other, "Other return policy", sections[other]))
-        path.write_text(document(*selected), encoding="utf-8")
+        write_docs(docs, *selected)
 
     def check(*_):
         return ReleaseDecision("release"), "fixture-release"
@@ -218,7 +217,7 @@ def test_milvus_alias_readiness_describe_and_search(tmp_path: Path) -> None:
     settings = isolated_settings(tmp_path / "processed")
     docs = tmp_path / "docs"
     docs.mkdir()
-    (docs / "returns.md").write_text(document(("returns.window", "Window", "Orchid returns.")))
+    write_docs(docs, ("returns.window", "Window", "Orchid returns."))
     with scratch_registry(settings, tmp_path / "scratch.sqlite") as registry:
         admin = MilvusAdmin(settings)
         alias = MilvusStore(settings)

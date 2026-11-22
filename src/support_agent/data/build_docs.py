@@ -14,6 +14,7 @@ from support_agent.data.faq_docs import TopicClassifier, deduplicate, load_faqs
 from support_agent.data.manifest import is_current, load_manifest
 from support_agent.data.policy_versions import PolicySection, docs_config_hash, load_versions
 from support_agent.data.product_docs import extract_products, product_category, product_section_id
+from support_agent.data.section_metadata import SECTION_METADATA_FILE, build_section_metadata
 
 log = logging.getLogger(__name__)
 
@@ -101,6 +102,7 @@ def build_docs(settings: Settings) -> BuildIndex:
             topics[topic].append(sid)
             provenance[sid] = sorted(f.source_id for g in section_groups for f in g.records)
             sources[topic].update(f.dataset for g in section_groups for f in g.records)
+    policy_topics = {sid: topic for topic, ids in topics.items() for sid in ids}
     if versions is not None:
         sections.update(versions.apply_versions(sections))
         for entry in versions.entries:
@@ -127,9 +129,12 @@ def build_docs(settings: Settings) -> BuildIndex:
         )
     products = extract_products(raw_dir, settings.data.docs)
     catalogs: dict[str, list[str]] = defaultdict(list)
+    catalog_categories: dict[str, str] = {}
     for product in products:
         sid = product_section_id(product.model)
-        catalogs[product_category(product.model, settings.data.docs)].append(
+        category = product_category(product.model, settings.data.docs)
+        catalog_categories[sid] = category
+        catalogs[category].append(
             f"## {product.name}\n<!-- section: {sid} -->\n\n{product.description}"
         )
         provenance[sid] = [product.source_id]
@@ -150,6 +155,13 @@ def build_docs(settings: Settings) -> BuildIndex:
         "".join(p.model_dump_json() + "\n" for p in products),
     )
     write_text(docs_dir / "provenance.json", json_text(provenance))
+    metadata = build_section_metadata(
+        policy_topics, catalog_categories, settings.policy_versions.default_effective_from, versions
+    )
+    write_text(
+        docs_dir / SECTION_METADATA_FILE,
+        json_text({sid: entry.model_dump(mode="json") for sid, entry in metadata.items()}),
+    )
     write_text(processed / "build_index.json", index.model_dump_json(indent=2) + "\n")
     write_text(previous, json_text(sorted(files)))
     log.info("built %d documents and %d products", len(files), len(products))

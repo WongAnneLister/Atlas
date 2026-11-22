@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Literal, Protocol
 
 from support_agent.config import Settings
+from support_agent.data.section_metadata import SectionMetadata
 from support_agent.retrieval.index_build import new_build, save_build_snapshot, store_for
 from support_agent.retrieval.index_models import BuildRecord
 from support_agent.retrieval.index_plan import (
@@ -220,12 +221,14 @@ def adopt_index(
         finally:
             if reader is None:
                 store.close()
-        if {chunk.chunk_id: chunk for chunk in actual} != {
-            chunk.chunk_id: chunk for chunk in expected
-        }:
+        legacy = bool(actual) and all(chunk.effective_from is None for chunk in actual)
+        exclude = set(SectionMetadata.model_fields) if legacy else set()
+        if (legacy and settings.policy_versions.enabled) or {
+            chunk.chunk_id: chunk.model_dump(exclude=exclude) for chunk in actual
+        } != {chunk.chunk_id: chunk.model_dump(exclude=exclude) for chunk in expected}:
             raise ValueError("Existing collection chunks do not match the on-disk documents")
         prior = next((build for build in lock.builds() if build.collection == collection), None)
-        fingerprint = index_fingerprint(settings)
+        fingerprint = index_fingerprint(settings, legacy_schema=legacy)
         if prior is None:
             record = new_build(settings, corpus, fingerprint, mode="adopted", collection=collection)
             save_build_snapshot(settings, record.build_id, actual)

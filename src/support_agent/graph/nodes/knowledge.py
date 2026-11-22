@@ -16,6 +16,7 @@ from support_agent.graph.model_data import source_blocks
 from support_agent.graph.state import CitationRecord, ConversationState
 from support_agent.reliability.guards import diagnostic_type, is_dependency_failure
 from support_agent.reliability.structured import StructuredOutputError
+from support_agent.retrieval.filters import knowledge_filters, retrieve_with_filters
 from support_agent.retrieval.scope import scope_chunks
 from support_agent.retrieval.types import RetrievedChunk
 
@@ -38,12 +39,17 @@ class KnowledgePath:
         error_type = None
         dependency_unavailable = False
         retrieval = self.deps.settings.retrieval
+        filters = None
+        filters_applied = False
         scope = retrieval.store_scope
         pool = (
             max(retrieval.rerank_top_k, scope.pool_k) if scope.enabled else retrieval.rerank_top_k
         )
         try:
-            ranked = self.deps.knowledge_retriever().retrieve(state.rewritten_query, pool)
+            filters = knowledge_filters(state.rewritten_query, self.deps.settings)
+            ranked, filters_applied = retrieve_with_filters(
+                self.deps.knowledge_retriever(), state.rewritten_query, pool, filters
+            )
             chunks, store, dropped = scope_chunks(
                 state.rewritten_query, ranked, scope, retrieval.rerank_top_k
             )
@@ -57,6 +63,8 @@ class KnowledgePath:
         return {
             "retrieval": chunks,
             "retrieval_build_id": self.deps.current_build_id(),
+            "filters": filters,
+            "filters_applied": filters_applied,
             "retrieval_error_type": error_type,
             "retrieval_dependency_unavailable": dependency_unavailable,
             "trace": [*state.trace, "retrieve"],

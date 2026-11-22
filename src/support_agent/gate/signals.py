@@ -92,9 +92,16 @@ def entity_terms(query: str, settings: GateSettings) -> list[str]:
     return list(dict.fromkeys(term for term in (_normalise(name) for name in kept) if term))
 
 
+def model_terms(query: str) -> list[str]:
+    """Extract normalized model codes using the gate's matching rules."""
+    return list(
+        dict.fromkeys(_normalise(match.group(0)) for match in _MODEL_NUMBER.finditer(query))
+    )
+
+
 def specific_terms(query: str, settings: GateSettings) -> list[str]:
     """Model numbers and, when enabled, named entities: the things a question is about."""
-    terms = [_normalise(match.group(0)) for match in _MODEL_NUMBER.finditer(query)]
+    terms = model_terms(query)
     if settings.entity_terms:
         terms.extend(entity_terms(query, settings))
     return list(dict.fromkeys(term for term in terms if term))
@@ -140,8 +147,7 @@ def model_number_missed(query: str, chunks: list[RetrievedChunk], settings: Gate
     Stricter than specific_term_missed: a hit on another name (e.g. "USB") does not
     stand in for the model. One model is enough, so "X, rather than Y" still passes.
     """
-    models = [_normalise(match.group(0)) for match in _MODEL_NUMBER.finditer(query)]
-    models = [model for model in dict.fromkeys(models) if model]
+    models = model_terms(query)
     if not models:
         return False
     corpus = _evidence_text(chunks, settings)

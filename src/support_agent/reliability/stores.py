@@ -1,6 +1,7 @@
 """Apply guards at the store and reranker boundaries without changing retrieval scores."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from threading import Lock
 from time import monotonic
 
@@ -8,6 +9,7 @@ from support_agent.config import Settings
 from support_agent.orders.models import CustomerSummary, Order, RefundRequest, Shipment
 from support_agent.orders.service import OrderService
 from support_agent.reliability.guards import DependencyGuards
+from support_agent.retrieval.filters import RetrievalFilters
 from support_agent.retrieval.milvus_store import MilvusStore, SearchHit
 from support_agent.retrieval.rerank import Reranker
 from support_agent.retrieval.types import RetrievedChunk
@@ -37,16 +39,39 @@ class GuardedMilvusSearch:
                 )
             return self._store
 
-    def search_dense(self, vector: list[float], limit: int) -> list[SearchHit]:
+    @contextmanager
+    def filter_scope(self) -> Iterator[None]:
+        def resolve(seconds: float) -> tuple[MilvusStore, str]:
+            store = self._client(seconds)
+            return store, store.resolve_read_target(timeout_s=seconds)
+
+        store, target = self._guards.call("milvus", resolve)
+        with store.use_read_target(target):
+            yield
+
+    def supports_filters(self) -> bool:
         return self._guards.call(
-            "milvus",
-            lambda seconds: self._client(seconds).search_dense(vector, limit, timeout_s=seconds),
+            "milvus", lambda seconds: self._client(seconds).supports_filters(timeout_s=seconds)
         )
 
-    def search_bm25(self, text: str, limit: int) -> list[SearchHit]:
+    def search_dense(
+        self, vector: list[float], limit: int, *, filters: RetrievalFilters | None = None
+    ) -> list[SearchHit]:
         return self._guards.call(
             "milvus",
-            lambda seconds: self._client(seconds).search_bm25(text, limit, timeout_s=seconds),
+            lambda seconds: self._client(seconds).search_dense(
+                vector, limit, timeout_s=seconds, filters=filters
+            ),
+        )
+
+    def search_bm25(
+        self, text: str, limit: int, *, filters: RetrievalFilters | None = None
+    ) -> list[SearchHit]:
+        return self._guards.call(
+            "milvus",
+            lambda seconds: self._client(seconds).search_bm25(
+                text, limit, timeout_s=seconds, filters=filters
+            ),
         )
 
     def current_build_id(self) -> str | None:

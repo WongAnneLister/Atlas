@@ -282,9 +282,9 @@ def _flaky_search(monkeypatch, failures: list[Exception]) -> list[int]:
         calls.append(1)
         if failures:
             raise failures.pop(0)
-        return []
+        return [], None, False
 
-    monkeypatch.setattr("eval.index_release.production_chunks", search)
+    monkeypatch.setattr("eval.index_release.production_retrieval", search)
     return calls
 
 

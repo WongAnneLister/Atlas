@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Protocol
 from uuid import uuid4
 
+from eval.common import FILTER_MODES, filter_mode, set_filter_mode
 from eval.registry import DatasetEntry, load_registry
 from eval.run_record import (
     RUNS,
@@ -25,7 +26,7 @@ from eval.run_record import (
 )
 from eval.schema import TimeSensitiveItem
 from eval.stats import wilson_interval
-from eval.sweep import production_chunks
+from eval.sweep import production_retrieval
 from support_agent.config import REPO_ROOT, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.data.policy_versions import PolicyVersions, VersionedPolicy, load_versions
@@ -68,7 +69,9 @@ def measure(
     settings = deps.settings
     if item.path == "knowledge":
         as_of = settings.orders.today
-        chunks = production_chunks(deps.knowledge_retriever(), item.question, settings)
+        chunks, filters, applied = production_retrieval(
+            deps.knowledge_retriever(), item.question, settings
+        )
         gate = evaluate(item.question, chunks, settings.gate)
     else:
         if item.order_id is None or item.customer_id is None:
@@ -89,6 +92,8 @@ def measure(
             raise RuntimeError(f"Refund retrieval failed for {item.id}")
         chunks = result["retrieval"]
         gate = result["gate"]
+        filters = result["filters"]
+        applied = result["filters_applied"]
 
     gold = entry.section_at(as_of)
     if item.as_of != as_of or item.gold_sections != [gold]:
@@ -103,7 +108,7 @@ def measure(
             "version_hit_at_5": gold in top,
             "wrong_version_at_5": wrong in top,
             "gate_pass": gate.passed,
-            "filters_applied": False,
+            "filters_applied": applied,
         },
         payload={
             "path": item.path,
@@ -111,6 +116,7 @@ def measure(
             "gold_section": gold,
             "top_sections": top,
             "gate_reason": gate.reason,
+            "filters": filters.model_dump(mode="json") if filters is not None else None,
         },
     )
 
@@ -162,7 +168,7 @@ def collect_run(
             cost_note="retrieval and evidence gate only",
             command=list(command),
             source={
-                "filters": "off",
+                "filters": filter_mode(settings),
                 "collection": settings.milvus.collection,
                 "build_id": deps.current_build_id(),
                 "reranker_device": retrieval.reranker_device,
@@ -235,21 +241,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--split", choices=("dev", "test", "all"), default="all")
     parser.add_argument(
         "--filters",
-        choices=("off", "date", "date_category"),
+        choices=FILTER_MODES,
         default="off",
-        help="23a supports only --filters off; date and date_category require commit 23",
+        help="Filter mode for this run (default: off)",
     )
     parser.add_argument("--report", type=Path, default=REPORT)
     parser.add_argument("--report-from", type=Path, nargs="+", metavar="RUN")
     args = parser.parse_args(args_list)
-    if args.filters != "off":
-        parser.error("23a supports only --filters off")
     output = REPO_ROOT / args.report
     if args.report_from:
         write_report([REPO_ROOT / path for path in args.report_from], output)
         return 0
 
-    settings = get_settings()
+    settings = get_settings().model_copy(deep=True)
+    set_filter_mode(settings, args.filters)
     versions = load_versions(settings.policy_versions)
     items = load_items(load_registry()["eval_v2"])
     splits = ("dev", "test") if args.split == "all" else (args.split,)

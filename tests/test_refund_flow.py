@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 import pytest
@@ -14,8 +15,10 @@ from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.intents import Intent
 from support_agent.graph.refund_decision import RefundDecision
+from support_agent.orders.fixtures import TIME_SENSITIVE_CUSTOMER
 from support_agent.orders.models import Order
 from support_agent.orders.service import OrderService
+from support_agent.retrieval.filters import RetrievalFilters
 from support_agent.retrieval.types import RetrievedChunk
 from test_graph import StructuredFake
 
@@ -23,6 +26,7 @@ from test_graph import StructuredFake
 class DecisionFake(FakeListChatModel):
     decisions: list[Any] = Field(default_factory=list)
     decision_calls: int = 0
+    decision_prompt: str = ""
 
     def with_structured_output(self, schema: Any, **kwargs: Any) -> Any:
         assert issubclass(schema, RefundDecision)
@@ -30,6 +34,7 @@ class DecisionFake(FakeListChatModel):
 
         def decide(messages: Any) -> dict[str, Any]:
             self.decision_calls += 1
+            self.decision_prompt = messages[-1].content
             value = self.decisions.pop(0)
             if isinstance(value, Exception):
                 raise value
@@ -60,6 +65,48 @@ class FixedRetriever:
                 scores={"rerank": self.score},
             )
         ][:top_k]
+
+
+class PolicyVersionRetriever(FixedRetriever):
+    def __init__(self, *, empty: bool = False) -> None:
+        super().__init__()
+        self.empty = empty
+        self.calls: list[RetrievalFilters | None] = []
+
+    def supports_filters(self) -> bool:
+        return True
+
+    def retrieve(
+        self, query: str, top_k: int, filters: RetrievalFilters | None = None
+    ) -> list[RetrievedChunk]:
+        self.calls.append(filters)
+        base = super().retrieve(query, top_k)[0]
+        change = date(2026, 9, 1)
+        versions = [
+            base.model_copy(
+                update={
+                    "chunk_id": "old",
+                    "section_id": "returns.policy@2026-01-01",
+                    "doc_type": "policy",
+                    "text": "You can return products within 90 days of purchase.",
+                    "effective_from": date(2026, 1, 1),
+                    "effective_to": change,
+                }
+            ),
+            base.model_copy(
+                update={
+                    "chunk_id": "current",
+                    "section_id": "returns.policy",
+                    "doc_type": "policy",
+                    "text": "You can return products within 30 days of purchase.",
+                    "effective_from": change,
+                    "effective_to": None,
+                }
+            ),
+        ]
+        if self.empty:
+            return []
+        return [chunk for chunk in versions if filters is None or filters.matches(chunk)]
 
 
 def fast(intent: Intent = Intent.REFUND_REQUEST) -> StructuredFake:
@@ -99,6 +146,104 @@ def yes_decision(order: Order) -> dict[str, Any]:
         "reasons": ["The policy supports this request [1]."],
         "citations": [1],
     }
+
+
+@pytest.mark.parametrize(
+    ("order_id", "stored_date", "version", "window"),
+    [
+        ("ORD-999996", date(2026, 8, 20), "old", 90),
+        ("ORD-999998", date(2026, 9, 1), "current", 30),
+    ],
+)
+def test_refund_uses_verified_order_date_and_explains_historical_citation(
+    seeded: Any, order_id: str, stored_date: date, version: str, window: int
+) -> None:
+    settings, service = seeded
+    customer = TIME_SENSITIVE_CUSTOMER.customer_id
+    order = service.get_order(order_id, customer)
+    decision = (
+        yes_decision(order)
+        if version == "old"
+        else {
+            "eligible": "no",
+            "reasons": ["The order is outside the 30-day return window [1]."],
+            "citations": [1],
+        }
+    )
+    main = DecisionFake(responses=["unused"], decisions=[decision])
+    retriever = PolicyVersionRetriever()
+    with deps(settings, service, main, retriever) as graph_deps:
+        result = build_graph(graph_deps).invoke(
+            {
+                "messages": [
+                    HumanMessage(content=f"I bought it in August. Please refund {order_id}.")
+                ],
+                "customer_id": customer,
+            },
+            {"configurable": {"thread_id": "refund-version"}},
+        )
+    assert len(retriever.calls) == 1
+    filters = retriever.calls[0]
+    assert filters is not None
+    assert filters.as_of == stored_date == order.order_date
+    assert filters.product_category is None
+    assert result["filters"] == filters
+    assert result["filters_applied"] is True
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "after_sales",
+        "refund_identify",
+        "refund_load",
+        "refund_retrieve",
+        "refund_decide",
+        "refund_act",
+        "output_guard",
+    ]
+    assert [chunk.chunk_id for chunk in result["retrieval"]] == [version]
+    assert result["citations"][0]["chunk_id"] == version
+    assert f"within {window} days" in main.decision_prompt
+    assert result["output_guard_flag"] is None
+    if version == "old":
+        assert "Validity from 2026-01-01 until 2026-09-01 (end excluded)." in main.decision_prompt
+        assert result["answer"].startswith(
+            "Your order was placed on 2026-08-20. "
+            "The policy that applied then was in effect from 2026-01-01 "
+            "until 2026-09-01 [1]."
+        )
+        assert result["refund_request"]["status"] == "pending_review"
+    else:
+        assert "Validity from 2026-09-01." in main.decision_prompt
+        assert result["answer"].startswith("I cannot approve this request.")
+
+
+def test_empty_order_date_filter_hands_off_without_decision_or_unfiltered_retry(
+    seeded: Any,
+) -> None:
+    settings, service = seeded
+    main = DecisionFake(responses=["unused"])
+    retriever = PolicyVersionRetriever(empty=True)
+    with deps(settings, service, main, retriever) as graph_deps:
+        result = invoke(build_graph(graph_deps), "Refund ORD-000001. I bought it in August.")
+    assert result["trace"] == [
+        "input_guard",
+        "rewrite",
+        "classify",
+        "after_sales",
+        "refund_identify",
+        "refund_load",
+        "refund_retrieve",
+        "handoff",
+        "output_guard",
+    ]
+    assert main.decision_calls == 0
+    assert result["gate"].reason == "empty_retrieval"
+    assert result["handoff"].reason == "low_evidence"
+    assert len(retriever.calls) == 1
+    assert retriever.calls[0] is not None
+    assert result["filters"] == result["handoff"].filters == retriever.calls[0]
+    assert result["filters_applied"] is result["handoff"].filters_applied is True
 
 
 def test_act_returns_citations_for_refund_denial() -> None:

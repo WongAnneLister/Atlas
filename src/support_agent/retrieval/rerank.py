@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import logging
 import math
+from contextlib import AbstractContextManager
 from typing import Any, Protocol
 
 from support_agent.config import REPO_ROOT, RetrievalSettings, get_settings
+from support_agent.retrieval.filters import RetrievalFilters, filter_scope, supports_filters
 from support_agent.retrieval.types import RetrievedChunk, Retriever
 
 
@@ -103,11 +105,23 @@ class RerankingRetriever:
         self.candidates_k, self.top_k = candidates_k, top_k
         self.dedupe_text = dedupe_text
 
-    def retrieve(self, query: str, top_k: int | None = None) -> list[RetrievedChunk]:
+    def supports_filters(self) -> bool:
+        return supports_filters(self.base)
+
+    def filter_scope(self) -> AbstractContextManager[None]:
+        return filter_scope(self.base)
+
+    def retrieve(
+        self, query: str, top_k: int | None = None, filters: RetrievalFilters | None = None
+    ) -> list[RetrievedChunk]:
         limit = self.top_k if top_k is None else min(top_k, self.top_k)
         if limit <= 0:
             raise ValueError("top_k must be positive")
-        candidates = self.base.retrieve(query, self.candidates_k)
+        candidates = (
+            self.base.retrieve(query, self.candidates_k)
+            if filters is None
+            else self.base.retrieve(query, self.candidates_k, filters=filters)
+        )
         ranked = self.reranker.rerank(query, candidates)
         return (unique_text(ranked) if self.dedupe_text else ranked)[:limit]
 

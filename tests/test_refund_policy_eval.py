@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 from eval.refund_policy_eval import CachingRetriever, Row, by_status_lines, summary_lines
+
+from support_agent.retrieval.filters import RetrievalFilters
 
 
 def row(mode: str, order_id: str, passed: bool, top: str, other: int = 0, **kw: Any) -> Row:
@@ -62,7 +65,27 @@ def test_cache_retrieves_each_query_once() -> None:
     assert calls == ["q"]
 
 
-def test_cache_retries_then_records_a_failed_query() -> None:
+def test_cache_retrieves_each_date_and_category_independently() -> None:
+    calls: list[tuple[date | None, str | None]] = []
+
+    class Inner:
+        def supports_filters(self) -> bool:
+            return True
+
+        def retrieve(self, query: str, top_k: int, filters=None) -> list[Any]:
+            calls.append((filters.as_of, filters.product_category) if filters else (None, None))
+            return []
+
+    cached = CachingRetriever(Inner())
+    old, new = date(2026, 8, 31), date(2026, 9, 1)
+    assert cached.supports_filters()
+    cached.retrieve("same query", 5)
+    for day, category in [(old, None), (new, None), (old, None), (new, "hair_dryers")]:
+        cached.retrieve("same query", 5, RetrievalFilters(as_of=day, product_category=category))
+    assert calls == [(None, None), (old, None), (new, None), (new, "hair_dryers")]
+
+
+def test_cache_retries_and_raises_on_terminal_failure() -> None:
     import pytest
 
     tries: list[str] = []
@@ -78,4 +101,4 @@ def test_cache_retries_then_records_a_failed_query() -> None:
     assert cached.retrieve("up", 5) == []
     with pytest.raises(ConnectionError):
         cached.retrieve("down", 5)
-    assert cached.failed == {"down"}
+    assert tries == ["up", "up", "down", "down"]

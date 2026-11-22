@@ -6,9 +6,17 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from eval.refund_decision_eval import EXPECTED, VERSIONS, Run, downgrade_causes, report_lines
+from eval.refund_decision_eval import (
+    EXPECTED,
+    VERSIONS,
+    Run,
+    downgrade_causes,
+    holdout_orders,
+    report_lines,
+)
 
 from support_agent.config import Settings
+from support_agent.data.policy_versions import load_versions
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS as PROMPT_DIR
 from support_agent.graph.nodes.refund import RefundPath
@@ -124,6 +132,29 @@ def test_holdout_runs_use_their_own_expectation() -> None:
     lines = report_lines([late])
     assert lines[2].startswith(f"| window_holdout | `{VERSIONS[2]}` | 1 |")
     assert lines[2].endswith("| 0/1 | 1 | 0 |")
+
+
+def test_holdout_uses_the_configured_purchase_window_on_each_order_date() -> None:
+    from types import SimpleNamespace
+
+    settings = Settings()
+    settings.orders.today = date(2026, 10, 3)
+    versions = load_versions(settings.policy_versions)
+    returns = next(
+        entry for entry in versions.entries if entry.base_section_id.startswith("returns.")
+    )
+    returns.old.replace = "Returns are allowed within 33 days of purchase."
+    prior = order().model_copy(update={"order_date": date(2026, 8, 31), "order_id": "old"})
+    current = order().model_copy(update={"order_date": date(2026, 9, 1), "order_id": "current"})
+
+    class Orders:
+        def list_customers(self, limit: int) -> list[SimpleNamespace]:
+            return [SimpleNamespace(customer_id="CUST-0002")]
+
+        def list_recent_orders(self, customer_id: str, limit: int) -> list[Order]:
+            return [prior, current]
+
+    assert holdout_orders(Orders(), settings, versions) == [(current, {"no"}), (prior, {"yes"})]
 
 
 def _window_state(days_since_order: int | None) -> ConversationState:

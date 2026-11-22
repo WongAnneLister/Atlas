@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-from eval.common import load_items, set_hash
+from eval.common import FILTER_MODES, FILTER_VARIANT_PREFIX, load_items, set_filter_mode, set_hash
 from eval.legacy_core import import_retrieval, render_retrieval, save_retrieval
 from eval.retrieval_experiment import Experiment
 from eval.retrieval_index import (
@@ -27,6 +27,7 @@ from eval.validate_set import validate_current
 from support_agent.config import REPO_ROOT, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.retrieval.embed import BgeM3Embedder
+from support_agent.retrieval.filters import knowledge_filters
 from support_agent.retrieval.index_snapshot import load_build_chunks
 from support_agent.retrieval.milvus_store import MilvusStore
 from support_agent.retrieval.rerank import BgeReranker
@@ -132,7 +133,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     with ExitStack() as resources:
         embedder, reranker = BgeM3Embedder(settings.retrieval), BgeReranker(settings.retrieval)
-        measured_settings = settings
+        measured_settings = settings.model_copy(deep=True)
+        set_filter_mode(measured_settings, "off")
         store = MilvusStore(measured_settings)
         resources.callback(store.close)
         store.pin_reads()
@@ -152,8 +154,10 @@ def main(argv: list[str] | None = None) -> int:
             measured_settings, store, embedder, reranker, cache / "results", snapshot
         )
         variants = {mode: (baseline, mode) for mode in ("dense", "bm25", "hybrid", "hybrid_rerank")}
-        if settings.retrieval_eval.run_ablations:
-            alternate = settings.model_copy(deep=True)
+        filter_settings = {}
+        ablations = settings.retrieval_eval.run_ablations
+        if ablations and all(chunk.effective_from is not None for chunk in chunks):
+            alternate = measured_settings.model_copy(deep=True)
             alternate.chunk.prepend_heading = not settings.chunk.prepend_heading
             alternate.milvus.collection = collection_for_prefix(
                 settings, alternate.chunk.prepend_heading
@@ -179,6 +183,11 @@ def main(argv: list[str] | None = None) -> int:
                 ),
                 "hybrid",
             )
+        elif ablations:
+            log.warning(
+                "Skipping the heading ablation because the serving snapshot has no metadata"
+            )
+        if ablations:
             raw_query = measured_settings.model_copy(deep=True)
             raw_query.retrieval.bm25_normalise_model_numbers = not (
                 settings.retrieval.bm25_normalise_model_numbers
@@ -200,14 +209,26 @@ def main(argv: list[str] | None = None) -> int:
                 ),
                 "hybrid",
             )
+            for filter_mode in FILTER_MODES:
+                name = FILTER_VARIANT_PREFIX + filter_mode
+                variant = measured_settings.model_copy(deep=True)
+                set_filter_mode(variant, filter_mode)
+                filter_settings[name] = variant
+                variants[name] = (baseline, "hybrid_rerank")
         meta.variant_config_hashes = {
-            name: digest(json_text(experiment.settings.model_dump(mode="json")))
+            name: digest(
+                json_text(filter_settings.get(name, experiment.settings).model_dump(mode="json"))
+            )
             for name, (experiment, _) in variants.items()
         }
         records = []
         for index, item in enumerate(items, 1):
             for name, (experiment, mode) in variants.items():
-                record = experiment.retrieve(mode, item).model_copy(update={"mode": name})
+                variant = filter_settings.get(name)
+                filters = knowledge_filters(item.question, variant) if variant is not None else None
+                record = experiment.retrieve(mode, item, filters=filters).model_copy(
+                    update={"mode": name}
+                )
                 records.append(record)
                 log.info(
                     "%s %d/%d %s mode=%s cached=%s latency=%.3fs",

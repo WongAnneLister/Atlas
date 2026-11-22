@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 import math
 import re
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from time import monotonic
 from typing import Any, Protocol
 
@@ -14,8 +16,17 @@ from pydantic import BaseModel
 
 from support_agent.config import Settings
 from support_agent.retrieval.chunking import Chunk
+from support_agent.retrieval.filters import RetrievalFilters
+from support_agent.retrieval.milvus_metadata import (
+    DAY_FIELDS,
+    LEGACY_CHUNK_FIELDS,
+    METADATA_FIELDS,
+    METADATA_STRINGS,
+    chunk_to_row,
+    row_to_chunk_fields,
+)
 
-STORE_SCHEMA_VERSION = "1"
+STORE_SCHEMA_VERSION = "2"
 DESCRIPTION = "support-agent dense+BM25 chunks v1"
 
 
@@ -84,9 +95,13 @@ class SearchHit(Chunk):
 
 
 class SearchStore(Protocol):
-    def search_dense(self, vector: list[float], limit: int) -> list[SearchHit]: ...
+    def search_dense(
+        self, vector: list[float], limit: int, *, filters: RetrievalFilters | None = None
+    ) -> list[SearchHit]: ...
 
-    def search_bm25(self, text: str, limit: int) -> list[SearchHit]: ...
+    def search_bm25(
+        self, text: str, limit: int, *, filters: RetrievalFilters | None = None
+    ) -> list[SearchHit]: ...
 
 
 class MilvusStore:
@@ -104,6 +119,8 @@ class MilvusStore:
         self.provenance_settings = provenance_settings or settings
         self.config = settings.milvus
         self._pinned_reads: str | None = None
+        self._read_target: ContextVar[str | None] = ContextVar("milvus_read_target", default=None)
+        self._metadata_collections: dict[str, bool] = {}
         self._experiment_writes = False
         self._build_identity: tuple[float, str | None] | None = None
         self._chunk_snapshot: dict[str, Chunk] | None = None
@@ -151,7 +168,50 @@ class MilvusStore:
 
     @property
     def read_collection(self) -> str:
-        return self._pinned_reads or self.collection
+        return self._read_target.get() or self._pinned_reads or self.collection
+
+    def resolve_read_target(self, *, timeout_s: float | None = None) -> str:
+        target = self.read_collection
+        if target != self.settings.index.live_alias:
+            return target
+        physical = self.alias_target(target, timeout_s=timeout_s)
+        if physical is None:
+            raise ValueError("Serving index alias is missing; adopt or release an index first")
+        return physical
+
+    @contextmanager
+    def use_read_target(self, target: str) -> Iterator[None]:
+        token = self._read_target.set(target)
+        try:
+            yield
+        finally:
+            self._read_target.reset(token)
+
+    @contextmanager
+    def filter_scope(self) -> Iterator[None]:
+        # Probe and both searches refer to one physical schema even across an alias switch.
+        with self.use_read_target(self.resolve_read_target()):
+            yield
+
+    def _has_metadata(self, target: str, timeout_s: float | None = None) -> bool:
+        if target not in self._metadata_collections:
+            description = self.client.describe_collection(
+                collection_name=target,
+                timeout=self.config.timeout_s if timeout_s is None else timeout_s,
+            )
+            names = {field["name"] for field in description.get("fields", ())}
+            present = names.intersection(METADATA_FIELDS)
+            if present and present != set(METADATA_FIELDS):
+                raise ValueError("Milvus collection has incomplete filter metadata")
+            self._metadata_collections[target] = bool(present)
+        return self._metadata_collections[target]
+
+    def supports_filters(self, *, timeout_s: float | None = None) -> bool:
+        return self._has_metadata(self.resolve_read_target(timeout_s=timeout_s), timeout_s)
+
+    def _output_fields(self, target: str, timeout_s: float | None = None) -> list[str]:
+        metadata = METADATA_FIELDS if self._has_metadata(target, timeout_s) else ()
+        return [*LEGACY_CHUNK_FIELDS, *metadata]
 
     def ready(self) -> bool:
         if self.collection != self.settings.index.live_alias:
@@ -167,7 +227,7 @@ class MilvusStore:
         build_id = None
         try:
             target = (
-                (self._pinned_reads or self.alias_target())
+                (self._read_target.get() or self._pinned_reads or self.alias_target())
                 if self.collection == self.settings.index.live_alias
                 else self.collection
             )
@@ -200,6 +260,11 @@ class MilvusStore:
         return str(info["collection_id"])
 
     def read_chunks(self) -> list[Chunk]:
+        with self.filter_scope():
+            return self._read_chunks()
+
+    def _read_chunks(self) -> list[Chunk]:
+        target = self.read_collection
         count = self.count()
         if not count:
             return []
@@ -207,14 +272,19 @@ class MilvusStore:
             collection_name=self.read_collection,
             filter="",
             batch_size=self.config.query_batch_size,
-            output_fields=list(Chunk.model_fields),
+            output_fields=self._output_fields(target),
             consistency_level="Strong",
             timeout=self.config.timeout_s,
         )
         chunks: list[Chunk] = []
         try:
             while rows := reader.next():
-                chunks.extend(Chunk.model_validate(row) for row in rows)
+                chunks.extend(
+                    Chunk.model_validate(
+                        row_to_chunk_fields(row, self.settings.policy_versions.open_end_day)
+                    )
+                    for row in rows
+                )
         finally:
             reader.close()
         if len(chunks) != count or len({chunk.chunk_id for chunk in chunks}) != count:
@@ -224,11 +294,12 @@ class MilvusStore:
     def read_vectors(self, section_ids: Sequence[str]) -> list[VectorChunk]:
         if not section_ids:
             return []
+        target = self.resolve_read_target()
         reader = self.client.query_iterator(
-            collection_name=self.read_collection,
+            collection_name=target,
             filter=f"section_id in {json.dumps(list(section_ids), ensure_ascii=False)}",
             batch_size=self.config.query_batch_size,
-            output_fields=[*Chunk.model_fields, "dense"],
+            output_fields=[*self._output_fields(target), "dense"],
             consistency_level="Strong",
             timeout=self.config.timeout_s,
         )
@@ -236,7 +307,13 @@ class MilvusStore:
         try:
             while rows := reader.next():
                 results.extend(
-                    VectorChunk(chunk=Chunk.model_validate(row), dense=row["dense"]) for row in rows
+                    VectorChunk(
+                        chunk=Chunk.model_validate(
+                            row_to_chunk_fields(row, self.settings.policy_versions.open_end_day)
+                        ),
+                        dense=row["dense"],
+                    )
+                    for row in rows
                 )
         finally:
             reader.close()
@@ -255,14 +332,19 @@ class MilvusStore:
         if description.get("description") != DESCRIPTION:
             raise ValueError("Refusing to reset a collection not created by support-agent")
 
-    def alias_target(self, alias: str | None = None) -> str | None:
+    def alias_target(
+        self, alias: str | None = None, *, timeout_s: float | None = None
+    ) -> str | None:
         from pymilvus.exceptions import MilvusException
 
         describe = getattr(self.client, "describe_alias", None)
         if describe is None:
             return None
         try:
-            response = describe(alias=alias or self.collection, timeout=self.config.timeout_s)
+            response = describe(
+                alias=alias or self.collection,
+                timeout=self.config.timeout_s if timeout_s is None else timeout_s,
+            )
         except MilvusException as error:
             message = str(error.message).lower()
             if (
@@ -339,6 +421,14 @@ class MilvusStore:
             if name == "text":
                 options.update(enable_analyzer=True, analyzer_params=self.config.analyzer)
             schema.add_field(field_name=name, datatype=DataType.VARCHAR, **options)
+        for field in METADATA_STRINGS:
+            schema.add_field(
+                field_name=field,
+                datatype=DataType.VARCHAR,
+                max_length=self.config.metadata_max_bytes,
+            )
+        for field in DAY_FIELDS:
+            schema.add_field(field_name=field, datatype=DataType.INT32)
         schema.add_field(field_name="n_tokens", datatype=DataType.INT64)
         schema.add_field(
             field_name="dense",
@@ -374,6 +464,10 @@ class MilvusStore:
                 "bm25_b": self.config.bm25_b,
             },
         )
+        for field in METADATA_STRINGS:
+            indexes.add_index(field_name=field, index_type="INVERTED")
+        for field in DAY_FIELDS:
+            indexes.add_index(field_name=field, index_type="STL_SORT")
         self.client.create_collection(
             collection_name=self.config.collection,
             schema=schema,
@@ -381,6 +475,7 @@ class MilvusStore:
             consistency_level="Strong",
             timeout=self.config.timeout_s,
         )
+        self._metadata_collections[self.collection] = True
 
     def validate(self, chunks: list[Chunk], vectors: list[list[float]]) -> None:
         if len(chunks) != len(vectors) or len({c.chunk_id for c in chunks}) != len(chunks):
@@ -392,6 +487,7 @@ class MilvusStore:
             "title": self.config.heading_max_bytes,
             "heading_path": self.config.heading_max_bytes,
             "text": self.config.text_max_bytes,
+            **dict.fromkeys(METADATA_STRINGS, self.config.metadata_max_bytes),
         }
         for chunk, vector in zip(chunks, vectors, strict=True):
             if (
@@ -400,6 +496,10 @@ class MilvusStore:
                 or not any(vector)
             ):
                 raise ValueError("Invalid dense vector dimension, values or norm")
+            if chunk.effective_from is None:
+                raise ValueError(
+                    f"Missing section metadata for {chunk.section_id}; run make data-docs"
+                )
             for field, maximum in limits.items():
                 if len(str(getattr(chunk, field)).encode("utf-8")) > maximum:
                     raise ValueError(
@@ -412,7 +512,7 @@ class MilvusStore:
         size = self.config.upsert_batch_size
         for offset in range(0, len(chunks), size):
             rows = [
-                {**chunk.model_dump(), "dense": vector}
+                {**chunk_to_row(chunk, self.settings.policy_versions.open_end_day), "dense": vector}
                 for chunk, vector in zip(
                     chunks[offset : offset + size],
                     vectors[offset : offset + size],
@@ -440,27 +540,42 @@ class MilvusStore:
         return int(result[0]["count(*)"])
 
     def _search(
-        self, data: object, field: str, metric: str, limit: int, timeout_s: float | None
+        self,
+        data: object,
+        field: str,
+        metric: str,
+        limit: int,
+        timeout_s: float | None,
+        filters: RetrievalFilters | None,
     ) -> list[SearchHit]:
         if limit <= 0:
             raise ValueError("Search limit must be positive")
         params = {"ef": max(limit, self.config.hnsw_ef_search)} if field == "dense" else {}
+        target = self.resolve_read_target(timeout_s=timeout_s)
+        expression = (
+            filters.to_expr(self.settings.retrieval.filters.category_terms) if filters else ""
+        )
+        if expression and not self._has_metadata(target, timeout_s):
+            raise ValueError("Filtered search requires a metadata-enabled collection")
         response = self.client.search(
-            collection_name=self.read_collection,
+            collection_name=target,
             data=[data],
             anns_field=field,
             limit=limit,
+            filter=expression,
             search_params={"metric_type": metric, "params": params},
             output_fields=["chunk_id"]
             if self._chunk_snapshot is not None
-            else list(Chunk.model_fields),
+            else self._output_fields(target, timeout_s),
             consistency_level="Strong",
             timeout=timeout_s if timeout_s is not None else self.config.timeout_s,
         )
         results: list[SearchHit] = []
         for hit in response[0]:
             if self._chunk_snapshot is None:
-                fields = hit["entity"]
+                fields = row_to_chunk_fields(
+                    hit["entity"], self.settings.policy_versions.open_end_day
+                )
             else:
                 chunk_id = str(hit["entity"]["chunk_id"])
                 if chunk_id not in self._chunk_snapshot:
@@ -470,7 +585,12 @@ class MilvusStore:
         return results
 
     def search_dense(
-        self, vector: list[float], limit: int | None = None, *, timeout_s: float | None = None
+        self,
+        vector: list[float],
+        limit: int | None = None,
+        *,
+        timeout_s: float | None = None,
+        filters: RetrievalFilters | None = None,
     ) -> list[SearchHit]:
         return self._search(
             vector,
@@ -478,10 +598,16 @@ class MilvusStore:
             "COSINE",
             self.settings.retrieval.dense_top_k if limit is None else limit,
             timeout_s,
+            filters,
         )
 
     def search_bm25(
-        self, text: str, limit: int | None = None, *, timeout_s: float | None = None
+        self,
+        text: str,
+        limit: int | None = None,
+        *,
+        timeout_s: float | None = None,
+        filters: RetrievalFilters | None = None,
     ) -> list[SearchHit]:
         return self._search(
             text,
@@ -489,6 +615,7 @@ class MilvusStore:
             "BM25",
             self.settings.retrieval.bm25_top_k if limit is None else limit,
             timeout_s,
+            filters,
         )
 
     def drop(self) -> None:
@@ -498,6 +625,7 @@ class MilvusStore:
                 raise ValueError("Refusing to drop a collection still referenced by an alias")
             self._assert_owned()
             self.client.drop_collection(collection_name=self.config.collection)
+            self._metadata_collections.pop(self.collection, None)
 
     def _aliases(self) -> list[str]:
         list_aliases = getattr(self.client, "list_aliases", None)

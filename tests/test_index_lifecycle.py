@@ -8,7 +8,7 @@ from support_agent.db.engine import make_engine
 from support_agent.retrieval.index_models import BuildRecord
 from support_agent.retrieval.registry import IndexRegistry
 from support_agent.retrieval.tokenization import WhitespaceTokenizer
-from test_index_plan import document
+from test_index_plan import write_docs
 
 
 class Admin:
@@ -156,7 +156,7 @@ def test_adoption_refuses_mismatched_text(setup, tmp_path: Path) -> None:
     settings, registry, admin = setup
     collection = settings.index.protected_collections[0]
     admin.collections.add(collection)
-    (tmp_path / "returns.md").write_text(document(("returns.window", "Window", "The fixture.")))
+    write_docs(tmp_path, ("returns.window", "Window", "The fixture."))
     with pytest.raises(ValueError, match="do not match"):
         adopt_index(
             settings,
@@ -168,6 +168,45 @@ def test_adoption_refuses_mismatched_text(setup, tmp_path: Path) -> None:
             reader=Reader(),
         )
     assert admin.target is None and not registry.builds()
+
+
+def test_adoption_of_exact_legacy_content_requires_full_rebuild(setup, tmp_path: Path) -> None:
+    from support_agent.retrieval.chunking import chunk_document
+    from support_agent.retrieval.index_plan import index_fingerprint
+    from support_agent.retrieval.index_release import adopt_index
+    from support_agent.retrieval.tokenization import WhitespaceTokenizer
+    from test_index_plan import document
+
+    settings, registry, admin = setup
+    settings.policy_versions.enabled = False
+    collection = settings.index.protected_collections[0]
+    admin.collections.add(collection)
+    source = ("returns.window", "Window", "The fixture.")
+    write_docs(tmp_path, source)
+    tokenizer = WhitespaceTokenizer()
+
+    class Reader:
+        def collection_identity(self):
+            return "some"
+
+        def read_chunks(self):
+            return chunk_document(document(source), settings.chunk, tokenizer)
+
+        def alias_target(self):
+            return None
+
+    build = adopt_index(
+        settings,
+        registry,
+        admin,
+        collection,
+        docs_dir=tmp_path,
+        tokenizer=tokenizer,
+        reader=Reader(),
+    )
+    assert build.mode == "adopted"
+    assert build.fingerprint != index_fingerprint(settings)
+    assert admin.target == collection
 
 
 def test_slow_check_holds_no_registry_lock_and_a_concurrent_release_wins(setup) -> None:

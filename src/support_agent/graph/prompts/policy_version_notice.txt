@@ -1,0 +1,1 @@
+Your order was placed on {order_date}. The policy that applied then was in effect from {effective_from} until {effective_to} [{citation}].

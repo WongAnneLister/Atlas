@@ -9,7 +9,7 @@ from support_agent.retrieval.embed import FakeEmbedder
 from support_agent.retrieval.milvus_store import MilvusStore
 from support_agent.retrieval.registry import IndexRegistry
 from support_agent.retrieval.tokenization import WhitespaceTokenizer
-from test_index_plan import document
+from test_index_plan import write_docs
 
 
 def test_reset_rejects_an_alias_without_writes() -> None:
@@ -46,9 +46,8 @@ def test_incremental_build_and_failed_candidate_cleanup(tmp_path) -> None:
     settings = Settings()
     settings.data.processed_dir = str(tmp_path)
     settings.retrieval.embedding_dim = 4
-    target = tmp_path / "returns.md"
-    target.write_text(
-        document(("a", "First", "Keep."), ("b", "Second", "Before."), ("c", "Third", "Deleted."))
+    write_docs(
+        tmp_path, ("a", "First", "Keep."), ("b", "Second", "Before."), ("c", "Third", "Deleted.")
     )
     registry = IndexRegistry(
         make_engine(URL.create("sqlite", database=str(tmp_path / "index.sqlite")), settings.db)
@@ -101,9 +100,26 @@ def test_incremental_build_and_failed_candidate_cleanup(tmp_path) -> None:
         )
 
     original = build()
+    from support_agent.retrieval.index_tables import sections
+
+    with registry.engine.connect() as connection:
+        first_metadata = (
+            connection.execute(sections.select().where(sections.c.section_id == "a"))
+            .mappings()
+            .one()["metadata"]
+        )
+    assert first_metadata == {
+        "heading": "First",
+        "doc_type": "policy",
+        "topic": "returns",
+        "product_category": "",
+        "effective_from": "2026-01-01",
+        "effective_to": None,
+        "region": "global",
+    }
     with registry.locked_alias(settings.index.live_alias) as lock:
         lock.swap(None, original.build_id)
-    target.write_text(document(("a", "First", "Keep."), ("b", "Second", "After.")))
+    write_docs(tmp_path, ("a", "First", "Keep."), ("b", "Second", "After."))
     changed = build()
     assert (changed.mode, changed.embedded_chunks, changed.copied_chunks) == ("incremental", 1, 1)
     before = {row.chunk.section_id: row for row in vectors[original.collection]}

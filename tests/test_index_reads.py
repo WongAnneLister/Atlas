@@ -33,3 +33,32 @@ def test_last_build_file_refuses_to_hydrate_another_build(tmp_path) -> None:
     (tmp_path / "ingest_run.json").write_text('{"build_id":"aa","chunk_hash":"irrelevant"}')
     with pytest.raises(ValueError, match="build id"):
         load_latest_chunks(config, expected_build_id="bb")
+
+
+def test_legacy_snapshot_reads_and_reports_its_original_hash(tmp_path) -> None:
+    from support_agent.data.doc_models import digest
+    from support_agent.retrieval.index_snapshot import (
+        Snapshot,
+        build_chunk_hash,
+        build_snapshot_path,
+        load_build_chunks,
+    )
+
+    settings = Settings()
+    settings.data.processed_dir = str(tmp_path)
+    folder = build_snapshot_path(settings, "aa")
+    folder.mkdir(parents=True)
+    line = (
+        '{"chunk_id":"x","doc_id":"returns","section_id":"a","title":"Returns",'
+        '"heading_path":"Returns > A","text":"Legacy chunk.","n_tokens":3}\n'
+    )
+    (folder / "chunks.jsonl").write_text(line)
+    (folder / "snapshot.json").write_text(
+        Snapshot(build_id="aa", chunk_hash=digest(line)).model_dump_json()
+    )
+    chunk = load_build_chunks(settings, "aa")[0]
+    assert chunk.effective_from is None
+    assert build_chunk_hash(settings, "aa") == digest(line)
+    (folder / "chunks.jsonl").write_text(line + "\n")
+    with pytest.raises(ValueError, match="checksum"):
+        build_chunk_hash(settings, "aa")

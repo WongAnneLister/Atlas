@@ -4,12 +4,20 @@ from __future__ import annotations
 
 import re
 from bisect import bisect_right
+from collections.abc import Mapping
+from datetime import date
 from pathlib import Path
 
 from pydantic import BaseModel, Field
 
 from support_agent.config import ChunkSettings
 from support_agent.data.doc_models import digest
+from support_agent.data.section_metadata import (
+    DocType,
+    SectionMetadata,
+    load_section_metadata,
+    require_section_metadata,
+)
 from support_agent.data.validate_docs import parse_document
 from support_agent.retrieval.tokenization import Tokenizer
 
@@ -24,6 +32,13 @@ class Chunk(BaseModel):
     heading_path: str
     text: str = Field(min_length=1)
     n_tokens: int = Field(gt=0)
+    # Existing snapshots and collections can predate section metadata.
+    doc_type: DocType = "policy"
+    topic: str = ""
+    product_category: str = ""
+    effective_from: date | None = None
+    effective_to: date | None = None
+    region: str = "global"
 
 
 def split_text(text: str, tokenizer: Tokenizer, maximum: int, overlap: int) -> list[str]:
@@ -104,7 +119,12 @@ def section_pieces(
     return pieces
 
 
-def chunk_document(text: str, config: ChunkSettings, tokenizer: Tokenizer) -> list[Chunk]:
+def chunk_document(
+    text: str,
+    config: ChunkSettings,
+    tokenizer: Tokenizer,
+    metadata: Mapping[str, SectionMetadata] | None = None,
+) -> list[Chunk]:
     sections, header = parse_document(text)
     headings = {
         sid: heading.strip()
@@ -118,7 +138,14 @@ def chunk_document(text: str, config: ChunkSettings, tokenizer: Tokenizer) -> li
         chunk
         for sid, prose in sections.items()
         for chunk in chunk_section(
-            sid, prose, header.doc_id, header.title, headings[sid], config, tokenizer
+            sid,
+            prose,
+            header.doc_id,
+            header.title,
+            headings[sid],
+            config,
+            tokenizer,
+            metadata=require_section_metadata(metadata, sid) if metadata is not None else None,
         )
     ]
 
@@ -131,7 +158,10 @@ def chunk_section(
     heading: str,
     config: ChunkSettings,
     tokenizer: Tokenizer,
+    *,
+    metadata: SectionMetadata | None = None,
 ) -> list[Chunk]:
+    fields = metadata.model_dump() if metadata is not None else {}
     return [
         Chunk(
             chunk_id=digest(f"{sid}:{index}"),
@@ -141,12 +171,14 @@ def chunk_section(
             heading_path=f"{title} > {heading}",
             text=piece,
             n_tokens=tokenizer.count(piece),
+            **fields,
         )
         for index, piece in enumerate(section_pieces(sid, prose, config, tokenizer, heading))
     ]
 
 
 def load_chunks(folder: Path, config: ChunkSettings, tokenizer: Tokenizer) -> list[Chunk]:
+    metadata = load_section_metadata(folder)
     chunks = [
         chunk
         for path in sorted(folder.glob("*.md"))
@@ -154,12 +186,15 @@ def load_chunks(folder: Path, config: ChunkSettings, tokenizer: Tokenizer) -> li
             path.read_text(encoding="utf-8"),
             config,
             tokenizer,
+            metadata,
         )
     ]
     if not chunks:
         raise ValueError("No chunks found; run make data-docs")
     if len({chunk.chunk_id for chunk in chunks}) != len(chunks):
         raise ValueError("Duplicate section ids across source documents")
+    if metadata.keys() != {chunk.section_id for chunk in chunks}:
+        raise ValueError("Section metadata contains sections outside the source documents")
     return chunks
 
 

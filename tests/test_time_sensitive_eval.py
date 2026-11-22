@@ -3,14 +3,16 @@ from pathlib import Path
 
 import pytest
 from eval.build_time_sensitive import build_items
+from eval.common import set_filter_mode
 from eval.run_record import read_run
-from eval.time_sensitive_eval import collect_run, main, write_report
+from eval.time_sensitive_eval import collect_run, write_report
 
 from support_agent.config import get_settings
 from support_agent.data.policy_versions import load_versions
 from support_agent.graph.deps import GraphDeps
 from support_agent.orders.fixtures import time_sensitive_fixtures
 from support_agent.orders.models import Order
+from support_agent.retrieval.filters import RetrievalFilters
 from support_agent.retrieval.types import RetrievedChunk
 
 
@@ -27,8 +29,11 @@ def chunk(section_id: str) -> RetrievedChunk:
     )
 
 
-def test_evaluator_writes_paired_metrics_for_both_paths(tmp_path: Path) -> None:
-    settings = get_settings()
+@pytest.mark.parametrize("mode", ["off", "date", "date_category"])
+def test_evaluator_writes_paired_metrics_for_both_paths(tmp_path: Path, mode: str) -> None:
+    settings = get_settings().model_copy(deep=True)
+    set_filter_mode(settings, mode)
+    settings.retrieval.filters.category_terms["hair_dryers"].append("return window")
     versions = load_versions(settings.policy_versions)
     cases = [
         item
@@ -44,15 +49,20 @@ def test_evaluator_writes_paired_metrics_for_both_paths(tmp_path: Path) -> None:
         for order in time_sensitive_fixtures(settings.orders)[0]
         if order.order_id == refund.order_id
     )
-    calls: list[str] = []
+    calls: list[tuple[str, RetrievalFilters | None]] = []
 
     class Retriever:
-        def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]:
-            calls.append(query)
+        def supports_filters(self) -> bool:
+            return True
+
+        def retrieve(
+            self, query: str, top_k: int, filters: RetrievalFilters | None = None
+        ) -> list[RetrievedChunk]:
+            calls.append((query, filters))
             if query == knowledge.question:
                 return [chunk(current_id)]
             # Both versions can count at the same time.
-            return [chunk(current_id), chunk(old_id)]
+            return [chunk(current_id), chunk(old_id)] if filters is None else [chunk(old_id)]
 
     class OrderService:
         def get_order(self, order_id: str, customer_id: str) -> Order:
@@ -65,19 +75,31 @@ def test_evaluator_writes_paired_metrics_for_both_paths(tmp_path: Path) -> None:
     run = read_run(path)
     assert run.manifest.split == "dev"
     assert run.manifest.datasets["eval_v2"].version == "v2"
-    assert calls[0] == knowledge.question
-    assert calls[1] != refund.question
+    assert run.manifest.source["filters"] == mode
+    assert calls[0][0] == knowledge.question
+    assert calls[1][0] != refund.question
+    applied = mode != "off"
+    category = "hair_dryers" if mode == "date_category" else None
+    assert calls[0][1] == (
+        RetrievalFilters(as_of=settings.orders.today, product_category=category)
+        if applied
+        else None
+    )
+    assert calls[1][1] == (RetrievalFilters(as_of=order.order_date) if applied else None)
+    assert [row.payload["filters"] for row in run.items] == [
+        filters.model_dump(mode="json") if filters else None for _, filters in calls
+    ]
     assert run.items[0].metrics == {
         "version_hit_at_5": True,
         "wrong_version_at_5": False,
         "gate_pass": True,
-        "filters_applied": False,
+        "filters_applied": applied,
     }
     assert run.items[1].metrics == {
         "version_hit_at_5": True,
-        "wrong_version_at_5": True,
+        "wrong_version_at_5": not applied,
         "gate_pass": True,
-        "filters_applied": False,
+        "filters_applied": applied,
     }
     output = tmp_path / "report.md"
     write_report([path], output)
@@ -88,10 +110,3 @@ def test_evaluator_writes_paired_metrics_for_both_paths(tmp_path: Path) -> None:
     assert "[34.24%, 100.00%]" in report
     assert "Each refund row represents a distinct order date" in report
     assert "policy version selection depends only on the stored order date" in report
-
-
-@pytest.mark.parametrize("mode", ["date", "date_category"])
-def test_unavailable_filter_modes_fail_before_opening_dependencies(mode, capsys) -> None:
-    with pytest.raises(SystemExit, match="2"):
-        main(["--filters", mode])
-    assert "only --filters off" in capsys.readouterr().err

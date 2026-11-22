@@ -25,6 +25,7 @@ from support_agent.graph.turn_identity import action_key, current_graph_config, 
 from support_agent.orders.models import Order, OrderNotFound
 from support_agent.reliability.guards import diagnostic_type, is_dependency_failure
 from support_agent.reliability.stores import GuardedOrders
+from support_agent.retrieval.filters import RetrievalFilters, retrieve_with_filters
 from support_agent.retrieval.scope import scope_chunks
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,9 @@ class RefundPath:
         self.deps = deps
         prompt_file, self.decision_schema = DECISION_VERSIONS[deps.settings.refund.decision_version]
         self.prompt = (PROMPTS / prompt_file).read_text(encoding="utf-8")
+        self.policy_notice = (
+            (PROMPTS / "policy_version_notice.txt").read_text(encoding="utf-8").strip()
+        )
 
     def _service(self) -> GuardedOrders:
         return self.deps.guarded_orders()
@@ -160,6 +164,8 @@ class RefundPath:
         settings = self.deps.settings
         query = policy_query(order, state.intent.value if state.intent else None, settings)
         retrieval = settings.retrieval
+        filters = RetrievalFilters(as_of=order.order_date) if retrieval.filters.enabled else None
+        filters_applied = False
         scope = retrieval.store_scope
         pool = (
             max(retrieval.rerank_top_k, scope.pool_k) if scope.enabled else retrieval.rerank_top_k
@@ -167,7 +173,9 @@ class RefundPath:
         error_type = None
         dependency_unavailable = False
         try:
-            ranked = self.deps.knowledge_retriever().retrieve(query, pool)
+            ranked, filters_applied = retrieve_with_filters(
+                self.deps.knowledge_retriever(), query, pool, filters
+            )
             chunks, _, _ = scope_chunks(query, ranked, scope, retrieval.rerank_top_k)
         except Exception as error:
             error_type = diagnostic_type(error)
@@ -181,11 +189,15 @@ class RefundPath:
             allow_untuned=self.deps.allow_untuned_gate,
         )
         build_id = self.deps.current_build_id()
+        evidence = {
+            "retrieval": chunks,
+            "gate": gate,
+            "retrieval_build_id": build_id,
+            "filters": filters,
+            "filters_applied": filters_applied,
+        }
         if not gate.passed:
-            current = state.model_copy(
-                update={"retrieval": chunks, "gate": gate, "retrieval_build_id": build_id},
-                deep=True,
-            )
+            current = state.model_copy(update=evidence, deep=True)
             return {
                 **make_handoff(
                     current,
@@ -194,16 +206,12 @@ class RefundPath:
                     else HandoffReason.LOW_EVIDENCE,
                 ),
                 "retrieval_error_type": error_type,
-                "retrieval": chunks,
-                "retrieval_build_id": build_id,
-                "gate": gate,
+                **evidence,
                 "refund_policy_query": query,
                 "trace": [*state.trace, "refund_retrieve", "handoff"],
             }
         return {
-            "retrieval": chunks,
-            "retrieval_build_id": build_id,
-            "gate": gate,
+            **evidence,
             "refund_policy_query": query,
             "trace": [*state.trace, "refund_retrieve"],
         }
@@ -212,7 +220,7 @@ class RefundPath:
         order = self._order_from_state(state)
         if order is None or state.gate is None or not state.gate.passed:
             return self._handoff(state, HandoffReason.POLICY_REQUIRES_HUMAN)
-        sources = source_blocks(state.retrieval)
+        sources = source_blocks(state.retrieval, include_validity=True)
         data = refund_data(state.order_context or {})
         order_facts = order_block(json.dumps(data, sort_keys=True))
         messages = [
@@ -256,12 +264,14 @@ class RefundPath:
             if number in decision.citations
         ]
         citations = " ".join(f"[{record.n}]" for record in records)
+        notice = self._historical_policy_notice(state, records)
         if decision.eligible == "no":
             reason = " ".join(decision.reasons) or "The policy does not support this request."
             answer = (
                 f"I cannot approve this request. {reason} "
                 f"You can ask a human agent to review it. {citations}"
             ).strip()
+            answer = f"{notice}{answer}"
             return {
                 "answer": answer,
                 "citations": records,
@@ -292,8 +302,8 @@ class RefundPath:
             )
             return self._handoff(state, reason)
         answer = (
-            f"Your refund request {request.request_id} is pending human review. {citations}".strip()
-        )
+            f"{notice}Your refund request {request.request_id} is pending human review. {citations}"
+        ).strip()
         return {
             "refund_request": request.model_dump(mode="json"),
             "answer": answer,
@@ -301,6 +311,28 @@ class RefundPath:
             "messages": [AIMessage(content=answer)],
             "trace": [*state.trace, "refund_act"],
         }
+
+    def _historical_policy_notice(
+        self, state: ConversationState, citations: list[CitationRecord]
+    ) -> str:
+        order = self._order_from_state(state)
+        if order is None:
+            return ""
+        today = self.deps.settings.orders.today
+        for citation in citations:
+            chunk = state.retrieval[citation.n - 1]
+            start, end = chunk.effective_from, chunk.effective_to
+            if start is not None and end is not None and start <= order.order_date < end <= today:
+                return (
+                    self.policy_notice.format(
+                        order_date=order.order_date,
+                        effective_from=start,
+                        effective_to=end,
+                        citation=citation.n,
+                    )
+                    + " "
+                )
+        return ""
 
     @staticmethod
     def _order_choice(order: Order) -> dict[str, Any]:

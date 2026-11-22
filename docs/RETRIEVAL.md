@@ -14,7 +14,7 @@ Within a long section, paragraph endings are preferred, then sentence endings, t
 Overlapping source windows retain the configured number of tokens within each section.
 Token counts use the pinned BGE fast tokenizer, excluding special tokens and heading prefixes.
 Product sections always remain a single chunk, even when an entire manual exceeds the policy budget.
-Source text and section ids remain unchanged; the frozen evaluation set is not rewritten.
+Current sections retain their source text and IDs. Synthetic history has separate IDs.
 Chunk ids hash section id and its local chunk index. Full rebuilds remove obsolete rows.
 Heading paths are prepended only to encoder input when enabled; displayed and BM25 text stay raw.
 
@@ -108,7 +108,8 @@ flowchart LR
   the switch takes the lock and refuses if the alias moved in the meantime.
 - Per-build chunk text and its checksum live under the configured builds directory. The legacy
   `chunks.jsonl` and `ingest_run.json` describe the last completed build. Cached rank readers
-  require matching build provenance. `make ingest-chunks` writes a preview separately.
+  require matching build provenance. `make ingest-chunks` writes its artifacts and report
+  to the local preview directory.
   Serving searches follow the alias. Build ID telemetry may lag within the configured lookup TTL.
   Retrieval benchmarks that hydrate local text pin their starting target for the entire run.
 - Standard retrieval evaluation starts from the alias. Ablations use the two configured experiment
@@ -119,6 +120,42 @@ flowchart LR
   a negative control, a one-section change and rollback is in `eval/reports/index_lifecycle.md`
   (`make eval-index-lifecycle`).
 
+
+## Policy dates and product categories
+
+`make data-docs` writes a metadata entry for every section in `section_metadata.json`.
+Chunks carry document type, topic, product category, region and validity dates. The index planner
+hashes section metadata with the text and heading. A metadata edit therefore marks the section as
+changed. Schema version 2 forces a full build before a new release. The old serving build can still
+be read during the paired check, and an alias rollback can still return to it.
+
+The current generic-store returns and price-adjustment sections keep their text and IDs, preserving
+the v1 labels. An invented historical section gets an `@2026-01-01` ID suffix and a
+`(policy before 2026-09-01)` heading suffix. The historical windows are 90 days for returns and 14
+days for price adjustments. The existing current windows are 30 and 7 days, respectively.
+The new versions start on September 1, 2026. Other sections are valid from the configured
+January 1, 2026 default. Validity includes the start day and excludes the end day.
+
+Milvus stores dates as INT32 `YYYYMMDD` and uses `policy_versions.open_end_day` for an open end.
+It indexes date fields with STL_SORT and metadata strings with INVERTED. The Python representation
+uses a date or `None` for the end. Both dense and BM25 search apply the same expression before
+fusion and reranking. Store scope still applies to the reranked pool.
+
+The knowledge path uses `orders.today`. An unambiguous category comes from configured terms or
+a recognized catalog model code. A category filter preserves policy chunks and keeps catalog
+chunks in that category. Ambiguous or absent categories leave date filtering in place.
+The refund path uses the verified purchase date from OrderService. Customer text supplies neither
+date. A cited historical refund policy produces a notice from a graph template before output checks.
+
+A schema check and both filtered searches use the same physical collection. Legacy collections
+hold the current text and do not support filter fields. Run rows and graph state record
+`filters_applied: false` for those searches. An empty filtered result on a metadata-enabled
+collection goes through the existing evidence gate with empty evidence and hands off.
+
+The retrieval ablations compare `off`, `date`, and `date_category` on the same index. This measures
+candidate filtering before the reranker, which orders the surviving candidates by relevance.
+Release and sweep evidence hashes include filter settings. The rerank pair cache keeps the same
+model, query and passage key, so each ablation can reuse scores for its surviving pairs.
 
 ## Hybrid + RRF
 

@@ -15,6 +15,7 @@ from support_agent.gate.evidence import GateResult
 from support_agent.graph.coverage import CoverageAnswer
 from support_agent.graph.intents import Intent
 from support_agent.graph.turn_identity import action_key, current_graph_config, turn_message_id
+from support_agent.retrieval.filters import RetrievalFilters
 from support_agent.retrieval.types import RetrievedChunk
 
 if TYPE_CHECKING:
@@ -47,6 +48,8 @@ class HandoffPayload(BaseModel):
     intent: Intent | None
     retrieval_build_id: str | None = None
     retrieval_snapshot: list[RetrievedChunk] = Field(default_factory=list)
+    filters: RetrievalFilters | None = None
+    filters_applied: bool = False
     gate: GateResult | None = None
     coverage: CoverageAnswer | None = None
     order_context: dict[str, Any] | None = None
@@ -80,6 +83,8 @@ def make_handoff(state: ConversationState, reason: HandoffReason) -> dict[str, A
         intent=state.intent,
         retrieval_snapshot=state.retrieval,
         retrieval_build_id=state.retrieval_build_id,
+        filters=state.filters,
+        filters_applied=state.filters_applied,
         gate=state.gate,
         coverage=state.coverage,
         order_context=state.order_context,

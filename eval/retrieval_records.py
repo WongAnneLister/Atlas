@@ -5,6 +5,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from eval.schema import EvalItem, Group, Split
+from support_agent.retrieval.filters import RetrievalFilters
 from support_agent.retrieval.types import RetrievedChunk
 
 
@@ -16,6 +17,8 @@ class SearchRecord(BaseModel):
     components_s: dict[str, float]
     provenance: str
     cache_hit: bool = False
+    filters: RetrievalFilters | None = None
+    filters_applied: bool = False
 
 
 class RunMetadata(BaseModel):
@@ -62,6 +65,8 @@ class SearchReportRow(BaseModel):
     chunks: list[Rank]
     latency_s: float = Field(ge=0)
     cache_hit: bool
+    filters: RetrievalFilters | None = None
+    filters_applied: bool = False
 
 
 class RetrievalReportRun(BaseModel):

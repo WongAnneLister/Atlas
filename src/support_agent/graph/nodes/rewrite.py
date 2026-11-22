@@ -32,6 +32,8 @@ def reset_turn() -> dict[str, Any]:
         "reliability_events": [],
         "retrieval": [],
         "retrieval_build_id": None,
+        "filters": None,
+        "filters_applied": False,
         "gate": None,
         "retrieval_error_type": None,
         "retrieval_dependency_unavailable": False,

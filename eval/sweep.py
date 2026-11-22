@@ -24,6 +24,11 @@ from support_agent.gate.evidence import VETO_REASONS, evaluate
 from support_agent.retrieval.chunking import Chunk
 from support_agent.retrieval.embed import BgeM3Embedder
 from support_agent.retrieval.factory import build_retriever
+from support_agent.retrieval.filters import (
+    RetrievalFilters,
+    knowledge_filters,
+    retrieve_with_filters,
+)
 from support_agent.retrieval.index_snapshot import load_build_chunks, load_latest_chunks
 from support_agent.retrieval.milvus_store import MilvusStore
 from support_agent.retrieval.rerank import BgeReranker
@@ -50,6 +55,8 @@ class GateScore(BaseModel):
     chunks: list[ChunkScore] = Field(default_factory=list)
     vetoed: bool = False
     build_id: str | None = None
+    filters: RetrievalFilters | None = None
+    filters_applied: bool = False
 
 
 class GateScoreMetadata(BaseModel):
@@ -104,13 +111,20 @@ def select_threshold(records: list[GateScore], rule: str = "lowest") -> float | 
     return min(safe, key=lambda t: (abs(t - centre), t))
 
 
-def production_chunks(retriever: Any, question: str, settings: Settings) -> list[RetrievedChunk]:
-    """Retrieve exactly what the knowledge path sees: pool, store scope, then top k."""
+def production_retrieval(
+    retriever: Any, question: str, settings: Settings
+) -> tuple[list[RetrievedChunk], RetrievalFilters | None, bool]:
+    """Retrieve what the knowledge path sees, with the requested and actual filter status."""
     retrieval = settings.retrieval
     scope = retrieval.store_scope
     pool = max(retrieval.rerank_top_k, scope.pool_k) if scope.enabled else retrieval.rerank_top_k
-    ranked = retriever.retrieve(question, pool)
-    return scope_chunks(question, ranked, scope, retrieval.rerank_top_k)[0]
+    filters = knowledge_filters(question, settings)
+    ranked, applied = retrieve_with_filters(retriever, question, pool, filters)
+    return scope_chunks(question, ranked, scope, retrieval.rerank_top_k)[0], filters, applied
+
+
+def production_chunks(retriever: Any, question: str, settings: Settings) -> list[RetrievedChunk]:
+    return production_retrieval(retriever, question, settings)[0]
 
 
 def load_local_chunks(settings: Settings, path: Path | None = None) -> dict[str, Chunk]:
@@ -271,7 +285,7 @@ def _collect_with_store(
         reranker=BgeReranker(settings.retrieval),
     )
     for item in pending:
-        chunks = production_chunks(retriever, item.question, settings)
+        chunks, filters, applied = production_retrieval(retriever, item.question, settings)
         result = evaluate(item.question, chunks, settings.gate, allow_untuned=True)
         records.append(
             GateScore(
@@ -288,6 +302,8 @@ def _collect_with_store(
                     for chunk in chunks
                 ],
                 vetoed=result.reason in VETO_REASONS,
+                filters=filters,
+                filters_applied=applied,
             )
         )
         temporary = output.with_suffix(output.suffix + ".tmp")

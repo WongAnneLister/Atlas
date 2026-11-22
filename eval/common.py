@@ -13,6 +13,24 @@ from support_agent.config import REPO_ROOT, EvalSettings, Settings
 from support_agent.data.doc_models import digest, numeric_tokens, write_text
 from support_agent.data.validate_docs import parse_document
 
+FILTER_MODES = ("off", "date", "date_category")
+FILTER_VARIANT_PREFIX = "hybrid_rerank_filters_"
+
+
+def set_filter_mode(settings: Settings, mode: str) -> None:
+    if mode not in FILTER_MODES:
+        raise ValueError(f"Unknown retrieval filter mode: {mode}")
+    config = settings.retrieval.filters
+    config.enabled = mode != "off"
+    config.category = mode == "date_category"
+
+
+def filter_mode(settings: Settings) -> str:
+    config = settings.retrieval.filters
+    if not config.enabled:
+        return "off"
+    return "date_category" if config.category else "date"
+
 
 def normalised(text: str) -> str:
     return " ".join(re.findall(r"\w+", unicodedata.normalize("NFKC", text).casefold()))

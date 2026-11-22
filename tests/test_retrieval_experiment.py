@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 
 import pytest
+from eval.legacy_core import render_retrieval, save_retrieval
 from eval.retrieval_experiment import Experiment
 from eval.retrieval_records import RetrievalRun, RunMetadata
-from eval.retrieval_report import write_reports
 from eval.schema import EvalItem
 
 from support_agent.config import get_settings
+from support_agent.retrieval.filters import RetrievalFilters
 from support_agent.retrieval.rerank import FakeReranker
 from test_retrieval import QueryEmbedder, SearchStore
 
@@ -61,13 +63,60 @@ def test_cache_reuses_real_timings_and_invalidates_changed_provenance(tmp_path: 
     assert len(store.calls) == 4
 
 
+def test_filter_ablation_changes_both_candidate_searches_and_the_cache_key(tmp_path: Path) -> None:
+    calls = []
+
+    class FilterStore(SearchStore):
+        def supports_filters(self):
+            return True
+
+        def search_dense(self, vector, limit, filters=None):
+            calls.append(("dense", filters))
+            return super().search_dense(vector, limit)
+
+        def search_bm25(self, text, limit, filters=None):
+            calls.append(("bm25", filters))
+            return super().search_bm25(text, limit)
+
+    experiment = Experiment(
+        get_settings(), FilterStore(), QueryEmbedder(), FakeReranker(), tmp_path, "snapshot"
+    )
+    by_date = RetrievalFilters(as_of=date(2026, 9, 1))
+    both = by_date.model_copy(update={"product_category": "monitors"})
+    for filters in (None, by_date, both, by_date):
+        record = experiment.retrieve("hybrid_rerank", question(), filters=filters)
+        assert record.filters_applied == (filters is not None)
+    assert calls == [
+        (source, filters) for filters in (None, by_date, both) for source in ("dense", "bm25")
+    ]
+    assert record.cache_hit
+
+
+def test_legacy_filter_ablation_records_that_filters_were_unsupported(tmp_path: Path) -> None:
+    store = SearchStore()
+    experiment = Experiment(
+        get_settings(), store, QueryEmbedder(), FakeReranker(), tmp_path, "snapshot"
+    )
+    record = experiment.retrieve(
+        "hybrid_rerank", question(), filters=RetrievalFilters(as_of=date(2026, 9, 1))
+    )
+    assert not record.filters_applied
+    assert [call[0] for call in store.calls] == ["dense", "bm25"]
+
+
 def test_report_header_metrics_and_csv_do_not_export_source_text(tmp_path: Path) -> None:
     experiment = Experiment(
         get_settings(), SearchStore(), QueryEmbedder(), FakeReranker(), tmp_path / "cache", "id"
     )
     record = experiment.retrieve("hybrid", question())
-    run = RetrievalRun(metadata=metadata(), records=[record], requested_split="dev")
-    write_reports(run, tmp_path / "reports", tmp_path / "RETRIEVAL.md")
+    filter_mode = "hybrid_rerank_filters_date"
+    filters = RetrievalFilters(as_of=date(2026, 9, 1))
+    filtered = experiment.retrieve("hybrid_rerank", question(), filters=filters).model_copy(
+        update={"mode": filter_mode}
+    )
+    run = RetrievalRun(metadata=metadata(), records=[record, filtered], requested_split="dev")
+    run_path = save_retrieval(run, [], root=tmp_path / "runs")
+    render_retrieval(run_path, tmp_path / "reports", tmp_path / "RETRIEVAL.md")
     report = (tmp_path / "reports/retrieval.md").read_text()
     for field in [
         "base-sha",
@@ -85,10 +134,12 @@ def test_report_header_metrics_and_csv_do_not_export_source_text(tmp_path: Path)
     assert "Recall@1" in report and "MRR" in report
     assert "1.0000" in report
     assert "unreviewed" in report
+    assert f"| dev | {filter_mode} | 0/1 |" in report
     csv = (tmp_path / "reports/retrieval_dev.csv").read_text()
     assert "product.a" in csv and "hybrid" in csv
     assert question().question not in csv
     assert record.chunks[0].text not in csv
+    assert "filters_applied" in csv and "2026-09-01" in csv
     assert "Source: eval/reports/retrieval.md" in (tmp_path / "RETRIEVAL.md").read_text()
 
 

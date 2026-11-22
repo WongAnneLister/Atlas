@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, JsonValue
 
+from support_agent.data.section_metadata import SectionMetadata
+
 BuildMode = Literal["full", "incremental", "adopted"]
 BuildStatus = Literal["building", "built", "failed", "released", "retired", "dropped"]
 
@@ -25,6 +27,7 @@ class SourceSection(BaseModel):
     heading: str
     text: str
     content_hash: str
+    metadata: SectionMetadata
 
 
 class Corpus(BaseModel):

@@ -1,6 +1,10 @@
 """Retrieve both candidate lists and retain their ranks alongside the RRF score."""
 
+from collections.abc import Iterator
+from contextlib import contextmanager
+
 from support_agent.config import RetrievalSettings
+from support_agent.retrieval.filters import RetrievalFilters, filter_scope, supports_filters
 from support_agent.retrieval.fusion import rrf
 from support_agent.retrieval.types import RetrievedChunk, Retriever
 
@@ -11,12 +15,23 @@ class HybridRetriever:
         self.bm25 = bm25
         self.config = config
 
-    def retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]:
+    def supports_filters(self) -> bool:
+        return supports_filters(self.dense) and supports_filters(self.bm25)
+
+    @contextmanager
+    def filter_scope(self) -> Iterator[None]:
+        with filter_scope(self.dense), filter_scope(self.bm25):
+            yield
+
+    def retrieve(
+        self, query: str, top_k: int, filters: RetrievalFilters | None = None
+    ) -> list[RetrievedChunk]:
         if top_k <= 0:
             raise ValueError("top_k must be positive")
+        kwargs = {"filters": filters} if filters is not None else {}
         sources = {
-            "dense": self.dense.retrieve(query, self.config.dense_top_k),
-            "bm25": self.bm25.retrieve(query, self.config.bm25_top_k),
+            "dense": self.dense.retrieve(query, self.config.dense_top_k, **kwargs),
+            "bm25": self.bm25.retrieve(query, self.config.bm25_top_k, **kwargs),
         }
         chunks: dict[str, RetrievedChunk] = {}
         for source, results in sources.items():

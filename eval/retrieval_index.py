@@ -45,7 +45,9 @@ def inference_runtime() -> dict[str, str]:
 
 def chunk_hash(chunks: list[Chunk]) -> str:
     return digest(
-        json_text([chunk.model_dump() for chunk in sorted(chunks, key=lambda c: c.chunk_id)])
+        json_text(
+            [chunk.model_dump(mode="json") for chunk in sorted(chunks, key=lambda c: c.chunk_id)]
+        )
     )
 
 
@@ -63,6 +65,8 @@ def prepare_experiment_index(
     expected = collection_for_prefix(settings, prepend_heading)
     if store.collection != expected or not chunks:
         raise ValueError("Expected the configured experiment collection and a nonempty corpus")
+    if any(chunk.effective_from is None for chunk in chunks):
+        raise ValueError("Experiment indexes require dated chunks from a metadata-enabled build")
     fields = {
         key: value
         for key, value in settings.retrieval.model_dump().items()

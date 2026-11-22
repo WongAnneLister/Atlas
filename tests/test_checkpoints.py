@@ -1,5 +1,6 @@
 """Checkpoint factories and eval thread namespaces."""
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -44,3 +45,12 @@ def test_checkpoint_serializer_keeps_typed_order(seeded) -> None:
     value = serde.loads_typed(serde.dumps_typed(order))
     assert isinstance(value, Order)
     assert value == order
+
+
+def test_checkpoint_serializer_keeps_retrieval_filters() -> None:
+    from support_agent.graph.postgres import checkpoint_serializer
+    from support_agent.retrieval.filters import RetrievalFilters
+
+    filters = RetrievalFilters(as_of=date(2026, 9, 1), product_category="hair_dryers")
+    serde = checkpoint_serializer()
+    assert serde.loads_typed(serde.dumps_typed(filters)) == filters

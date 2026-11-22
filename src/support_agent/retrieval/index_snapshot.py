@@ -21,13 +21,28 @@ def build_snapshot_path(settings: Settings, build_id: str) -> Path:
     return REPO_ROOT / settings.data.processed_dir / settings.index.builds_directory / build_id
 
 
-def _load(path: Path, metadata: Snapshot, expected: str | None) -> list[Chunk]:
+def _verified_text(path: Path, metadata: Snapshot, expected: str | None) -> str:
     if metadata.build_id != expected:
         raise ValueError("Local chunk snapshot does not match the expected build id")
-    raw = path.read_text(encoding="utf-8")
+    raw = path.read_bytes().decode("utf-8")
     if digest(raw) != metadata.chunk_hash:
         raise ValueError("Local chunk snapshot checksum differs from its recorded build")
-    return [Chunk.model_validate_json(line) for line in raw.splitlines() if line]
+    return raw
+
+
+def _load(path: Path, metadata: Snapshot, expected: str | None) -> list[Chunk]:
+    return [
+        Chunk.model_validate_json(line)
+        for line in _verified_text(path, metadata, expected).splitlines()
+        if line
+    ]
+
+
+def build_chunk_hash(settings: Settings, build_id: str) -> str:
+    path = build_snapshot_path(settings, build_id)
+    meta = Snapshot.model_validate_json((path / "snapshot.json").read_bytes())
+    _verified_text(path / "chunks.jsonl", meta, build_id)
+    return meta.chunk_hash
 
 
 def load_build_chunks(settings: Settings, build_id: str) -> list[Chunk]:
