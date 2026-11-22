@@ -5,7 +5,13 @@ from random import Random
 
 import pytest
 from eval.build_claims import build_claim_set, synthetic_build_lines
-from eval.claim_labels import export_labels, import_labels
+from eval.claim_labels import (
+    export_labels,
+    export_review,
+    import_drafts,
+    import_labels,
+    import_review,
+)
 from eval.claim_perturbations import Perturbations
 from eval.claims import extract_claims
 from eval.claims_eval import score_claims
@@ -376,3 +382,46 @@ def test_splitter_breaks_inline_numbered_lists_without_gluing_item_numbers():
         "The fee is 40.",
         "You can pay online.",
     ]
+
+
+def test_model_drafts_stay_marked_until_the_author_reviews_a_blind_sample(tmp_path):
+    rows, sections, options = make_claim_set()
+    items = build_claim_set(rows, sections, **options)
+    path = tmp_path / "labels.csv"
+    export_labels(items, path)
+    with path.open(newline="", encoding="utf-8") as handle:
+        csv_rows = list(csv.DictReader(handle))
+    for index, row in enumerate(csv_rows):
+        row["label"] = "unsupported" if index == 0 else "supported"
+        row["note"] = "model reason"
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(csv_rows[0]))
+        writer.writeheader()
+        writer.writerows(csv_rows)
+    drafted = import_drafts(items, path)
+    real = [item for item in drafted if item.group == "real"]
+    assert all(item.label_source == "model_draft" and not item.reviewed for item in real)
+    assert all(item.draft_label == item.label and item.note == "" for item in real)
+
+    review = tmp_path / "review.csv"
+    export_review(drafted, review, size=1, seed=7)
+    with review.open(newline="", encoding="utf-8") as handle:
+        sample = list(csv.DictReader(handle))
+    # Every drafted unsupported claim is reviewed, plus the seeded sample; the sheet is blind.
+    assert csv_rows[0]["id"] in {row["id"] for row in sample} and len(sample) == 2
+    assert all(row["label"] == row["note"] == "" for row in sample)
+    for row in sample:
+        row["label"] = "supported"
+    with review.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(sample[0]))
+        writer.writeheader()
+        writer.writerows(sample)
+    final, agreement = import_review(drafted, review)
+    assert agreement["reviewed"] == 2 and agreement["agree"] == 1
+    assert agreement["changed"] == [csv_rows[0]["id"]]
+    by_id = {item.id: item for item in final}
+    changed = by_id[csv_rows[0]["id"]]
+    assert changed.label == "supported" and changed.draft_label == "unsupported"
+    assert changed.label_source == "human" and changed.reviewed
+    untouched = [item for item in final if item.label_source == "model_draft"]
+    assert len(untouched) == 2 and not any(item.reviewed for item in untouched)

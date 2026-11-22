@@ -150,10 +150,14 @@ class ClaimItem(BaseModel):
     claim: str = Field(min_length=1)
     sources: list[ClaimSource]
     label: ClaimLabel | None = None
-    label_source: Literal["human", "construction"]
+    # "model_draft": drafted by a model, not yet confirmed by the author. A draft the author
+    # reviewed becomes "human" and keeps the model's verdict in draft_label for agreement.
+    label_source: Literal["human", "construction", "model_draft"]
     perturbation: ClaimPerturbation | None = None
     reviewed: bool = False
     note: str = ""
+    draft_label: ClaimLabel | None = None
+    draft_note: str = ""
 
     @model_validator(mode="after")
     def _consistent_provenance(self) -> ClaimItem:
@@ -168,11 +172,12 @@ class ClaimItem(BaseModel):
                 or self.note
             ):
                 raise ValueError("Synthetic claims require a perturbation and blank human labels")
-        elif (
-            self.label_source != "human"
-            or self.perturbation is not None
-            or self.reviewed != (self.label is not None)
-        ):
+        elif self.perturbation is not None or self.label_source == "construction":
+            raise ValueError("Real claims require consistent human label provenance")
+        elif self.label_source == "model_draft":
+            if self.label is None or self.reviewed or self.draft_label != self.label:
+                raise ValueError("A model draft needs a label, its copy and no review mark")
+        elif self.reviewed != (self.label is not None):
             raise ValueError("Real claims require consistent human label provenance")
         return self
 

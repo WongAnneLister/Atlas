@@ -139,9 +139,9 @@ datasets:
   - Freeze seeded pairs of same-split eval_v1 questions for part-level scoring.
   - Balance which part comes first in half-answerable pairs within each split.
 - name: claims_v1
-  version: v2
+  version: v3
   path: eval/sets/claims_v1.jsonl
-  sha256: 10fd5b4dc6e1937f0fafdf2e8e958327b9ab26d6fdd688b8e2caeb8b6ae4509f
+  sha256: ec330eea3fa6827e4f7c8b43df359b1d8f9892437aba841063691fec9061d782
   items: 350
   splits:
     dev: 140
@@ -151,3 +151,4 @@ datasets:
   changelog:
   - Build claim set for test.
   - Build claim set for dev and test.
+  - Import model-drafted claim labels.

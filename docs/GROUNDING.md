@@ -13,9 +13,11 @@ Each claim has access to the chunks cited by its paragraph. The extraction uses 
 saved citation order and checks the saved section identifiers, so it can recover the
 numbered chunks without performing retrieval.
 
-**Do not label the current registered `claims_v1`.** It is a test-only tooling draft.
-25b will rebuild it from the saved 24b dev and test runs before human review.
-The label and scoring commands require the rebuilt schema with question context.
+`claims_v1` v2 was rebuilt from the 24b dev and test runs of the shipped configuration
+(planning + partial answers): 230 real claims (80 dev, 150 test) and 120 synthetic.
+Labels for v3 were **drafted by a model (Claude)** at the author's request, with a one-line
+reason per claim, and the author reviews a sample (decision below). Results that rest on
+unreviewed drafts are reported as such.
 
 `claims_v1_sources.json` records paths and hashes for the saved inputs and the
 unlabelled set. The builder accepts both standard run directories and legacy E2E JSONL.
@@ -30,6 +32,16 @@ labels, run `make eval-claims-label CLAIMS_LABEL_ARGS="--import --version vN"` w
 next registry version. The CSV shows the question, claim and cited text. Import
 requires the original IDs, question, claim text, split and sources. The
 dataset, provenance and review CSV stay local.
+
+Model-drafted labels. `--import --drafted-by-model` imports a complete CSV as
+`label_source: model_draft` (unreviewed; the reason goes to `draft_note`).
+`--review-sample N --seed S` writes `claims_v1_review.csv`: every drafted `unsupported`
+claim plus N seeded drafted `supported` claims, shuffled and blind (no draft label or
+reason). `--import-review --version vN` turns each reviewed row into a human label, keeps
+the draft in `draft_label`, and prints agreement. Report agreement next to every verifier
+number; unreviewed drafts stay marked and are not called human labels. The drafting rule
+was strict: a claim is supported only if its cited text states all of it; an added "Yes"
+that the source does not state, or a remark about the sources themselves, is unsupported.
 
 Synthetic negatives change a number, duration, amount or model, or replace a sentence
 with one from a different document. Each keeps its original question and cited
