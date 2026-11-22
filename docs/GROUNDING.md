@@ -130,3 +130,12 @@ the time a customer waits for the checked reply.
 25b will also rebuild and label the claim set, compare verifier results separately
 on human-labelled and synthetic claims, and use the existing judge and human
 review workflow for final-answer hallucination. No live measurements were taken in 25.
+
+## Results (commit 25b)
+
+The numbers are in [`eval/reports/claim_grounding.md`](../eval/reports/claim_grounding.md).
+In short: the checks catch changed numbers, units, models and sentences from other documents,
+and they rarely touch answers that already passed coverage. On real claims the verifier is
+lenient about a leading "Yes" the source does not state. Real-claim labels are unreviewed
+model drafts until the author's review is imported. Known limits are listed under 25b in
+`docs/PROGRESS.md`.

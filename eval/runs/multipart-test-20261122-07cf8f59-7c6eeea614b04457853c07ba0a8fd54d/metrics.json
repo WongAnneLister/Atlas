@@ -1,0 +1,114 @@
+{
+  "metrics": {
+    "answered_part_correct": {
+      "interval": {
+        "point": 0.65,
+        "low": 0.45,
+        "high": 0.85
+      },
+      "n": 20,
+      "count": 13,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "full_answer_rate": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.75,
+        "high": 1.0
+      },
+      "n": 20,
+      "count": 18,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "latency_p50": {
+      "interval": {
+        "point": 20.097313958016457,
+        "low": 15.976061082998058,
+        "high": 23.06090199999744
+      },
+      "n": 50,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "latency_p95": {
+      "interval": {
+        "point": 47.229056416021194,
+        "low": 34.04809616698185,
+        "high": 54.38845762499841
+      },
+      "n": 50,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "noanswer_false_accept": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 10,
+      "count": 0,
+      "wilson_upper": 0.27753279986288915,
+      "rule_of_three_upper": 0.3
+    },
+    "part_recall_at_5": {
+      "interval": {
+        "point": 0.975,
+        "low": 0.925,
+        "high": 1.0
+      },
+      "n": 40,
+      "count": 39,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "partial_answer_rate": {
+      "interval": {
+        "point": 0.26,
+        "low": 0.14,
+        "high": 0.38
+      },
+      "n": 50,
+      "count": 13,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "pass_rate": {
+      "interval": {
+        "point": 0.36,
+        "low": 0.22,
+        "high": 0.48
+      },
+      "n": 50,
+      "count": 18,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "unanswerable_part_handed_off": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 20,
+      "count": 20,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    }
+  },
+  "statistics": {
+    "latency_p50": "p50",
+    "latency_p95": "p95",
+    "first_token_p50": "p50",
+    "first_token_p95": "p95"
+  },
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

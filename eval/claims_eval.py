@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -107,6 +107,7 @@ def render_report(
     *,
     target_recall: float,
     alpha: float,
+    label_sources: dict[str, int] | None = None,
 ) -> str:
     models = ", ".join(f"{role}={model}" for role, model in sorted(run.models.items()))
     lines = [
@@ -136,7 +137,16 @@ def render_report(
         )
     lines += [
         "",
-        "Partial verdicts count as unsupported. Unreviewed real claims are excluded.",
+        "Partial verdicts count as unsupported. Real claims without a label are excluded.",
+        *(
+            [
+                "Real-claim label sources: "
+                + ", ".join(f"{source} {count}" for source, count in sorted(label_sources.items()))
+                + ". `model_draft` labels were drafted by a model and not reviewed by the author.",
+            ]
+            if label_sources
+            else []
+        ),
         "Synthetic negatives contain no positive support examples, so their precision cannot",
         "measure how often the verifier would reject supported claims.",
         "F1 intervals transform the Wilson interval for TP / (TP + FP + FN).",
@@ -167,6 +177,13 @@ def main(argv: list[str] | None = None) -> int:
             score_claims(items, predictions, alpha=alpha),
             target_recall=settings.grounding.target_recall,
             alpha=alpha,
+            label_sources=dict(
+                Counter(
+                    item.label_source
+                    for item in items
+                    if item.group == "real" and item.label is not None
+                )
+            ),
         )
         if args.report:
             args.report.resolve().relative_to(REPO_ROOT)

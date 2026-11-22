@@ -1,0 +1,102 @@
+{
+  "verifier": [
+    {
+      "split": "dev",
+      "group": "real",
+      "n": 80,
+      "flagged": 0,
+      "tp": 0,
+      "positives": 3,
+      "fp": 0,
+      "negatives": 77
+    },
+    {
+      "split": "dev",
+      "group": "synthetic",
+      "n": 60,
+      "flagged": 60,
+      "tp": 60,
+      "positives": 60,
+      "fp": 0,
+      "negatives": 0
+    },
+    {
+      "split": "test",
+      "group": "real",
+      "n": 150,
+      "flagged": 0,
+      "tp": 0,
+      "positives": 5,
+      "fp": 0,
+      "negatives": 145
+    },
+    {
+      "split": "test",
+      "group": "synthetic",
+      "n": 60,
+      "flagged": 60,
+      "tp": 60,
+      "positives": 60,
+      "fp": 0,
+      "negatives": 0
+    }
+  ],
+  "reasons": {
+    "dev": {
+      "missing_literal": 43,
+      "verified_quote": 80,
+      "verifier_unsupported": 17
+    },
+    "test": {
+      "missing_literal": 45,
+      "verified_quote": 150,
+      "verifier_partial": 1,
+      "verifier_unsupported": 14
+    }
+  },
+  "missed_kinds": {
+    "leading yes/no not stated in the source": 4,
+    "statement about the sources": 1
+  },
+  "removals": {
+    "v1-test-on": {
+      "claims": 262,
+      "removed": 7,
+      "reasons": {
+        "verifier_unsupported": 1,
+        "withdrawn with its part": 5,
+        "missing_literal": 1
+      },
+      "low_grounding": 1
+    },
+    "v1-dev-on": {
+      "claims": 285,
+      "removed": 2,
+      "reasons": {
+        "verifier_partial": 1,
+        "withdrawn with its part": 1
+      },
+      "low_grounding": 0
+    },
+    "mp-test-on": {
+      "claims": 74,
+      "removed": 1,
+      "reasons": {
+        "missing_literal": 1
+      },
+      "low_grounding": 0
+    },
+    "mp-dev-on": {
+      "claims": 67,
+      "removed": 0,
+      "reasons": {},
+      "low_grounding": 0
+    },
+    "latency-on": {
+      "claims": 72,
+      "removed": 0,
+      "reasons": {},
+      "low_grounding": 0
+    }
+  }
+}

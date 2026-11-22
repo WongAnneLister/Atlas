@@ -1,0 +1,853 @@
+{
+  "git_sha": "07cf8f59de05b07752e746a80e0b597f562f06de",
+  "config_hash": "45c3fc9e7288e5635716ef2d3d97e1c39669989966e782397ddc45442f57ebaf",
+  "dataset_sha256": "ec330eea3fa6827e4f7c8b43df359b1d8f9892437aba841063691fec9061d782",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash"
+  },
+  "date": "2026-11-22T16:26:21.614177+00:00",
+  "split": "test",
+  "predictions": [
+    {
+      "id": "claim-test-7a8d8b7ae98032494e031e7fa94a85fcf1336961f1114036f07d10338e2a36f2",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-8d1b597898e667a219f6ac11451dc5c9e99d3f81d3a73f892ee9e973936ec1d8",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-afdc944ed2fe5cb390f2027e23cbe2f3ad1c115f5846bfac113c55f87a1cb070",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-7f9873c9eaa8b30e1e072d3cb3cad0657a61ff5f654c3805c2e6ba34d85657fe",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-2f22fb7e71acd84426b4cebbeb2b9e0099951be73f0e8f41cf6843750080ae43",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-3745637fecb9e3c0e9f9b7c384e778a46ba515badf0f5d376967fcc82839ee77",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-15517e0c7ca729048d1d341c27cb723722d79453404b5bb0d909eba3b9868f6f",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-297fb57c398484f9fe36fde0437c7dba8a54d3fc0e562ec769d437dd0754516b",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-c1ac9cd884f21c0945c33a50a211ca70f2be7d580f8b0b11cfacdfcc1dae15ce",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-656e70beb0bf5083c3acdabc92d1f75ea084fe1c146dd5fdd246d28ca19848d5",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-2b9e8fd0f7c7fbf6c2d390cec3e0e0baa29618a49f7dfee9afe9150425a71ced",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-14d305cc29574fdd5528bf52af06e87f6e44ede750e03b5d88f319969dd75aed",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-93d1c1e162757dba9b447d2b77a71ad04e3d22a7af9d14bf2ae694855090a17d",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-20f5cf818e339b9c2e4b73334c0086a760b81cfb9089810d7d65debd780cf8c6",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-cef8dd128f7347b879aeb33194dd04d26039e11a35a711a6861e541a795c4927",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-312b7fba52416f52b3724234f053f1017a90985b33270c4a3aca7bca49b69814",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-ccaad14048202aabc949b6c3b2e4c34f513f8ddc19c9f9a8d2576d959ec21655",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-90150cb6c7e542c10e03fe0c15294ad14d5c58d6dcd8b4f6f7e2619e39d7f4de",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-3f921f729745f240588606a35794a8283319dc6034b6843ec7c07a9ee4dab210",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-b32a365ee8573c29df4eb396f6d7e2f4846c2a06173269ecf54a6dc0804df114",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-c304950adf84e370cc7fced7b6693ffe237ca754f5ac9cd6ffa8a7ce8d2576d4",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-b355e5e89378ffaf5d23d129ca7a5af201b5e2124b624358fd6c76ec0ca7163a",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-b43e33504499a570e11acb0916ce80470c98e744e2ff972dc4027e721572ffca",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-c7d5f01b3465ff2fb38f09797ac9b393ada1d85e825c59bdf674e807e88019d0",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-f27ab6231117cbbbb976e6964a2f1703526ba66c55d541a5ce32547aea00683c",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-63091bccd8d5a951ee76be29ec33bdd70771860e9a86e40f6dbf04d9472b71a5",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-9ada4a9b594772ea2d24e7a3ac063f21ef85a8a0a65b4839a2725f0dea83cab5",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-d8d94509c0e5890e0262b5bb8b0119bcfe845e8d19b41b938beaaf857adf5d72",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-4b4f98b9981437096216dd02b9b530cff459d5447832208a692fc1850f6da1fb",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-ee34c425af52b6a7f3fad6ab7986e6b6927a9e1bd81070f887865ebdc9c936a1",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-ed96b2ca8a46e7196d8365cbb4f3a3f237af46e6aebf139dea93c94eb248610c",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-7b744cd2e9d34272965d7862cc3465c6d6cdd56ea330778dbe9ef85346c69539",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-44f3f7ac6b7152922df51d7c03bcb49313a6137b590a16e8fc24eedb734614f3",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-5479243f4c5defb9f5dbafb3b27a054a96f965831180ecc074f8721bc2680883",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-07ba7221daecec59e8935b1851d6956f4081a02713f3e167959d87d91e8ca57c",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-afbc78ae35978a575ad9e21bbd9ecd43eac46863cf88d36da7d631e2e4076894",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-3d8fb743921c74edce241a651591c13fb00178b4ec3a504cfda106929beeabbf",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-51e366241d7c86361b9a879296b3f90a8ac6f3fdc23fd0fdb4516967fa18e116",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-79cf7517a16076ac81bf9be2ee117fbb7a28328012304b318dd0cb2bf3703323",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-b7bebe6ceef3b02b2878db9b89b986ddbfe9a3a6114989d3376a93dfe45bc81d",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-1016251dcb1e962b9d8ea6b8c0e32167f1d6414a6b50e8a89073a3f7545775cb",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-cc43c3f535da5ffc8b951ba36f0f77a377dcd8174da6a7094b9eadc8f346ced4",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-1a2abb2b6756c9c67845506e9921370cc2faa14c0d84966902a9079c2bf17cf1",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-2ae07b06e15bfb80147674dafc1f6495b91d396f12a80516c68bdc79b0e26829",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-5b14d7037e9a267d8648b1739d9874375a339c3876ffb9e30ffd11a03df0799e",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-2e9408a2b872ff68ede65822d763522a75e8ba614bba780cc1456918243f1759",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-eaf58d7b0fff6af4b6879509d9748cbe2538fae5f125e07f2971cc57f9434000",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-601a5b1793062bd6c99a251dc47b55627892714a4b69fb294cf6b3e07c673dd6",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-d5ef109c466400acca76a29158833c5c67f0786da1848cd026a7f9abf9afbe1d",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-c0582c3acf00ee80a77a084992c52d3bae62349cedb30dd79abf328775e3be79",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-053153221c0dcce166eb9d0fced38d7238e5b1d3f5da7ebe9979e9dfb28e56ae",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-e4037d8fda54acce2c99bdf8657a3c6c7f2c46af109dac08e8905c437c1699dc",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-7c3decd8b51ef9097fc7e0df871ba175c37f3118b060f686c78b1e27e133a78a",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-cb6730f1f6845aae3a23f12b4d30952b9e8957c982c98c89b182c7a0f6706a7b",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-da4a22bc63672b5a026140acc14f51df74811c4f9cf46ce22b633c1a96a0a87f",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-b0269eb647527badfcb2ca73f20d05cb83deb7d5f9660979f74bdd43f518eb71",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-e5e4ee109e12ba279cfa14e103dafaa4cda52dfbcbf996e50fcbdbf8fa779386",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-c4b1977f137ee51c94695d4a0dd10fde625a62a487497620d4ee68f5fe105691",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-bb14498ebb90c0f7e09111204390391bfcc05f0098b7fb127397f08c22bcc10f",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-d5e8467f94bae28bbc216ed00ade33683d143add0035f914a9650966290ac6d2",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-7d802fa99754a66e0401d62e56a99c2805bfca0f23ae2b4f0096316c7ba4377f",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-ec58c7314adad53f50ae3bb8b06ded4cb189f44352c9326f86e10d6be891bd36",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-175fb3efb1ded69e47df9e542916989e8d8caf4a1f72f4216e538fc9b3d1bbfe",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-cfd66b17c2ccafe7fb69ff1aaadcc0f98043576f27cf0a9f4253f6ba3eed9bcb",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-736b19214ad30ba826c5cdeb20275d741ebd98f22787d28ff488bf6e2317d69f",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-3850bfca6fdb3c576077d84f9d8ba7919f9cb4bc9a8eb1e336409d58238e0649",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-dd0f5c8db2ae9622b49538b5d7054b981c4c92955dd2a55c80ca4444c03c9241",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-6e0bbf5b911c77e90567c2697e83f255f811c6aeddd2513a6390227e39c01bbf",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-21acfe403d5443695bf35d8a467e10e022d3e80732ed7dc30726a55565dd3f4b",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-45d0f9538d4d5c49592596efedd5c69acb918c583ef78073e384515fd5714d4f",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-3349a356af7df603cba8b97de3c4b3d5adbb170817bec1b731ee853fe12b1c4e",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-50ddf77be4d519f39344708e145aab6ad34090dbfac4b034f26215f8bff6e8ac",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-1f0f3373fea69919dee2c76b2e59db4f45a3e5cfd2587eeb4db3d3ce4348c4dd",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-f7bb9316492875ee667aa526a185b4b41ae0e68c330a9fb04553412def970181",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-241a0efdb90d8474e4e5627308e6e8a3f012639f5d2781e583a8624a71d3671f",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-56ea35f6fc61bbb15d378c82e915c07e99a4e221bcbb23e8a6e9e2efa768b145",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-ac144bf8f3cc98f2d74f87066b279d9f1d4918cf0db2b9266c743d8aeefa5952",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-11cb757013511e3fb102ee0c9594ad6dfd3bb5c39f9dc4d9880cb850d41ab484",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-e5ceee30408da8e19b2311d133d2ff9a25991049dbebb53156aa58a7efef868a",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-761fbb524f22f1619b5144fced029894e9e6f62b5cac142eb08a23a627b39a6c",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-3b36ce01fe6c8daa06deef7f99209120a95a9de807cdf6f3652a7910898f7b26",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-2f58925253dd3f0633fb5e7dcd3a89f7c7432d136dbdd83be4906af8b3f75237",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-9727b7d36b16340fa4432c649d1fed3c6da6a3e26027dbbb46785ed037fc1bb3",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-59aa541d1ed6ea7d9ba2749c0f8acb0836a0e7d41ddab19bddf17fe9cd0950b5",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-e37415cc1089f0d15e7142288caca3720de8f78764bee0b8377b167caac2ddce",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-ad21dd0b34f45f04a7597228eebe502627d25b58953098ee30736e62c2ebfbc2",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-903b00ba5154ce9b740af15b55b61a408c5b05e03972a2909456554552f42e7f",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-40f3ca69e64732988b0b5341975e35899d4365f27fcb2a7b34107a1e13fb2c3d",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-48f615d5c01f5af35b8d06c5d265d2e9a17f86dca6695c1a266c295137e9b694",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-f4e662446b29fa198c79fef338a46a79bd88f5704d30c016514404c09adedc97",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-5c1cd7cf1c39b6de27957e284a32be1fd9bc982c23a67b8519879e036d1f5e36",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-0c96a6e31212eb914c80d9688e2e1156b6ad97c1ec7ad3ddfd519451ae5a9198",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-6caeaf174070000517982995e5d8bc40fb637a702c4050daf3547bddaf56b0a8",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-17437d88a5ef1f2cd128fc0962564ddd7eed8685565d38fd7b01c5445ba02be6",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-d32a8b67b28ec2f6ca9d76b50f19d84dc23fb2b76ca2f1eb48968ad3453c0930",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-4aa53378e36c3a02cd034cca886506bc94d4673990ff70a6f9d6d7a62d3b2ca4",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-3c1a3d68c9276a3dd513db703e2d91461d4bf9af79aa6762ecb24f6a26957652",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-33cc7fe14265df56b9cd7742f0862dc24e4219e33e108542c01811b999e6b60e",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-a791cd0e6383943b233dce0681593d69e90d96453639c0f7e6926db79dad026f",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-0718b4e262dcd74be27fe763ed40d0c66c1695e50ccab063a7c77e09b8fa7c7e",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-ef88a46ee128bc0966be52bba91e6ce9c23e31f0b53e48f3039b1cfaa398c5ec",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-ea9e9b9531d3438f6caab3910ead162daca83483656bebd6a7a2d51d60c43258",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-29937fca125ac9cc930db814eef4e2aaf029689ae9b3d356d7e500dc17e572ed",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-d4f7bbd4ab5034ba0f350cab95d3cc3bf46240035c69a7ee19e279f30e4882aa",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-d2035470cb24caa10031b783c1e95ba7e89fc2f5f0a4476f0840896a42469a3a",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-fb7b8f5b20db8113592d68c0d69c7e6847d0a1cbce7255872eafb73306723abb",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-a5728afef4d21afebfaf4c7837d6629e42026e058a4a605017f1de5345c78fbe",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-7c0eb6ae418a787d0b8783fcfcdf9e980e339f0bed18d3abd4627f214484cf75",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-41894cb84f7c7749e0f295da3e14ba53f056e236b39de579ee135e7f0fc696a9",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-2d5faf701277ac996a243fac86b274cff06b7a31d05c89dbeb4f5687b7bcdda0",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-035f4a61c186272f5e9b3c41567281953aebb261c290e278d77a0752ea9afc5d",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-ae12851a22bbf82ed795b5f581cf3ebae8b9897acd5462d30dc6add946317f95",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-66d3efb52764c0bcdeab2877fc15942dd083858740c321bcba6ee8bc004406dd",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-81a76a589db85c2b57d6130bf3e0f72d220f45a04640351600e601f14f72d190",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-919a46a85c95b4edce577bfe661b8ff8e2b06ceb91ce04f5a2a3477fc09f7c40",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-92c80e8d2ee2b112d6d46225bb254e8bfffaf2bf37c7ea5f8495bcb2a0d86221",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-c40abce7f5808108118313fb5de022a7c75be9eb6b1ab33c4bbb685fe5c1882b",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-88ce86ed1ff1775b473e0f007a04366a8054a7e9ca2f2d5b91a228d66ea5a1e2",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-67ce287e54a1fbab8609d77e64d448bfc2f21c82a27560b25f9ea63277b9f453",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-6e0e8fc11d7387b39e1727711f109ee8877466bc160a7389339d81f9794b2759",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-498f1cab689f6b464d8eef411f82726d1e2ca4b1f52625072d523ca290b0411a",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-376ece2a1ce2d83764d90186466502e2bf5a4142b30abb9c39dca0136d44d9cc",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-5a80a7e277e45385c937778c43a1e6e84225b9b4fb9b44a439ec14e76e82aa37",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-94163b91ba1f3cc88caed195e89aedaa23d889b6d57fc11efa66f04f1cc2582a",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-5f678e6b9e8fbdd272d31a450aa9e8d3fb4e9a3472021e85be3759909ad82f07",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-2ccbf51024bafdf98c2fb95fc513622207ceae01e5c7026e7c20b6407cbfbdea",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-1111e6a67b9d23ddf3ef959bc285813c6e29612e8da88f5cbf43e7523360aee5",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-90e989c637b287e6a9efc5f58b77370954b751f2a7f8c77efaeb3a444cbec9a6",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-d7b292fb4de8434cb3322931dfbee5fe57c7495f33948cc5584050653de70b01",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-4a7da4d4ff0bdedc0b2ee0661f0cc7b80829fed13c9adf88e7633559998a09de",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-afa37cfe7ce75973cb84f218cc6c6f0f9ece8528787f9aa4fa59a68f1185b730",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-3a74d2b5942eeaad4c593c216339fad1a7b029553418a9363b39053d706aa985",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-87cb035bf5f0e4a88288727a3b9736743caa987173a2de192561f447f605e078",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-3792b28a8f96e0a7dfe6cd7f2cbf1514b1427afd76878964d05513d70fe35ef3",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-2b6f8b356c8ce59afc46e2fd8c8970457c4040317f911df5fcd99428c34be398",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-91234f3d87db73bd45fdfcf07f13d6400fb1904fcdd405f87da7aaac252aabd5",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-9bce2a7b861bdeae0be26772c7c3fd2aa28e5ad576956808503519e4e4790e36",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-37c77fbebcfba0dfdf909f7df2da45176beab70a4dcbdb147ee12b3b73174b1a",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-4a69598d45b56781c2d3beced06f83df0ca84cdc9f74d9933468a0e13bc6adf6",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-77aa1986dead1c6819a6f96bfff9a1a53ba21081db943e8d3ad3e5e7596eaa01",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-a75fd42dfcbef3c619b5cdbe61d141dab9861d8a307460761588dfa2ce0bceec",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-9908d2574d55a77dd1ec9774c295cbc38c996f25cb3c2d94638b7b0cfa5afddc",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-b0fa7e7f3ae81b144880f07bbef60ea48845243cc76452ddf547025447453775",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-36807ae104738346c86464bd2a7cd1b78f29fcc8b77bd81c38a7718d7d259154",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-6417e7d3d10583546ce093f6570bdeee833deb5b5841f29373416a8fb318fd09",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-07b91b5b67f0ee9266c360c35f672f359d412117e2433817c6e2d1c886f2b7f7",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-9913e7c753978ebbc8cc5c1059405bad00ef792552b89d25e96d2343ee9d673d",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-a5378cf89be841541f7b4bc763362bc1a7f8e38b653a568ca704b9dacc58b630",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-390c49f83916daf1da464fe2ba32a2bd6f4da36d69274638f02352c69e7991b0",
+      "verdict": "supported"
+    },
+    {
+      "id": "claim-test-afc50f555f538253fe907bf7ead34415c7a430d6b231fedd4b8afe00d32911d1",
+      "verdict": "supported"
+    },
+    {
+      "id": "synthetic-test-9572402f7e2e8ac9381dcab2381c0856332087514b88177fea42b5ad84818c30",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-63e805c5142bad33dfa7fe1e36ebe0b28942e33c23d3b5076b15de53d152e336",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-0997d0cfdc6d84c76044361138dc6a7b75b6955c23ea43b26e4c3a273b755373",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-a7560b975ef1f1ed09ca06bbe63645b3a7dd574f6a370c74110c04910c03f4c6",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-087d6a6974926ae2e99b161e5e0e051ebe273990ce5cf273fcd85bedd601fd69",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-e0029421041b46fb0f31bd9344c5669e5ae00b320e7b613c92ba0a6edbf049e3",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-2411b21dbc304846c67b2ff97b65d1d77dde9ab1113dfddf8fad30c0c360206e",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-ac4cf31daa21dc03f415d1462c37c0cda518d8caf3dc19939d3d1cea4004d4ee",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-52cd15e858944702c68a07d16a2ae7732123c8ba510aa1b351d700c4f474bc91",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-d7edc6a4812c6db012a3d8bf576a8a573eece8db360652e3adacfb646a7fd9a9",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-0327f1c8f9c586ad50e3dbcd8b99f3fd8757b18e76f1a60f6a0194e5ace29900",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-bf2880df685544f5969cd63eba3acc43fade59fb12d8456f2d5e788e748c97ef",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-71ffe8f24d6d71cef26c87b93282e71eb8d5600ea1e5b2b1bca339dd6d53b2f7",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-3ccf55da55aed4fc6f64f71f62c12552b5db9502479f3ac9e0c86d6050b890fb",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-88f807fadbaf9c292e542b4e72ca858efe2825afc957ba45136ada1087a7fc4d",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-75a439c94f637c846a66cf46e33bf3f591e83fd534218af3f34d6f8dc91dbbc0",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-d6170a6d29cec87cdb2f7564d87820e15085f7f7707473caf0012e306c172169",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-12555f7ad22425c9044cecca1e07b82666ac33020e539dee6f7611eb486e7455",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-f3dce58e38e0e9a721b2fcbad8828b5fb748053acc1c83ee2756907776a9ade9",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-19d2c38c8d4ac8e3771635b191163d6d5bc975d5a389d8e4921114618fb44137",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-e42b99caba69765ee39cc8ae1fedaf0c6f2400664648d0ef20c26eb5e8e57bb1",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-d6206cfce9dfa802750a843078f6cb427ce914e810452fef6367e5eb3d65a2ae",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-4b7596c1c126c357e6580f8b843e92eaceb3e2c6e2a5c43c4128722a9f45c60e",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-4c9a901d4509f87fe33c2475f54f1bd3a56fd89b1bb0b63a5eeecf8b7dbc517d",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-bb3773bcf4f47c754c72c768aa604a57da4859365355db382f9e5484381a9e0c",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-c43e1b4f5b5f9afbf00f2d7142c636daa914ca022e1e7254aef7f6b7efa57cde",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-6d50b9a9017c0707b4ac3e265b5f60fc91f5de6d39493865ec9de1b83adee7c9",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-30df72739e1e16b1187ca6845c8a24525d0f271be947c035ea631c03d7525207",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-4161b108520798b66d79637c79e2373faa02e852ef56ad57267b1810c12a4595",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-b604376150409603b4d4d4ec67b2ca88cbddeb054c5f74d268cabeadbe7989d3",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-4704cd97d27df7296d1c6fcb1c48936c59fbb717b56ef6eb4d5771da87917fbb",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-30c799ed8dc32d49fb727cb3adf0487dee4bb813edacedff2a89e6ded95fb99f",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-b3b09c15f2d8379f6b87bc8911fc3d0e23c98951649047bd65c1e7770cfa3c11",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-97ca5b4b5eb5dce4abe430df83bec9251673f5bae73088da23dca29d22c80c51",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-9ac6a2d0cce46e8434894f6c571a55c458a1e301bb65b075fc8a2dcf7f200e3c",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-f989423a1f5c9aa5f8bb61f3117ae1cd5d33d61009fde8ae87f33adae6c97757",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-e2acb2838e06c5ce992a1539649b795512ba4d3519c797a26138ccb14bffb26f",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-384befb277bb5e9aff23181fbaa5e9356e2a3f702e3f9a3449ea8aea0a469720",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-8a9966784738e4dca5f0dfae13d02e1821a6759f762c0aee7600956ff80f2562",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-69eddd363134a43af52a8835ee32f1437ca0c819ff362bbe946661237222e842",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-ad7e3cef1da0bd1a853470d9079d6b72cf8cfdacfb03b4e6c3400033e5045db8",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-842a88634be7747aeceafc021a5b5268e37998fa4881cb27c13d2e720ecd8fde",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-a738d3340a5ab45e6ddd2bf74a15739f1bffba77b54ac8a78fd7bc306ca101a2",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-69ed69fb659b2b0e2cb10c3048d625db98f5b57dde7146bc775353f67df85235",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-b3f08c5a8b89bcc389a85ddfb58a0b3b44fc5bb68792b64e304ed4ae628b657c",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-b22521ec53e0d77770d7c429babeac2410aec396b0927c18bb1989104c0c49cc",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-817fb0664ff04d08d660a9a3e16a0f96d67dfeda9fb670a29ce51eeaa3e1bfa4",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-b6218286a7e639a0449c2bef11e576b5c147b77b2e8a9273928246d8854050c6",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-395eafdf7faa84204a3da52514ae844e5560c47f88e35a37647db72c11977fe6",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-e3bc5f443e674748059176649f940efc3528b98ff0111d603a48753c15766659",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-f017e2aa956389207b3c4be44db804c43fa8b5a0e67d3b1f8d6d628be0296f3a",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-18ebf0c5964ebb2ebc3035f7b3562b6405282a250f8edddef816066f529289d5",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-ff0aa920ea06665ae55b1a777e29c796aaa3a565b4637a366636e61437942607",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-70b534035c651760de44dc84f6262d6e0c78252b08ce7ced6bb24281b9838490",
+      "verdict": "partial"
+    },
+    {
+      "id": "synthetic-test-996eaadaf0fe7f8325904595676f026297e41d64c019716690cd7150688633e8",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-b7521639f923953ae6e08fdad10c66125a56b675f7230fbf7dcc75597a8be17b",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-417fa0d56fe6486299b6cf74b902ca4586886f72b9d3667098e967dd4d7bd6a3",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-8e84b90313ab60d6d4587fc3ee3061699c6313025e986aae95cc8a30c5f3056d",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-2fd40296004d46956b8d9a1f3b0f5b48cb0897a2253aa354488c40e214a9eb94",
+      "verdict": "unsupported"
+    },
+    {
+      "id": "synthetic-test-015e8716393c992aa0d8f7c6354d71d4e415fd88a289030f2e89eca97c318687",
+      "verdict": "unsupported"
+    }
+  ]
+}

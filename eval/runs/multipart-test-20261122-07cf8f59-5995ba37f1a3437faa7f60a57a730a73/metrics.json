@@ -1,0 +1,158 @@
+{
+  "metrics": {
+    "answered_part_correct": {
+      "interval": {
+        "point": 0.65,
+        "low": 0.45,
+        "high": 0.85
+      },
+      "n": 20,
+      "count": 13,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "answers_with_any_unsupported_claim": {
+      "interval": {
+        "point": 0.03125,
+        "low": 0.0,
+        "high": 0.09375
+      },
+      "n": 32,
+      "count": 1,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "claims_removed_per_answer": {
+      "interval": {
+        "point": 0.03125,
+        "low": 0.0,
+        "high": 0.09375
+      },
+      "n": 32,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "full_answer_rate": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.75,
+        "high": 1.0
+      },
+      "n": 20,
+      "count": 18,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "latency_p50": {
+      "interval": {
+        "point": 6.512371208984405,
+        "low": 5.08803058299236,
+        "high": 7.117169000004651
+      },
+      "n": 50,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "latency_p95": {
+      "interval": {
+        "point": 30.314970125007676,
+        "low": 18.65967404100229,
+        "high": 39.76345774999936
+      },
+      "n": 50,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "low_grounding_handoff_rate": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 32,
+      "count": 0,
+      "wilson_upper": 0.10717919825507058,
+      "rule_of_three_upper": 0.09375
+    },
+    "noanswer_false_accept": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 10,
+      "count": 0,
+      "wilson_upper": 0.27753279986288915,
+      "rule_of_three_upper": 0.3
+    },
+    "part_recall_at_5": {
+      "interval": {
+        "point": 0.975,
+        "low": 0.925,
+        "high": 1.0
+      },
+      "n": 40,
+      "count": 39,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "partial_answer_rate": {
+      "interval": {
+        "point": 0.26,
+        "low": 0.14,
+        "high": 0.38
+      },
+      "n": 50,
+      "count": 13,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "pass_rate": {
+      "interval": {
+        "point": 0.36,
+        "low": 0.22,
+        "high": 0.48
+      },
+      "n": 50,
+      "count": 18,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "unanswerable_part_handed_off": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 20,
+      "count": 20,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "claim_support_rate": {
+      "interval": {
+        "point": 0.9864864864864865,
+        "low": 0.9594594594594594,
+        "high": 1.0
+      },
+      "n": 74,
+      "count": 73,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    }
+  },
+  "statistics": {
+    "latency_p50": "p50",
+    "latency_p95": "p95",
+    "first_token_p50": "p50",
+    "first_token_p95": "p95"
+  },
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

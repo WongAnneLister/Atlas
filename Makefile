@@ -28,7 +28,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         results eval-refund-policy eval-refund-decisions eval-validate-all eval-registry-bump \
         eval-time-sensitive-build eval-time-sensitive eval-time-sensitive-e2e eval-policy-versions-report \
         eval-cross-doc-failures eval-multipart-build eval-multipart eval-query-planning-report \
-        eval-claims-build eval-claims-label eval-claims eval-claims-verify \
+        eval-claims-build eval-claims-label eval-claims eval-claims-verify eval-claim-grounding-report \
         eval-index-release eval-index-lifecycle eval-rerank-cache eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
 
 define todo
@@ -337,3 +337,6 @@ eval-claims:
 
 eval-claims-verify:
 	$(RUN) python -m eval.claims_verify $(CLAIMS_VERIFY_ARGS)
+
+eval-claim-grounding-report:
+	$(RUN) python -m eval.claim_grounding_report $(CLAIM_GROUNDING_REPORT_ARGS)
