@@ -12,6 +12,7 @@ from support_agent.graph.coverage import CoverageAnswer
 from support_agent.graph.handoff import HandoffPayload
 from support_agent.graph.intents import Intent, Path
 from support_agent.graph.parts import PartRetrievalResult, QueryPart
+from support_agent.grounding.claims import ClaimAssessment, GroundingDraft
 from support_agent.guardrails.input import InputAction
 from support_agent.reliability.events import ReliabilityEvent
 from support_agent.retrieval.filters import RetrievalFilters
@@ -62,9 +63,13 @@ class ConversationState(BaseModel):
         "implied_by_absence",
         "invalid_evidence",
         "guardrail_blocked",
+        "low_grounding",
     ] = "not_attempted"
     answer_error_type: str | None = None
     coverage: CoverageAnswer | None = None
+    grounding_drafts: list[GroundingDraft] = Field(default_factory=list)
+    claims: list[ClaimAssessment] | None = None
+    claims_removed: int = Field(default=0, ge=0)
     order_context: dict[str, Any] | None = None
     refund_candidates: list[dict[str, Any]] = Field(default_factory=list)
     refund_order_id: str | None = None

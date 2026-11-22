@@ -76,6 +76,7 @@ reliability:
     decide: 30
     order_extract: 30
     grounding: 30
+    verify: 30
     complaint: 30
     tools: 30
     rerank: 60
@@ -249,6 +250,9 @@ intent_eval:
   target_accuracy: 0.9
 
 grounding:
+  enabled: true
+  split_compound: false
+  verifier_role: fast
   short_sentence_words: 3
   generic_phrases:
     - "You can contact support for help."

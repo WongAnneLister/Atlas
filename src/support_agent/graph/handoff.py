@@ -31,6 +31,7 @@ class HandoffReason(StrEnum):
     GUARDRAIL_BLOCKED = "guardrail_blocked"
     COMPLAINT = "complaint"
     LOW_EVIDENCE = "low_evidence"
+    LOW_GROUNDING = "low_grounding"
     RETRIEVAL_ERROR = "retrieval_error"
     DEPENDENCY_UNAVAILABLE = "dependency_unavailable"
     ANSWER_ERROR = "answer_error"

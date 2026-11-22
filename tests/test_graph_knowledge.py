@@ -81,6 +81,7 @@ def invoke(graph: Any, question: str) -> dict[str, Any]:
 
 def test_high_evidence_answers_with_valid_source_metadata() -> None:
     settings = Settings()
+    settings.grounding.enabled = False
     settings.gate.threshold = 0.7
     main = CoverageFake(
         responses=["unused"], payload={"parts": [part("You have 30 days to return the item.")]}
@@ -306,6 +307,7 @@ def part(answer: str = "Unused items can be returned within 30 days.", **changes
 
 def coverage_graph(payload: dict) -> dict:
     settings = Settings()
+    settings.grounding.enabled = False
     settings.gate.threshold = 0.7
     with GraphDeps(
         settings,

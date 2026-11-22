@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from typing import Any
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from support_agent.gate.evidence import evaluate
 from support_agent.graph.coverage import (
@@ -25,8 +24,10 @@ from support_agent.graph.handoff import (
 )
 from support_agent.graph.intents import INTENT_TO_PATH, Path
 from support_agent.graph.model_data import source_blocks
+from support_agent.graph.nodes.knowledge_reply import check_citations, multipart_reply, whole_reply
 from support_agent.graph.parts import QueryPart
-from support_agent.graph.state import CitationRecord, ConversationState
+from support_agent.graph.state import ConversationState
+from support_agent.grounding.claims import GroundingDraft
 from support_agent.reliability.guards import diagnostic_type, is_dependency_failure
 from support_agent.reliability.structured import StructuredOutputError
 from support_agent.retrieval.filters import knowledge_filters, retrieve_with_filters
@@ -34,7 +35,6 @@ from support_agent.retrieval.scope import scope_chunks
 from support_agent.retrieval.types import RetrievedChunk
 
 logger = logging.getLogger(__name__)
-_CITATION = re.compile(r"\[(\d+)\]")
 
 
 def _part_sources(part: QueryPart, chunks: list[RetrievedChunk]) -> dict[int, RetrievedChunk]:
@@ -62,11 +62,12 @@ def route_after_gate(state: ConversationState) -> str:
 
 
 class KnowledgePath:
+    _check_citations = staticmethod(check_citations)
+
     def __init__(self, deps: GraphDeps) -> None:
         self.deps = deps
         self.prompt = (PROMPTS / "answer.md").read_text(encoding="utf-8")
         self.parts_prompt = (PROMPTS / "answer_parts.md").read_text(encoding="utf-8")
-        self.partial_handoff = (PROMPTS / "partial_handoff.txt").read_text(encoding="utf-8").strip()
 
     def retrieve(self, state: ConversationState) -> dict[str, Any]:
         error_type = None
@@ -143,14 +144,30 @@ class KnowledgePath:
         if status != "answered":
             current = state.model_copy(update={"coverage": coverage})
             return {**self._answer_handoff(current, status), "coverage": coverage}
-        cleaned, citations = self._check_citations(text, chunks)
+        current = state.model_copy(update={"coverage": coverage})
+        trace = [*state.trace, "answer"]
+        if not self.deps.settings.grounding.enabled:
+            return whole_reply(current, [text], trace)
+        question = next(
+            (
+                message.content
+                for message in reversed(state.messages)
+                if isinstance(message, HumanMessage) and isinstance(message.content, str)
+            ),
+            state.rewritten_query,
+        )
         return {
-            "answer": cleaned,
-            "messages": [AIMessage(content=cleaned)],
-            "citations": [item.model_dump() for item in citations],
-            "trace": [*state.trace, "answer"],
-            "answer_status": "answered",
             "coverage": coverage,
+            "grounding_drafts": [
+                GroundingDraft(
+                    part=0,
+                    question=question,
+                    text=decision.answer,
+                    source_numbers=sorted({quote.source for quote in decision.evidence}),
+                )
+                for decision in coverage.parts
+            ],
+            "trace": trace,
         }
 
     def _answer_parts(self, state: ConversationState) -> dict[str, Any]:
@@ -201,6 +218,7 @@ class KnowledgePath:
     ) -> dict[str, Any]:
         parts = list(state.parts)
         paragraphs: list[str] = []
+        drafts: list[GroundingDraft] = []
         failures: list[CoverageStatus] = []
         for (index, assigned), decision in zip(sources.items(), coverage.parts, strict=True):
             status, text, numbers = render_covered_part(decision, assigned)
@@ -209,6 +227,15 @@ class KnowledgePath:
                 parts[index] = parts[index].model_copy(update={"failure_reason": status})
                 continue
             paragraphs.append(text)
+            if self.deps.settings.grounding.enabled:
+                drafts.append(
+                    GroundingDraft(
+                        part=index,
+                        question=parts[index].text,
+                        text=decision.answer,
+                        source_numbers=numbers,
+                    )
+                )
             parts[index] = parts[index].model_copy(
                 update={
                     "answered": True,
@@ -222,32 +249,15 @@ class KnowledgePath:
         if failures and (not paragraphs or not self.deps.settings.knowledge.partial_answers):
             return self._answer_handoff(current, failures[0])
 
-        answer, citations = self._check_citations("\n\n".join(paragraphs), state.retrieval)
-        handoff_data: dict[str, Any] = {}
         trace = [*state.trace, "answer"]
-        if failed := [part for part in parts if not part.answered]:
-            names = ", ".join(
-                f"“{' '.join(_CITATION.sub('', part.text).split())}”" for part in failed
-            )
-            summary = self.partial_handoff.format(questions=names)
-            remaining = iter(mark_parts_handed_off(failed, HandoffReason.UNSUPPORTED_PART))
-            parts = [part if part.answered else next(remaining) for part in parts]
-            current.parts = parts
-            handoff_data = make_handoff(
-                current, HandoffReason.UNSUPPORTED_PART, customer_message=summary
-            )
-            answer = f"{answer}\n\n{summary}"
-            trace.append("handoff")
-        return {
-            **handoff_data,
-            "answer": answer,
-            "messages": [AIMessage(content=answer)],
-            "citations": [item.model_dump() for item in citations],
-            "trace": trace,
-            "answer_status": "partial" if failed else "answered",
-            "coverage": coverage,
-            "parts": parts,
-        }
+        if self.deps.settings.grounding.enabled:
+            return {
+                "grounding_drafts": drafts,
+                "coverage": coverage,
+                "parts": parts,
+                "trace": trace,
+            }
+        return multipart_reply(current, paragraphs, trace)
 
     def _request_coverage(
         self, state: ConversationState, prompt: str, data: str
@@ -303,29 +313,3 @@ class KnowledgePath:
             "citations": [],
             "answer_status": status,
         }
-
-    @staticmethod
-    def _check_citations(
-        answer: str, chunks: list[RetrievedChunk]
-    ) -> tuple[str, list[CitationRecord]]:
-        valid_numbers = set(range(1, len(chunks) + 1))
-        seen: set[int] = set()
-
-        def replace(match: re.Match[str]) -> str:
-            number = int(match.group(1))
-            if number not in valid_numbers:
-                return ""
-            seen.add(number)
-            return match.group(0)
-
-        cleaned = re.sub(r"\s+([,.!?;:])", r"\1", _CITATION.sub(replace, answer)).strip()
-        citations = [
-            CitationRecord(
-                n=number,
-                chunk_id=chunks[number - 1].chunk_id,
-                section_id=chunks[number - 1].section_id,
-                heading_path=chunks[number - 1].heading_path,
-            )
-            for number in sorted(seen)
-        ]
-        return cleaned, citations

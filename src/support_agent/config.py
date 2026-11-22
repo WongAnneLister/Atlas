@@ -280,15 +280,18 @@ class ClaimSamplingSettings(BaseModel):
     max_per_item: int = Field(gt=0)
 
 
-class GroundingEvalSettings(BaseModel):
+class GroundingSettings(BaseModel):
+    enabled: bool
+    split_compound: bool
+    verifier_role: Literal["fast", "main"]
     generic_phrases: list[str] = Field(max_length=9)
     short_sentence_words: int = Field(ge=0)
     target_recall: float = Field(gt=0, le=1)
 
 
-def _default_grounding_eval() -> GroundingEvalSettings:
+def _default_grounding() -> GroundingSettings:
     config = yaml.safe_load(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
-    return GroundingEvalSettings.model_validate(config["grounding"])
+    return GroundingSettings.model_validate(config["grounding"])
 
 
 class EvalPlatformSettings(BaseModel):
@@ -463,7 +466,7 @@ class Settings(BaseSettings):
     graph: GraphSettings
     planning: PlanningSettings
     knowledge: KnowledgeSettings
-    grounding: GroundingEvalSettings = Field(default_factory=_default_grounding_eval)
+    grounding: GroundingSettings = Field(default_factory=_default_grounding)
     intent_eval: IntentEvalSettings
     evaluation: EvalSettings
     eval: EvalPlatformSettings = Field(default_factory=_default_eval_platform)

@@ -120,7 +120,33 @@ def names(stream: list[tuple[str, Any]]) -> list[str]:
     return [name for name, _ in stream]
 
 
-async def test_knowledge_stream(seeded: Any) -> None:
+@pytest.mark.parametrize("grounding", [False, True])
+async def test_knowledge_stream(seeded: Any, monkeypatch, grounding: bool) -> None:
+    from support_agent.reliability.llm_calls import ReliableModels
+    from support_agent.reliability.structured import ParsedResponse
+
+    seeded[0].grounding.enabled = grounding
+    structured = ReliableModels.structured
+
+    def fake_verifier(self, site, role, schema, messages, **kwargs):
+        if site != "verify":
+            return structured(self, site, role, schema, messages, **kwargs)
+        [claim] = json.loads(messages[-1].content)
+        [source] = claim["sources"]
+        value = schema.model_validate(
+            {
+                "verdicts": [
+                    {
+                        "number": claim["number"],
+                        "verdict": "supported",
+                        "evidence": {"source": source["n"], "quote": source["text"]},
+                    }
+                ]
+            }
+        )
+        return ParsedResponse(value, "fixture"), None
+
+    monkeypatch.setattr(ReliableModels, "structured", fake_verifier)
     async with client(seeded) as api:
         stream = events(await api.post("/api/chat", json=QUESTION))
         second = events(await api.post("/api/chat", json=QUESTION))
@@ -147,6 +173,7 @@ async def test_knowledge_stream(seeded: Any) -> None:
         "retrieve",
         "gate",
         "answer",
+        *(["ground"] if grounding else []),
         "output_guard",
     ]
     assert second[-1][1]["trace"] == ["input_guard", "rewrite", "classify", "fixed", "output_guard"]

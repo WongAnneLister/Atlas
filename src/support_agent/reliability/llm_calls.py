@@ -39,6 +39,8 @@ CallSite = Literal[
     "decide",
     "order_extract",
     "grounding",
+    "verify",
+    "split_claims",
     "complaint",
     "tools",
 ]
@@ -154,7 +156,10 @@ class ReliableModels:
         call = _ModelCall(
             site=call_site,
             role=role,
-            timeout_s=getattr(settings.reliability.timeouts_s, call_site),
+            timeout_s=getattr(
+                settings.reliability.timeouts_s,
+                "verify" if call_site == "split_claims" else call_site,
+            ),
             deadline=monotonic() + policy.budget_s,
             model=primary,
         )

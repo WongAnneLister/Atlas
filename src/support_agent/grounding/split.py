@@ -37,26 +37,44 @@ def _phrase_key(text: str) -> tuple[str, ...]:
     return tuple(_WORDS.findall(CITATION.sub("", text).casefold()))
 
 
-def answer_sentences(answer: str, *, generic_phrases: Collection[str] = ()) -> list[str]:
-    """Fold short fragments into neighbouring claims within their own paragraph."""
+def answer_fragments(
+    answer: str, *, generic_phrases: Collection[str] = (), short_sentence_words: int
+) -> list[tuple[str, bool]]:
+    """Return claim text and a generic flag, preserving the safe phrases for rendering."""
     ignored = {_phrase_key(phrase) for phrase in generic_phrases}
-    max_short = get_settings().grounding.short_sentence_words
-    claims: list[str] = []
+    fragments: list[tuple[str, bool]] = []
     for paragraph in _PARAGRAPH.split(answer):
-        merged: list[str] = []
+        merged: list[tuple[str, bool]] = []
         pending: list[str] = []
         for sentence in sentence_candidates(paragraph):
             words = _phrase_key(sentence)
             if words in ignored:
+                if pending:
+                    merged.append((" ".join(pending), False))
+                    pending.clear()
+                merged.append((sentence, True))
                 continue
             pending.append(sentence)
-            if len(words) > max_short:
-                merged.append(" ".join(pending))
+            if len(words) > short_sentence_words:
+                merged.append((" ".join(pending), False))
                 pending.clear()
         if pending:
-            if merged:
-                merged[-1] += " " + " ".join(pending)
+            if merged and not merged[-1][1]:
+                merged[-1] = (merged[-1][0] + " " + " ".join(pending), False)
             else:
-                merged.append(" ".join(pending))
-        claims.extend(merged)
-    return claims
+                merged.append((" ".join(pending), False))
+        fragments.extend(merged)
+    return fragments
+
+
+def answer_sentences(answer: str, *, generic_phrases: Collection[str] = ()) -> list[str]:
+    """Use the same fragment boundaries as runtime verification."""
+    return [
+        text
+        for text, generic in answer_fragments(
+            answer,
+            generic_phrases=generic_phrases,
+            short_sentence_words=get_settings().grounding.short_sentence_words,
+        )
+        if not generic
+    ]

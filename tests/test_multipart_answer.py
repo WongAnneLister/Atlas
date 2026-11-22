@@ -63,7 +63,9 @@ def test_only_approved_parts_reach_the_answer_model_and_failed_parts_go_to_hando
         ],
     )
 
-    with GraphDeps(Settings(), main_model=main) as deps:
+    settings = Settings()
+    settings.grounding.enabled = False
+    with GraphDeps(settings, main_model=main) as deps:
         result = KnowledgePath(deps).answer(state)
 
     assert main.calls == 1
@@ -169,7 +171,9 @@ def test_coverage_requires_matching_questions_and_scoped_quotes(reordered: bool)
     if reordered:
         parts.reverse()
     main = CoverageFake(responses=["unused"], payload={"parts": parts})
-    with GraphDeps(Settings(), main_model=main) as deps:
+    settings = Settings()
+    settings.grounding.enabled = False
+    with GraphDeps(settings, main_model=main) as deps:
         result = KnowledgePath(deps).answer(state)
 
     assert "All returns are accepted within 45 days." not in result["answer"]

@@ -57,32 +57,59 @@ records still load and omit the new metrics when no assessment was recorded. For
 before/after hallucination measurement, 25b will reuse the judge and blinded human
 confirmation on final answers. That measurement is distinct from verifier verdicts.
 
-## Planned verification (25)
+## Runtime verification (25)
 
-- The first release covers knowledge answers on both routes. Refund reasons combine
-  policy with order facts, and the refund path already checks its citations and
-  return window.
-- The verifier will check model-written text. Code-generated notices and handoff
-  templates stay outside verification. A short configured list will cover generic
-  phrases from the model.
-- Each claim uses its paragraph's cited chunks. The verifier gets the part question
-  or original item question as context only. It uses the cited chunks as evidence
-  and performs no further retrieval.
-- The fast model will make one structured call per answer and supply a verbatim
-  quote for each supported claim. The existing stack can validate those quotes
-  without downloading a separate natural language inference model.
-- Code will first check numbers, durations, amounts, percentages and model IDs
-  against the cited chunks. A missing literal can be rejected before the model call.
-- An unsupported claim will be removed. Losing the first claim or all substantive
-  text fails that part. The existing partial-answer switch governs whether supported
-  sibling parts can still be released.
-- A failed or invalid verifier response will cause a handoff. Dependency failures
-  use the dependency handoff reason.
-- The grounding switch will provide a baseline with the previous graph behavior.
-  Grounding settings will be captured in the E2E config hash.
-- Sentence splitting is deterministic. The optional fast-model compound splitter
-  will default off and be evaluated on dev.
+After the evidence gate and citation coverage checks, the knowledge route prepares
+model-written drafts. The `ground` node verifies them before `output_guard` can
+publish any text. This applies to whole and multipart knowledge answers. Refund
+reasons combine policy with order facts, and their existing citation and return
+window checks still govern that route.
 
-The streaming API already emits answer tokens after the output guard. Verification
-will add work before the first token. The release path will keep streaming the
-checked answer, and 25b will measure the first-token latency and cost.
+The runtime uses the same sentence splitter and `grounding.generic_phrases` list
+as the evaluation. Fixed notices and handoff text are outside the check. Generic
+phrases may accompany a verified answer. A paragraph needs a supported substantive
+claim to be released.
+
+Each claim gets the original customer question or the planned part question for
+context. Its evidence consists of the numbered chunks cited by its paragraph. A
+claim receives neither sibling sources nor additional retrieval. Exact checks
+first compare numbers, durations, amounts, percentages, and model identifiers
+against that evidence. They normalize case, punctuation, and equivalent literal
+formats such as “30-day” and “30 days.” They do not infer conversions or parse
+spelled-out numbers.
+
+Claims that pass the literal checks go into one structured call using the configured
+verifier role, which defaults to `fast`. Each claim needs an explicit verdict.
+A supported verdict must give a verbatim quote from one of that claim's cited chunks.
+Code checks claim IDs and quote membership. This reuses the existing model stack
+and avoids a second model download. Quote membership proves provenance. Semantic
+support still depends on the verifier and needs live calibration.
+
+Partial and unsupported verdicts remove the claim. Losing the first substantive
+claim or all substantive content fails that part. With partial answers enabled,
+supported sibling parts can still be released, and failed parts keep their
+`low_grounding` reason. A whole grounding handoff carries `low_grounding`. An
+unavailable dependency gives `dependency_unavailable`. Missing, duplicate or invalid
+verdicts fail closed. Retained paragraphs keep their verified coverage citations.
+The reply rebuilds its citation list from those paragraphs.
+
+The graph records assessed claims, their verdicts and removals. The trace records
+verdict summaries without claim text. Claims skipped after an exact failure of the
+main claim are unassessed. A verifier error has no trusted verdicts. The existing
+acceptance rule continues to measure release.
+
+`grounding.enabled` defaults to true. Turning it off restores the previous route,
+answer and citation behavior. The full E2E config hash includes grounding settings.
+`grounding.split_compound` defaults to false. When enabled, a separate structured
+call may divide a compound sentence into exact ordered excerpts. Joined excerpts
+must reproduce the original claim. The exact checks run on the resulting pieces
+before the verdict call. Compound splitting will be calibrated on dev in 25b.
+
+The API emits customer-visible tokens after the output guard. Grounding therefore
+adds work before the first visible answer token. 25b will measure the latency and
+cost. Provider callback latency measures internal model output and does not capture
+the time a customer waits for the checked reply.
+
+25b will also rebuild and label the claim set, compare verifier results separately
+on human-labelled and synthetic claims, and use the existing judge and human
+review workflow for final-answer hallucination. No live measurements were taken in 25.

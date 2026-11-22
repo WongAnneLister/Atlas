@@ -91,3 +91,33 @@ def test_checkpoint_serializers_keep_part_routing_and_evidence(tmp_path: Path) -
     assert restored["route_source"] == "parts"
     assert restored["parts"] == [part]
     assert restored["part_retrievals"] == [retrieval]
+
+
+def test_checkpoint_serializers_keep_grounding_drafts_and_verdicts(tmp_path: Path) -> None:
+    from langgraph.checkpoint.sqlite import SqliteSaver
+    from langgraph.graph import END, START, StateGraph
+
+    from support_agent.graph.postgres import checkpoint_serializer
+    from support_agent.graph.state import ConversationState
+    from support_agent.grounding.claims import ClaimAssessment, GroundingDraft
+
+    draft = GroundingDraft(part=1, question="What is covered?", text="Example.", source_numbers=[1])
+    verdict = ClaimAssessment(
+        part=1, text=draft.text, verdict="unsupported", reason="missing_citation", removed=True
+    )
+    values = {"grounding_drafts": [draft], "claims": [verdict], "claims_removed": 1}
+    serde = checkpoint_serializer()
+    assert serde.loads_typed(serde.dumps_typed(values)) == values
+
+    state = StateGraph(ConversationState)
+    state.add_node("keep", lambda _: values)
+    state.add_edge(START, "keep")
+    state.add_edge("keep", END)
+    config = {"configurable": {"thread_id": "grounding-checkpoint"}}
+    with SqliteSaver.from_conn_string(str(tmp_path / "grounding.sqlite")) as saver:
+        graph = state.compile(checkpointer=saver)
+        graph.invoke({}, config)
+        restored = graph.get_state(config).values
+    assert {key: restored[key] for key in values} == values
+    assert isinstance(restored["claims"][0], ClaimAssessment)
+    assert isinstance(restored["grounding_drafts"][0], GroundingDraft)
