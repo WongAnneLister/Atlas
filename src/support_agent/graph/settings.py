@@ -15,6 +15,17 @@ class GraphSettings(BaseModel):
     checkpoint_path: str
 
 
+class PlanningSettings(BaseModel):
+    enabled: bool
+    max_parts: int = Field(ge=2)
+    min_question_marks: int = Field(ge=2)
+    long_query_words: int = Field(gt=0)
+
+
+class KnowledgeSettings(BaseModel):
+    partial_answers: bool
+
+
 class IntentEvalSettings(BaseModel):
     seed: int
     per_intent: int = Field(gt=0)

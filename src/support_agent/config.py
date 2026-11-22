@@ -25,7 +25,13 @@ from pydantic_settings import (
 
 from support_agent.config_layers import yaml_layers
 from support_agent.db.settings import DatabaseSettings
-from support_agent.graph.settings import GraphSettings, IntentEvalSettings, IntentSettings
+from support_agent.graph.settings import (
+    GraphSettings,
+    IntentEvalSettings,
+    IntentSettings,
+    KnowledgeSettings,
+    PlanningSettings,
+)
 from support_agent.guardrails.settings import GuardrailSettings
 from support_agent.infra.settings import ReadinessSettings, RedisSettings
 from support_agent.reliability.settings import (
@@ -430,6 +436,8 @@ class Settings(BaseSettings):
     agent: AgentSettings
     intent: IntentSettings
     graph: GraphSettings
+    planning: PlanningSettings
+    knowledge: KnowledgeSettings
     intent_eval: IntentEvalSettings
     evaluation: EvalSettings
     eval: EvalPlatformSettings = Field(default_factory=_default_eval_platform)

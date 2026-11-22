@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from support_agent.config import Settings
 from support_agent.graph.intents import INTENT_TO_PATH, Intent, Path
+from support_agent.graph.parts import QueryPart
 from support_agent.graph.state import ConversationState
 from support_agent.reliability.llm_calls import ReliableModels
 from support_agent.reliability.structured import StructuredOutputError, parse_response
@@ -73,9 +74,21 @@ class Classifier:
             )
 
     def __call__(self, state: ConversationState) -> dict[str, Any]:
-        outcome = self.classify(state.rewritten_query)
+        parts = state.parts
+        part_route = None
+        if len(parts) > 1:
+            outcomes = [self.classify(part.text) for part in parts]
+            parts = [
+                self._classified_part(part, outcome)
+                for part, outcome in zip(parts, outcomes, strict=True)
+            ]
+            part_route = self._knowledge_route(outcomes)
+
+        outcome = part_route if part_route is not None else self.classify(state.rewritten_query)
         path = INTENT_TO_PATH[outcome.intent]
         return {
+            "parts": parts,
+            "route_source": "parts" if part_route is not None else "whole",
             "intent": outcome.intent,
             "intent_confidence": outcome.confidence,
             "path": path,
@@ -86,3 +99,31 @@ class Classifier:
             "classifier_model": outcome.model_name,
             "trace": [*state.trace, "classify"],
         }
+
+    @staticmethod
+    def _classified_part(part: QueryPart, outcome: ClassificationOutcome) -> QueryPart:
+        reason = None
+        if outcome.parse_failed:
+            reason = "classification_failed"
+        elif outcome.intent == Intent.CHITCHAT_OTHER:
+            reason = "unsupported_part"
+        return part.model_copy(
+            update={
+                "intent": outcome.intent,
+                "classification_failed": outcome.parse_failed,
+                "failure_reason": reason,
+            }
+        )
+
+    @staticmethod
+    def _knowledge_route(outcomes: list[ClassificationOutcome]) -> ClassificationOutcome | None:
+        if any(
+            outcome.parse_failed
+            or INTENT_TO_PATH[outcome.intent] not in {Path.KNOWLEDGE, Path.FIXED}
+            for outcome in outcomes
+        ):
+            return None
+        return next(
+            (outcome for outcome in outcomes if INTENT_TO_PATH[outcome.intent] == Path.KNOWLEDGE),
+            None,
+        )

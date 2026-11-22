@@ -13,6 +13,7 @@ from support_agent.gate.evidence import GateResult
 from support_agent.graph.coverage import CoverageAnswer
 from support_agent.graph.handoff import HandoffPayload, HandoffReason
 from support_agent.graph.intents import Intent, Path
+from support_agent.graph.parts import PartRetrievalRequest, PartRetrievalResult, QueryPart
 from support_agent.graph.state import CitationRecord
 from support_agent.orders.models import Order, OrderItem, OrderStatus, RefundRequest, Shipment
 from support_agent.reliability.events import ReliabilityEvent
@@ -35,7 +36,10 @@ def checkpoint_serializer() -> JsonPlusSerializer:
         Order,
         OrderItem,
         OrderStatus,
+        PartRetrievalRequest,
+        PartRetrievalResult,
         Path,
+        QueryPart,
         RefundRequest,
         ReliabilityEvent,
         RetrievalFilters,

@@ -38,6 +38,7 @@ class E2EPart(BaseModel):
     """Observed outcome for one planned part, including its validated citation sections."""
 
     text: str = Field(min_length=1)
+    intent: str | None = None
     gate: dict[str, Any] | None = None
     retrieved_section_ids: list[str] = Field(default_factory=list)
     retrieved_sources: list[dict[str, str]] = Field(default_factory=list)
@@ -52,6 +53,7 @@ class E2ERecord(BaseModel):
     item: EvalItem | MultipartItem
     intent: str | None = None
     path: str | None = None
+    route_source: Literal["whole", "parts"] | None = None
     trace: list[str] = Field(default_factory=list)
     gate: dict[str, Any] | None = None
     parts: list[E2EPart] | None = None

@@ -7,7 +7,12 @@ from typing import Any
 from langchain_core.messages import AIMessage
 
 from support_agent.graph.deps import GraphDeps
-from support_agent.graph.handoff import PROMPTS, HandoffReason, make_handoff
+from support_agent.graph.handoff import (
+    PROMPTS,
+    HandoffReason,
+    make_handoff,
+    mark_parts_handed_off,
+)
 from support_agent.graph.state import ConversationState
 from support_agent.guardrails.output import OutputChecks, OutputFlag
 from support_agent.guardrails.pii import find_pii
@@ -59,11 +64,17 @@ class OutputGuard:
         messages = original[:-1] if unsafe is not None else original
         flags = [*state.guardrail_flags, violation]
         current = state.model_copy(update={"messages": messages, "guardrail_flags": flags})
+        parts_update: dict[str, Any] = {}
+        if state.route_source == "parts":
+            current.parts = mark_parts_handed_off(state.parts, HandoffReason.GUARDRAIL_BLOCKED)
+            current.coverage = None
+            parts_update = {"parts": current.parts, "coverage": None}
         update = make_handoff(current, HandoffReason.GUARDRAIL_BLOCKED)
         if unsafe is not None:
             update["messages"][0] = update["messages"][0].model_copy(update={"id": unsafe.id})
         return {
             **update,
+            **parts_update,
             "citations": [],
             "guardrail_flags": flags,
             "output_guard_flag": violation,

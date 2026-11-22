@@ -61,15 +61,18 @@ class RetrievalFilters(BaseModel):
         )
 
 
-def knowledge_filters(question: str, settings: Settings) -> RetrievalFilters | None:
+def knowledge_filters(
+    question: str, settings: Settings, *, category_query: str | None = None
+) -> RetrievalFilters | None:
     from support_agent.retrieval.categories import detect_category
 
     config = settings.retrieval.filters
     if not config.enabled:
         return None
+    category_text = question if category_query is None else category_query
     return RetrievalFilters(
         as_of=settings.orders.today,
-        product_category=detect_category(question, settings) if config.category else None,
+        product_category=detect_category(category_text, settings) if config.category else None,
     )
 
 

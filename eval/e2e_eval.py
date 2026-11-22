@@ -18,7 +18,7 @@ from langgraph.types import Command
 
 from eval.common import load_items
 from eval.e2e_endpoint import endpoint_host
-from eval.e2e_records import E2EMetadata, E2ERecord, load_cached_run
+from eval.e2e_records import E2EMetadata, E2EPart, E2ERecord, load_cached_run
 from eval.e2e_report import render_e2e
 from eval.e2e_runs import prepare_e2e
 from eval.intent_eval import runtime_versions, source_hash
@@ -36,6 +36,7 @@ from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
+from support_agent.graph.parts import QueryPart
 from support_agent.llm import Role, resolve_model
 from support_agent.observability import tracing
 from support_agent.observability.cost import UsageLedger, cost_usd
@@ -117,6 +118,37 @@ def _run_item(
     return result, time.perf_counter() - usage.started, usage
 
 
+def _observed_parts(result: dict[str, Any]) -> list[E2EPart] | None:
+    if result.get("route_source") == "whole" or not result.get("parts"):
+        return None
+    observations = []
+    for value in result["parts"]:
+        if not isinstance(value, QueryPart):
+            observations.append(E2EPart.model_validate(value))
+            continue
+        chunks = value.retrieval[:5]
+        observations.append(
+            E2EPart(
+                text=value.text,
+                intent=value.intent.value if value.intent else None,
+                gate=value.gate.model_dump() if value.gate else None,
+                retrieved_section_ids=[chunk.section_id for chunk in chunks],
+                retrieved_sources=[
+                    {
+                        "section_id": chunk.section_id,
+                        "heading_path": chunk.heading_path,
+                        "text": chunk.text,
+                    }
+                    for chunk in chunks
+                ],
+                answered=value.answered,
+                handed_off=value.handed_off,
+                cited_section_ids=value.cited_section_ids,
+            )
+        )
+    return observations
+
+
 def _record(
     item: Any,
     result: dict[str, Any],
@@ -154,7 +186,8 @@ def _record(
         retrieval_error_type=result.get("retrieval_error_type"),
         answer_status=result.get("answer_status"),
         answer_error_type=result.get("answer_error_type"),
-        parts=result.get("parts"),
+        route_source=result.get("route_source"),
+        parts=_observed_parts(result),
         coverage=result["coverage"].model_dump()
         if hasattr(result.get("coverage"), "model_dump")
         else result.get("coverage"),

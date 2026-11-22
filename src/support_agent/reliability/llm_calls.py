@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 CallSite = Literal[
     "input_guard",
     "rewrite",
+    "plan",
     "classify",
     "answer",
     "decide",
@@ -116,6 +117,8 @@ class ReliableModels:
         role: Role,
         schema: type[SchemaT],
         messages: Sequence[BaseMessage],
+        *,
+        recover: bool = True,
     ) -> tuple[ParsedResponse[SchemaT], ReliabilityEvent]:
         def operation(
             model: BaseChatModel, garbage: bool, prompt: Sequence[BaseMessage]
@@ -132,7 +135,7 @@ class ReliableModels:
                 raise invalid_response(schema, error) from None
             return parse_response(schema, response)
 
-        return self._call(call_site, role, messages, operation)
+        return self._call(call_site, role, messages, operation, recover=recover)
 
     def _call(
         self,
@@ -140,11 +143,13 @@ class ReliableModels:
         role: Role,
         messages: Sequence[BaseMessage],
         operation: Operation[T],
+        *,
+        recover: bool = True,
     ) -> tuple[T, ReliabilityEvent]:
         settings = self._deps.settings
         policy = settings.reliability.retry
         primary = self._deps.primary_model_name(role)
-        fallbacks = getattr(settings.llm.fallbacks, role)
+        fallbacks = getattr(settings.llm.fallbacks, role) if recover else ()
         chain = tuple(dict.fromkeys((primary, *fallbacks)))
         call = _ModelCall(
             site=call_site,
@@ -153,22 +158,25 @@ class ReliableModels:
             deadline=monotonic() + policy.budget_s,
             model=primary,
         )
+
+        def attempt(remaining: float) -> T:
+            return self._attempt(call, operation, messages, remaining)
+
+        def run() -> T:
+            if not recover:
+                return attempt(call.deadline - monotonic())
+            return retry_call(attempt, policy=policy, is_idempotent=True, deadline=call.deadline)
+
         try:
             for index, model in enumerate(chain):
                 call.model = model
                 call.model_attempts = 0
                 try:
                     # The breaker sees whole calls: one call whose retries all fail counts once.
-                    result = self._deps.circuits.call(
-                        call.dependency,
-                        lambda: retry_call(
-                            lambda remaining: self._attempt(call, operation, messages, remaining),
-                            policy=policy,
-                            is_idempotent=True,
-                            deadline=call.deadline,
-                        ),
-                    )
+                    result = self._deps.circuits.call(call.dependency, run)
                 except StructuredOutputError as error:
+                    if not recover:
+                        raise
                     result = self._repair(call, operation, messages, error)
                     break
                 except Exception as error:

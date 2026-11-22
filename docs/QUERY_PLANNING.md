@@ -21,8 +21,8 @@ describe each run separately.
 - Every recorded gate passed across the three runs. The saved answer outcomes
   show zero invalid quotes or quote sources.
 
-The largest observed problem is routing, which happens before the proposed
-planner. These runs provide little evidence that per-part retrieval will raise
+The largest observed problem was the baseline's whole-question routing. The planner
+now runs before that decision. These runs provide little evidence that per-part retrieval alone will raise
 cross-document acceptance. The coverage case suggests a mechanism to test on
 dev questions. Separate retrieval could surface the passage defining SuperCoins,
 since the recorded gold hit identifies a section and that section spans
@@ -34,20 +34,42 @@ whether planning and targeted handoff help.
 
 ## Design decisions
 
-| Decision | Status in 24a |
+| Decision | Behavior |
 |---|---|
-| Use the planner's ordered list for the coverage response. The answer model returns one coverage part per planned part sent to it, in the same order. | Planned for commit 24. |
-| Apply the date and store scope of the whole rewritten question to every part. Detect the product category separately for each part. | Planned for commit 24. |
-| Require all declared key terms of each part to appear in either the original or rewritten question. Drop and log an invalid part, and use single-question retrieval if none survive. | Planned for commit 24. |
-| Count a false accept when any part of a wholly unanswerable question receives an answer. | Implemented in the evaluation metrics. |
-| Send the whole question to a human when any part's retrieval or reranker has a dependency error. Gate and coverage outcomes can lead to targeted handoff. | Planned for commit 24. |
-| Keep ordinary acceptance reserved for full answers and measure partial answers separately. | Implemented in the evaluation metrics. |
-| Freeze a multipart set with both-answerable, half-answerable and wholly unanswerable questions. Keep both source questions in the same split and record their IDs. | Implemented in the evaluation set builder. |
+| Plan parts once | Gate-approved parts go to the coverage model in plan order. Its reply must return one decision for each of those parts in that order. |
+| Preserve question scope | Date and store scope come from the whole rewritten question. Category detection uses the individual part. |
+| Check terms | The planner drops parts with key terms absent from both the original user turn and its rewrite. Fewer than two distinct grounded parts use the whole query. |
+| Count no-answer false accepts strictly | Any answered part on a wholly unanswerable item counts as a false accept. |
+| Fail closed on dependency errors | A failed retrieval or reranker produces a whole-question handoff. Gate and coverage failures can produce a targeted handoff. |
+| Preserve acceptance | Ordinary acceptance means a full answer. Partial answers have separate metrics. |
+| Measure partial answers separately | The frozen multipart set includes half-answerable questions as well as pairs with both or neither part answerable. |
+| Plan before classification | A heuristic decides whether to call the fast planner. An ordinary single question is classified once on the whole rewrite. |
+| Route each planned part | The existing classifier runs on each part. Knowledge plus fixed-reply parts can enter multipart retrieval. The fixed-reply parts are handed off as `unsupported_part`. An operational part, an entirely fixed-reply plan, or a classification error falls back to whole-query classification and the regular path. |
 
-The proposed knowledge flow plans the rewritten question, retrieves and gates
-each part, then checks coverage and citations on the parts that cleared the
-gate. The graph hands off unsupported parts. A live comparison is reserved for
-24b, after the planning code lands.
+## Runtime flow
+
+`input_guard → rewrite → plan → classify` begins each eligible turn. The planner uses
+`planning` configuration for its heuristic and part limit. It makes one bounded model attempt
+when the heuristic signals a possible split. The trace records `plan` when the model is called.
+Heuristic single questions retain the legacy trace. With `planning.enabled: false`, the
+graph connects rewrite directly to classification and the same legacy paths.
+
+For a multipart knowledge route, the graph sends each knowledge part to `retrieve_part`. The
+`merge` node assigns shared source numbers in plan order. Each part keeps its own ranked
+sources and scores. `gate_parts` checks each knowledge part against its own evidence.
+The order-tools fallback keeps its original single retrieval. State records the route source
+and each planned intent, including those observed before a whole-query fallback.
+
+Only gate-approved parts and their own sources reach the answer prompt. Quote checks constrain
+each answer to its assigned sources. If some parts can be answered, the output guard checks
+the partial reply before the API streams it. The targeted handoff keeps the failed parts and
+their snapshots for a human. With `knowledge.partial_answers: false`, an incomplete question
+goes to a human as a whole. Operational paths can use tools or interrupt for an order picker.
+Combining their replies with a knowledge answer remains a follow-up.
+
+The embedding and reranking models are shared. They serialize their own inference, while
+the graph can overlap the independent retrieval work. A paired live comparison is reserved
+for 24b.
 
 ## Running and reviewing the benchmark
 

@@ -1,5 +1,6 @@
 """Validated conversation state shared by the fixed workflow nodes."""
 
+from operator import add
 from typing import Annotated, Any, Literal
 
 from langchain_core.messages import AnyMessage
@@ -10,6 +11,7 @@ from support_agent.gate.evidence import GateResult
 from support_agent.graph.coverage import CoverageAnswer
 from support_agent.graph.handoff import HandoffPayload
 from support_agent.graph.intents import Intent, Path
+from support_agent.graph.parts import PartRetrievalResult, QueryPart
 from support_agent.guardrails.input import InputAction
 from support_agent.reliability.events import ReliabilityEvent
 from support_agent.retrieval.filters import RetrievalFilters
@@ -33,6 +35,9 @@ class ConversationState(BaseModel):
     intent: Intent | None = None
     intent_confidence: float = Field(default=0, ge=0, le=1, allow_inf_nan=False)
     path: Path | None = None
+    route_source: Literal["whole", "parts"] = "whole"
+    parts: list[QueryPart] = Field(default_factory=list)
+    part_retrievals: Annotated[list[PartRetrievalResult], add] = Field(default_factory=list)
     intent_low_confidence: bool = False
     classification_failed: bool = False
     classification_error_type: str | None = None
@@ -49,6 +54,7 @@ class ConversationState(BaseModel):
     answer_status: Literal[
         "not_attempted",
         "answered",
+        "partial",
         "model_error",
         "invalid_output",
         "invalid_citation",

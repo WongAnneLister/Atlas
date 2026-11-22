@@ -20,6 +20,7 @@ class FallbackSettings(BaseModel):
 class TimeoutSettings(BaseModel):
     input_guard: Seconds
     rewrite: Seconds
+    plan: Seconds
     classify: Seconds
     answer: Seconds
     decide: Seconds
@@ -34,6 +35,7 @@ class TimeoutSettings(BaseModel):
         return max(
             self.input_guard,
             self.rewrite,
+            self.plan,
             self.classify,
             self.answer,
             self.decide,

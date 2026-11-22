@@ -56,7 +56,7 @@ data:
 
 llm:
   provider: null        # env LLM_PROVIDER wins, e.g. "openai", "anthropic"
-  fast_model: null      # env LLM_FAST_MODEL wins; used for rewrite + intent
+  fast_model: null      # env LLM_FAST_MODEL wins; used for rewrite, planning and intent
   main_model: null      # env LLM_MAIN_MODEL wins; used for answers
   temperature: 0.0
   timeout_s: 30
@@ -70,6 +70,7 @@ reliability:
   timeouts_s:
     input_guard: 8
     rewrite: 30
+    plan: 8
     classify: 30
     answer: 30
     decide: 30
@@ -227,6 +228,15 @@ intent:
 graph:
   checkpoint_backend: memory
   checkpoint_path: data/checkpoints.sqlite
+
+planning:
+  enabled: true
+  max_parts: 3
+  min_question_marks: 2
+  long_query_words: 45
+
+knowledge:
+  partial_answers: true
 
 intent_eval:
   seed: 42
