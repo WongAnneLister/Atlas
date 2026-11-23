@@ -133,7 +133,14 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
         )
 
     add_node("input_guard", InputGuard(deps))
-    add_node("rewrite", make_rewrite_node(deps.models, deps.settings))
+    add_node(
+        "rewrite",
+        make_rewrite_node(
+            deps.models,
+            deps.settings,
+            memory_store_provider=deps.long_term_memory,
+        ),
+    )
     add_node("classify", Classifier(None, deps.settings, models=deps.models))
     graph.add_edge(START, "input_guard")
     graph.add_conditional_edges(

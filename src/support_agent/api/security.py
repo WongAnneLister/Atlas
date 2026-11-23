@@ -86,7 +86,11 @@ class SessionAuthMiddleware:
         root_path = scope.get("root_path", "")
         if root_path and path.startswith(root_path + "/"):
             path = path[len(root_path) :]
-        if scope["method"] == "POST" and path in _TURN_PATHS:
+        requires_auth = (scope["method"] == "POST" and path in _TURN_PATHS) or (
+            scope["method"] in {"GET", "DELETE"}
+            and (path == "/api/me/memories" or path.startswith("/api/me/memories/"))
+        )
+        if requires_auth:
             headers = Headers(scope=scope).getlist("authorization")
             parts = headers[0].split() if len(headers) == 1 else []
             try:

@@ -11,6 +11,7 @@ from sqlalchemy import URL, Connection, Engine, inspect
 
 from support_agent.config import REPO_ROOT, get_settings
 from support_agent.db.engine import make_engine, postgres_url, transaction
+from support_agent.memory.long_term.tables import metadata as memory_metadata
 from support_agent.orders.tables import metadata
 from support_agent.retrieval.index_tables import metadata as index_metadata
 
@@ -42,6 +43,7 @@ def ensure_atlas_schema(connection: Connection) -> None:
     allowed = (
         metadata.tables.keys()
         | index_metadata.tables.keys()
+        | memory_metadata.tables.keys()
         | CHECKPOINT_TABLES
         | {"alembic_version"}
     )

@@ -12,6 +12,12 @@ from langgraph.types import Overwrite
 
 from support_agent.config import Settings
 from support_agent.graph.state import ConversationState
+from support_agent.memory.long_term.reader import (
+    format_turn_memory_messages,
+    load_session_profile,
+    lookup_turn_memories,
+)
+from support_agent.memory.long_term.store import CustomerMemoryStore
 from support_agent.memory.short_term.compaction import compact_history
 from support_agent.memory.short_term.facts import extract_facts_from_turn
 from support_agent.reliability.llm_calls import ReliableModels
@@ -68,11 +74,15 @@ def reset_turn() -> dict[str, Any]:
         "compaction_events": 0,
         "second_level_compactions": 0,
         "summariser_calls": 0,
+        "turn_memory_hints": [],
     }
 
 
 def make_rewrite_node(
-    models: ReliableModels, settings: Settings
+    models: ReliableModels,
+    settings: Settings,
+    *,
+    memory_store_provider: Callable[[], CustomerMemoryStore | None] | None = None,
 ) -> Callable[[ConversationState], dict[str, Any]]:
     prompt = PROMPT_PATH.read_text(encoding="utf-8")
 
@@ -90,12 +100,43 @@ def make_rewrite_node(
         ]
         turn_number = max(1, len(human_indices))
         st_cfg = settings.memory.short_term
+        lt_cfg = settings.memory.long_term
         facts = state.pinned_facts
         blocks = list(state.compacted_blocks)
         history_start = state.history_start_index
         compaction_events = 0
         second_level = 0
         summariser_calls = 0
+
+        # Long-term memory: load L1_session once at conversation start, freeze for prefix cache;
+        # later turns may fetch additional hints into L4_turn without mutating L1_session.
+        customer_profile = state.customer_profile
+        customer_profile_loaded = state.customer_profile_loaded
+        loaded_memory_ids = list(state.loaded_memory_ids)
+        turn_memory_hints: list[str] = []
+        if lt_cfg.enabled and state.customer_id and memory_store_provider is not None:
+            try:
+                store = memory_store_provider()
+                if store is not None:
+                    if not customer_profile_loaded:
+                        customer_profile, loaded_memory_ids = load_session_profile(
+                            store,
+                            state.customer_id,
+                            original,
+                            lt_cfg,
+                            counter=models.context_builder().counter,
+                        )
+                        customer_profile_loaded = True
+                    else:
+                        turn_memory_hints = lookup_turn_memories(
+                            store,
+                            state.customer_id,
+                            original,
+                            already_loaded_ids=loaded_memory_ids,
+                            settings=lt_cfg,
+                        )
+            except Exception as error:
+                logger.warning("Long-term memory read failed: %s", type(error).__name__)
 
         if st_cfg.enabled:
             if st_cfg.pinned_facts_enabled:
@@ -138,8 +179,10 @@ def make_rewrite_node(
                     task_prompt=prompt,
                     user_text=original,
                     history=state.messages[history_start:-1],
+                    customer_profile=customer_profile,
                     compacted_blocks=[b.text for b in blocks],
                     pinned_facts=facts.render_dict() or None if st_cfg.enabled else None,
+                    extra_l4_messages=format_turn_memory_messages(turn_memory_hints),
                 )
                 response, _ = models.invoke("rewrite", "fast", built)
                 if not isinstance(response.content, str) or not response.content.strip():
@@ -155,6 +198,10 @@ def make_rewrite_node(
             "compaction_events": compaction_events,
             "second_level_compactions": second_level,
             "summariser_calls": summariser_calls,
+            "customer_profile": customer_profile,
+            "customer_profile_loaded": customer_profile_loaded,
+            "loaded_memory_ids": loaded_memory_ids,
+            "turn_memory_hints": turn_memory_hints,
             "trace": [*state.trace, "rewrite"],
         }
 

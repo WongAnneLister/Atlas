@@ -9,6 +9,7 @@ from langchain_core.messages import AIMessage
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, load_templates, make_handoff
 from support_agent.graph.state import ConversationState
+from support_agent.memory.long_term.reader import format_turn_memory_messages
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ class ComplaintPath:
                 task_prompt=self.prompt,
                 user_text=state.rewritten_query,
                 history=state.messages[state.history_start_index : -1],
+                customer_profile=state.customer_profile,
                 compacted_blocks=[b.text for b in state.compacted_blocks],
                 pinned_facts=(
                     state.pinned_facts.render_dict() or None
@@ -33,6 +35,7 @@ class ComplaintPath:
                     else None
                 ),
                 current_date=self.deps.settings.orders.today,
+                extra_l4_messages=format_turn_memory_messages(state.turn_memory_hints),
             )
             response, _ = self.deps.models.invoke("complaint", "fast", built)
             text = response.content

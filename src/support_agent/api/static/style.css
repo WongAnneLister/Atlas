@@ -42,9 +42,20 @@ button, select, input[type="text"] { padding: .35rem .55rem; border-radius: .4re
 button:not(:disabled) { cursor: pointer; }
 #message { flex: 1; min-width: 8rem; }
 #details { white-space: pre-wrap; overflow-wrap: anywhere; }
+#memories-panel {
+  margin-top: .85rem;
+  padding: .65rem .85rem;
+  background: #fff;
+  border: 1px solid #d1d9e5;
+  border-radius: .6rem;
+}
+#memories-panel summary { cursor: pointer; font-weight: 600; }
+.memories-toolbar { display: flex; gap: .5rem; margin: .5rem 0; }
+#memories-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .4rem; }
+#memories-list li { display: flex; justify-content: space-between; align-items: center; gap: .6rem; font-size: .9rem; }
 @media (prefers-color-scheme: dark) {
   :root { color: #e9eef8; background: #172338; }
-  #messages { background: #202d43; border-color: #485b76; }
+  #messages, #memories-panel { background: #202d43; border-color: #485b76; }
   .agent, .picker { background: #33445f; }
   .handoff { background: #4b391f; }
   .error, #status { color: #ffabab; }

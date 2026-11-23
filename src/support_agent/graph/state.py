@@ -99,3 +99,8 @@ class ConversationState(BaseModel):
     compaction_events: int = Field(default=0, ge=0)
     second_level_compactions: int = Field(default=0, ge=0)
     summariser_calls: int = Field(default=0, ge=0)
+    # Long-term memory: L1_session is frozen at turn 1; turn_memory_hints is per-turn (L4).
+    customer_profile: str | None = None
+    customer_profile_loaded: bool = False
+    loaded_memory_ids: list[str] = Field(default_factory=list)
+    turn_memory_hints: list[str] = Field(default_factory=list)

@@ -29,6 +29,7 @@ from support_agent.graph.nodes.knowledge_reply import check_citations, multipart
 from support_agent.graph.parts import QueryPart
 from support_agent.graph.state import ConversationState
 from support_agent.grounding.claims import GroundingDraft
+from support_agent.memory.long_term.reader import format_turn_memory_messages
 from support_agent.reliability.guards import diagnostic_type, is_dependency_failure
 from support_agent.reliability.structured import StructuredOutputError
 from support_agent.retrieval.filters import knowledge_filters, retrieve_with_filters
@@ -291,6 +292,7 @@ class KnowledgePath:
                 task_prompt=prompt,
                 user_text=data,
                 history=state.messages[state.history_start_index : -1],
+                customer_profile=state.customer_profile,
                 compacted_blocks=[b.text for b in state.compacted_blocks],
                 pinned_facts=(
                     state.pinned_facts.render_dict() or None
@@ -298,6 +300,7 @@ class KnowledgePath:
                     else None
                 ),
                 current_date=self.deps.settings.orders.today,
+                extra_l4_messages=format_turn_memory_messages(state.turn_memory_hints),
             )
             response, _ = self.deps.models.structured(
                 "answer",

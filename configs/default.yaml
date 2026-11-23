@@ -431,6 +431,28 @@ memory:
     low_watermark: 0.6
     summariser_role: fast
     llm_fact_extraction: false
+  long_term:
+    enabled: false
+    allowed_kinds: [open_issue, preference, product_owned, past_resolution]
+    ttl_days:
+      open_issue: 30
+      preference: 365
+      product_owned: 365
+      past_resolution: 90
+    min_confidence: 0.7
+    max_content_chars: 240
+    min_content_chars: 6
+    max_memories_per_customer: 50
+    session_top_k: 5
+    session_budget_tokens: 300
+    mid_turn_top_k: 2
+    mid_turn_min_relevance: 0.35
+    dedupe_similarity_threshold: 0.80
+    supersede_similarity_threshold: 0.45
+    extractor_role: fast
+    extract_on_handoff: true
+    extract_on_end: true
+    sqlite_path: data/processed/memories.sqlite
 
 context:
   enabled: true
@@ -465,6 +487,7 @@ context:
     grounding: {total_tokens: 4096, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
     summarise: {total_tokens: 6144, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: true}
     extract_facts: {total_tokens: 2048, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
+    extract_memories: {total_tokens: 3072, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
 
 tracing:
   enabled: false        # also needs LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY; see docs/OBSERVABILITY.md

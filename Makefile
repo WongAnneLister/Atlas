@@ -29,7 +29,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-time-sensitive-build eval-time-sensitive eval-time-sensitive-e2e eval-policy-versions-report \
         eval-cross-doc-failures eval-multipart-build eval-multipart eval-query-planning-report \
         eval-claims-build eval-claims-label eval-claims eval-claims-verify eval-claim-grounding-report \
-        eval-cache eval-sim-build eval-sim eval-context eval-memory-short eval-context-ab bench-kv \
+        eval-cache eval-sim-build eval-sim eval-context eval-memory-short eval-memory-long eval-context-ab bench-kv \
         eval-index-release eval-index-lifecycle eval-rerank-cache eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
 
 define todo
@@ -356,6 +356,9 @@ eval-context:
 
 eval-memory-short:
 	$(RUN) python -m eval.memory_short_eval $(EVAL_MEMORY_SHORT_ARGS)
+
+eval-memory-long:
+	$(RUN) python -m eval.memory_long_eval $(EVAL_MEMORY_LONG_ARGS)
 
 eval-context-ab:
 	$(RUN) python -m eval.context_ab $(EVAL_CONTEXT_AB_ARGS)

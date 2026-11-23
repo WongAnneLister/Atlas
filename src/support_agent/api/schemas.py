@@ -46,3 +46,7 @@ class LiveResponse(BaseModel):
 class ReadyResponse(BaseModel):
     status: Literal["ok", "down"]
     checks: dict[CheckName, CheckState]
+
+
+class DeleteMemoriesResponse(BaseModel):
+    deleted: int

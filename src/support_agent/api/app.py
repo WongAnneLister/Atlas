@@ -28,6 +28,7 @@ from support_agent.api.runner import Graph, TurnInput, failure_events, run_turn
 from support_agent.api.schemas import (
     ChatRequest,
     ConversationRequest,
+    DeleteMemoriesResponse,
     HealthResponse,
     LiveResponse,
     ReadyResponse,
@@ -46,6 +47,7 @@ from support_agent.graph.build import build_graph
 from support_agent.graph.handoff import HandoffReason, load_templates
 from support_agent.infra.redis import RedisStore
 from support_agent.llm import resolve_model
+from support_agent.memory.long_term.models import PublicMemoryItem
 from support_agent.observability import tracing
 from support_agent.observability.metrics import AtlasMetrics
 from support_agent.orders.models import CustomerSummary
@@ -343,5 +345,55 @@ def create_app(deps: ApiDeps) -> FastAPI:
         return await start_turn(
             request, Command(resume=request.value.strip()), None, http, customer_id
         )
+
+    @app.get("/api/me/memories")
+    async def list_my_memories(http: Request) -> list[PublicMemoryItem]:
+        customer_id: str = http.state.atlas_customer_id
+        await limit(http, customer_id)
+        store = deps.graph_deps.long_term_memory()
+        if store is None:
+            return []
+        try:
+            items = await to_thread.run_sync(store.list_active, customer_id)
+        except _DB_ERRORS as error:
+            raise HTTPException(503, "Memory store unavailable") from error
+        return [
+            PublicMemoryItem(
+                id=m.id,
+                kind=m.kind,
+                content=m.content,
+                created_at=m.created_at,
+                expires_at=m.expires_at,
+            )
+            for m in items
+        ]
+
+    @app.delete("/api/me/memories/{memory_id}")
+    async def delete_my_memory(memory_id: str, http: Request) -> DeleteMemoriesResponse:
+        customer_id: str = http.state.atlas_customer_id
+        await limit(http, customer_id)
+        store = deps.graph_deps.long_term_memory()
+        if store is None:
+            raise HTTPException(404, "Memory not found")
+        try:
+            deleted = await to_thread.run_sync(store.soft_delete, customer_id, memory_id)
+        except _DB_ERRORS as error:
+            raise HTTPException(503, "Memory store unavailable") from error
+        if not deleted:
+            raise HTTPException(404, "Memory not found")
+        return DeleteMemoriesResponse(deleted=1)
+
+    @app.delete("/api/me/memories")
+    async def delete_all_my_memories(http: Request) -> DeleteMemoriesResponse:
+        customer_id: str = http.state.atlas_customer_id
+        await limit(http, customer_id)
+        store = deps.graph_deps.long_term_memory()
+        if store is None:
+            return DeleteMemoriesResponse(deleted=0)
+        try:
+            count = await to_thread.run_sync(store.soft_delete_all, customer_id)
+        except _DB_ERRORS as error:
+            raise HTTPException(503, "Memory store unavailable") from error
+        return DeleteMemoriesResponse(deleted=count)
 
     return app

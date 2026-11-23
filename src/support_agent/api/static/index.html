@@ -25,6 +25,14 @@
         <button id="send" disabled>Send</button>
       </div>
     </form>
+    <details id="memories-panel">
+      <summary>What we remember (<span id="memories-count">0</span>)</summary>
+      <div class="memories-toolbar">
+        <button id="memories-refresh" type="button" disabled>Refresh</button>
+        <button id="memories-clear" type="button" disabled>Forget all</button>
+      </div>
+      <ul id="memories-list" aria-label="Saved memories"></ul>
+    </details>
     <pre id="details" aria-label="Turn details" hidden></pre>
     <p id="status" role="status"></p>
   </main>

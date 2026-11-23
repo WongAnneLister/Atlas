@@ -36,7 +36,7 @@ from support_agent.graph.settings import (
 )
 from support_agent.guardrails.settings import GuardrailSettings
 from support_agent.infra.settings import ReadinessSettings, RedisSettings
-from support_agent.memory.settings import ShortTermMemorySettings
+from support_agent.memory.settings import LongTermMemorySettings, ShortTermMemorySettings
 from support_agent.reliability.settings import (
     ChaosSettings,
     FallbackSettings,
@@ -425,6 +425,7 @@ class MemorySettings(BaseModel):
     recent_turns: int
     summary_max_tokens: int
     short_term: ShortTermMemorySettings = Field(default_factory=ShortTermMemorySettings)
+    long_term: LongTermMemorySettings = Field(default_factory=LongTermMemorySettings)
 
 
 class TracingSettings(BaseModel):

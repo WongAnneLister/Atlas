@@ -19,6 +19,7 @@ from support_agent.graph.order_grounding import check_order_answer_reliably
 from support_agent.graph.order_replies import REPLY_TOOL, Lookup, render_order_reply, reply_tool
 from support_agent.graph.state import ConversationState
 from support_agent.graph.tools import ToolResult, build_order_tools
+from support_agent.memory.long_term.reader import format_turn_memory_messages
 from support_agent.orders.models import OrderNotFound
 from support_agent.reliability.guards import is_dependency_failure
 
@@ -123,6 +124,7 @@ class ToolsPath:
                 task_prompt=self.prompt,
                 user_text=state.rewritten_query,
                 history=state.messages[state.history_start_index : -1],
+                customer_profile=state.customer_profile,
                 compacted_blocks=[b.text for b in state.compacted_blocks],
                 pinned_facts=(
                     state.pinned_facts.render_dict() or None
@@ -131,7 +133,10 @@ class ToolsPath:
                 ),
                 tool_names=[tool.name for tool in bound],
                 current_date=self.deps.settings.orders.today,
-                extra_l4_messages=messages,
+                extra_l4_messages=[
+                    *format_turn_memory_messages(state.turn_memory_hints),
+                    *messages,
+                ],
             )
             response, _ = self.deps.models.invoke("tools", "main", built, tools=bound)
             if not isinstance(response, AIMessage) or response.invalid_tool_calls:

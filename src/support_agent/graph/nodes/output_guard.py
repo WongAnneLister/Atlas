@@ -18,6 +18,7 @@ from support_agent.graph.handoff import (
 from support_agent.graph.state import ConversationState
 from support_agent.guardrails.output import OutputChecks, OutputFlag
 from support_agent.guardrails.pii import find_pii
+from support_agent.memory.long_term.policy import apply_write_policy, extract_memory_candidates
 
 
 def _evidence(state: ConversationState) -> list[str]:
@@ -58,6 +59,7 @@ class OutputGuard:
         violation = self._violation(state)
         if violation is None:
             self._maybe_cache_answer(state)
+            self._maybe_extract_memories_on_handoff(state)
             return {
                 "answer": state.answer,
                 "messages": [AIMessage(content=state.answer)] if state.answer else [],
@@ -118,3 +120,34 @@ class OutputGuard:
             models=self.deps.answer_cache_models(),
             entry=entry,
         )
+
+    def _maybe_extract_memories_on_handoff(self, state: ConversationState) -> None:
+        lt_cfg = self.deps.settings.memory.long_term
+        if (
+            not lt_cfg.enabled
+            or not lt_cfg.extract_on_handoff
+            or state.handoff is None
+            or not state.customer_id
+        ):
+            return
+        store = self.deps.long_term_memory()
+        if store is None:
+            return
+        with suppress(Exception):
+            candidates = extract_memory_candidates(
+                pinned_facts=state.pinned_facts,
+                compacted_blocks=state.compacted_blocks,
+                messages=state.messages,
+                models=self.deps.models,
+                builder=self.deps.context_builder(),
+                settings=lt_cfg,
+            )
+            if candidates:
+                conv_id = state.handoff.trace_id or "handoff"
+                apply_write_policy(
+                    store,
+                    state.customer_id,
+                    candidates,
+                    conversation_id=conv_id,
+                    settings=lt_cfg,
+                )

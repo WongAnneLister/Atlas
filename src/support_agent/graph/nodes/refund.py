@@ -23,6 +23,7 @@ from support_agent.graph.refund_decision import (
 from support_agent.graph.refund_query import policy_query
 from support_agent.graph.state import CitationRecord, ConversationState
 from support_agent.graph.turn_identity import action_key, current_graph_config, turn_message_id
+from support_agent.memory.long_term.reader import format_turn_memory_messages
 from support_agent.orders.models import Order, OrderNotFound
 from support_agent.reliability.guards import diagnostic_type, is_dependency_failure
 from support_agent.reliability.stores import GuardedOrders
@@ -234,6 +235,7 @@ class RefundPath:
                 task_prompt=self.prompt,
                 user_text=f"Order facts:\n{order_facts}\n\nSources:\n{sources}",
                 history=state.messages[state.history_start_index : -1],
+                customer_profile=state.customer_profile,
                 compacted_blocks=[b.text for b in state.compacted_blocks],
                 pinned_facts=(
                     state.pinned_facts.render_dict() or None
@@ -243,6 +245,7 @@ class RefundPath:
                 order_context=data,
                 order_context_never_trim=True,
                 current_date=self.deps.settings.orders.today,
+                extra_l4_messages=format_turn_memory_messages(state.turn_memory_hints),
             )
             response, _ = self.deps.models.structured("decide", "main", self.decision_schema, built)
         except ContextOverflow:

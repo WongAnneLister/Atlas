@@ -9,6 +9,10 @@ const send = document.querySelector("#send");
 const debug = document.querySelector("#debug");
 const details = document.querySelector("#details");
 const status = document.querySelector("#status");
+const memoriesList = document.querySelector("#memories-list");
+const memoriesCount = document.querySelector("#memories-count");
+const memoriesRefresh = document.querySelector("#memories-refresh");
+const memoriesClear = document.querySelector("#memories-clear");
 
 let conversationId;
 let activeRequest;
@@ -18,9 +22,60 @@ let picker;
 
 function syncControls() {
   message.disabled = send.disabled = Boolean(activeRequest || picker || !sessionToken);
+  memoriesRefresh.disabled = Boolean(!sessionToken);
+  memoriesClear.disabled = Boolean(!sessionToken || !memoriesList.children.length);
   for (const button of picker?.querySelectorAll("button") ?? []) {
     button.disabled = Boolean(activeRequest || !sessionToken);
   }
+}
+
+async function loadMemories() {
+  memoriesList.replaceChildren();
+  memoriesCount.textContent = "0";
+  if (!sessionToken) {
+    syncControls();
+    return;
+  }
+  try {
+    const response = await fetch("/api/me/memories", {
+      headers: { "Authorization": "Bearer " + sessionToken },
+    });
+    if (!response.ok) return;
+    const items = await response.json();
+    memoriesCount.textContent = String(items.length);
+    for (const item of items) {
+      const li = document.createElement("li");
+      const day = String(item.created_at || "").slice(0, 10);
+      const span = document.createElement("span");
+      span.textContent = "[" + day + " · " + item.kind + "] " + item.content;
+      const del = document.createElement("button");
+      del.type = "button";
+      del.textContent = "Delete";
+      del.addEventListener("click", () => deleteMemory(item.id));
+      li.append(span, del);
+      memoriesList.append(li);
+    }
+  } finally {
+    syncControls();
+  }
+}
+
+async function deleteMemory(id) {
+  if (!sessionToken) return;
+  const response = await fetch("/api/me/memories/" + encodeURIComponent(id), {
+    method: "DELETE",
+    headers: { "Authorization": "Bearer " + sessionToken },
+  });
+  if (response.ok) await loadMemories();
+}
+
+async function clearAllMemories() {
+  if (!sessionToken) return;
+  const response = await fetch("/api/me/memories", {
+    method: "DELETE",
+    headers: { "Authorization": "Bearer " + sessionToken },
+  });
+  if (response.ok) await loadMemories();
 }
 
 function resetChat() {
@@ -135,7 +190,10 @@ async function selectCustomer() {
   sessionRequest = request;
   try {
     const token = await issueSession(customer.value, request.signal);
-    if (sessionRequest === request) sessionToken = token;
+    if (sessionRequest === request) {
+      sessionToken = token;
+      await loadMemories();
+    }
   } catch (error) {
     if (sessionRequest === request) status.textContent = error.message;
   } finally {
@@ -223,6 +281,8 @@ composer.addEventListener("submit", (event) => {
 customer.addEventListener("change", selectCustomer);
 newChat.addEventListener("click", () => sessionToken ? resetChat() : selectCustomer());
 debug.addEventListener("change", () => { details.hidden = !debug.checked; });
+memoriesRefresh.addEventListener("click", loadMemories);
+memoriesClear.addEventListener("click", clearAllMemories);
 
 async function loadCustomers() {
   try {
