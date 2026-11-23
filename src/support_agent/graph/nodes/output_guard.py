@@ -6,6 +6,8 @@ from typing import Any
 
 from langchain_core.messages import AIMessage
 
+from support_agent.cache.eligibility import answer_cache_write_eligibility
+from support_agent.cache.layers import CachedAnswer
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import (
     PROMPTS,
@@ -55,6 +57,7 @@ class OutputGuard:
         trace = [*state.trace, "output_guard"]
         violation = self._violation(state)
         if violation is None:
+            self._maybe_cache_answer(state)
             return {
                 "answer": state.answer,
                 "messages": [AIMessage(content=state.answer)] if state.answer else [],
@@ -84,3 +87,34 @@ class OutputGuard:
             "answer_status": "guardrail_blocked",
             "trace": trace,
         }
+
+    def _maybe_cache_answer(self, state: ConversationState) -> None:
+        if state.answer_cache_hit is not None:
+            return
+        eligible, _ = answer_cache_write_eligibility(
+            state,
+            self.deps.settings.cache,
+            grounding_enabled=self.deps.settings.grounding.enabled,
+        )
+        if not eligible or state.gate is None or not state.retrieval_build_id:
+            return
+        entry = CachedAnswer(
+            answer=state.answer,
+            citations=list(state.citations),
+            retrieval=list(state.retrieval),
+            gate=state.gate,
+            coverage=state.coverage,
+            claims=list(state.claims) if state.claims is not None else None,
+            claims_removed=state.claims_removed,
+            filters_applied=state.filters_applied,
+            retrieval_build_id=state.retrieval_build_id,
+            models=dict(state.answered_by_model),
+        )
+        self.deps.answer_cache().set(
+            query=state.rewritten_query,
+            filters=state.filters,
+            build_id=state.retrieval_build_id,
+            prompt_version=self.deps.prompt_version(),
+            models=self.deps.answer_cache_models(),
+            entry=entry,
+        )

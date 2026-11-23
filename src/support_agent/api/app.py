@@ -137,6 +137,8 @@ def create_app(deps: ApiDeps) -> FastAPI:
                     else:
                         if isinstance(store, RedisStore):
                             resources.callback(store.close)
+                if store is not None and deps.graph_deps.cache_store is None:
+                    deps.graph_deps.cache_store = store
                 rate_limits = RateLimits(
                     cfg.rate_limit, store, shared=deps.settings.redis.backend == "redis"
                 )

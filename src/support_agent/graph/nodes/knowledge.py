@@ -8,6 +8,8 @@ from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from support_agent.cache.eligibility import answer_cache_lookup_eligibility
+from support_agent.cache.metrics import record_cache_event
 from support_agent.gate.evidence import evaluate
 from support_agent.graph.coverage import (
     CoverageAnswer,
@@ -81,6 +83,36 @@ class KnowledgePath:
         )
         try:
             filters = knowledge_filters(state.rewritten_query, self.deps.settings)
+            eligible, reason = answer_cache_lookup_eligibility(state, self.deps.settings.cache)
+            if eligible:
+                cached, hit_layer = self.deps.answer_cache().get(
+                    query=state.rewritten_query,
+                    filters=filters,
+                    build_id=self.deps.current_build_id(),
+                    prompt_version=self.deps.prompt_version(),
+                    models=self.deps.answer_cache_models(),
+                )
+                if cached is not None and hit_layer is not None:
+                    return {
+                        "retrieval": cached.retrieval,
+                        "retrieval_build_id": cached.retrieval_build_id,
+                        "filters": filters,
+                        "filters_applied": cached.filters_applied,
+                        "retrieval_error_type": None,
+                        "retrieval_dependency_unavailable": False,
+                        "gate": cached.gate,
+                        "coverage": cached.coverage,
+                        "claims": cached.claims,
+                        "claims_removed": cached.claims_removed,
+                        "answer": cached.answer,
+                        "citations": [c.model_dump() for c in cached.citations],
+                        "answer_status": "answered",
+                        "answer_cache_hit": hit_layer,
+                        "answered_by_model": dict(cached.models),
+                        "trace": [*state.trace, "retrieve"],
+                    }
+            elif self.deps.settings.cache.enabled and self.deps.settings.cache.answer.enabled:
+                record_cache_event("answer", "bypass", observer=self.deps.observer, reason=reason)
             ranked, filters_applied = retrieve_with_filters(
                 self.deps.knowledge_retriever(), state.rewritten_query, pool, filters
             )

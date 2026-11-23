@@ -219,6 +219,9 @@ class MilvusStore:
         target = self.alias_target()
         return target is not None and self.has_collection(target)
 
+    def invalidate_build_identity(self) -> None:
+        self._build_identity = None
+
     def current_build_id(self) -> str | None:
         """Resolve provenance without making successful search depend on the registry."""
         at = monotonic()

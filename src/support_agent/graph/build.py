@@ -9,6 +9,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Send
 
+from support_agent.cache.metrics import collect_cache_events
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.intents import INTENT_TO_PATH, PATH_NODES, Path
 from support_agent.graph.nodes.classify import Classifier
@@ -83,7 +84,7 @@ def _recording_node(
     publishes_reply: bool,
 ) -> Callable[[ConversationState], dict[str, Any]]:
     def run(state: ConversationState) -> dict[str, Any]:
-        with collect_events() as events:
+        with collect_events() as events, collect_cache_events() as cache_events:
             update = node(state)
         if not publishes_reply and update.get("answer"):
             # Keep unchecked drafts out of the history even if the graph stops here.
@@ -102,6 +103,11 @@ def _recording_node(
                 if event.role and event.model and event.error_type is None:
                     models[event.call_site] = event.model
             update["answered_by_model"] = models
+        if cache_events:
+            update["cache_events"] = [
+                *update.get("cache_events", state.cache_events),
+                *cache_events,
+            ]
         return update
 
     return run
@@ -157,7 +163,11 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
     add_node("gate", knowledge.gate)
     add_node("answer", knowledge.answer)
     add_node("handoff", knowledge.handoff)
-    graph.add_edge("retrieve", "gate")
+    graph.add_conditional_edges(
+        "retrieve",
+        lambda state: "output_guard" if state.answer_cache_hit else "gate",
+        ["gate", "output_guard"],
+    )
     graph.add_conditional_edges("gate", route_after_gate, ["answer", "handoff"])
     if deps.settings.grounding.enabled:
         add_node("ground", GroundingPath(deps))

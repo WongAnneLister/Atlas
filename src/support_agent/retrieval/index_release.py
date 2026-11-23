@@ -5,8 +5,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Literal, Protocol
 
+from support_agent.cache.layers import bump_index_revision
 from support_agent.config import Settings
 from support_agent.data.section_metadata import SectionMetadata
+from support_agent.infra.redis import KeyValueStore
 from support_agent.retrieval.index_build import new_build, save_build_snapshot, store_for
 from support_agent.retrieval.index_models import BuildRecord
 from support_agent.retrieval.index_plan import (
@@ -79,6 +81,8 @@ def release_index(
     admin: CollectionAdmin,
     build_id: str,
     check: Check,
+    *,
+    cache_store: KeyValueStore | None = None,
 ) -> Decision:
     # The check can run for an hour. Holding the registry lock that long would block every
     # other write to the same database, so collect evidence first and compare-and-swap after.
@@ -102,6 +106,7 @@ def release_index(
             eval_run_id=evidence,
             override_reason=decision.override_reason,
         )
+    bump_index_revision(cache_store, settings.cache)
     return decision
 
 
@@ -114,7 +119,11 @@ def _require_candidate(target: BuildRecord | None, admin: CollectionAdmin) -> Bu
 
 
 def rollback_index(
-    settings: Settings, registry: IndexRegistry, admin: CollectionAdmin
+    settings: Settings,
+    registry: IndexRegistry,
+    admin: CollectionAdmin,
+    *,
+    cache_store: KeyValueStore | None = None,
 ) -> BuildRecord:
     with registry.locked_alias(settings.index.live_alias) as lock:
         live = _aligned(lock, admin)
@@ -128,7 +137,8 @@ def rollback_index(
             raise ValueError("There is no previous released collection to restore")
         admin.switch(target.collection, live.collection if live else None)
         lock.swap(live.build_id if live else None, target.build_id)
-        return target
+    bump_index_revision(cache_store, settings.cache)
+    return target
 
 
 def index_status(

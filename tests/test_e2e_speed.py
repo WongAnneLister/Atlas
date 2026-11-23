@@ -33,6 +33,7 @@ from eval.rerank_cache import (
 from eval.run_record import read_run
 from eval.schema import EvalItem, MultipartItem, MultipartPart
 
+from support_agent.cache.layers import CachedRetriever
 from support_agent.config import Settings
 from support_agent.data.doc_models import digest, json_text
 from support_agent.graph import deps as deps_module
@@ -60,6 +61,8 @@ def _graph_rerank(settings: Settings, backend: Backend, monkeypatch):
         GraphDeps(settings, reranker_factory=scores.factory()) as deps,
     ):
         retriever = deps.knowledge_retriever()
+        if isinstance(retriever, CachedRetriever):
+            retriever = retriever.inner
         assert isinstance(retriever, RerankingRetriever)
         # The guard runs the reranker on its own worker thread, not the caller's.
         ranked = retriever.reranker.rerank("query", CHUNKS)

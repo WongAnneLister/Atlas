@@ -23,6 +23,7 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
+from support_agent.cache.settings import CacheSettings
 from support_agent.config_layers import yaml_layers
 from support_agent.db.settings import DatabaseSettings
 from support_agent.graph.settings import (
@@ -491,6 +492,7 @@ class Settings(BaseSettings):
     environment: Literal["local", "dev", "prod"]
     db: DatabaseSettings
     redis: RedisSettings
+    cache: CacheSettings = Field(default_factory=CacheSettings)
     readiness: ReadinessSettings
     reliability: ReliabilitySettings
     chaos: ChaosSettings

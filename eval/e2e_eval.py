@@ -226,6 +226,8 @@ def _record(
         llm_calls=usage.calls if usage is not None else None,
         usage_by_model=dict(usage.by_model) if usage is not None else None,
         reliability_events=result.get("reliability_events", []),
+        answer_cache_hit=result.get("answer_cache_hit"),
+        cache_events=result.get("cache_events", []),
     )
 
 

@@ -34,6 +34,8 @@ def reset_turn() -> dict[str, Any]:
         "classifier_model": None,
         "answered_by_model": {},
         "reliability_events": [],
+        "cache_events": [],
+        "answer_cache_hit": None,
         "retrieval": [],
         "retrieval_build_id": None,
         "filters": None,

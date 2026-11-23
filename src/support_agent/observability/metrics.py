@@ -6,6 +6,7 @@ from typing import Any, get_args
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
 from prometheus_client.exposition import choose_encoder
 
+from support_agent.cache.metrics import CacheLayer, CacheOutcome
 from support_agent.config import Settings
 from support_agent.gate.evidence import GateResult
 from support_agent.graph.handoff import HandoffPayload, HandoffReason
@@ -18,6 +19,8 @@ from support_agent.reliability.llm_calls import CallSite
 
 LLM_CALL_SITES = get_args(CallSite)
 _INPUT_FLAGS = frozenset(get_args(InputFlag))
+_CACHE_LAYERS = frozenset(get_args(CacheLayer))
+_CACHE_OUTCOMES = frozenset(get_args(CacheOutcome))
 
 ENDPOINTS = {
     "/": "index",
@@ -102,6 +105,12 @@ class AtlasMetrics:
             "atlas_guardrail_flags_total", "Guardrail flags", ("flag",), registry=self.registry
         )
         self.path = Counter("atlas_path_total", "Graph paths", ("path",), registry=self.registry)
+        self.cache_requests = Counter(
+            "atlas_cache_requests_total",
+            "Cache lookups by layer and outcome",
+            ("layer", "outcome"),
+            registry=self.registry,
+        )
 
     def request(self, path: str, outcome: str, seconds: float, trace_id: str) -> None:
         endpoint = ENDPOINTS.get(path, "static" if path.startswith("/static/") else "other")
@@ -128,6 +137,10 @@ class AtlasMetrics:
     def repair(self, call_site: str, outcome: str) -> None:
         if call_site in LLM_CALL_SITES and outcome in MODEL_OUTCOMES:
             self.repairs.labels(call_site, outcome).inc()
+
+    def cache_event(self, layer: CacheLayer, outcome: CacheOutcome) -> None:
+        if layer in _CACHE_LAYERS and outcome in _CACHE_OUTCOMES:
+            self.cache_requests.labels(layer, outcome).inc()
 
     def handoff(self, reason: HandoffReason) -> None:
         self.handoffs.labels(reason.value).inc()

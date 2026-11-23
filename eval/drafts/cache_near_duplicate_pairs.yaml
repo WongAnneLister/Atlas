@@ -1,0 +1,83 @@
+# Paraphrase / minimal-contrast pairs that MUST have different answers.
+# Used by `make eval-cache` to measure near-duplicate answer-cache wrong-hit rate.
+pairs:
+  - id: nd-01
+    kind: model_number
+    query_a: "Does the W40 come with a charger?"
+    query_b: "Does the W40 Pro come with a charger?"
+  - id: nd-02
+    kind: model_number
+    query_a: "What is the wattage of the Philips BHD340/10 hair dryer?"
+    query_b: "What is the wattage of the Philips BHD350/10 hair dryer?"
+  - id: nd-03
+    kind: model_number
+    query_a: "Does the Philips BHD340/10 include a ThermoProtect attachment?"
+    query_b: "Does the Philips BHD360/20 include a ThermoProtect attachment?"
+  - id: nd-04
+    kind: model_number
+    query_a: "What is the basket capacity of the Philips HD9252 air fryer?"
+    query_b: "What is the basket capacity of the Philips HD9280 air fryer?"
+  - id: nd-05
+    kind: model_number
+    query_a: "What is the battery life of the Philips TAH4205 headphones?"
+    query_b: "What is the battery life of the Philips TAH5205 headphones?"
+  - id: nd-06
+    kind: model_number
+    query_a: "What is the resolution of the 24E1N1100A monitor?"
+    query_b: "What is the resolution of the 27E1N1100A monitor?"
+  - id: nd-07
+    kind: model_number
+    query_a: "Is the W40 covered under warranty?"
+    query_b: "Is the W400 covered under warranty?"
+  - id: nd-08
+    kind: store_scope
+    query_a: "What is the return window for the generic store?"
+    query_b: "What is the return window for Flipkart?"
+  - id: nd-09
+    kind: store_scope
+    query_a: "How long do refunds take on Flipkart?"
+    query_b: "How long do refunds take at the generic store?"
+  - id: nd-10
+    kind: store_scope
+    query_a: "Does Flipkart offer international shipping?"
+    query_b: "Does the generic store offer international shipping?"
+  - id: nd-11
+    kind: store_scope
+    query_a: "How do I cancel an order on Flipkart?"
+    query_b: "How do I cancel an order at the generic store?"
+  - id: nd-12
+    kind: store_scope
+    query_a: "What payment methods does Flipkart accept?"
+    query_b: "What payment methods does the generic store accept?"
+  - id: nd-13
+    kind: policy_polarity
+    query_a: "Can I return an opened item within 30 days?"
+    query_b: "Can I return an unopened item within 30 days?"
+  - id: nd-14
+    kind: policy_polarity
+    query_a: "Are final sale items eligible for a refund?"
+    query_b: "Are regular sale items eligible for a refund?"
+  - id: nd-15
+    kind: policy_polarity
+    query_a: "How do I get a refund for a Cash on Delivery order on Flipkart?"
+    query_b: "How do I get a refund for a credit card order on Flipkart?"
+  - id: nd-16
+    kind: policy_polarity
+    query_a: "What is the shipping fee for standard delivery?"
+    query_b: "What is the shipping fee for express delivery?"
+  - id: nd-17
+    kind: policy_polarity
+    query_a: "How do I exchange a damaged item?"
+    query_b: "How do I cancel a shipped item?"
+  - id: nd-18
+    kind: policy_polarity
+    query_a: "How do I track my domestic shipment?"
+    query_b: "How do I track my international shipment?"
+  - id: nd-19
+    kind: numeric_detail
+    query_a: "Can I request a price adjustment after 7 days?"
+    query_b: "Can I request a price adjustment after 14 days?"
+  - id: nd-20
+    kind: numeric_detail
+    query_a: "Can I return an item bought 29 days ago?"
+    query_b: "Can I return an item bought 31 days ago?"

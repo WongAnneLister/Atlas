@@ -9,6 +9,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from eval.schema import ClaimVerdict, EvalItem, MultipartItem
+from support_agent.cache.metrics import CacheEvent
 from support_agent.observability.cost import ModelUsage
 from support_agent.reliability.events import ReliabilityEvent
 from support_agent.reliability.settings import ChaosSettings
@@ -91,6 +92,8 @@ class E2ERecord(BaseModel):
     llm_calls: int | None = Field(default=None, ge=0)
     usage_by_model: dict[str, ModelUsage] | None = None
     reliability_events: list[ReliabilityEvent] = Field(default_factory=list)
+    answer_cache_hit: str | None = None
+    cache_events: list[CacheEvent] = Field(default_factory=list)
 
 
 class JudgeRecord(BaseModel):

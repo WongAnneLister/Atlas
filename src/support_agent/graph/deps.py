@@ -15,8 +15,12 @@ from langchain_core.language_models import BaseChatModel
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 
+from support_agent.cache.keys import prompt_version_hash
+from support_agent.cache.layers import AnswerCache, CachedEmbedder, CachedRetriever
 from support_agent.config import REPO_ROOT, Settings
+from support_agent.graph.handoff import PROMPTS
 from support_agent.graph.postgres import postgres_saver
+from support_agent.infra.redis import KeyValueStore, NullRedis, RedisStore
 from support_agent.llm import Role, get_chat_model, resolve_model
 from support_agent.orders.service import OrderService
 from support_agent.reliability.chaos import ChaosInjector
@@ -26,7 +30,7 @@ from support_agent.reliability.guards import DependencyGuards
 from support_agent.reliability.llm_calls import LLMFault, ModelMessages, ReliableModels
 from support_agent.reliability.stores import GuardedMilvusSearch, GuardedOrders, GuardedReranker
 from support_agent.reliability.timeouts import BoundedExecutor
-from support_agent.retrieval.embed import BgeM3Embedder
+from support_agent.retrieval.embed import BgeM3Embedder, Embedder
 from support_agent.retrieval.factory import build_retriever
 from support_agent.retrieval.rerank import BgeReranker, Reranker
 from support_agent.retrieval.types import Retriever
@@ -46,6 +50,9 @@ class GraphDeps:
     # Builds the reranker behind the guard; None means the pinned BGE cross-encoder.
     # Offline evaluators use it to reuse cached logits; the API never sets it.
     reranker_factory: Callable[[], Reranker] | None = None
+    cache_store: KeyValueStore | None = None
+    build_id_provider: Callable[[], str | None] | None = None
+    cache_embedder: Embedder | None = None
     chaos_injector: ChaosInjector = field(init=False, repr=False)
     circuits: CircuitRegistry = field(init=False, repr=False)
     model_workers: BoundedExecutor = field(init=False, repr=False)
@@ -57,6 +64,9 @@ class GraphDeps:
     _checkpointer: BaseCheckpointSaver[Any] | None = field(default=None, init=False, repr=False)
     index_registry_settings: Settings | None = None
     _index_store: GuardedMilvusSearch | None = field(default=None, init=False, repr=False)
+    _cache_store_resolved: KeyValueStore | None = field(default=None, init=False, repr=False)
+    _cached_retriever: Retriever | None = field(default=None, init=False, repr=False)
+    _prompt_version: str | None = field(default=None, init=False, repr=False)
     _retriever_lock: Lock = field(default_factory=Lock, init=False, repr=False)
     _closed: bool = field(default=False, init=False, repr=False)
 
@@ -142,8 +152,44 @@ class GraphDeps:
         return GuardedOrders(self.orders, self.dependency_guards)
 
     def current_build_id(self) -> str | None:
+        if self.build_id_provider is not None:
+            return self.build_id_provider()
         store = self._index_store
         return store.current_build_id() if store is not None else None
+
+    def resolved_cache_store(self) -> KeyValueStore | None:
+        if not self.settings.cache.enabled:
+            return None
+        if self.cache_store is not None:
+            return self.cache_store
+        if self._cache_store_resolved is None:
+            if self.settings.redis.backend == "redis" and self.settings.redis_url is not None:
+                store = RedisStore(self.settings.redis_url.get_secret_value(), self.settings.redis)
+                self._resources.callback(store.close)
+                self._cache_store_resolved = store
+            else:
+                self._cache_store_resolved = NullRedis()
+        return self._cache_store_resolved
+
+    def prompt_version(self) -> str:
+        if self._prompt_version is None:
+            self._prompt_version = prompt_version_hash(PROMPTS, self.settings)
+        return self._prompt_version
+
+    def answer_cache_models(self) -> dict[str, str]:
+        models = {"main": self.primary_model_name("main")}
+        if self.settings.grounding.enabled:
+            role = self.settings.grounding.verifier_role
+            models["verifier"] = self.primary_model_name(role)
+        return models
+
+    def answer_cache(self) -> AnswerCache:
+        return AnswerCache(
+            self.resolved_cache_store(),
+            self.settings.cache,
+            embedder=self.cache_embedder,
+            observer=self.observer,
+        )
 
     def knowledge_retriever(self) -> Retriever:
         if self._closed:
@@ -157,17 +203,56 @@ class GraphDeps:
                 )
                 self._resources.callback(store.close)
                 self._index_store = store
-                self.retriever = build_retriever(
+                cache_store = self.resolved_cache_store()
+                embedder: Embedder = BgeM3Embedder(self.settings.retrieval)
+                if cache_store is not None and self.settings.cache.embedding.enabled:
+                    embedder = CachedEmbedder(
+                        embedder,
+                        cache_store,
+                        self.settings.retrieval,
+                        self.settings.cache,
+                        observer=self.observer,
+                    )
+                if self.cache_embedder is None:
+                    self.cache_embedder = embedder
+                base = build_retriever(
                     "hybrid_rerank",
                     settings=self.settings,
                     store=store,
-                    embedder=BgeM3Embedder(self.settings.retrieval),
+                    embedder=embedder,
                     reranker=GuardedReranker(
                         self.reranker_factory or (lambda: BgeReranker(self.settings.retrieval)),
                         self.dependency_guards,
                     ),
                 )
-            return self.retriever
+                if cache_store is not None and self.settings.cache.retrieval.enabled:
+                    base = CachedRetriever(
+                        base,
+                        cache_store,
+                        self.current_build_id,
+                        self.settings.retrieval,
+                        self.settings.cache,
+                        observer=self.observer,
+                    )
+                self.retriever = base
+                return self.retriever
+            if (
+                self._cached_retriever is None
+                and self.settings.cache.enabled
+                and self.settings.cache.retrieval.enabled
+                and self.cache_store is not None
+                and self.build_id_provider is not None
+                and not isinstance(self.retriever, CachedRetriever)
+            ):
+                self._cached_retriever = CachedRetriever(
+                    self.retriever,
+                    self.cache_store,
+                    self.current_build_id,
+                    self.settings.retrieval,
+                    self.settings.cache,
+                    observer=self.observer,
+                )
+            return self._cached_retriever or self.retriever
 
     def close(self) -> None:
         self._resources.close()

@@ -464,6 +464,25 @@ redis:
   connect_timeout_s: 2
   socket_timeout_s: 2
 
+cache:
+  enabled: true
+  key_prefix: atlas:cache:v1
+  index_revision_ttl_s: 2592000
+  embedding:
+    enabled: true
+    ttl_s: 604800
+  retrieval:
+    enabled: true
+    ttl_s: 86400
+  answer:
+    enabled: true
+    ttl_s: 3600
+    recent_turns: 6
+    near_duplicate:
+      enabled: false
+      similarity_threshold: 0.97
+      max_entries_per_bucket: 64
+
 readiness:
   postgres_timeout_s: 2
   migrations_timeout_s: 2
