@@ -14,3 +14,4 @@ policy_requires_human: "Your request needs a human review. I'll pass it to a hum
 system_error: "A system error interrupted this request. A human agent can help from here."
 guardrail_blocked: "I can’t continue with this request. A human support agent can help."
 unsupported_part: "I’ll pass the unsupported part of your request to a human support agent."
+context_overflow: "This conversation has grown too long for automated handling. I'll pass your request to a human support agent."

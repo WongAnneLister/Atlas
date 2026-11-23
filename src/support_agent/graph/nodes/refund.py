@@ -7,9 +7,10 @@ import logging
 import re
 from typing import Any
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage
 from langgraph.types import interrupt
 
+from support_agent.context.budget import ContextOverflow
 from support_agent.gate.evidence import evaluate
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, make_handoff
@@ -53,17 +54,14 @@ class RefundPath:
         order_id = match.group(0).upper().replace(" ", "-") if match else None
         if order_id is None:
             try:
-                response, _ = self.deps.models.invoke(
+                built = self.deps.context_builder().build(
                     "order_extract",
-                    "fast",
-                    [
-                        SystemMessage(
-                            content="Extract an order id from the customer request. "
-                            "Return the id or say none."
-                        ),
-                        HumanMessage(content=query),
-                    ],
+                    task_prompt=(
+                        "Extract an order id from the customer request. Return the id or say none."
+                    ),
+                    user_text=query,
                 )
+                response, _ = self.deps.models.invoke("order_extract", "fast", built)
                 content = getattr(response, "content", "")
                 if isinstance(content, str):
                     model_match = ORDER_ID.search(content)
@@ -223,14 +221,22 @@ class RefundPath:
         sources = source_blocks(state.retrieval, include_validity=True)
         data = refund_data(state.order_context or {})
         order_facts = order_block(json.dumps(data, sort_keys=True))
-        messages = [
-            SystemMessage(content=self.prompt),
-            HumanMessage(content=(f"Order facts:\n{order_facts}\n\nSources:\n{sources}")),
-        ]
         try:
-            response, _ = self.deps.models.structured(
-                "decide", "main", self.decision_schema, messages
+            built = self.deps.context_builder().build(
+                "decide",
+                task_prompt=self.prompt,
+                user_text=f"Order facts:\n{order_facts}\n\nSources:\n{sources}",
+                history=state.messages[:-1],
+                order_context=data,
+                order_context_never_trim=True,
+                current_date=self.deps.settings.orders.today,
             )
+            response, _ = self.deps.models.structured("decide", "main", self.decision_schema, built)
+        except ContextOverflow:
+            cb = getattr(self.deps.observer, "context_overflow", None)
+            if callable(cb):
+                cb("decide")
+            return self._handoff(state, HandoffReason.CONTEXT_OVERFLOW)
         except Exception as error:
             logger.warning("Refund decision failed: %s", type(error).__name__)
             reason = (

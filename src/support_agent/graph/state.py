@@ -8,6 +8,7 @@ from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
 
 from support_agent.cache.metrics import CacheEvent, CacheLayer
+from support_agent.context.builder import ContextCallRecord
 from support_agent.gate.evidence import GateResult
 from support_agent.graph.coverage import CoverageAnswer
 from support_agent.graph.handoff import HandoffPayload
@@ -47,6 +48,7 @@ class ConversationState(BaseModel):
     answered_by_model: dict[str, str] = Field(default_factory=dict)
     reliability_events: list[ReliabilityEvent] = Field(default_factory=list)
     cache_events: list[CacheEvent] = Field(default_factory=list)
+    context_calls: list[ContextCallRecord] = Field(default_factory=list)
     answer_cache_hit: CacheLayer | None = None
     retrieval_build_id: str | None = None
     retrieval: list[RetrievedChunk] = Field(default_factory=list)

@@ -4,7 +4,7 @@ import logging
 import re
 from typing import Any
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage
 
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, load_templates, make_handoff
@@ -21,11 +21,14 @@ class ComplaintPath:
     def __call__(self, state: ConversationState) -> dict[str, Any]:
         acknowledgement = load_templates("fixed_replies.yaml")["complaint_acknowledgement"]
         try:
-            response, _ = self.deps.models.invoke(
+            built = self.deps.context_builder().build(
                 "complaint",
-                "fast",
-                [SystemMessage(content=self.prompt), HumanMessage(content=state.rewritten_query)],
+                task_prompt=self.prompt,
+                user_text=state.rewritten_query,
+                history=state.messages[:-1],
+                current_date=self.deps.settings.orders.today,
             )
+            response, _ = self.deps.models.invoke("complaint", "fast", built)
             text = response.content
             if isinstance(text, str) and text.strip():
                 sentences = re.split(r"(?<=[.!?])\s+|\n+", text.strip())

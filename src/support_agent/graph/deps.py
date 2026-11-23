@@ -18,6 +18,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from support_agent.cache.keys import prompt_version_hash
 from support_agent.cache.layers import AnswerCache, CachedEmbedder, CachedRetriever
 from support_agent.config import REPO_ROOT, Settings
+from support_agent.context.builder import ContextBuilder
 from support_agent.graph.handoff import PROMPTS
 from support_agent.graph.postgres import postgres_saver
 from support_agent.infra.redis import KeyValueStore, NullRedis, RedisStore
@@ -190,6 +191,10 @@ class GraphDeps:
             embedder=self.cache_embedder,
             observer=self.observer,
         )
+
+    def context_builder(self) -> ContextBuilder:
+        _, provider = resolve_model("main", self.settings.llm)
+        return ContextBuilder(self.settings.context, llm_provider=provider)
 
     def knowledge_retriever(self) -> Retriever:
         if self._closed:

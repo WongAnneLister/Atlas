@@ -25,6 +25,7 @@ from pydantic_settings import (
 
 from support_agent.cache.settings import CacheSettings
 from support_agent.config_layers import yaml_layers
+from support_agent.context.settings import ContextSettings
 from support_agent.db.settings import DatabaseSettings
 from support_agent.graph.settings import (
     GraphSettings,
@@ -497,6 +498,7 @@ class Settings(BaseSettings):
     policy_versions: PolicyVersionSettings
     refund: RefundSettings = Field(default_factory=RefundSettings)
     memory: MemorySettings
+    context: ContextSettings = Field(default_factory=ContextSettings)
     tracing: TracingSettings
     costs: CostSettings
     api: APISettings

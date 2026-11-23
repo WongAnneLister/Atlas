@@ -144,13 +144,13 @@ def test_followup_rewrites_with_history_and_keeps_append_only_trace() -> None:
         == ["input_guard", "rewrite", "classify", "retrieve", "gate", "handoff", "output_guard"] * 2
     )
     history = model.rewritten_messages[0]
-    assert [message.type for message in history] == ["system", "human", "ai", "human"]
+    assert [message.type for message in history] == ["system", "human", "ai", "system", "human"]
     assert history[-1].content == "what about the W40 Pro?"
 
 
 def test_rewrite_history_bounds_human_turns_with_following_assistant() -> None:
     settings = Settings()
-    settings.intent.rewrite_history_turns = 2
+    settings.context.profiles["rewrite"].recent_turns = 1
     model = fake(Intent.POLICY_QUESTION)
     with knowledge_deps(settings, model) as deps:
         messages = [
@@ -161,7 +161,8 @@ def test_rewrite_history_bounds_human_turns_with_following_assistant() -> None:
             HumanMessage(content="and this one?"),
         ]
         build_graph(deps).invoke({"messages": messages}, {"configurable": {"thread_id": "history"}})
-    assert [message.content for message in model.rewritten_messages[0][1:]] == [
+    non_system = [m.content for m in model.rewritten_messages[0] if m.type != "system"]
+    assert non_system == [
         "recent question",
         "recent answer",
         "and this one?",

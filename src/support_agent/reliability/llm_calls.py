@@ -15,6 +15,13 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.tools import BaseTool
 from pydantic import ValidationError
 
+from support_agent.context.builder import (
+    BuiltContext,
+    ContextBuilder,
+    ContextCallRecord,
+    extract_usage_details,
+    record_context_call,
+)
 from support_agent.llm import Role
 from support_agent.reliability.errors import RetryBudgetExceeded, is_retryable
 from support_agent.reliability.events import ReliabilityEvent, ReliabilityOutcome, record_event
@@ -89,6 +96,9 @@ class ReliableModels:
         self._deps = deps
         self._repair_prompt = REPAIR_PROMPT.read_text(encoding="utf-8").strip()
 
+    def context_builder(self) -> ContextBuilder:
+        return self._deps.context_builder()
+
     def _messages(
         self, call_site: CallSite, prompt: Sequence[BaseMessage]
     ) -> Sequence[BaseMessage]:
@@ -99,10 +109,13 @@ class ReliableModels:
         self,
         call_site: CallSite,
         role: Role,
-        messages: Sequence[BaseMessage],
+        messages: BuiltContext | Sequence[BaseMessage],
         *,
         tools: Sequence[BaseTool] = (),
     ) -> tuple[BaseMessage, ReliabilityEvent]:
+        built = messages if isinstance(messages, BuiltContext) else None
+        raw_messages: Sequence[BaseMessage] = built.messages if built is not None else messages  # type: ignore[assignment]
+
         def operation(
             model: BaseChatModel, garbage: bool, prompt: Sequence[BaseMessage]
         ) -> BaseMessage:
@@ -111,17 +124,24 @@ class ReliableModels:
             runnable = model.bind_tools(tools) if tools else model
             return runnable.invoke(self._messages(call_site, prompt))
 
-        return self._call(call_site, role, messages, operation)
+        result, event = self._call(call_site, role, raw_messages, operation)
+        if built is not None:
+            self._record_context(built, result)
+        return result, event
 
     def structured(
         self,
         call_site: CallSite,
         role: Role,
         schema: type[SchemaT],
-        messages: Sequence[BaseMessage],
+        messages: BuiltContext | Sequence[BaseMessage],
         *,
         recover: bool = True,
     ) -> tuple[ParsedResponse[SchemaT], ReliabilityEvent]:
+        built = messages if isinstance(messages, BuiltContext) else None
+        raw_messages: Sequence[BaseMessage] = built.messages if built is not None else messages  # type: ignore[assignment]
+        captured_raw: list[object] = []
+
         def operation(
             model: BaseChatModel, garbage: bool, prompt: Sequence[BaseMessage]
         ) -> ParsedResponse[SchemaT]:
@@ -135,9 +155,38 @@ class ReliableModels:
                 )
             except (OutputParserException, ValidationError, JSONDecodeError) as error:
                 raise invalid_response(schema, error) from None
+            if isinstance(response, dict) and "raw" in response:
+                captured_raw.append(response["raw"])
             return parse_response(schema, response)
 
-        return self._call(call_site, role, messages, operation, recover=recover)
+        result, event = self._call(call_site, role, raw_messages, operation, recover=recover)
+        if built is not None:
+            self._record_context(built, captured_raw[-1] if captured_raw else None)
+        return result, event
+
+    def _record_context(self, built: BuiltContext, raw_message: object) -> None:
+        in_tok, out_tok, cache_read, cache_write = extract_usage_details(raw_message)
+        ratio = (cache_read / in_tok) if in_tok > 0 else 0.0
+        bd = built.breakdown
+        record_context_call(
+            ContextCallRecord(
+                node=built.node,
+                prefix_hash=built.prefix_hash,
+                l0_hash=built.l0_hash,
+                total_tokens=bd.total_tokens,
+                budget_tokens=bd.budget_tokens,
+                by_layer=dict(bd.by_layer),
+                by_section=dict(bd.by_section),
+                dropped_count=len(bd.dropped),
+                history_capped=bd.history_capped,
+                input_tokens=in_tok,
+                output_tokens=out_tok,
+                cache_read_tokens=cache_read,
+                cache_write_tokens=cache_write,
+                cache_hit_ratio=min(1.0, max(0.0, ratio)),
+            ),
+            observer=self._deps.observer,
+        )
 
     def _call(
         self,

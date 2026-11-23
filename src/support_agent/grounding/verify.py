@@ -7,7 +7,6 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, ConfigDict, Field
 
 from support_agent.graph.coverage import SourceQuote
@@ -55,14 +54,16 @@ def verify_claims(
         }
         for claim in claims
     ]
+    built = models.context_builder().build(
+        "verify",
+        task_prompt=_PROMPT.read_text(encoding="utf-8"),
+        user_text=json.dumps(payload, ensure_ascii=False),
+    )
     response, _ = models.structured(
         "verify",
         role,
         VerificationBatch,
-        [
-            SystemMessage(content=_PROMPT.read_text(encoding="utf-8")),
-            HumanMessage(content=json.dumps(payload, ensure_ascii=False)),
-        ],
+        built,
         recover=False,
     )
     results = {verdict.number: verdict for verdict in response.value.verdicts}

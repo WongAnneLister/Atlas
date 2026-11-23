@@ -89,6 +89,8 @@ class SimTurn(BaseModel):
     refund_request_id: str | None = None
     input_tokens: int = Field(default=0, ge=0)
     output_tokens: int = Field(default=0, ge=0)
+    cache_read_tokens: int = Field(default=0, ge=0)
+    context_calls: list[dict[str, Any]] = Field(default_factory=list)
     latency_s: float = Field(default=0.0, ge=0.0)
     error_type: str | None = None
 

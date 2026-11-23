@@ -8,6 +8,7 @@ from prometheus_client.exposition import choose_encoder
 
 from support_agent.cache.metrics import CacheLayer, CacheOutcome
 from support_agent.config import Settings
+from support_agent.context.builder import ContextCallRecord
 from support_agent.gate.evidence import GateResult
 from support_agent.graph.handoff import HandoffPayload, HandoffReason
 from support_agent.graph.intents import Path
@@ -111,6 +112,24 @@ class AtlasMetrics:
             ("layer", "outcome"),
             registry=self.registry,
         )
+        self.context_tokens = Counter(
+            "atlas_context_tokens_total",
+            "Context tokens per node and kind",
+            ("node", "kind"),
+            registry=self.registry,
+        )
+        self.context_cache_hit_ratio = Gauge(
+            "atlas_context_cache_hit_ratio",
+            "Latest prompt-prefix cache hit ratio per node",
+            ("node",),
+            registry=self.registry,
+        )
+        self.context_overflows = Counter(
+            "atlas_context_overflow_total",
+            "Context budget overflows per node",
+            ("node",),
+            registry=self.registry,
+        )
 
     def request(self, path: str, outcome: str, seconds: float, trace_id: str) -> None:
         endpoint = ENDPOINTS.get(path, "static" if path.startswith("/static/") else "other")
@@ -141,6 +160,20 @@ class AtlasMetrics:
     def cache_event(self, layer: CacheLayer, outcome: CacheOutcome) -> None:
         if layer in _CACHE_LAYERS and outcome in _CACHE_OUTCOMES:
             self.cache_requests.labels(layer, outcome).inc()
+
+    def context_call(self, record: ContextCallRecord) -> None:
+        node = record.node if record.node in LLM_CALL_SITES else "other"
+        if record.input_tokens:
+            self.context_tokens.labels(node, "input").inc(record.input_tokens)
+        if record.cache_read_tokens:
+            self.context_tokens.labels(node, "cache_read").inc(record.cache_read_tokens)
+        if record.cache_write_tokens:
+            self.context_tokens.labels(node, "cache_write").inc(record.cache_write_tokens)
+        self.context_cache_hit_ratio.labels(node).set(record.cache_hit_ratio)
+
+    def context_overflow(self, node: str) -> None:
+        label = node if node in LLM_CALL_SITES else "other"
+        self.context_overflows.labels(label).inc()
 
     def handoff(self, reason: HandoffReason) -> None:
         self.handoffs.labels(reason.value).inc()

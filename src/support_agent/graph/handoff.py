@@ -38,6 +38,7 @@ class HandoffReason(StrEnum):
     INVALID_ANSWER = "invalid_answer"
     INCOMPLETE_EVIDENCE = "incomplete_evidence"
     UNSUPPORTED_PART = "unsupported_part"
+    CONTEXT_OVERFLOW = "context_overflow"
     AGENT_STEP_CAP = "agent_step_cap"
     TOOL_ERROR = "tool_error"
     ORDER_NOT_FOUND = "order_not_found"

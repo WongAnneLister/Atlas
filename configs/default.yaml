@@ -419,6 +419,34 @@ memory:                    # P1 placeholders
   recent_turns: 6
   summary_max_tokens: 400
 
+context:
+  enabled: true
+  chars_per_token: 3.8
+  message_overhead_tokens: 4
+  hard_history_turn_cap: 16
+  cache_adapter:
+    provider: auto
+    max_breakpoints: 4
+    min_cacheable_tokens: 1024
+    layer_ttls:
+      L0_global: 3600
+      L1_session: 300
+      L2_compacted: 300
+      L3_history: 300
+  profiles:
+    rewrite: {total_tokens: 4096, history_max_tokens: 1600, evidence_min_ratio: 0.0, share_prefix: true}
+    classify: {total_tokens: 2048, history_max_tokens: 400, evidence_min_ratio: 0.0, share_prefix: false, recent_turns: 2}
+    plan: {total_tokens: 2048, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
+    input_guard: {total_tokens: 1024, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
+    answer: {total_tokens: 12000, history_max_tokens: 3000, evidence_min_ratio: 0.40, share_prefix: true}
+    tools: {total_tokens: 8192, history_max_tokens: 2048, evidence_min_ratio: 0.0, share_prefix: true}
+    decide: {total_tokens: 8192, history_max_tokens: 1500, evidence_min_ratio: 0.35, share_prefix: true}
+    complaint: {total_tokens: 4096, history_max_tokens: 1024, evidence_min_ratio: 0.0, share_prefix: true}
+    verify: {total_tokens: 8192, history_max_tokens: 0, evidence_min_ratio: 0.50, share_prefix: false}
+    split_claims: {total_tokens: 4096, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
+    order_extract: {total_tokens: 2048, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
+    grounding: {total_tokens: 4096, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
+
 tracing:
   enabled: false        # also needs LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY; see docs/OBSERVABILITY.md
   redact_inputs: false  # true: customer text never leaves the process (demo default is false)

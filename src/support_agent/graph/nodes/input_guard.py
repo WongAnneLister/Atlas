@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
 
 from support_agent.config import REPO_ROOT
@@ -31,11 +31,16 @@ class InputGuard:
         decision = self.patterns.check(current.content, self.deps.settings.api.max_message_chars)
         if self.settings.classifier.enabled and decision.action != "block":
             try:
+                built = self.deps.context_builder().build(
+                    "input_guard",
+                    task_prompt=self.prompt,
+                    user_text=current.content,
+                )
                 result, _ = self.deps.models.structured(
                     "input_guard",
                     self.settings.classifier.model_role,
                     _Suspicion,
-                    [SystemMessage(content=self.prompt), current],
+                    built,
                 )
             except Exception:
                 decision.flags.append("input_classifier_error")

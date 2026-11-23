@@ -6,10 +6,9 @@ import json
 import logging
 from typing import Any
 
-from langchain_core.messages import HumanMessage, SystemMessage
-
 from support_agent.cache.eligibility import answer_cache_lookup_eligibility
 from support_agent.cache.metrics import record_cache_event
+from support_agent.context.budget import ContextOverflow
 from support_agent.gate.evidence import evaluate
 from support_agent.graph.coverage import (
     CoverageAnswer,
@@ -287,15 +286,32 @@ class KnowledgePath:
         self, state: ConversationState, prompt: str, data: str
     ) -> CoverageAnswer | dict[str, Any]:
         try:
+            built = self.deps.context_builder().build(
+                "answer",
+                task_prompt=prompt,
+                user_text=data,
+                history=state.messages[:-1],
+                current_date=self.deps.settings.orders.today,
+            )
             response, _ = self.deps.models.structured(
                 "answer",
                 "main",
                 CoverageAnswer,
-                [
-                    SystemMessage(content=prompt),
-                    HumanMessage(content=data),
-                ],
+                built,
             )
+        except ContextOverflow:
+            cb = getattr(self.deps.observer, "context_overflow", None)
+            if callable(cb):
+                cb("answer")
+            current = state.model_copy(deep=True)
+            current.trace.append("handoff")
+            return {
+                **make_handoff(current, HandoffReason.CONTEXT_OVERFLOW),
+                "trace": current.trace,
+                "citations": [],
+                "answer_status": "model_error",
+                "answer_error_type": "ContextOverflow",
+            }
         except StructuredOutputError as error:
             return {
                 **self._answer_handoff(state, "invalid_output"),

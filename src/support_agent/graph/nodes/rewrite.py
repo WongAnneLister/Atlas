@@ -7,7 +7,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
 from langgraph.types import Overwrite
 
 from support_agent.config import Settings
@@ -35,6 +35,7 @@ def reset_turn() -> dict[str, Any]:
         "answered_by_model": {},
         "reliability_events": [],
         "cache_events": [],
+        "context_calls": [],
         "answer_cache_hit": None,
         "retrieval": [],
         "retrieval_build_id": None,
@@ -83,10 +84,14 @@ def make_rewrite_node(
             if isinstance(message, HumanMessage)
         ]
         if len(human_indices) > 1:
-            start = human_indices[-settings.intent.rewrite_history_turns :][0]
-            messages: list[BaseMessage] = [SystemMessage(content=prompt), *state.messages[start:]]
             try:
-                response, _ = models.invoke("rewrite", "fast", messages)
+                built = models.context_builder().build(
+                    "rewrite",
+                    task_prompt=prompt,
+                    user_text=original,
+                    history=state.messages[:-1],
+                )
+                response, _ = models.invoke("rewrite", "fast", built)
                 if not isinstance(response.content, str) or not response.content.strip():
                     raise ValueError("Rewrite must be nonempty text")
                 query = response.content.strip()

@@ -132,9 +132,15 @@ def check_order_answer_reliably(
     if not sentences:
         return GroundingResult(status="grounded", attempts=1)
     try:
-        response, event = models.structured(
-            "grounding", "main", OrderGrounding, _messages(data, sentences, prompt)
+        user_payload = f"Order data:\n{data}\n\nNumbered sentences:\n" + "\n".join(
+            f"{i}. {s}" for i, s in enumerate(sentences, start=1)
         )
+        built = models.context_builder().build(
+            "grounding",
+            task_prompt=prompt,
+            user_text=user_payload,
+        )
+        response, event = models.structured("grounding", "main", OrderGrounding, built)
     except StructuredOutputError as error:
         logger.warning("Order grounding reply was invalid: %s", error.error_type)
         return GroundingResult(status="error", attempts=1 + int(error.repaired))

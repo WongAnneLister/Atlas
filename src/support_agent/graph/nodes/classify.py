@@ -48,12 +48,17 @@ class Classifier:
     def classify(self, query: str) -> ClassificationOutcome:
         model_name: str | None = None
         try:
-            messages = [SystemMessage(content=self.prompt), HumanMessage(content=query)]
             if self.models is not None:
-                parsed, _ = self.models.structured("classify", "fast", IntentPrediction, messages)
+                built = self.models.context_builder().build(
+                    "classify",
+                    task_prompt=self.prompt,
+                    user_text=query,
+                )
+                parsed, _ = self.models.structured("classify", "fast", IntentPrediction, built)
             else:
                 if self.model is None:
                     raise RuntimeError("A classifier model is required")
+                messages = [SystemMessage(content=self.prompt), HumanMessage(content=query)]
                 response = self.model.with_structured_output(
                     IntentPrediction, include_raw=True
                 ).invoke(messages)

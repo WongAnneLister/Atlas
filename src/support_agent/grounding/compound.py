@@ -4,7 +4,6 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
-from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, ConfigDict, Field
 
 from support_agent.grounding.claims import Claim
@@ -35,14 +34,16 @@ def split_compounds(
     data = [
         {"number": claim.number, "question": claim.question, "text": claim.text} for claim in claims
     ]
+    built = models.context_builder().build(
+        "split_claims",
+        task_prompt=_PROMPT.read_text(encoding="utf-8"),
+        user_text=json.dumps(data, ensure_ascii=False),
+    )
     response, _ = models.structured(
         "split_claims",
         role,
         CompoundSplits,
-        [
-            SystemMessage(content=_PROMPT.read_text(encoding="utf-8")),
-            HumanMessage(content=json.dumps(data, ensure_ascii=False)),
-        ],
+        built,
         recover=False,
     )
     splits = {row.number: row.pieces for row in response.value.splits}

@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any
 from unicodedata import normalize
 
-from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field, StringConstraints
 
 from support_agent.graph.parts import QueryPart
@@ -87,11 +86,13 @@ class Planner:
             return {"parts": []}
 
         update: dict[str, Any] = {"parts": [], "trace": [*state.trace, "plan"]}
-        messages = [SystemMessage(content=self.prompt), HumanMessage(content=query)]
         try:
-            parsed, _ = self.models.structured(
-                "plan", "fast", PlanPrediction, messages, recover=False
+            built = self.models.context_builder().build(
+                "plan",
+                task_prompt=self.prompt,
+                user_text=query,
             )
+            parsed, _ = self.models.structured("plan", "fast", PlanPrediction, built, recover=False)
         except Exception as error:
             error_type = (
                 error.error_type

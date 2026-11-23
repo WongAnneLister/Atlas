@@ -10,6 +10,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Send
 
 from support_agent.cache.metrics import collect_cache_events
+from support_agent.context.builder import collect_context_records
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.intents import INTENT_TO_PATH, PATH_NODES, Path
 from support_agent.graph.nodes.classify import Classifier
@@ -84,7 +85,11 @@ def _recording_node(
     publishes_reply: bool,
 ) -> Callable[[ConversationState], dict[str, Any]]:
     def run(state: ConversationState) -> dict[str, Any]:
-        with collect_events() as events, collect_cache_events() as cache_events:
+        with (
+            collect_events() as events,
+            collect_cache_events() as cache_events,
+            collect_context_records() as context_calls,
+        ):
             update = node(state)
         if not publishes_reply and update.get("answer"):
             # Keep unchecked drafts out of the history even if the graph stops here.
@@ -107,6 +112,11 @@ def _recording_node(
             update["cache_events"] = [
                 *update.get("cache_events", state.cache_events),
                 *cache_events,
+            ]
+        if context_calls:
+            update["context_calls"] = [
+                *update.get("context_calls", state.context_calls),
+                *context_calls,
             ]
         return update
 

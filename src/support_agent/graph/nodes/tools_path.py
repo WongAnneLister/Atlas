@@ -6,10 +6,11 @@ import json
 import logging
 from typing import Any
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from pydantic import ValidationError
 
+from support_agent.context.budget import ContextOverflow
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import PROMPTS, HandoffReason, load_templates, make_handoff
 from support_agent.graph.intents import Intent
@@ -82,15 +83,16 @@ class ToolsPath:
         service = self.deps.guarded_orders()
         tools = build_order_tools(service, state.customer_id)
         by_name = {tool.name: tool for tool in tools}
-        messages: list[BaseMessage] = [
-            SystemMessage(content=self.prompt),
-            HumanMessage(content=state.rewritten_query),
-        ]
         try:
             bound = list(tools)
             if settings.agent.order_replies == "template":
                 bound.append(reply_tool())
-            return self._loop(current, bound, by_name, messages)
+            return self._loop(current, bound, by_name, [])
+        except ContextOverflow:
+            cb = getattr(self.deps.observer, "context_overflow", None)
+            if callable(cb):
+                cb("tools")
+            return {**_updates(current), **make_handoff(current, HandoffReason.CONTEXT_OVERFLOW)}
         except Exception as error:
             logger.warning("Order loop failed: %s", type(error).__name__)
             reason = (
@@ -116,7 +118,16 @@ class ToolsPath:
         lookups: list[Lookup] = []
         for step in range(cfg.max_steps):
             state.agent_steps = step + 1
-            response, _ = self.deps.models.invoke("tools", "main", messages, tools=bound)
+            built = self.deps.context_builder().build(
+                "tools",
+                task_prompt=self.prompt,
+                user_text=state.rewritten_query,
+                history=state.messages[:-1],
+                tool_names=[tool.name for tool in bound],
+                current_date=self.deps.settings.orders.today,
+                extra_l4_messages=messages,
+            )
+            response, _ = self.deps.models.invoke("tools", "main", built, tools=bound)
             if not isinstance(response, AIMessage) or response.invalid_tool_calls:
                 return {**_updates(state), **make_handoff(state, HandoffReason.TOOL_ERROR)}
             messages.append(response)

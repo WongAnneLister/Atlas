@@ -108,13 +108,13 @@ def _extract_turn_sse(events: list[tuple[str, Any]]) -> dict[str, Any]:
 
 def _read_checkpoint_diagnostics(
     graph_deps: GraphDeps, thread_id: str, prev_msg_count: int
-) -> tuple[list[str], list[ToolCallRecord], str | None, int, int, int]:
-    """Read internal trace, tool calls, refund id, and token usage from the checkpointer."""
+) -> tuple[list[str], list[ToolCallRecord], str | None, int, int, int, list[dict[str, Any]], int]:
+    """Read internal trace, tool calls, refund id, and token/context usage from the checkpointer."""
     saver = graph_deps.checkpointer()
     config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
     saved = saver.get_tuple(config)
     if saved is None:
-        return [], [], None, 0, 0, prev_msg_count
+        return [], [], None, 0, 0, 0, [], prev_msg_count
     values: dict[str, Any] = saved.checkpoint.get("channel_values", {})
     route = list(values.get("trace", []))
     messages = list(values.get("messages", []))
@@ -122,6 +122,7 @@ def _read_checkpoint_diagnostics(
     tool_calls: list[ToolCallRecord] = []
     in_tok = 0
     out_tok = 0
+    cache_read = 0
     for msg in new_messages:
         if isinstance(msg, AIMessage):
             for call in getattr(msg, "tool_calls", None) or []:
@@ -136,11 +137,20 @@ def _read_checkpoint_diagnostics(
             if isinstance(usage, dict):
                 in_tok += int(usage.get("input_tokens", usage.get("prompt_tokens", 0)) or 0)
                 out_tok += int(usage.get("output_tokens", usage.get("completion_tokens", 0)) or 0)
+    ctx_calls: list[dict[str, Any]] = []
+    for call in values.get("context_calls", []):
+        row = call.model_dump(mode="json") if hasattr(call, "model_dump") else dict(call)
+        ctx_calls.append(row)
+        cache_read += int(row.get("cache_read_tokens", 0) or 0)
+    if in_tok == 0 and ctx_calls:
+        for row in ctx_calls:
+            in_tok += int(row.get("input_tokens", 0) or row.get("total_tokens", 0))
+            out_tok += int(row.get("output_tokens", 0))
     refund = values.get("refund_request")
     refund_id = None
     if isinstance(refund, dict) and refund.get("request_id"):
         refund_id = str(refund["request_id"])
-    return route, tool_calls, refund_id, in_tok, out_tok, len(messages)
+    return route, tool_calls, refund_id, in_tok, out_tok, cache_read, ctx_calls, len(messages)
 
 
 async def run_scenario_over_api(
@@ -236,7 +246,7 @@ async def run_scenario_over_api(
                 break
             parsed = _extract_turn_sse(parse_sse(resume_resp.text))
 
-        route, tool_calls, refund_id, in_tok, out_tok, prev_msg_count = (
+        route, tool_calls, refund_id, in_tok, out_tok, cache_read, ctx_calls, prev_msg_count = (
             _read_checkpoint_diagnostics(graph_deps, thread_id, prev_msg_count)
         )
         agent_text = parsed["answer"]
@@ -255,6 +265,8 @@ async def run_scenario_over_api(
                 refund_request_id=refund_id,
                 input_tokens=in_tok,
                 output_tokens=out_tok,
+                cache_read_tokens=cache_read,
+                context_calls=ctx_calls,
                 latency_s=elapsed,
                 error_type=parsed["error_type"],
             )
