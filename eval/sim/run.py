@@ -108,13 +108,24 @@ def _extract_turn_sse(events: list[tuple[str, Any]]) -> dict[str, Any]:
 
 def _read_checkpoint_diagnostics(
     graph_deps: GraphDeps, thread_id: str, prev_msg_count: int
-) -> tuple[list[str], list[ToolCallRecord], str | None, int, int, int, list[dict[str, Any]], int]:
+) -> tuple[
+    list[str],
+    list[ToolCallRecord],
+    str | None,
+    int,
+    int,
+    int,
+    int,
+    int,
+    list[dict[str, Any]],
+    int,
+]:
     """Read internal trace, tool calls, refund id, and token/context usage from the checkpointer."""
     saver = graph_deps.checkpointer()
     config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
     saved = saver.get_tuple(config)
     if saved is None:
-        return [], [], None, 0, 0, 0, [], prev_msg_count
+        return [], [], None, 0, 0, 0, 0, 0, [], prev_msg_count
     values: dict[str, Any] = saved.checkpoint.get("channel_values", {})
     route = list(values.get("trace", []))
     messages = list(values.get("messages", []))
@@ -150,7 +161,20 @@ def _read_checkpoint_diagnostics(
     refund_id = None
     if isinstance(refund, dict) and refund.get("request_id"):
         refund_id = str(refund["request_id"])
-    return route, tool_calls, refund_id, in_tok, out_tok, cache_read, ctx_calls, len(messages)
+    comp_events = int(values.get("compaction_events", 0) or 0)
+    sum_calls = int(values.get("summariser_calls", 0) or 0)
+    return (
+        route,
+        tool_calls,
+        refund_id,
+        in_tok,
+        out_tok,
+        cache_read,
+        comp_events,
+        sum_calls,
+        ctx_calls,
+        len(messages),
+    )
 
 
 async def run_scenario_over_api(
@@ -246,9 +270,18 @@ async def run_scenario_over_api(
                 break
             parsed = _extract_turn_sse(parse_sse(resume_resp.text))
 
-        route, tool_calls, refund_id, in_tok, out_tok, cache_read, ctx_calls, prev_msg_count = (
-            _read_checkpoint_diagnostics(graph_deps, thread_id, prev_msg_count)
-        )
+        (
+            route,
+            tool_calls,
+            refund_id,
+            in_tok,
+            out_tok,
+            cache_read,
+            comp_events,
+            sum_calls,
+            ctx_calls,
+            prev_msg_count,
+        ) = _read_checkpoint_diagnostics(graph_deps, thread_id, prev_msg_count)
         agent_text = parsed["answer"]
         visible_history.append(("assistant", agent_text))
         turns.append(
@@ -266,6 +299,8 @@ async def run_scenario_over_api(
                 input_tokens=in_tok,
                 output_tokens=out_tok,
                 cache_read_tokens=cache_read,
+                compaction_events=comp_events,
+                summariser_calls=sum_calls,
                 context_calls=ctx_calls,
                 latency_s=elapsed,
                 error_type=parsed["error_type"],

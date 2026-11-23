@@ -1,1 +1,1 @@
-"""Phase 2: short-term layers and long-term customer memory (commits 29-30)."""
+"""Short-term and long-term conversation memory."""

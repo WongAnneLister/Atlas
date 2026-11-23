@@ -122,7 +122,13 @@ class ToolsPath:
                 "tools",
                 task_prompt=self.prompt,
                 user_text=state.rewritten_query,
-                history=state.messages[:-1],
+                history=state.messages[state.history_start_index : -1],
+                compacted_blocks=[b.text for b in state.compacted_blocks],
+                pinned_facts=(
+                    state.pinned_facts.render_dict() or None
+                    if self.deps.settings.memory.short_term.enabled
+                    else None
+                ),
                 tool_names=[tool.name for tool in bound],
                 current_date=self.deps.settings.orders.today,
                 extra_l4_messages=messages,

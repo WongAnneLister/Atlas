@@ -29,6 +29,8 @@ class TimeoutSettings(BaseModel):
     verify: Seconds
     complaint: Seconds
     tools: Seconds
+    summarise: Seconds = 20
+    extract_facts: Seconds = 15
     rerank: Seconds
     orders_db: Seconds
 

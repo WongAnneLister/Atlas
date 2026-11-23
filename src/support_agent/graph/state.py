@@ -16,6 +16,8 @@ from support_agent.graph.intents import Intent, Path
 from support_agent.graph.parts import PartRetrievalResult, QueryPart
 from support_agent.grounding.claims import ClaimAssessment, GroundingDraft
 from support_agent.guardrails.input import InputAction
+from support_agent.memory.short_term.compaction import SummaryBlock
+from support_agent.memory.short_term.facts import PinnedFacts
 from support_agent.reliability.events import ReliabilityEvent
 from support_agent.retrieval.filters import RetrievalFilters
 from support_agent.retrieval.types import RetrievedChunk
@@ -90,3 +92,10 @@ class ConversationState(BaseModel):
     answer: str = ""
     citations: list[CitationRecord] = Field(default_factory=list)
     trace: list[str] = Field(default_factory=list)
+    # Short-term memory layers persisted across turns via the checkpointer.
+    pinned_facts: PinnedFacts = Field(default_factory=PinnedFacts)
+    compacted_blocks: list[SummaryBlock] = Field(default_factory=list)
+    history_start_index: int = Field(default=0, ge=0)
+    compaction_events: int = Field(default=0, ge=0)
+    second_level_compactions: int = Field(default=0, ge=0)
+    summariser_calls: int = Field(default=0, ge=0)

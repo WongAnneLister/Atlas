@@ -67,6 +67,10 @@ def _default_profiles() -> dict[str, NodeBudgetProfile]:
             total_tokens=2048, history_max_tokens=0, share_prefix=False
         ),
         "grounding": NodeBudgetProfile(total_tokens=4096, history_max_tokens=0, share_prefix=False),
+        "summarise": NodeBudgetProfile(total_tokens=6144, history_max_tokens=0, share_prefix=True),
+        "extract_facts": NodeBudgetProfile(
+            total_tokens=2048, history_max_tokens=0, share_prefix=False
+        ),
     }
 
 

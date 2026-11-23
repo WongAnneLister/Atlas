@@ -50,8 +50,15 @@ class RefundPath:
         query = " ".join(
             message.content for message in state.messages if isinstance(message.content, str)
         )
-        match = ORDER_ID.search(query)
-        order_id = match.group(0).upper().replace(" ", "-") if match else None
+        order_id: str | None = None
+        if (
+            self.deps.settings.memory.short_term.enabled
+            and self.deps.settings.memory.short_term.pinned_facts_enabled
+        ):
+            order_id = state.pinned_facts.latest_order_id()
+        if order_id is None:
+            match = ORDER_ID.search(query)
+            order_id = match.group(0).upper().replace(" ", "-") if match else None
         if order_id is None:
             try:
                 built = self.deps.context_builder().build(
@@ -226,7 +233,13 @@ class RefundPath:
                 "decide",
                 task_prompt=self.prompt,
                 user_text=f"Order facts:\n{order_facts}\n\nSources:\n{sources}",
-                history=state.messages[:-1],
+                history=state.messages[state.history_start_index : -1],
+                compacted_blocks=[b.text for b in state.compacted_blocks],
+                pinned_facts=(
+                    state.pinned_facts.render_dict() or None
+                    if self.deps.settings.memory.short_term.enabled
+                    else None
+                ),
                 order_context=data,
                 order_context_never_trim=True,
                 current_date=self.deps.settings.orders.today,

@@ -12,6 +12,8 @@ from langgraph.types import Overwrite
 
 from support_agent.config import Settings
 from support_agent.graph.state import ConversationState
+from support_agent.memory.short_term.compaction import compact_history
+from support_agent.memory.short_term.facts import extract_facts_from_turn
 from support_agent.reliability.llm_calls import ReliableModels
 
 logger = logging.getLogger(__name__)
@@ -63,6 +65,9 @@ def reset_turn() -> dict[str, Any]:
         "fallback_to_knowledge": False,
         "answer": "",
         "citations": [],
+        "compaction_events": 0,
+        "second_level_compactions": 0,
+        "summariser_calls": 0,
     }
 
 
@@ -83,13 +88,49 @@ def make_rewrite_node(
             for index, message in enumerate(state.messages)
             if isinstance(message, HumanMessage)
         ]
+        turn_number = max(1, len(human_indices))
+        st_cfg = settings.memory.short_term
+        facts = state.pinned_facts
+        blocks = list(state.compacted_blocks)
+        history_start = state.history_start_index
+        compaction_events = 0
+        second_level = 0
+        summariser_calls = 0
+
+        if st_cfg.enabled:
+            if st_cfg.pinned_facts_enabled:
+                facts = extract_facts_from_turn(
+                    original,
+                    turn_number,
+                    facts,
+                    models=models,
+                    use_llm=st_cfg.llm_fact_extraction,
+                )
+            if st_cfg.compaction_enabled and len(state.messages) > 1:
+                comp = compact_history(
+                    state.messages[:-1],
+                    active_history_start=history_start,
+                    existing_blocks=blocks,
+                    current_turn=turn_number,
+                    settings=st_cfg,
+                    models=models,
+                    builder=models.context_builder(),
+                )
+                blocks = comp.blocks
+                history_start = comp.active_history_start
+                compaction_events = comp.compacted_chunks
+                second_level = comp.second_level_merges
+                summariser_calls = comp.summariser_calls
+
         if len(human_indices) > 1:
             try:
                 built = models.context_builder().build(
                     "rewrite",
                     task_prompt=prompt,
                     user_text=original,
-                    history=state.messages[:-1],
+                    history=state.messages[history_start:-1],
+                    compacted_blocks=[b.text for b in blocks],
+                    pinned_facts=facts.render_dict() or None if st_cfg.enabled else None,
                 )
                 response, _ = models.invoke("rewrite", "fast", built)
                 if not isinstance(response.content, str) or not response.content.strip():
@@ -97,6 +138,15 @@ def make_rewrite_node(
                 query = response.content.strip()
             except Exception as error:
                 logger.warning("Query rewrite failed: %s", type(error).__name__)
-        return {"rewritten_query": query, "trace": [*state.trace, "rewrite"]}
+        return {
+            "rewritten_query": query,
+            "pinned_facts": facts,
+            "compacted_blocks": blocks,
+            "history_start_index": history_start,
+            "compaction_events": compaction_events,
+            "second_level_compactions": second_level,
+            "summariser_calls": summariser_calls,
+            "trace": [*state.trace, "rewrite"],
+        }
 
     return rewrite

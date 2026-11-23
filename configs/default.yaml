@@ -79,6 +79,8 @@ reliability:
     verify: 30
     complaint: 30
     tools: 30
+    summarise: 20
+    extract_facts: 15
     rerank: 60
     orders_db: 15
     # Milvus keeps its deadline in milvus.timeout_s.
@@ -415,9 +417,20 @@ orders:
     - {product_id: demo-w400, model: W400, name: Demo W400 Headphones, category: electronics}
     - {product_id: demo-shirt, model: T100, name: Demo T100 Shirt, category: clothing}
 
-memory:                    # P1 placeholders
+memory:
   recent_turns: 6
   summary_max_tokens: 400
+  short_term:
+    enabled: true
+    strategy: chunked
+    pinned_facts_enabled: true
+    compaction_enabled: true
+    chunk_turns: 6
+    history_budget: 1600
+    summary_budget: 600
+    low_watermark: 0.6
+    summariser_role: fast
+    llm_fact_extraction: false
 
 context:
   enabled: true
@@ -446,6 +459,8 @@ context:
     split_claims: {total_tokens: 4096, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
     order_extract: {total_tokens: 2048, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
     grounding: {total_tokens: 4096, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
+    summarise: {total_tokens: 6144, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: true}
+    extract_facts: {total_tokens: 2048, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
 
 tracing:
   enabled: false        # also needs LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY; see docs/OBSERVABILITY.md

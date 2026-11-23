@@ -144,7 +144,15 @@ def test_followup_rewrites_with_history_and_keeps_append_only_trace() -> None:
         == ["input_guard", "rewrite", "classify", "retrieve", "gate", "handoff", "output_guard"] * 2
     )
     history = model.rewritten_messages[0]
-    assert [message.type for message in history] == ["system", "human", "ai", "system", "human"]
+    assert [message.type for message in history] == [
+        "system",
+        "human",
+        "ai",
+        "system",
+        "system",
+        "human",
+    ]
+    assert "W40 PRO" in str(history[4].content)
     assert history[-1].content == "what about the W40 Pro?"
 
 

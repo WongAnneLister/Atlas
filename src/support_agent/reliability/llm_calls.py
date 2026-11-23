@@ -50,6 +50,8 @@ CallSite = Literal[
     "split_claims",
     "complaint",
     "tools",
+    "summarise",
+    "extract_facts",
 ]
 LLMFault = Callable[[str], Literal["garbage"] | None]
 ModelMessages = Callable[[CallSite, Sequence[BaseMessage]], Sequence[BaseMessage]]

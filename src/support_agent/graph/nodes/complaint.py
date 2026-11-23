@@ -25,7 +25,13 @@ class ComplaintPath:
                 "complaint",
                 task_prompt=self.prompt,
                 user_text=state.rewritten_query,
-                history=state.messages[:-1],
+                history=state.messages[state.history_start_index : -1],
+                compacted_blocks=[b.text for b in state.compacted_blocks],
+                pinned_facts=(
+                    state.pinned_facts.render_dict() or None
+                    if self.deps.settings.memory.short_term.enabled
+                    else None
+                ),
                 current_date=self.deps.settings.orders.today,
             )
             response, _ = self.deps.models.invoke("complaint", "fast", built)
