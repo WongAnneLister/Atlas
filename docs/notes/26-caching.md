@@ -13,8 +13,10 @@ A naive cache is dangerous because it can serve old policies or another user's d
 Putting versions and customer checks into the design stops those bugs by structure.
 
 **Number**
-No number yet. I will measure hit rates, latency saved, and wrong hits with `make eval-cache`.
-Offline unit tests already verify key versioning, invalidation, isolation, and Redis failure bypass.
+On 70 smoke questions, mean latency dropped from 13.6034 to 1.9772 seconds.
+Tokens fell from 320307 to 191936 with 0 mismatches on 27 answer hits.
+Staleness and isolation both passed, and wrong hits were 0 of 20 at 0.97.
+Source: eval/reports/cache.md
 
 **Trade-off**
 Strict rules leave out multi-part questions and any turn mentioning an order or email.

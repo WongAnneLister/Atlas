@@ -13,8 +13,10 @@ We need a multi-turn baseline before changing context layout and memory in commi
 Running through the real API also checks interrupts and customer isolation end to end.
 
 **Number**
-No number yet. I will measure the live multi-turn baseline with `make eval-sim`.
-Offline tests already verify the full scenario suite, trajectory metrics, interrupts, and turn caps.
+Across 30 nightly test runs, task success was 36.67% with 0.0943 repeat variance.
+Wrong customer access was 0 of 30, and fact retention was 16.67%.
+Handoff appropriateness was 33.33%, with 0.00% loop rate and 0.00% run errors.
+Source: eval/reports/sim.md
 
 **Trade-off**
 A simulated user can make mistakes or drift out of character during long chats.
