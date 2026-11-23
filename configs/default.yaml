@@ -284,6 +284,15 @@ eval:
     n_resamples: 2000
     seed: 17
     alpha: 0.05
+  sim:
+    model_role: fast
+    model: null
+    temperature: 0.4
+    seed: 27
+    repeats: 3
+    nightly_subset_size: 10
+    loop_threshold: 3
+    validity_sample_size: 10
 
 evaluation:
   sets_dir: eval/sets

@@ -152,3 +152,16 @@ datasets:
   - Build claim set for test.
   - Build claim set for dev and test.
   - Import model-drafted claim labels.
+- name: scenarios_v1
+  version: v1
+  path: eval/sets/scenarios_v1.jsonl
+  sha256: ba9984e2ed57881030d7654d37a857a03575f9b78c6c944e467a7d99799cf6cb
+  items: 60
+  splits:
+    dev: 30
+    test: 30
+  reviewed: 0
+  license_scope: local_only
+  changelog:
+  - Freeze 60 multi-turn support scenarios (30 dev, 30 test, 10 nightly) derived from
+    docs/ORDERS.md and policy documents.

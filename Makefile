@@ -29,7 +29,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-time-sensitive-build eval-time-sensitive eval-time-sensitive-e2e eval-policy-versions-report \
         eval-cross-doc-failures eval-multipart-build eval-multipart eval-query-planning-report \
         eval-claims-build eval-claims-label eval-claims eval-claims-verify eval-claim-grounding-report \
-        eval-cache \
+        eval-cache eval-sim-build eval-sim \
         eval-index-release eval-index-lifecycle eval-rerank-cache eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
 
 define todo
@@ -344,3 +344,9 @@ eval-claim-grounding-report:
 
 eval-cache:
 	$(RUN) python -m eval.cache_eval $(EVAL_CACHE_ARGS)
+
+eval-sim-build:
+	$(RUN) python -m eval.sim.build_scenarios $(EVAL_SIM_BUILD_ARGS)
+
+eval-sim:
+	$(RUN) python -m eval.sim.run $(EVAL_SIM_ARGS)

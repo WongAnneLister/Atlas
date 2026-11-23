@@ -73,6 +73,7 @@ jobs:
           uv sync --all-extras --locked
           make eval-smoke-build
           make eval-redteam-build
+          make eval-sim-build
           validation=$(mktemp)
           if ! make eval-validate-all EVAL_VALIDATE_ALL_ARGS=--require-present > "$validation"; then
             cat "$validation"
@@ -117,5 +118,9 @@ jobs:
           cat "$scratch/gate.md" >> "$GITHUB_STEP_SUMMARY"
           if (( gate_status != 0 )); then
             exit "$gate_status"
+          fi
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            make eval-sim EVAL_SIM_ARGS="--split test --subset nightly --repeats 1 --report $scratch/sim.md --validity-report $scratch/sim_validity.md --run-root $scratch/runs"
+            cat "$scratch/sim.md" >> "$GITHUB_STEP_SUMMARY"
           fi
           exit "$redteam_status"

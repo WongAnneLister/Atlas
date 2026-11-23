@@ -302,11 +302,23 @@ def _default_grounding() -> GroundingSettings:
     return GroundingSettings.model_validate(config["grounding"])
 
 
+class SimSettings(BaseModel):
+    model_role: Literal["fast", "main"] = "fast"
+    model: str | None = None
+    temperature: float = Field(default=0.4, ge=0.0, le=2.0)
+    seed: int = Field(default=27, ge=0)
+    repeats: int = Field(default=3, ge=1)
+    nightly_subset_size: int = Field(default=10, ge=1)
+    loop_threshold: int = Field(default=3, ge=2)
+    validity_sample_size: int = Field(default=10, ge=1)
+
+
 class EvalPlatformSettings(BaseModel):
     stats: EvalStatsSettings
     multipart_min_overlap: float = Field(gt=0, le=1)
     e2e_speed: E2ESpeedSettings
     claims: ClaimSamplingSettings
+    sim: SimSettings = Field(default_factory=SimSettings)
 
 
 def _default_eval_platform() -> EvalPlatformSettings:
