@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, StringConstraints
 
 from support_agent.handoff.models import ResolutionLabel
+from support_agent.observability.online_store import FeedbackRating, ReviewRubric
 
 NonBlank = Annotated[str, StringConstraints(pattern=r"\S")]
 ThreadPart = Annotated[str, StringConstraints(pattern=r"^[^:\s]+$")]
@@ -68,3 +69,24 @@ class AgentResolveRequest(BaseModel):
     label: ResolutionLabel
     note: str = ""
     hand_back_to_ai: bool = True
+
+
+class FeedbackRequest(BaseModel):
+    message_id: NonBlank
+    conversation_id: ThreadPart
+    rating: FeedbackRating
+    reason: str | None = None
+    trace_id: str | None = None
+
+
+class FeedbackResponse(BaseModel):
+    id: str
+    message_id: str
+    rating: FeedbackRating
+    created: bool
+
+
+class ReviewLabelRequest(BaseModel):
+    reviewer_id: NonBlank
+    rubric_label: ReviewRubric
+    note: str = ""

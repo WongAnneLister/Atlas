@@ -34,10 +34,13 @@ from support_agent.api.schemas import (
     ChatRequest,
     ConversationRequest,
     DeleteMemoriesResponse,
+    FeedbackRequest,
+    FeedbackResponse,
     HealthResponse,
     LiveResponse,
     ReadyResponse,
     ResumeRequest,
+    ReviewLabelRequest,
     SessionRequest,
     SessionResponse,
 )
@@ -58,6 +61,7 @@ from support_agent.llm import resolve_model
 from support_agent.memory.long_term.models import PublicMemoryItem
 from support_agent.observability import tracing
 from support_agent.observability.metrics import AtlasMetrics
+from support_agent.observability.online_store import ReviewStatus, SampledReviewRecord
 from support_agent.orders.models import CustomerSummary
 from support_agent.reliability.guards import is_dependency_failure
 from support_agent.reliability.stores import GuardedOrders
@@ -540,5 +544,72 @@ def create_app(deps: ApiDeps) -> FastAPI:
             },
         )
         return item
+
+    @app.post("/api/feedback")
+    async def submit_feedback(request: FeedbackRequest, http: Request) -> FeedbackResponse:
+        customer_id: str = http.state.atlas_customer_id
+        await limit(http, customer_id)
+        store = deps.graph_deps.online_eval()
+        if store is None:
+            raise HTTPException(503, "Online feedback storage is disabled")
+        record, created = await to_thread.run_sync(
+            lambda: store.record_feedback(
+                message_id=request.message_id,
+                conversation_id=request.conversation_id,
+                customer_id=customer_id,
+                rating=request.rating,
+                reason=request.reason,
+                trace_id=request.trace_id,
+            )
+        )
+        if created:
+            metrics.record_feedback(request.rating)
+            try:
+                await to_thread.run_sync(
+                    lambda: tracing.record_feedback_score(
+                        deps.settings.tracing,
+                        trace_id=request.trace_id,
+                        rating=request.rating,
+                        reason=request.reason,
+                    )
+                )
+            except Exception as error:
+                logger.warning("Async feedback score failed: %s", type(error).__name__)
+        return FeedbackResponse(
+            id=record.id,
+            message_id=record.message_id,
+            rating=record.rating,
+            created=created,
+        )
+
+    @app.get("/api/agent/reviews")
+    async def agent_list_reviews(
+        http: Request, status: ReviewStatus | None = None
+    ) -> list[SampledReviewRecord]:
+        require_agent(http)
+        store = deps.graph_deps.online_eval()
+        if store is None:
+            return []
+        return await to_thread.run_sync(lambda: store.list_reviews(status=status))
+
+    @app.post("/api/agent/reviews/{review_id}/label")
+    async def agent_label_review(
+        review_id: str, request: ReviewLabelRequest, http: Request
+    ) -> SampledReviewRecord:
+        require_agent(http)
+        store = deps.graph_deps.online_eval()
+        if store is None:
+            raise HTTPException(503, "Online eval store is disabled")
+        updated = await to_thread.run_sync(
+            lambda: store.label_review(
+                review_id,
+                reviewer_id=request.reviewer_id,
+                rubric_label=request.rubric_label,
+                note=request.note,
+            )
+        )
+        if updated is None:
+            raise HTTPException(404, "Review item not found")
+        return updated
 
     return app

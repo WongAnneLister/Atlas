@@ -21,6 +21,7 @@ from support_agent.graph.turn_identity import current_graph_config
 from support_agent.guardrails.output import OutputChecks, OutputFlag
 from support_agent.guardrails.pii import find_pii
 from support_agent.memory.long_term.policy import apply_write_policy, extract_memory_candidates
+from support_agent.observability.online_checks import check_citation_validity
 
 
 def _evidence(state: ConversationState) -> list[str]:
@@ -62,6 +63,7 @@ class OutputGuard:
         if violation is None:
             self._maybe_cache_answer(state)
             self._maybe_extract_memories_on_handoff(state)
+            self._maybe_record_online_event(state, state.handoff)
             handoff_update = self._maybe_enqueue_handoff(state, state.handoff)
             return {
                 "answer": state.answer,
@@ -183,3 +185,42 @@ class OutputGuard:
                 return {"human_mode": True, "active_handoff_id": item.id}
             return {"active_handoff_id": item.id}
         return {}
+
+    def _maybe_record_online_event(
+        self, state: ConversationState, payload: HandoffPayload | None
+    ) -> None:
+        citation_valid = check_citation_validity(state.answer, state.citations)
+        if citation_valid is not None:
+            cb = getattr(self.deps.observer, "citation_check", None)
+            if callable(cb):
+                cb(citation_valid)
+        store = self.deps.online_eval()
+        if store is None:
+            return
+        with suppress(Exception):
+            cfg = current_graph_config()
+            thread_id = str(cfg.get("configurable", {}).get("thread_id") or "")
+            conv_id = thread_id.split(":", 1)[1] if ":" in thread_id else (thread_id or "unknown")
+            trace_id = cfg.get("metadata", {}).get("trace_id")
+            tokens = sum(c.input_tokens + c.output_tokens for c in state.context_calls)
+            rewrite_skipped = "rewrite" not in state.trace or (
+                not any(c.node == "rewrite" for c in state.context_calls)
+            )
+            store.record_turn_event(
+                conversation_id=conv_id,
+                customer_id=state.customer_id or "anonymous",
+                trace_id=trace_id if isinstance(trace_id, str) else None,
+                intent=str(state.intent) if state.intent is not None else None,
+                path=str(state.path) if state.path is not None else None,
+                gate_score=state.gate.score if state.gate is not None else None,
+                gate_passed=state.gate.passed if state.gate is not None else None,
+                handoff_reason=str(payload.reason) if payload is not None else None,
+                rewrite_skipped=rewrite_skipped,
+                tokens_total=tokens,
+                cost_usd=0.0,
+                citation_valid=citation_valid,
+                claims_removed=state.claims_removed,
+                guardrail_flags=list(state.guardrail_flags),
+                question_text=state.rewritten_query,
+                answer_text=state.answer,
+            )

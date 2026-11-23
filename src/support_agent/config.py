@@ -38,6 +38,7 @@ from support_agent.guardrails.settings import GuardrailSettings
 from support_agent.handoff.settings import HandoffSettings
 from support_agent.infra.settings import ReadinessSettings, RedisSettings
 from support_agent.memory.settings import LongTermMemorySettings, ShortTermMemorySettings
+from support_agent.observability.online_settings import OnlineEvalSettings
 from support_agent.reliability.settings import (
     ChaosSettings,
     FallbackSettings,
@@ -515,6 +516,7 @@ class Settings(BaseSettings):
     reliability: ReliabilitySettings
     chaos: ChaosSettings
     handoff: HandoffSettings = Field(default_factory=HandoffSettings)
+    online_eval: OnlineEvalSettings = Field(default_factory=OnlineEvalSettings)
     database_url: SecretStr | None = Field(default=None, exclude=True)
     redis_url: SecretStr | None = Field(default=None, exclude=True)
 

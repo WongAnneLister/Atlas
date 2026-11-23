@@ -125,6 +125,43 @@ function addMessage(kind, text = "") {
   return bubble;
 }
 
+function attachFeedbackBar(bubble, messageId, traceId) {
+  const bar = document.createElement("div");
+  bar.className = "feedback-bar";
+  const up = document.createElement("button");
+  up.type = "button";
+  up.textContent = "👍";
+  up.title = "Helpful";
+  const down = document.createElement("button");
+  down.type = "button";
+  down.textContent = "👎";
+  down.title = "Not helpful";
+  const sendFb = async (rating) => {
+    if (!sessionToken) return;
+    const reason = rating === "down" ? (window.prompt("Optional: what was wrong?") || null) : null;
+    up.disabled = down.disabled = true;
+    await fetch("/api/feedback", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + sessionToken,
+      },
+      body: JSON.stringify({
+        message_id: messageId,
+        conversation_id: conversationId,
+        rating,
+        reason,
+        trace_id: traceId,
+      }),
+    }).catch(() => {});
+    bar.textContent = rating === "up" ? "Thanks for the feedback 👍" : "Feedback recorded 👎";
+  };
+  up.addEventListener("click", () => sendFb("up"));
+  down.addEventListener("click", () => sendFb("down"));
+  bar.append(up, down);
+  bubble.append(bar);
+}
+
 function renderCitations(bubble, answer, citations) {
   const headings = new Map(citations.map(({ n, heading_path }) => [String(n), heading_path]));
   bubble.replaceChildren();
@@ -284,6 +321,7 @@ async function run(endpoint, payload) {
         listenForHumanReplies(conversationId);
       } else if (event === "done") {
         details.textContent = JSON.stringify({ gate: data.gate, trace: data.trace }, null, 2);
+        if (bubble) attachFeedbackBar(bubble, crypto.randomUUID(), data.trace_id || null);
         complete = true;
       }
       messages.scrollTop = messages.scrollHeight;

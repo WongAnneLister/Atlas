@@ -25,6 +25,7 @@ from support_agent.handoff.store import HandoffQueueStore
 from support_agent.infra.redis import KeyValueStore, NullRedis, RedisStore
 from support_agent.llm import Role, get_chat_model, resolve_model
 from support_agent.memory.long_term.store import CustomerMemoryStore
+from support_agent.observability.online_store import OnlineEvalStore
 from support_agent.orders.service import OrderService
 from support_agent.reliability.chaos import ChaosInjector
 from support_agent.reliability.circuit import CircuitRegistry
@@ -58,6 +59,7 @@ class GraphDeps:
     cache_embedder: Embedder | None = None
     memory_store: CustomerMemoryStore | None = None
     handoff_store: HandoffQueueStore | None = None
+    online_eval_store: OnlineEvalStore | None = None
     chaos_injector: ChaosInjector = field(init=False, repr=False)
     circuits: CircuitRegistry = field(init=False, repr=False)
     model_workers: BoundedExecutor = field(init=False, repr=False)
@@ -164,6 +166,16 @@ class GraphDeps:
             self.handoff_store = HandoffQueueStore.from_settings(self.settings)
             self._resources.callback(self.handoff_store.close)
         return self.handoff_store
+
+    def online_eval(self) -> OnlineEvalStore | None:
+        if self._closed:
+            raise RuntimeError("GraphDeps is closed")
+        if not self.settings.online_eval.enabled and self.online_eval_store is None:
+            return None
+        if self.online_eval_store is None:
+            self.online_eval_store = OnlineEvalStore.from_settings(self.settings)
+            self._resources.callback(self.online_eval_store.close)
+        return self.online_eval_store
 
     @cached_property
     def dependency_guards(self) -> DependencyGuards:

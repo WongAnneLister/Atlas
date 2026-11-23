@@ -7,10 +7,11 @@ from support_agent.db.engine import make_engine, postgres_url
 from support_agent.db.migrate import include_object, require_write_target
 from support_agent.handoff.tables import metadata as handoff_metadata
 from support_agent.memory.long_term.tables import metadata as memory_metadata
+from support_agent.observability.online_tables import metadata as online_metadata
 from support_agent.orders.tables import metadata
 from support_agent.retrieval.index_tables import metadata as index_metadata
 
-TARGET_METADATA = [metadata, index_metadata, memory_metadata, handoff_metadata]
+TARGET_METADATA = [metadata, index_metadata, memory_metadata, handoff_metadata, online_metadata]
 
 
 def migrate() -> None:

@@ -13,6 +13,7 @@ from support_agent.config import REPO_ROOT, get_settings
 from support_agent.db.engine import make_engine, postgres_url, transaction
 from support_agent.handoff.tables import metadata as handoff_metadata
 from support_agent.memory.long_term.tables import metadata as memory_metadata
+from support_agent.observability.online_tables import metadata as online_metadata
 from support_agent.orders.tables import metadata
 from support_agent.retrieval.index_tables import metadata as index_metadata
 
@@ -46,6 +47,7 @@ def ensure_atlas_schema(connection: Connection) -> None:
         | index_metadata.tables.keys()
         | memory_metadata.tables.keys()
         | handoff_metadata.tables.keys()
+        | online_metadata.tables.keys()
         | CHECKPOINT_TABLES
         | {"alembic_version"}
     )

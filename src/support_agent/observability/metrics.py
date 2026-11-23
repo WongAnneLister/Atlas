@@ -29,6 +29,7 @@ ENDPOINTS = {
     "/api/resume": "resume",
     "/api/session": "session",
     "/api/customers": "customers",
+    "/api/feedback": "feedback",
     "/api/health": "health",
     "/api/health/live": "live",
     "/api/health/ready": "ready",
@@ -118,6 +119,24 @@ class AtlasMetrics:
             ("node", "kind"),
             registry=self.registry,
         )
+        self.feedback = Counter(
+            "atlas_feedback_total",
+            "Explicit customer feedback on AI answers",
+            ("rating",),
+            registry=self.registry,
+        )
+        self.drift = Gauge(
+            "atlas_drift_metric",
+            "Latest online drift signal value",
+            ("metric",),
+            registry=self.registry,
+        )
+        self.online_citations = Counter(
+            "atlas_online_citation_valid_total",
+            "Online automatic citation validity checks",
+            ("valid",),
+            registry=self.registry,
+        )
         self.context_cache_hit_ratio = Gauge(
             "atlas_context_cache_hit_ratio",
             "Latest prompt-prefix cache hit ratio per node",
@@ -177,6 +196,16 @@ class AtlasMetrics:
 
     def handoff(self, reason: HandoffReason) -> None:
         self.handoffs.labels(reason.value).inc()
+
+    def record_feedback(self, rating: str) -> None:
+        if rating in {"up", "down"}:
+            self.feedback.labels(rating).inc()
+
+    def drift_metric(self, name: str, value: float) -> None:
+        self.drift.labels(name).set(value)
+
+    def citation_check(self, valid: bool) -> None:
+        self.online_citations.labels(str(valid).lower()).inc()
 
     def graph_update(self, update: Mapping[str, Any], *, publish_handoff: bool = True) -> None:
         if (output_flag := update.get("output_guard_flag")) in get_args(OutputFlag):

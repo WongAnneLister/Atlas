@@ -19,7 +19,7 @@ from support_agent.infra.redis import KeyValueStore
 
 logger = logging.getLogger(__name__)
 _FALLBACK_LOCK = Lock()
-_TURN_PATHS = frozenset({"/api/chat", "/api/resume"})
+_TURN_PATHS = frozenset({"/api/chat", "/api/resume", "/api/feedback"})
 SESSION_REQUIRED = "A valid demo session token is required"
 
 

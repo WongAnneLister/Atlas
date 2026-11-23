@@ -583,3 +583,19 @@ handoff:
     policy_requires_human: normal
     user_requested: normal
     default: normal
+
+online_eval:
+  enabled: false
+  sqlite_path: data/processed/online_eval.sqlite
+  sample_size: 20
+  near_threshold_band: 0.10
+  near_threshold_weight: 0.50
+  drift_thresholds:
+    intent_psi: 0.20
+    gate_ks: 0.15
+    gate_psi: 0.20
+    handoff_rate_delta: 0.10
+    rewrite_skip_delta: 0.15
+    tokens_per_turn_ratio: 0.25
+    cost_per_conv_ratio: 0.25
+    thumbs_down_delta: 0.10

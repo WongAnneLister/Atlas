@@ -228,3 +228,25 @@ def flush() -> None:
         _LANGFUSE.flush()
     except Exception as error:
         logger.warning("Trace flush failed: %s", type(error).__name__)
+
+
+def record_feedback_score(
+    settings: TracingSettings,
+    *,
+    trace_id: str | None,
+    rating: str,
+    reason: str | None = None,
+) -> None:
+    """Attach a thumbs up/down score to a Langfuse trace; no-op when disabled."""
+    if not trace_id or not tracing_configured(settings):
+        return
+    try:
+        client = _client(settings)
+        client.create_score(
+            trace_id=trace_id,
+            name="user_feedback",
+            value=1.0 if rating == "up" else 0.0,
+            comment=redact_pii(reason) if reason else None,
+        )
+    except Exception as error:
+        logger.warning("Feedback trace score failed: %s", type(error).__name__)
