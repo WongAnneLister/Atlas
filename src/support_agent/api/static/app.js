@@ -19,6 +19,7 @@ let activeRequest;
 let sessionRequest;
 let sessionToken;
 let picker;
+let handoffStream;
 
 function syncControls() {
   message.disabled = send.disabled = Boolean(activeRequest || picker || !sessionToken);
@@ -78,9 +79,37 @@ async function clearAllMemories() {
   if (response.ok) await loadMemories();
 }
 
+async function listenForHumanReplies(convId) {
+  if (!sessionToken || handoffStream) return;
+  const controller = new AbortController();
+  handoffStream = controller;
+  try {
+    const response = await fetch("/api/conversations/" + encodeURIComponent(convId) + "/events", {
+      headers: { "Authorization": "Bearer " + sessionToken },
+      signal: controller.signal,
+    });
+    if (!response.ok || !response.body) return;
+    await readEvents(response.body, (event, data) => {
+      if (handoffStream !== controller) return;
+      if (event === "agent_reply") {
+        addMessage("agent", "[Human agent " + data.agent_id + "] " + data.text);
+      } else if (event === "handoff_resolved") {
+        addMessage("badge", "Ticket resolved (" + data.label + ")" + (data.hand_back_to_ai ? " · AI assistant resumed" : ""));
+      }
+      messages.scrollTop = messages.scrollHeight;
+    });
+  } catch (_) {
+    // Stream aborted on resetChat or closed cleanly on resolution.
+  } finally {
+    if (handoffStream === controller) handoffStream = null;
+  }
+}
+
 function resetChat() {
   activeRequest?.abort();
   activeRequest = null;
+  handoffStream?.abort();
+  handoffStream = null;
   picker = null;
   conversationId = crypto.randomUUID();
   messages.replaceChildren();
@@ -252,6 +281,7 @@ async function run(endpoint, payload) {
       } else if (event === "handoff") {
         addMessage("handoff", "Transferred to a human agent — reason: " + data.reason + "\n" + data.message);
         complete = true;
+        listenForHumanReplies(conversationId);
       } else if (event === "done") {
         details.textContent = JSON.stringify({ gate: data.gate, trace: data.trace }, null, 2);
         complete = true;

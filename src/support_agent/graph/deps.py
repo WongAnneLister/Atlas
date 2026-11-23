@@ -21,6 +21,7 @@ from support_agent.config import REPO_ROOT, Settings
 from support_agent.context.builder import ContextBuilder
 from support_agent.graph.handoff import PROMPTS
 from support_agent.graph.postgres import postgres_saver
+from support_agent.handoff.store import HandoffQueueStore
 from support_agent.infra.redis import KeyValueStore, NullRedis, RedisStore
 from support_agent.llm import Role, get_chat_model, resolve_model
 from support_agent.memory.long_term.store import CustomerMemoryStore
@@ -56,6 +57,7 @@ class GraphDeps:
     build_id_provider: Callable[[], str | None] | None = None
     cache_embedder: Embedder | None = None
     memory_store: CustomerMemoryStore | None = None
+    handoff_store: HandoffQueueStore | None = None
     chaos_injector: ChaosInjector = field(init=False, repr=False)
     circuits: CircuitRegistry = field(init=False, repr=False)
     model_workers: BoundedExecutor = field(init=False, repr=False)
@@ -152,6 +154,16 @@ class GraphDeps:
             self.memory_store = CustomerMemoryStore.from_settings(self.settings)
             self._resources.callback(self.memory_store.close)
         return self.memory_store
+
+    def handoff_queue(self) -> HandoffQueueStore | None:
+        if self._closed:
+            raise RuntimeError("GraphDeps is closed")
+        if not self.settings.handoff.queue_enabled and self.handoff_store is None:
+            return None
+        if self.handoff_store is None:
+            self.handoff_store = HandoffQueueStore.from_settings(self.settings)
+            self._resources.callback(self.handoff_store.close)
+        return self.handoff_store
 
     @cached_property
     def dependency_guards(self) -> DependencyGuards:

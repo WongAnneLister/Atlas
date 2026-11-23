@@ -11,11 +11,13 @@ from support_agent.cache.layers import CachedAnswer
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.handoff import (
     PROMPTS,
+    HandoffPayload,
     HandoffReason,
     make_handoff,
     mark_parts_handed_off,
 )
 from support_agent.graph.state import ConversationState
+from support_agent.graph.turn_identity import current_graph_config
 from support_agent.guardrails.output import OutputChecks, OutputFlag
 from support_agent.guardrails.pii import find_pii
 from support_agent.memory.long_term.policy import apply_write_policy, extract_memory_candidates
@@ -60,11 +62,13 @@ class OutputGuard:
         if violation is None:
             self._maybe_cache_answer(state)
             self._maybe_extract_memories_on_handoff(state)
+            handoff_update = self._maybe_enqueue_handoff(state, state.handoff)
             return {
                 "answer": state.answer,
                 "messages": [AIMessage(content=state.answer)] if state.answer else [],
                 "handoff": state.handoff,
                 "citations": [citation.model_dump() for citation in state.citations],
+                **handoff_update,
                 "trace": trace,
             }
         original = state.messages
@@ -80,9 +84,11 @@ class OutputGuard:
         update = make_handoff(current, HandoffReason.GUARDRAIL_BLOCKED)
         if unsafe is not None:
             update["messages"][0] = update["messages"][0].model_copy(update={"id": unsafe.id})
+        handoff_update = self._maybe_enqueue_handoff(current, update.get("handoff"))
         return {
             **update,
             **parts_update,
+            **handoff_update,
             "citations": [],
             "guardrail_flags": flags,
             "output_guard_flag": violation,
@@ -151,3 +157,29 @@ class OutputGuard:
                     conversation_id=conv_id,
                     settings=lt_cfg,
                 )
+
+    def _maybe_enqueue_handoff(
+        self, state: ConversationState, payload: HandoffPayload | None
+    ) -> dict[str, Any]:
+        if payload is None:
+            return {}
+        queue = self.deps.handoff_queue()
+        if queue is None:
+            return {}
+        cfg = self.deps.settings.handoff
+        thread_id = str(current_graph_config().get("configurable", {}).get("thread_id") or "")
+        customer_id = state.customer_id or "anonymous"
+        conv_id = thread_id.split(":", 1)[1] if ":" in thread_id else (thread_id or "unknown")
+        with suppress(Exception):
+            item = queue.enqueue(
+                conversation_id=conv_id,
+                customer_id=customer_id,
+                reason=str(payload.reason),
+                priority=cfg.priority_for(str(payload.reason)),
+                payload=payload.model_dump(mode="json"),
+                idempotency_key=payload.idempotency_key,
+            )
+            if cfg.human_mode_enabled:
+                return {"human_mode": True, "active_handoff_id": item.id}
+            return {"active_handoff_id": item.id}
+        return {}

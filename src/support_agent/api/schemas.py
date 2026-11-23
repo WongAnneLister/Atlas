@@ -4,6 +4,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, StringConstraints
 
+from support_agent.handoff.models import ResolutionLabel
+
 NonBlank = Annotated[str, StringConstraints(pattern=r"\S")]
 ThreadPart = Annotated[str, StringConstraints(pattern=r"^[^:\s]+$")]
 
@@ -50,3 +52,19 @@ class ReadyResponse(BaseModel):
 
 class DeleteMemoriesResponse(BaseModel):
     deleted: int
+
+
+class AgentClaimRequest(BaseModel):
+    agent_id: NonBlank
+
+
+class AgentReplyRequest(BaseModel):
+    agent_id: NonBlank
+    message: NonBlank
+
+
+class AgentResolveRequest(BaseModel):
+    agent_id: NonBlank
+    label: ResolutionLabel
+    note: str = ""
+    hand_back_to_ai: bool = True

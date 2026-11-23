@@ -1,6 +1,7 @@
 """Compile the fixed rewrite → classify → path workflow with checkpointing."""
 
 from collections.abc import Callable
+from contextlib import suppress
 from typing import Any
 
 from langchain_core.messages import AIMessage
@@ -23,7 +24,7 @@ from support_agent.graph.nodes.output_guard import OutputGuard
 from support_agent.graph.nodes.part_retrieval import PartKnowledgeRetrieval, route_after_parts_gate
 from support_agent.graph.nodes.plan import Planner
 from support_agent.graph.nodes.refund import RefundPath
-from support_agent.graph.nodes.rewrite import make_rewrite_node
+from support_agent.graph.nodes.rewrite import make_rewrite_node, reset_turn
 from support_agent.graph.nodes.tools_path import ToolsPath
 from support_agent.graph.parts import PartRetrievalRequest
 from support_agent.graph.state import ConversationState
@@ -132,6 +133,34 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
             name, RunnableLambda(_recording_node(node, publishes_reply=name == "output_guard"))
         )
 
+    def human_mode_node(state: ConversationState) -> dict[str, Any]:
+        """Forward customer messages directly to the active handoff without calling any LLM."""
+        text = ""
+        if state.messages and isinstance(state.messages[-1].content, str):
+            text = state.messages[-1].content.strip()
+        queue = deps.handoff_queue()
+        if queue is not None and state.active_handoff_id and text:
+            with suppress(Exception):
+                queue.add_message(
+                    state.active_handoff_id,
+                    sender="customer",
+                    author=state.customer_id or "customer",
+                    text=text,
+                )
+        ack = deps.settings.handoff.human_mode_ack
+        return {
+            **reset_turn(),
+            "answer": ack,
+            "messages": [AIMessage(content=ack)],
+            "human_mode": True,
+            "active_handoff_id": state.active_handoff_id,
+            "trace": [*state.trace, "human_mode"],
+        }
+
+    graph.add_node(
+        "human_mode",
+        RunnableLambda(_recording_node(human_mode_node, publishes_reply=True)),
+    )
     add_node("input_guard", InputGuard(deps))
     add_node(
         "rewrite",
@@ -142,7 +171,12 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
         ),
     )
     add_node("classify", Classifier(None, deps.settings, models=deps.models))
-    graph.add_edge(START, "input_guard")
+    graph.add_conditional_edges(
+        START,
+        lambda state: "human_mode" if state.human_mode else "input_guard",
+        ["human_mode", "input_guard"],
+    )
+    graph.add_edge("human_mode", END)
     graph.add_conditional_edges(
         "input_guard",
         lambda state: "output_guard" if state.input_guard_action == "block" else "rewrite",

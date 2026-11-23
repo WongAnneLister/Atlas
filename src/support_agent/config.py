@@ -35,6 +35,7 @@ from support_agent.graph.settings import (
     PlanningSettings,
 )
 from support_agent.guardrails.settings import GuardrailSettings
+from support_agent.handoff.settings import HandoffSettings
 from support_agent.infra.settings import ReadinessSettings, RedisSettings
 from support_agent.memory.settings import LongTermMemorySettings, ShortTermMemorySettings
 from support_agent.reliability.settings import (
@@ -513,6 +514,7 @@ class Settings(BaseSettings):
     readiness: ReadinessSettings
     reliability: ReliabilitySettings
     chaos: ChaosSettings
+    handoff: HandoffSettings = Field(default_factory=HandoffSettings)
     database_url: SecretStr | None = Field(default=None, exclude=True)
     redis_url: SecretStr | None = Field(default=None, exclude=True)
 

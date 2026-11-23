@@ -5,9 +5,12 @@ from alembic import context
 from support_agent.config import get_settings
 from support_agent.db.engine import make_engine, postgres_url
 from support_agent.db.migrate import include_object, require_write_target
+from support_agent.handoff.tables import metadata as handoff_metadata
 from support_agent.memory.long_term.tables import metadata as memory_metadata
 from support_agent.orders.tables import metadata
 from support_agent.retrieval.index_tables import metadata as index_metadata
+
+TARGET_METADATA = [metadata, index_metadata, memory_metadata, handoff_metadata]
 
 
 def migrate() -> None:
@@ -15,7 +18,7 @@ def migrate() -> None:
     if connection is not None:
         context.configure(
             connection=connection,
-            target_metadata=[metadata, index_metadata, memory_metadata],
+            target_metadata=TARGET_METADATA,
             include_object=include_object,
         )
         with context.begin_transaction():
@@ -27,7 +30,7 @@ def migrate() -> None:
     if context.is_offline_mode():
         context.configure(
             url=url,
-            target_metadata=[metadata, index_metadata, memory_metadata],
+            target_metadata=TARGET_METADATA,
             literal_binds=True,
         )
         with context.begin_transaction():
@@ -43,7 +46,7 @@ def migrate() -> None:
             ensure_atlas_schema(connection)
             context.configure(
                 connection=connection,
-                target_metadata=[metadata, index_metadata, memory_metadata],
+                target_metadata=TARGET_METADATA,
                 include_object=include_object,
             )
             with context.begin_transaction():

@@ -1,6 +1,8 @@
 """Build the local demo API and own graph lifetime and turn locks."""
 
+import hmac
 import logging
+import os
 import sqlite3
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
 from contextlib import ExitStack, aclosing, asynccontextmanager
@@ -26,6 +28,9 @@ from support_agent.api.locks import ConversationLocks, LockUnavailable
 from support_agent.api.readiness import ReadinessChecks, build_readiness, build_redis, readiness
 from support_agent.api.runner import Graph, TurnInput, failure_events, run_turn
 from support_agent.api.schemas import (
+    AgentClaimRequest,
+    AgentReplyRequest,
+    AgentResolveRequest,
     ChatRequest,
     ConversationRequest,
     DeleteMemoriesResponse,
@@ -45,6 +50,9 @@ from support_agent.api.security import (
 )
 from support_agent.graph.build import build_graph
 from support_agent.graph.handoff import HandoffReason, load_templates
+from support_agent.handoff.broker import HandoffEventBroker
+from support_agent.handoff.models import HandoffItem, HandoffStatus
+from support_agent.handoff.store import HandoffNotFoundError, HandoffQueueStore, HandoffStateError
 from support_agent.infra.redis import RedisStore
 from support_agent.llm import resolve_model
 from support_agent.memory.long_term.models import PublicMemoryItem
@@ -108,6 +116,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
     tokens = SessionTokens.from_environment(cfg.session)
     metrics = AtlasMetrics(deps.settings, deps.metrics_registry)
     deps.graph_deps.observer = metrics
+    handoff_broker = HandoffEventBroker()
     system_error = load_templates("handoff_messages.yaml")[HandoffReason.SYSTEM_ERROR]
     locks: ConversationLocks
     orders: GuardedOrders
@@ -166,6 +175,10 @@ def create_app(deps: ApiDeps) -> FastAPI:
     @app.get("/")
     async def index() -> FileResponse:
         return FileResponse(STATIC / "index.html")
+
+    @app.get("/console")
+    async def console_page() -> FileResponse:
+        return FileResponse(STATIC / "console.html")
 
     @app.get("/api/customers")
     def customers() -> list[CustomerSummary]:
@@ -395,5 +408,137 @@ def create_app(deps: ApiDeps) -> FastAPI:
         except _DB_ERRORS as error:
             raise HTTPException(503, "Memory store unavailable") from error
         return DeleteMemoriesResponse(deleted=count)
+
+    def require_agent(http: Request) -> None:
+        expected = os.getenv("AGENT_TOKEN") or deps.settings.handoff.demo_agent_token
+        auth = http.headers.get("authorization", "")
+        parts = auth.split()
+        if len(parts) != 2 or parts[0].casefold() != "bearer":
+            raise HTTPException(401, "Agent token required", headers={"WWW-Authenticate": "Bearer"})
+        if not hmac.compare_digest(parts[1], expected):
+            raise HTTPException(401, "Invalid agent token", headers={"WWW-Authenticate": "Bearer"})
+
+    def require_handoff_queue() -> HandoffQueueStore:
+        queue = deps.graph_deps.handoff_queue()
+        if queue is None:
+            raise HTTPException(503, "Handoff queue is disabled")
+        return queue
+
+    @app.get("/api/conversations/{conversation_id}/events")
+    async def conversation_events(conversation_id: str, http: Request) -> EventSourceResponse:
+        customer_id: str = http.state.atlas_customer_id
+        thread_id = f"{customer_id}:{conversation_id}"
+
+        async def stream() -> AsyncGenerator[JSONServerSentEvent, None]:
+            async for event_name, data in handoff_broker.subscribe(thread_id):
+                yield JSONServerSentEvent(event=event_name, data=data)
+                if event_name == "handoff_resolved":
+                    return
+
+        return EventSourceResponse(stream())
+
+    @app.get("/api/agent/handoffs")
+    async def agent_list_handoffs(
+        http: Request, status: HandoffStatus | None = None
+    ) -> list[HandoffItem]:
+        require_agent(http)
+        queue = require_handoff_queue()
+        return await to_thread.run_sync(lambda: queue.list_items(status=status))
+
+    @app.get("/api/agent/handoffs/{handoff_id}")
+    async def agent_get_handoff(handoff_id: str, http: Request) -> HandoffItem:
+        require_agent(http)
+        queue = require_handoff_queue()
+        item = await to_thread.run_sync(queue.get, handoff_id)
+        if item is None:
+            raise HTTPException(404, "Handoff not found")
+        return item
+
+    @app.post("/api/agent/handoffs/{handoff_id}/claim")
+    async def agent_claim_handoff(
+        handoff_id: str, request: AgentClaimRequest, http: Request
+    ) -> HandoffItem:
+        require_agent(http)
+        queue = require_handoff_queue()
+        try:
+            return await to_thread.run_sync(queue.claim, handoff_id, request.agent_id)
+        except HandoffNotFoundError as error:
+            raise HTTPException(404, str(error)) from error
+        except HandoffStateError as error:
+            raise HTTPException(409, str(error)) from error
+
+    @app.post("/api/agent/handoffs/{handoff_id}/reply")
+    async def agent_reply_handoff(
+        handoff_id: str, request: AgentReplyRequest, http: Request
+    ) -> HandoffItem:
+        require_agent(http)
+        queue = require_handoff_queue()
+        try:
+            item = await to_thread.run_sync(
+                lambda: queue.add_message(
+                    handoff_id,
+                    sender="agent",
+                    author=request.agent_id,
+                    text=request.message,
+                )
+            )
+        except HandoffNotFoundError as error:
+            raise HTTPException(404, str(error)) from error
+        except HandoffStateError as error:
+            raise HTTPException(409, str(error)) from error
+        thread_id = f"{item.customer_id}:{item.conversation_id}"
+        handoff_broker.publish(
+            thread_id,
+            "agent_reply",
+            {
+                "handoff_id": item.id,
+                "agent_id": request.agent_id,
+                "text": request.message.strip(),
+            },
+        )
+        return item
+
+    @app.post("/api/agent/handoffs/{handoff_id}/resolve")
+    async def agent_resolve_handoff(
+        handoff_id: str, request: AgentResolveRequest, http: Request
+    ) -> HandoffItem:
+        require_agent(http)
+        queue = require_handoff_queue()
+        try:
+            item = await to_thread.run_sync(
+                lambda: queue.resolve(
+                    handoff_id,
+                    agent_id=request.agent_id,
+                    label=request.label,
+                    note=request.note,
+                    hand_back_to_ai=request.hand_back_to_ai,
+                )
+            )
+        except HandoffNotFoundError as error:
+            raise HTTPException(404, str(error)) from error
+        except HandoffStateError as error:
+            raise HTTPException(409, str(error)) from error
+
+        thread_id = f"{item.customer_id}:{item.conversation_id}"
+        if request.hand_back_to_ai:
+            config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
+            try:
+                await to_thread.run_sync(
+                    lambda: graph.update_state(
+                        config, {"human_mode": False, "active_handoff_id": None}
+                    )
+                )
+            except Exception as error:
+                logger.warning("Failed to clear human_mode checkpoint: %s", type(error).__name__)
+        handoff_broker.publish(
+            thread_id,
+            "handoff_resolved",
+            {
+                "handoff_id": item.id,
+                "label": request.label,
+                "hand_back_to_ai": request.hand_back_to_ai,
+            },
+        )
+        return item
 
     return app

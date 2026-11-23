@@ -59,6 +59,7 @@ class HandoffPayload(BaseModel):
     parts: list[QueryPart] = Field(default_factory=list)
     customer_message: str | None = None
     order_context: dict[str, Any] | None = None
+    pinned_facts: dict[str, Any] = Field(default_factory=dict)
     guardrail_flags: list[str] = Field(default_factory=list)
     created_at: datetime
     idempotency_key: str | None = None
@@ -121,6 +122,7 @@ def make_handoff(
         parts=parts,
         customer_message=customer_message,
         order_context=state.order_context,
+        pinned_facts=state.pinned_facts.render_dict(),
         guardrail_flags=state.guardrail_flags,
         created_at=datetime.now(UTC),
     )

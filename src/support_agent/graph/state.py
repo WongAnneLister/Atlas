@@ -104,3 +104,6 @@ class ConversationState(BaseModel):
     customer_profile_loaded: bool = False
     loaded_memory_ids: list[str] = Field(default_factory=list)
     turn_memory_hints: list[str] = Field(default_factory=list)
+    # Human handoff takeover mode (Commit 31): checkpointed across turns until resolved.
+    human_mode: bool = False
+    active_handoff_id: str | None = None

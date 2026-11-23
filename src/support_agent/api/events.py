@@ -30,6 +30,8 @@ def events_for_update(node_name: str, update: dict[str, Any], chunk_words: int) 
         ]
     if node_name == "__interrupt__":
         return [SseEvent(name="interrupt", data=update)]
+    if node_name == "human_mode" and (answer := update.get("answer")):
+        return [SseEvent(name="token", data={"text": answer})]
     if node_name != "output_guard" or not (answer := update.get("answer")):
         return []
     handoff_events = []

@@ -1,1 +1,1 @@
-"""Phase 2: human handoff queue and agent console (commit 31)."""
+"""Human handoff queue, models, and settings."""

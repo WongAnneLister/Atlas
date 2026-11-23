@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atlas Agent Console</title>
+  <link rel="stylesheet" href="/static/console.css">
+  <script src="/static/console.js" defer></script>
+</head>
+<body>
+  <main class="layout">
+    <header class="topbar">
+      <h1>Human Handoff Console</h1>
+      <div class="controls">
+        <label>Agent ID <input id="agent-id" type="text" value="agent-1"></label>
+        <label>Token <input id="agent-token" type="password" value="atlas-demo-agent"></label>
+        <select id="status-filter">
+          <option value="">All statuses</option>
+          <option value="open" selected>Open</option>
+          <option value="claimed">Claimed</option>
+          <option value="resolved">Resolved</option>
+        </select>
+        <button id="refresh" type="button">Refresh</button>
+      </div>
+    </header>
+    <p id="console-status" role="status"></p>
+    <section class="split">
+      <aside class="queue">
+        <h2>Queue</h2>
+        <ul id="queue-list"></ul>
+      </aside>
+      <article class="detail" id="detail-panel">
+        <p class="muted">Select a handoff item to inspect the AI trace snapshot.</p>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
