@@ -189,10 +189,11 @@ class ContextBuilder:
                 )
             )
 
-        # --- L2_compacted (frozen summary blocks; populated in Commit 29) ---
-        if compacted_blocks:
+        # --- L2_compacted (frozen summary blocks; disabled in sliding strategy) ---
+        effective_blocks = () if self.settings.strategy == "sliding" else compacted_blocks
+        if effective_blocks:
             l2_tokens = 0
-            for idx, block in enumerate(compacted_blocks):
+            for idx, block in enumerate(effective_blocks):
                 if not block.strip():
                     continue
                 b_msg = SystemMessage(
@@ -213,15 +214,22 @@ class ContextBuilder:
                     )
                 )
 
-        # --- L3_history (append-only; temporary hard cap until Commit 29 compaction) ---
+        # --- L3_history (append-only for chunked; sliding window drops oldest turn each step) ---
         history_capped = False
         cleaned_history = sanitise_history_messages(history)
         if profile.history_max_tokens > 0 and cleaned_history:
-            turn_cap = (
-                profile.recent_turns
-                if profile.recent_turns is not None
-                else self.settings.hard_history_turn_cap
-            )
+            if self.settings.strategy == "sliding":
+                turn_cap = (
+                    min(profile.recent_turns, self.settings.sliding_window_turns)
+                    if profile.recent_turns is not None
+                    else self.settings.sliding_window_turns
+                )
+            else:
+                turn_cap = (
+                    profile.recent_turns
+                    if profile.recent_turns is not None
+                    else self.settings.hard_history_turn_cap
+                )
             max_msgs = turn_cap * 2
             if len(cleaned_history) > max_msgs:
                 dropped_msgs = cleaned_history[:-max_msgs]
@@ -395,11 +403,17 @@ class ContextBuilder:
         messages.extend(extra_kept)
 
         total_tokens = sum(by_layer.values())
+        adapter_cfg = self.settings.cache_adapter
+        effective_provider = (
+            "none" if self.settings.strategy == "chunked_nocache" else self.llm_provider
+        )
         adapted_messages, active_breakpoints = apply_cache_breakpoints(
             messages,
             breakpoints,
-            self.settings.cache_adapter,
-            llm_provider=self.llm_provider,
+            adapter_cfg.model_copy(update={"provider": "none"})
+            if self.settings.strategy == "chunked_nocache"
+            else adapter_cfg,
+            llm_provider=effective_provider,
         )
         breakdown = ContextBreakdown(
             node=node,

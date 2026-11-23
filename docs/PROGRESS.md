@@ -78,7 +78,7 @@ Agents: update this file in every commit. Keep it short and factual.
 | 32 | Online eval + drift | todo | |
 | 33 | Load test + SLO | todo | |
 | 34 | Deploy + README v2 | todo | |
-| 35 | Prefix-cache A/B (run after 29) | todo | |
+| 35 | Prefix-cache A/B (run after 29) | done | `eval/reports/context_ab.md` + `docs/CONTEXT.md` (live DeepSeek + local Milvus `4aece1a3` + MPS reranker, 6 test scenarios x 4 arms, read mult 0.1, USD prices unset -> effective input units/conv): `chunked` 79.9% hit ratio, 1300.1 units/conv, P50 4.29 s; `sliding` 77.8%, 1941.5 units/conv, P50 9.61 s; `rolling` 68.9%, 1989.7 units/conv, P50 9.96 s (task success 16.67% vs 0.00% for other arms on small n=6, overlapping CIs); `chunked_nocache` 0.0%, 6989.0 units/conv. Dev-only `chunk_turns` sweep (4/6/10) keeps default `6` (51.3% hit ratio, 33.33% success). Optional vLLM KV benchmark (`bench/kv/`) skipped cleanly (no NVIDIA GPU). |
 
 ## Latest numbers (copied from eval/reports by script or by hand with the report path)
 

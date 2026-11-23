@@ -106,13 +106,22 @@ def make_rewrite_node(
                     models=models,
                     use_llm=st_cfg.llm_fact_extraction,
                 )
-            if st_cfg.compaction_enabled and len(state.messages) > 1:
+            if (
+                st_cfg.compaction_enabled
+                and settings.context.strategy != "sliding"
+                and len(state.messages) > 1
+            ):
+                effective_st = (
+                    st_cfg.model_copy(update={"strategy": "rolling"})
+                    if settings.context.strategy == "rolling"
+                    else st_cfg.model_copy(update={"strategy": "chunked"})
+                )
                 comp = compact_history(
                     state.messages[:-1],
                     active_history_start=history_start,
                     existing_blocks=blocks,
                     current_turn=turn_number,
-                    settings=st_cfg,
+                    settings=effective_st,
                     models=models,
                     builder=models.context_builder(),
                 )

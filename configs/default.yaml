@@ -434,9 +434,13 @@ memory:
 
 context:
   enabled: true
+  strategy: chunked          # chunked | sliding | rolling | chunked_nocache
+  sliding_window_turns: 4
   chars_per_token: 3.8
   message_overhead_tokens: 4
   hard_history_turn_cap: 16
+  cache_read_multiplier: 0.1
+  cache_write_multiplier: 1.0
   cache_adapter:
     provider: auto
     max_breakpoints: 4

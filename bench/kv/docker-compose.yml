@@ -1,0 +1,18 @@
+# Optional self-hosted vLLM Automatic Prefix Caching (APC) benchmark (Commit 35 Part B).
+# Requires an NVIDIA GPU with container toolkit. Run `make bench-kv` to replay prompts.
+services:
+  vllm-apc-on:
+    image: vllm/vllm-openai:v0.6.6
+    command:
+      - --model=Qwen/Qwen2.5-3B-Instruct
+      - --enable-prefix-caching
+      - --port=8001
+    ports:
+      - "127.0.0.1:8001:8001"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 CacheProvider = Literal["auto", "anthropic", "openai", "deepseek", "none"]
+ContextStrategy = Literal["chunked", "sliding", "rolling", "chunked_nocache"]
 
 
 class NodeBudgetProfile(BaseModel):
@@ -76,9 +77,13 @@ def _default_profiles() -> dict[str, NodeBudgetProfile]:
 
 class ContextSettings(BaseModel):
     enabled: bool = True
+    strategy: ContextStrategy = "chunked"
+    sliding_window_turns: int = Field(default=4, ge=1)
     chars_per_token: float = Field(default=3.8, gt=0.0)
     message_overhead_tokens: int = Field(default=4, ge=0)
     hard_history_turn_cap: int = Field(default=16, ge=1)
+    cache_read_multiplier: float = Field(default=0.1, ge=0.0, le=1.0)
+    cache_write_multiplier: float = Field(default=1.0, ge=0.0, le=5.0)
     cache_adapter: CacheAdapterSettings = Field(default_factory=CacheAdapterSettings)
     profiles: dict[str, NodeBudgetProfile] = Field(default_factory=_default_profiles)
 
