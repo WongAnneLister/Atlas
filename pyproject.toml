@@ -41,6 +41,9 @@ postgres = [
     "langgraph-checkpoint-postgres>=3,<4",
     "psycopg[binary,pool]>=3.2,<4",
 ]
+loadtest = [
+    "locust>=2.30",
+]
 # Other provider packages can be added when needed; DeepSeek is an opt-in extra.
 
 [dependency-groups]

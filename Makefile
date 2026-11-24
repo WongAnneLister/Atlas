@@ -29,7 +29,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-time-sensitive-build eval-time-sensitive eval-time-sensitive-e2e eval-policy-versions-report \
         eval-cross-doc-failures eval-multipart-build eval-multipart eval-query-planning-report \
         eval-claims-build eval-claims-label eval-claims eval-claims-verify eval-claim-grounding-report \
-        eval-cache eval-sim-build eval-sim eval-context eval-memory-short eval-memory-long eval-context-ab bench-kv loop-report seed-handoff-demo drift-report replay-traffic \
+        eval-cache eval-sim-build eval-sim eval-context eval-memory-short eval-memory-long eval-context-ab bench-kv loop-report seed-handoff-demo drift-report replay-traffic loadtest \
         eval-index-release eval-index-lifecycle eval-rerank-cache eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
 
 define todo
@@ -377,3 +377,10 @@ drift-report:
 
 replay-traffic:
 	$(RUN) python scripts/replay_traffic.py
+
+PROFILE ?= steady
+USERS ?= 20
+DURATION ?= 60s
+HOST ?= http://127.0.0.1:8000
+loadtest:
+	LOADTEST_PROFILE=$(PROFILE) LOADTEST_USERS=$(USERS) $(RUN) locust -f loadtest/locustfile.py --headless --host $(HOST) -u $(USERS) -r 5 -t $(DURATION)

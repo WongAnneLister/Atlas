@@ -460,6 +460,12 @@ class RateLimitSettings(BaseModel):
     per_ip: int = Field(gt=0)
 
 
+class ConcurrencySettings(BaseModel):
+    max_in_flight: int = Field(default=32, gt=0)
+    retry_after_s: int = Field(default=2, gt=0)
+    customer_cache_ttl_s: float = Field(default=30.0, ge=0.0, allow_inf_nan=False)
+
+
 class APISettings(BaseModel):
     host: str
     port: int
@@ -470,6 +476,7 @@ class APISettings(BaseModel):
     max_body_bytes: int = Field(gt=0)
     session: SessionSettings
     rate_limit: RateLimitSettings
+    concurrency: ConcurrencySettings = Field(default_factory=ConcurrencySettings)
     health_timeout_s: float = Field(gt=0, allow_inf_nan=False)
     warmup_retriever: bool
 

@@ -20,6 +20,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sse_starlette import EventSourceResponse, JSONServerSentEvent
 from starlette.types import Receive, Scope, Send
 
+from support_agent.api.backpressure import CustomerAllowlistCache, InFlightLimiter
 from support_agent.api.body_limit import BodyLimitMiddleware
 from support_agent.api.deps import ApiDeps
 from support_agent.api.events import SseEvent
@@ -121,16 +122,18 @@ def create_app(deps: ApiDeps) -> FastAPI:
     metrics = AtlasMetrics(deps.settings, deps.metrics_registry)
     deps.graph_deps.observer = metrics
     handoff_broker = HandoffEventBroker()
+    in_flight = InFlightLimiter(cfg.concurrency.max_in_flight, cfg.concurrency.retry_after_s)
     system_error = load_templates("handoff_messages.yaml")[HandoffReason.SYSTEM_ERROR]
     locks: ConversationLocks
     orders: GuardedOrders
+    customer_cache: CustomerAllowlistCache
     graph: Graph
     checks: ReadinessChecks
     rate_limits: RateLimits
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        nonlocal graph, checks, locks, orders, rate_limits
+        nonlocal graph, checks, locks, orders, customer_cache, rate_limits
         try:
             graph = await to_thread.run_sync(build_graph, deps.graph_deps)
             if deps.warmup:
@@ -161,6 +164,10 @@ def create_app(deps: ApiDeps) -> FastAPI:
                 orders = GuardedOrders(
                     lambda: deps.order_service, deps.graph_deps.dependency_guards
                 )
+                customer_cache = CustomerAllowlistCache(
+                    orders.list_customers,
+                    ttl_s=cfg.concurrency.customer_cache_ttl_s,
+                )
                 checks = deps.readiness or build_readiness(
                     deps.settings, deps.order_service, deps.milvus_check, resources, store
                 )
@@ -187,14 +194,19 @@ def create_app(deps: ApiDeps) -> FastAPI:
     @app.get("/api/customers")
     def customers() -> list[CustomerSummary]:
         try:
-            return orders.list_customers(cfg.demo_customer_limit)
+            return customer_cache.list_customers(cfg.demo_customer_limit)
         except Exception as error:
             if not isinstance(error, _DB_ERRORS) and not is_dependency_failure(error):
                 raise
             raise HTTPException(503, "Order database unavailable") from error
 
     def is_demo_customer(customer_id: str) -> bool:
-        return any(customer.customer_id == customer_id for customer in customers())
+        try:
+            return customer_cache.contains(customer_id, cfg.demo_customer_limit)
+        except Exception as error:
+            if not isinstance(error, _DB_ERRORS) and not is_dependency_failure(error):
+                raise
+            raise HTTPException(503, "Order database unavailable") from error
 
     async def limit(http: Request, customer_id: str | None = None) -> None:
         ip = http.client.host if http.client else "unknown"
@@ -263,20 +275,34 @@ def create_app(deps: ApiDeps) -> FastAPI:
         customer_id: str,
     ) -> TurnResponse:
         await limit(http, customer_id)
+        if not in_flight.try_acquire():
+            raise HTTPException(
+                503,
+                "Server busy; please retry shortly.",
+                headers={"Retry-After": str(in_flight.retry_after_s)},
+            )
         trace_id: str = http.state.trace_id
         thread_id = f"{customer_id}:{request.conversation_id}"
         try:
             with CancelScope(shield=True):
                 token = await to_thread.run_sync(locks.acquire, thread_id)
         except LockUnavailable as error:
+            in_flight.release()
             raise HTTPException(503, "Conversation lock unavailable") from error
+        except BaseException:
+            in_flight.release()
+            raise
         if token is None:
+            in_flight.release()
             raise HTTPException(409, "Still answering your previous message. Please wait.")
         owner_token = token
 
         async def release() -> None:
             with CancelScope(shield=True):
-                await to_thread.run_sync(locks.release, thread_id, owner_token)
+                try:
+                    await to_thread.run_sync(locks.release, thread_id, owner_token)
+                finally:
+                    in_flight.release()
 
         async def renew() -> bool:
             return await to_thread.run_sync(locks.refresh, thread_id, owner_token)

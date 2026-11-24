@@ -528,6 +528,10 @@ api:
     window_s: 60
     per_customer: 30
     per_ip: 120
+  concurrency:
+    max_in_flight: 32
+    retry_after_s: 2
+    customer_cache_ttl_s: 30.0
   warmup_retriever: false
 
 db:
