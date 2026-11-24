@@ -532,6 +532,9 @@ api:
     max_in_flight: 32
     retry_after_s: 2
     customer_cache_ttl_s: 30.0
+  demo_budget:
+    daily_spend_cap_usd: 0.0
+    max_conversation_turns: 30
   warmup_retriever: false
 
 db:

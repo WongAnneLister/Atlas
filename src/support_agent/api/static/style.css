@@ -6,7 +6,15 @@
 }
 body { margin: 0; }
 main { max-width: 46rem; margin: auto; padding: 1.25rem; }
-h1 { margin: 0 0 .75rem; font-size: 1.7rem; }
+h1 { margin: 0 0 .4rem; font-size: 1.7rem; }
+.demo-banner {
+  margin: 0 0 .75rem;
+  padding: .4rem .65rem;
+  font-size: .85rem;
+  background: #e9f2fc;
+  border: 1px solid #b9d4f2;
+  border-radius: .45rem;
+}
 .controls { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 #messages {
   display: flex;

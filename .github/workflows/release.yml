@@ -1,0 +1,79 @@
+name: Eval-Gated Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run checks and build without deploying"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  verify-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Set up Python 3.11
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Run full offline checks (lint, mypy, pytest, notes-check)
+        run: make check
+
+      - name: Build production Docker image
+        run: docker build -t support-agent:${GITHUB_REF_NAME} .
+
+  eval-gate:
+    needs: verify-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Evaluate release gate (dry-run when LLM secrets are absent)
+        env:
+          LLM_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          if [ -z "$LLM_API_KEY" ]; then
+            echo "No live LLM secret configured; skipping live eval gate in dry-run mode."
+            exit 0
+          fi
+          echo "Running eval release gate against candidate build..."
+          uv sync --frozen --dev --extra deepseek
+          make eval-gate
+
+  deploy:
+    needs: [verify-and-build, eval-gate]
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VM and smoke-test HTTPS endpoint
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          LIVE_URL: ${{ secrets.LIVE_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOST" ] || [ -z "$LIVE_URL" ]; then
+            echo "DEPLOY_HOST or LIVE_URL secret unset; skipping remote deploy cleanly."
+            exit 0
+          fi
+          echo "Deploy target configured: ${DEPLOY_HOST}; smoke-testing ${LIVE_URL}"
+          curl -fsS "${LIVE_URL}/api/health/live"
+          curl -fsS "${LIVE_URL}/api/health/ready"

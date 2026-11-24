@@ -466,6 +466,15 @@ class ConcurrencySettings(BaseModel):
     customer_cache_ttl_s: float = Field(default=30.0, ge=0.0, allow_inf_nan=False)
 
 
+class DemoBudgetSettings(BaseModel):
+    daily_spend_cap_usd: float = Field(default=0.0, ge=0.0, allow_inf_nan=False)
+    max_conversation_turns: int = Field(default=30, gt=0)
+    budget_reached_message: str = (
+        "The public demo has reached its daily LLM budget. "
+        "Your request has been handed off; please try again tomorrow."
+    )
+
+
 class APISettings(BaseModel):
     host: str
     port: int
@@ -477,6 +486,7 @@ class APISettings(BaseModel):
     session: SessionSettings
     rate_limit: RateLimitSettings
     concurrency: ConcurrencySettings = Field(default_factory=ConcurrencySettings)
+    demo_budget: DemoBudgetSettings = Field(default_factory=DemoBudgetSettings)
     health_timeout_s: float = Field(gt=0, allow_inf_nan=False)
     warmup_retriever: bool
 

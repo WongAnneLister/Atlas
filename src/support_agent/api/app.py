@@ -22,6 +22,7 @@ from starlette.types import Receive, Scope, Send
 
 from support_agent.api.backpressure import CustomerAllowlistCache, InFlightLimiter
 from support_agent.api.body_limit import BodyLimitMiddleware
+from support_agent.api.budget import DailySpendCap
 from support_agent.api.deps import ApiDeps
 from support_agent.api.events import SseEvent
 from support_agent.api.http_metrics import RequestMetricsMiddleware
@@ -123,6 +124,10 @@ def create_app(deps: ApiDeps) -> FastAPI:
     deps.graph_deps.observer = metrics
     handoff_broker = HandoffEventBroker()
     in_flight = InFlightLimiter(cfg.concurrency.max_in_flight, cfg.concurrency.retry_after_s)
+    spend_cap_usd = float(
+        os.getenv("DEMO_DAILY_SPEND_CAP_USD", str(cfg.demo_budget.daily_spend_cap_usd))
+    )
+    spend_cap = DailySpendCap(spend_cap_usd)
     system_error = load_templates("handoff_messages.yaml")[HandoffReason.SYSTEM_ERROR]
     locks: ConversationLocks
     orders: GuardedOrders
@@ -178,6 +183,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
             await to_thread.run_sync(deps.graph_deps.close)
 
     app = FastAPI(lifespan=lifespan)
+    app.state.spend_cap = spend_cap
     app.add_middleware(SessionAuthMiddleware, tokens=tokens)
     app.add_middleware(BodyLimitMiddleware, max_bytes=cfg.max_body_bytes)
     app.add_middleware(RequestMetricsMiddleware, metrics=metrics)
@@ -275,6 +281,40 @@ def create_app(deps: ApiDeps) -> FastAPI:
         customer_id: str,
     ) -> TurnResponse:
         await limit(http, customer_id)
+        if spend_cap.exceeded():
+
+            async def budget_stream() -> AsyncGenerator[JSONServerSentEvent, None]:
+                yield _encode(
+                    SseEvent(
+                        name="handoff",
+                        data={
+                            "reason": "demo_budget_reached",
+                            "message": cfg.demo_budget.budget_reached_message,
+                        },
+                    )
+                )
+                yield _encode(
+                    SseEvent(
+                        name="done",
+                        data={
+                            "conversation_id": request.conversation_id,
+                            "trace": ["demo_budget_cap"],
+                        },
+                    )
+                )
+
+            async def _noop_release() -> None:
+                return None
+
+            async def _noop_renew() -> bool:
+                return True
+
+            return TurnResponse(
+                budget_stream(),
+                _noop_release,
+                _noop_renew,
+                deps.settings.reliability.locks.renew_interval_s,
+            )
         if not in_flight.try_acquire():
             raise HTTPException(
                 503,
@@ -344,6 +384,12 @@ def create_app(deps: ApiDeps) -> FastAPI:
                 async for event in turn:
                     if event.name == "error":
                         http.state.atlas_metric_outcome = "error"
+                    if (
+                        event.name == "done"
+                        and isinstance(event.data, dict)
+                        and isinstance(cost_usd := event.data.get("cost_usd"), int | float)
+                    ):
+                        spend_cap.record(float(cost_usd))
                     yield _encode(event)
 
         def response(error: Exception | None = None) -> TurnResponse:

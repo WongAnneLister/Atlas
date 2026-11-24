@@ -197,8 +197,79 @@ def render_block(reports_dir: Path, link_prefix: str = "eval/reports") -> str:
             f"The hallucination review audits an earlier test run ({judge.run_info()[1]}) "
             f"than the full-graph report ({e2e.run_info()[1]}).",
         ]
+    lines += _render_phase2_section(reports_dir, link_prefix)
     lines.append(END)
     return "\n".join(lines)
+
+
+def _render_phase2_section(reports_dir: Path, link_prefix: str) -> list[str]:
+    """Append Phase 2 production metrics when the Phase 2 reports exist."""
+    phase2_files = ("redteam.md", "context_ab.md", "memory_long.md", "load.md", "drift.md")
+    if not all((reports_dir / name).is_file() for name in phase2_files):
+        return []
+    redteam = load(reports_dir, "redteam.md")
+    ctx_ab = load(reports_dir, "context_ab.md")
+    mem_long = load(reports_dir, "memory_long.md")
+    load_rep = load(reports_dir, "load.md")
+    drift_rep = load(reports_dir, "drift.md")
+
+    rt_overall = redteam.row("**Overall**")[1].split(" (")[0]
+    rt_benign = redteam.row("benign_lookalike", section="False blocks")[1].split(" (")[0]
+    chunked = ctx_ab.row("`chunked`")
+    nocache = ctx_ab.row("`chunked_nocache`")
+    mem_recall_on = mem_long.row("Cross-session fact use (recall)")[2]
+    mem_leaks = mem_long.row("Cross-customer leak rate (canaries)")[2]
+    load_rps_before = load_rep.row("Throughput (req/s)")[1]
+    load_rps_after = load_rep.row("Throughput (req/s)")[2]
+    load_p95_before = load_rep.row("Overall P50 / P95 / P99 (ms)")[1]
+    load_p95_after = load_rep.row("Overall P50 / P95 / P99 (ms)")[2]
+    load_avail = load_rep.row("2xx success (availability)")[2]
+    drift_breaches = drift_rep.bullet("Breaches detected")
+
+    return [
+        "",
+        (
+            "**Phase 2 production metrics** "
+            "(measured in live & capacity evals; drift is a simulated week):"
+        ),
+        "",
+        "| Area | Metric | Measured value | Source |",
+        "|---|---|---:|---|",
+        (
+            f"| Security | Red-team v2 overall ASR | {rt_overall} "
+            f"| {_link('redteam.md', link_prefix)} |"
+        ),
+        (
+            f"| Security | Benign look-alike false blocks | {rt_benign} "
+            f"| {_link('redteam.md', link_prefix)} |"
+        ),
+        (
+            f"| Context / Cache | Prefix-cache hit ratio (`chunked` vs uncached units/conv) "
+            f"| {chunked[4]} ({chunked[7]} vs {nocache[7]} units) "
+            f"| {_link('context_ab.md', link_prefix)} |"
+        ),
+        (
+            f"| Long-term Memory | Cross-session fact use (ON) "
+            f"| {mem_recall_on} | {_link('memory_long.md', link_prefix)} |"
+        ),
+        (
+            f"| Long-term Memory | Cross-customer canary leaks "
+            f"| {mem_leaks} | {_link('memory_long.md', link_prefix)} |"
+        ),
+        (
+            f"| Load / Capacity | Throughput before -> after fix (mock LLM, conc=16) "
+            f"| {load_rps_before} -> {load_rps_after} req/s ({load_avail}) "
+            f"| {_link('load.md', link_prefix)} |"
+        ),
+        (
+            f"| Load / Capacity | Overall P50 / P95 / P99 before -> after "
+            f"| {load_p95_before} -> {load_p95_after} ms | {_link('load.md', link_prefix)} |"
+        ),
+        (
+            f"| Online Drift (simulated) | Day-5 missing-doc shift breaches caught "
+            f"| {drift_breaches} | {_link('drift.md', link_prefix)} |"
+        ),
+    ]
 
 
 def render_stats_block(reports_dir: Path) -> str:
