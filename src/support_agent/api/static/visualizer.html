@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atlas — 架构代码与动态流程双向联动可视化</title>
+  <style>
+    :root[data-theme="dark"] {
+      --background: #0d1117;
+      --card: #161b22;
+      --border: #30363d;
+      --foreground: #e6edf3;
+      --muted-foreground: #8b949e;
+      --primary: #58a6ff;
+      --primary-foreground: #0d1117;
+      --success: #3fb950;
+      --warning: #d29922;
+      --error: #f85149;
+      --chart-1: #ff7b72;
+      --chart-2: #d2a8ff;
+      --chart-3: #a5d6ff;
+      --chart-4: #79c0ff;
+      --chart-5: #ffa657;
+    }
+
+    :root[data-theme="light"] {
+      --background: #f6f8fa;
+      --card: #ffffff;
+      --border: #d0d7de;
+      --foreground: #1f2328;
+      --muted-foreground: #656d76;
+      --primary: #0969da;
+      --primary-foreground: #ffffff;
+      --success: #1a7f37;
+      --warning: #9a6700;
+      --error: #cf222e;
+      --chart-1: #cf222e;
+      --chart-2: #8250df;
+      --chart-3: #0a3069;
+      --chart-4: #0550ae;
+      --chart-5: #953800;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    button {
+      font-family: inherit;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: color-mix(in srgb, var(--muted-foreground) 50%, transparent);
+    }
+
+    /* Header */
+    .header {
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+      padding: 10px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--primary);
+      color: var(--primary-foreground);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .brand-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-title {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .badge-mono {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--background);
+      border: 1px solid var(--border);
+      color: var(--muted-foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .brand-sub {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .btn {
+      padding: 4px 9px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--background);
+      color: var(--foreground);
+      font-size: 12px;
+      transition: border-color 120ms ease, opacity 120ms ease;
+    }
+    .btn:hover:not(:disabled) { border-color: var(--primary); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary {
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--primary);
+      background: var(--primary);
+      color: var(--primary-foreground);
+      font-weight: 600;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-muted { color: var(--muted-foreground); }
+    .btn-muted:hover { color: var(--foreground); }
+    .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
+    /* Scenario Bar */
+    .scenario-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .scenario-label {
+      font-size: 12px;
+      color: var(--muted-foreground);
+      flex-shrink: 0;
+      margin-right: 4px;
+    }
+    .scenario-btn {
+      border: 1px solid var(--border);
+      background: var(--background);
+      color: var(--foreground);
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      flex-shrink: 0;
+      transition: all 140ms ease;
+    }
+    .scenario-btn:hover { border-color: var(--primary); }
+    .scenario-btn.active {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 16%, var(--card));
+      font-weight: 600;
+    }
+
+    /* Main Workspace */
+    .workspace {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* Left Pane */
+    .left-pane {
+      display: flex;
+      flex-direction: column;
+      min-width: 300px;
+      border-right: 1px solid var(--border);
+      background: var(--card);
+    }
+    .tabs-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: var(--background);
+      padding: 6px 8px 0;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .file-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      overflow-x: auto;
+    }
+    .file-tab {
+      padding: 6px 10px;
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      border-radius: 6px 6px 0 0;
+      border: 1px solid transparent;
+      border-bottom: none;
+      background: transparent;
+      color: var(--muted-foreground);
+      flex-shrink: 0;
+      transition: color 120ms ease;
+    }
+    .file-tab:hover { color: var(--foreground); }
+    .file-tab.active {
+      background: var(--card);
+      border-color: var(--border);
+      color: var(--foreground);
+      font-weight: 600;
+      margin-bottom: -1px;
+    }
+    .file-meta {
+      padding: 6px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      background: var(--card);
+      flex-shrink: 0;
+    }
+    .file-path {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--muted-foreground);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .link-badge {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--background);
+      border: 1px solid var(--border);
+      color: var(--muted-foreground);
+      flex-shrink: 0;
+      font-size: 11px;
+    }
+    .code-container {
+      flex: 1;
+      overflow: auto;
+      padding: 8px 0;
+      user-select: text;
+      background: var(--background);
+    }
+
+    /* Code line styling */
+    .code-line {
+      display: flex;
+      align-items: stretch;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12.5px;
+      line-height: 1.55;
+      border-left: 3px solid transparent;
+      transition: background-color 120ms ease, border-color 120ms ease;
+    }
+    .code-line.linked { cursor: pointer; }
+    .code-line.linked:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+    .code-line.is-hovered {
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+      border-left-color: color-mix(in srgb, var(--primary) 65%, transparent);
+    }
+    .code-line.is-active {
+      background: color-mix(in srgb, var(--primary) 18%, transparent);
+      border-left-color: var(--primary);
+    }
+    .code-line.is-sim-active {
+      background: color-mix(in srgb, var(--success) 18%, transparent);
+      border-left-color: var(--success);
+    }
+    .line-num {
+      user-select: none;
+      width: 44px;
+      min-width: 44px;
+      padding: 0 10px 0 6px;
+      text-align: right;
+      color: var(--muted-foreground);
+      opacity: 0.65;
+      font-variant-numeric: tabular-nums;
+    }
+    .line-dot {
+      width: 14px;
+      min-width: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .line-dot span {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--primary);
+      opacity: 0.35;
+      transition: transform 120ms ease, opacity 120ms ease;
+    }
+    .code-line.is-active .line-dot span,
+    .code-line.is-hovered .line-dot span {
+      opacity: 1;
+      transform: scale(1.25);
+    }
+    .code-line.is-sim-active .line-dot span {
+      background: var(--success);
+      opacity: 1;
+      transform: scale(1.35);
+    }
+    .line-code {
+      white-space: pre;
+      padding-right: 16px;
+      flex: 1;
+    }
+
+    .tok-kw { color: var(--chart-1); font-weight: 600; }
+    .tok-fn { color: var(--chart-2); }
+    .tok-str { color: var(--chart-3); }
+    .tok-num { color: var(--chart-4); }
+    .tok-com { color: var(--muted-foreground); font-style: italic; opacity: 0.85; }
+    .tok-cls { color: var(--chart-5); font-weight: 500; }
+
+    /* Inspector */
+    .inspector {
+      border-top: 1px solid var(--border);
+      background: var(--card);
+      padding: 10px 14px;
+      flex-shrink: 0;
+    }
+    .insp-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .insp-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .insp-badge {
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--primary);
+      color: var(--primary-foreground);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .insp-title {
+      margin: 0;
+      font-size: 12.5px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .insp-metric {
+      font-size: 11.5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--success);
+      flex-shrink: 0;
+    }
+    .insp-desc {
+      margin: 6px 0 0;
+      font-size: 12px;
+      color: var(--muted-foreground);
+      line-height: 1.5;
+    }
+    .insp-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .insp-tag {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--background);
+      border: 1px solid var(--border);
+      color: var(--muted-foreground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    /* Resizer */
+    .resizer {
+      width: 5px;
+      cursor: col-resize;
+      background: var(--border);
+      transition: background-color 120ms ease;
+      flex-shrink: 0;
+    }
+    .resizer:hover, .resizer.dragging { background: var(--primary); }
+
+    /* Right Pane */
+    .right-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 360px;
+      background: var(--background);
+      position: relative;
+      overflow: hidden;
+    }
+    .diagram-bar {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .sim-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .sim-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--muted-foreground);
+      flex-shrink: 0;
+    }
+    .sim-text {
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .zoom-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .zoom-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--background);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+    .zoom-btn:hover { border-color: var(--primary); }
+    .zoom-readout {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11.5px;
+      color: var(--muted-foreground);
+      width: 40px;
+      text-align: center;
+    }
+    .svg-viewport {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+    }
+    .svg-viewport:active { cursor: grabbing; }
+    #flow-svg { width: 100%; height: 100%; display: block; }
+
+    /* SVG Graph Elements */
+    .graph-node {
+      cursor: pointer;
+      transition: filter 160ms ease, opacity 160ms ease;
+    }
+    .graph-node rect.node-bg {
+      fill: var(--card);
+      stroke: var(--border);
+      stroke-width: 1.5;
+      transition: stroke 160ms ease, stroke-width 160ms ease, fill 160ms ease;
+    }
+    .graph-node:hover rect.node-bg,
+    .graph-node.is-hovered rect.node-bg {
+      stroke: var(--primary);
+      stroke-width: 2.2;
+      fill: color-mix(in srgb, var(--primary) 8%, var(--card));
+    }
+    .graph-node.is-active rect.node-bg {
+      stroke: var(--primary);
+      stroke-width: 2.6;
+      fill: color-mix(in srgb, var(--primary) 13%, var(--card));
+    }
+    .graph-node.is-sim-visited rect.node-bg {
+      stroke: var(--success);
+      stroke-width: 2;
+      fill: color-mix(in srgb, var(--success) 8%, var(--card));
+    }
+    .graph-node.is-sim-current rect.node-bg {
+      stroke: var(--success);
+      stroke-width: 3;
+      fill: color-mix(in srgb, var(--success) 16%, var(--card));
+    }
+    .graph-node.is-sim-blocked rect.node-bg {
+      stroke: var(--error);
+      stroke-width: 3;
+      fill: color-mix(in srgb, var(--error) 14%, var(--card));
+    }
+    .graph-node.is-dimmed { opacity: 0.34; }
+
+    .graph-edge {
+      fill: none;
+      stroke: color-mix(in srgb, var(--muted-foreground) 45%, transparent);
+      stroke-width: 1.6;
+      transition: stroke 160ms ease, stroke-width 160ms ease, opacity 160ms ease;
+    }
+    .graph-edge.is-dimmed { opacity: 0.18; }
+    .graph-edge.is-hovered,
+    .graph-edge.is-active {
+      stroke: var(--primary);
+      stroke-width: 2.6;
+    }
+    .graph-edge.is-sim-visited {
+      stroke: var(--success);
+      stroke-width: 2.4;
+      opacity: 0.9;
+    }
+    .graph-edge.is-sim-active {
+      stroke: var(--success);
+      stroke-width: 3.2;
+      stroke-dasharray: 8 5;
+      animation: flowDash 0.65s linear infinite;
+    }
+    .graph-edge.is-sim-blocked {
+      stroke: var(--error);
+      stroke-width: 3.2;
+      stroke-dasharray: 8 5;
+      animation: flowDash 0.65s linear infinite;
+    }
+
+    @keyframes flowDash {
+      from { stroke-dashoffset: 26; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    .edge-label-bg {
+      fill: var(--background);
+      stroke: var(--border);
+      stroke-width: 1;
+    }
+    .edge-label-text {
+      fill: var(--muted-foreground);
+      font-size: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      pointer-events: none;
+    }
+
+    .zone-box {
+      fill: color-mix(in srgb, var(--card) 42%, transparent);
+      stroke: var(--border);
+      stroke-width: 1;
+      stroke-dasharray: 4 4;
+    }
+    .zone-label {
+      fill: var(--muted-foreground);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    /* Infra Bar */
+    .infra-bar {
+      border-top: 1px solid var(--border);
+      background: var(--card);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .infra-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .infra-pill {
+      border: 1px solid var(--border);
+      background: var(--background);
+      color: var(--foreground);
+      font-size: 11.5px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      transition: all 140ms ease;
+    }
+    .infra-pill:hover, .infra-pill.active {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 14%, var(--card));
+    }
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 11.5px;
+      color: var(--muted-foreground);
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-top">
+      <div class="brand">
+        <div class="logo">A</div>
+        <div>
+          <div class="brand-title-row">
+            <h1 class="brand-title">Atlas 架构与动态流程可视化</h1>
+            <span class="badge-mono">LangGraph · 35 Commits</span>
+          </div>
+          <p class="brand-sub">点击或悬停左侧代码 / 右侧节点，实时双向定位；选择场景可播放真实请求链路</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="btn-prev" class="btn" title="上一步">⏮</button>
+        <button id="btn-play" class="btn-primary">
+          <span id="play-icon">▶</span>
+          <span id="play-label">播放流程</span>
+        </button>
+        <button id="btn-next" class="btn" title="下一步">⏭</button>
+        <button id="btn-speed" class="btn font-mono" title="切换播放速度">1x</button>
+        <button id="btn-reset" class="btn btn-muted">重置</button>
+        <button id="btn-theme" class="btn btn-muted" title="切换亮/暗主题">☀ 亮色</button>
+      </div>
+    </div>
+
+    <div class="scenario-bar" id="scenario-bar">
+      <span class="scenario-label">动态场景：</span>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <!-- LEFT PANE -->
+    <section id="left-pane" class="left-pane" style="width: 46%;">
+      <div class="tabs-bar">
+        <div class="file-tabs" id="file-tabs"></div>
+        <button id="btn-toggle-view-mode" class="btn btn-muted" style="margin-bottom: 5px; flex-shrink: 0;" title="在主图编排 (build.py) 与节点实现代码之间切换">
+          切换实现/编排
+        </button>
+      </div>
+
+      <div class="file-meta">
+        <span id="active-file-path" class="file-path">src/support_agent/graph/build.py</span>
+        <span id="code-link-badge" class="link-badge">点击带圆点代码行联动右侧</span>
+      </div>
+
+      <div id="code-container" class="code-container"></div>
+
+      <div class="inspector">
+        <div class="insp-head">
+          <div class="insp-left">
+            <span id="insp-badge" class="insp-badge">gate</span>
+            <h2 id="insp-title" class="insp-title">证据门控 (Evidence Gate)</h2>
+          </div>
+          <span id="insp-metric" class="insp-metric"></span>
+        </div>
+        <p id="insp-desc" class="insp-desc"></p>
+        <div id="insp-tags" class="insp-tags"></div>
+      </div>
+    </section>
+
+    <div id="resizer" class="resizer" title="拖动调整左右宽度"></div>
+
+    <!-- RIGHT PANE -->
+    <section id="right-pane" class="right-pane">
+      <div class="diagram-bar">
+        <div class="sim-banner">
+          <span id="sim-status-dot" class="sim-dot"></span>
+          <span id="sim-step-text" class="sim-text">自由探索模式 — 点击任意节点查看源码，或点击上方场景播放动态流转</span>
+        </div>
+        <div class="zoom-controls">
+          <button id="zoom-out" class="zoom-btn" title="缩小">−</button>
+          <span id="zoom-readout" class="zoom-readout">100%</span>
+          <button id="zoom-in" class="zoom-btn" title="放大">+</button>
+          <button id="zoom-fit" class="btn btn-muted" style="padding: 2px 8px; height: 24px;">重置视图</button>
+        </div>
+      </div>
+
+      <div id="svg-viewport" class="svg-viewport">
+        <svg id="flow-svg" viewBox="0 0 980 760" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <marker id="arrow-default" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="currentColor" style="color: var(--muted-foreground); opacity: 0.65;"></path>
+            </marker>
+            <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="var(--primary)"></path>
+            </marker>
+            <marker id="arrow-sim" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="var(--success)"></path>
+            </marker>
+            <marker id="arrow-error" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="var(--error)"></path>
+            </marker>
+            <filter id="glow-sim" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="3.5" result="blur"></feGaussianBlur>
+              <feMerge>
+                <feMergeNode in="blur"></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
+              </feMerge>
+            </filter>
+          </defs>
+          <g id="pan-zoom-group">
+            <g id="zones-layer"></g>
+            <g id="edges-layer"></g>
+            <g id="nodes-layer"></g>
+            <g id="packet-layer"></g>
+          </g>
+        </svg>
+      </div>
+
+      <div class="infra-bar">
+        <div class="infra-pills">
+          <span style="font-size: 12px; color: var(--muted-foreground); margin-right: 4px;">横切底座 (点击联动)：</span>
+          <button class="infra-pill" data-infra="context">ContextBuilder (L0–L4)</button>
+          <button class="infra-pill" data-infra="retrieval">Hybrid + RRF + Rerank</button>
+          <button class="infra-pill" data-infra="gate">Evidence Gate (4信号)</button>
+          <button class="infra-pill" data-infra="sse">FastAPI SSE Runner</button>
+        </div>
+        <div class="legend">
+          <span class="legend-item"><span class="legend-dot" style="background: var(--primary);"></span>选中联动</span>
+          <span class="legend-item"><span class="legend-dot" style="background: var(--success);"></span>流程流转</span>
+          <span class="legend-item"><span class="legend-dot" style="background: var(--error);"></span>拦截/移交</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const CODE_FILES = {
+      "build.py": {
+        label: "graph/build.py",
+        path: "src/support_agent/graph/build.py",
+        lines: [
+          "def build_graph(deps: GraphDeps) -> CompiledStateGraph:",
+          "    graph = StateGraph(ConversationState)",
+          "",
+          "    # 1. 入口路由：人工接管模式直接跳过所有 LLM，否则进入输入护栏",
+          "    graph.add_node(\"human_mode\", RunnableLambda(human_mode_node))",
+          "    add_node(\"input_guard\", InputGuard(deps))",
+          "    graph.add_conditional_edges(",
+          "        START,",
+          "        lambda state: \"human_mode\" if state.human_mode else \"input_guard\",",
+          "        [\"human_mode\", \"input_guard\"],",
+          "    )",
+          "    graph.add_edge(\"human_mode\", END)",
+          "",
+          "    # 2. 输入护栏：命中高危注入直接跳 output_guard 移交人工",
+          "    graph.add_conditional_edges(",
+          "        \"input_guard\",",
+          "        lambda s: \"output_guard\" if s.input_guard_action == \"block\" else \"rewrite\",",
+          "        [\"rewrite\", \"output_guard\"],",
+          "    )",
+          "",
+          "    # 3. 改写 + 多问题规划 + 9意图分类",
+          "    add_node(\"rewrite\", make_rewrite_node(deps.models, deps.settings))",
+          "    add_node(\"plan\", Planner(deps))",
+          "    add_node(\"classify\", Classifier(None, deps.settings, models=deps.models))",
+          "    graph.add_edge(\"rewrite\", \"plan\")",
+          "    graph.add_edge(\"plan\", \"classify\")",
+          "    graph.add_conditional_edges(",
+          "        \"classify\",",
+          "        dispatch_after_classify,  # 单问题选5条路径 / 多问题 Send 并行",
+          "        [\"tools\", \"after_sales\", \"complaint\", \"fixed\", \"retrieve\", \"retrieve_part\"],",
+          "    )",
+          "",
+          "    # 4A. 知识路径（单问题）：缓存命中跳过门控，否则必须过 Evidence Gate",
+          "    add_node(\"retrieve\", knowledge.retrieve)",
+          "    add_node(\"gate\", knowledge.gate)",
+          "    add_node(\"answer\", knowledge.answer)",
+          "    add_node(\"ground\", GroundingPath(deps))",
+          "    add_node(\"handoff\", knowledge.handoff)",
+          "    graph.add_conditional_edges(\"retrieve\", lambda s: \"output_guard\" if s.answer_cache_hit else \"gate\")",
+          "    graph.add_conditional_edges(\"gate\", route_after_gate, [\"answer\", \"handoff\"])",
+          "    graph.add_conditional_edges(\"answer\", lambda s: \"ground\" if s.grounding_drafts else \"output_guard\")",
+          "    graph.add_edge(\"ground\", \"output_guard\")",
+          "    graph.add_edge(\"handoff\", \"output_guard\")",
+          "",
+          "    # 4B. 知识路径（多问题并行 Send 扇出 -> 合并 -> 分项门控）",
+          "    graph.add_node(\"retrieve_part\", RunnableLambda(parts.retrieve_part))",
+          "    add_node(\"merge\", parts.merge)",
+          "    add_node(\"gate_parts\", parts.gate_parts)",
+          "    graph.add_edge(\"retrieve_part\", \"merge\")",
+          "    graph.add_edge(\"merge\", \"gate_parts\")",
+          "    graph.add_conditional_edges(\"gate_parts\", route_after_parts_gate, [\"answer\", \"handoff\"])",
+          "",
+          "    # 4C. 售后退款子流：识别订单(可 interrupt) -> 加载订单 -> 查历史政策 -> 决策 -> 执行",
+          "    add_node(\"after_sales\", refund.identify_order)",
+          "    add_node(\"refund_load\", refund.load_order)",
+          "    add_node(\"refund_retrieve\", refund.retrieve_policy)",
+          "    add_node(\"refund_decide\", refund.decide)",
+          "    add_node(\"refund_act\", refund.act)",
+          "    graph.add_conditional_edges(\"after_sales\", route_refund_identify, [\"refund_load\", \"output_guard\"])",
+          "    graph.add_edge(\"refund_load\", \"refund_retrieve\")",
+          "    graph.add_conditional_edges(\"refund_retrieve\", route_refund_policy, [\"refund_decide\", \"output_guard\"])",
+          "    graph.add_edge(\"refund_decide\", \"refund_act\")",
+          "    graph.add_edge(\"refund_act\", \"output_guard\")",
+          "",
+          "    # 4D. 工具路径（支持回退到知识检索）、投诉路径、固定模板路径",
+          "    add_node(\"tools\", ToolsPath(deps))",
+          "    graph.add_conditional_edges(\"tools\", route_after_tools, [\"retrieve\", \"output_guard\"])",
+          "    add_node(\"complaint\", ComplaintPath(deps))",
+          "    add_node(\"fixed\", fixed_reply)",
+          "    graph.add_edge(\"complaint\", \"output_guard\")",
+          "    graph.add_edge(\"fixed\", \"output_guard\")",
+          "",
+          "    # 5. 统一出口护栏：检查泄密/越权PII/无依据承诺 -> 缓存/入队 -> END",
+          "    add_node(\"output_guard\", OutputGuard(deps))",
+          "    graph.add_edge(\"output_guard\", END)",
+          "    return graph.compile(checkpointer=deps.checkpointer())"
+        ],
+        mappings: [
+          { start: 4, end: 12, nodes: ["start", "human_mode", "input_guard"], edges: ["e_start_human", "e_start_in", "e_human_end"] },
+          { start: 14, end: 19, nodes: ["input_guard", "rewrite", "output_guard"], edges: ["e_in_rewrite", "e_in_out"] },
+          { start: 21, end: 22, nodes: ["rewrite"], edges: ["e_rewrite_plan"] },
+          { start: 23, end: 23, nodes: ["plan"], edges: ["e_plan_classify"] },
+          { start: 24, end: 31, nodes: ["classify"], edges: ["e_cls_tools", "e_cls_retrieve", "e_cls_parts", "e_cls_refund", "e_cls_complaint", "e_cls_fixed"] },
+          { start: 33, end: 34, nodes: ["retrieve"], edges: ["e_ret_gate", "e_ret_cache"] },
+          { start: 35, end: 35, nodes: ["gate"], edges: ["e_gate_ans", "e_gate_ho"] },
+          { start: 36, end: 36, nodes: ["answer"], edges: ["e_ans_ground"] },
+          { start: 37, end: 37, nodes: ["ground"], edges: ["e_ground_out"] },
+          { start: 38, end: 38, nodes: ["handoff"], edges: ["e_ho_out"] },
+          { start: 39, end: 43, nodes: ["retrieve", "gate", "answer", "ground", "handoff"], edges: ["e_ret_gate", "e_gate_ans", "e_gate_ho", "e_ans_ground", "e_ground_out", "e_ho_out"] },
+          { start: 45, end: 51, nodes: ["retrieve_part", "merge", "gate_parts"], edges: ["e_cls_parts", "e_rp_merge", "e_merge_gp", "e_gp_ans", "e_gp_ho"] },
+          { start: 53, end: 63, nodes: ["after_sales", "refund_load", "refund_retrieve", "refund_decide", "refund_act"], edges: ["e_ref_load", "e_ref_ret", "e_ref_dec", "e_ref_act", "e_ref_out"] },
+          { start: 65, end: 67, nodes: ["tools"], edges: ["e_tools_ret", "e_tools_out"] },
+          { start: 68, end: 71, nodes: ["complaint", "fixed"], edges: ["e_comp_out", "e_fix_out"] },
+          { start: 73, end: 76, nodes: ["output_guard", "end"], edges: ["e_out_end"] }
+        ]
+      },
+      "rewrite.py": {
+        label: "nodes/rewrite.py",
+        path: "src/support_agent/graph/nodes/rewrite.py",
+        lines: [
+          "def make_rewrite_node(models: ReliableModels, settings: Settings, *, memory_store_provider=None):",
+          "    prompt = PROMPT_PATH.read_text(encoding=\"utf-8\")",
+          "",
+          "    def rewrite(state: ConversationState) -> dict[str, Any]:",
+          "        original = state.messages[-1].content",
+          "        query = original",
+          "        human_indices = [i for i, m in enumerate(state.messages) if isinstance(m, HumanMessage)]",
+          "",
+          "        # 1. 长期记忆：第1轮加载并冻结进 L1_session；后续轮次增量查进 L4_turn",
+          "        if lt_cfg.enabled and state.customer_id:",
+          "            if not customer_profile_loaded:",
+          "                customer_profile, loaded_memory_ids = load_session_profile(store, state.customer_id, original, lt_cfg)",
+          "            else:",
+          "                turn_memory_hints = lookup_turn_memories(store, state.customer_id, original, ...)",
+          "",
+          "        # 2. 短期记忆：提取 PinnedFacts (订单号/型号) + 超预算分块压缩成 L2 摘要块",
+          "        if st_cfg.enabled:",
+          "            facts = extract_facts_from_turn(original, turn_number, facts, models=models)",
+          "            comp = compact_history(state.messages[:-1], existing_blocks=blocks, settings=effective_st, ...)",
+          "            blocks, history_start = comp.blocks, comp.active_history_start",
+          "",
+          "        # 3. 多轮指代消解：第1轮不调模型；第2轮及以后调 ContextBuilder + fast 模型改写",
+          "        if len(human_indices) > 1:",
+          "            built = models.context_builder().build(\"rewrite\", task_prompt=prompt, user_text=original, ...)",
+          "            response, _ = models.invoke(\"rewrite\", \"fast\", built)",
+          "            query = response.content.strip() or original",
+          "        return {\"rewritten_query\": query, \"pinned_facts\": facts, \"compacted_blocks\": blocks, \"trace\": [*state.trace, \"rewrite\"]}"
+        ],
+        mappings: [
+          { start: 1, end: 27, nodes: ["rewrite"], edges: ["e_in_rewrite", "e_rewrite_plan"] }
+        ]
+      },
+      "classify.py": {
+        label: "nodes/classify.py",
+        path: "src/support_agent/graph/nodes/classify.py",
+        lines: [
+          "class IntentPrediction(BaseModel):",
+          "    intent: Intent       # 9 个领域意图枚举，强制结构化输出",
+          "    confidence: float = Field(ge=0, le=1)",
+          "",
+          "class Classifier:",
+          "    def classify(self, query: str) -> ClassificationOutcome:",
+          "        try:",
+          "            # 1. ContextBuilder 装配稳定前缀 (实测 DeepSeek 前缀缓存命中率 85.1%)",
+          "            built = self.models.context_builder().build(\"classify\", task_prompt=self.prompt, user_text=query)",
+          "            parsed, _ = self.models.structured(\"classify\", \"fast\", IntentPrediction, built)",
+          "            return ClassificationOutcome(**parsed.value.model_dump(), model_name=parsed.model_name)",
+          "        except Exception as error:",
+          "            # 解析或调用失败兜底为 chitchat_other，不崩图",
+          "            return ClassificationOutcome(intent=Intent.CHITCHAT_OTHER, confidence=0, parse_failed=True)",
+          "",
+          "    def __call__(self, state: ConversationState) -> dict[str, Any]:",
+          "        parts, part_route = state.parts, None",
+          "        # 2. 若 Planner 拆出了多个子问题，逐个分类；全为知识类则走 Send 并行",
+          "        if len(parts) > 1:",
+          "            outcomes = [self.classify(part.text) for part in parts]",
+          "            parts = [self._classified_part(p, o) for p, o in zip(parts, outcomes, strict=True)]",
+          "            part_route = self._knowledge_route(outcomes)  # 混入操作类则退回整句",
+          "",
+          "        # 3. 代码查静态字典 INTENT_TO_PATH 决定 5 条固定路径之一",
+          "        outcome = part_route if part_route is not None else self.classify(state.rewritten_query)",
+          "        path = INTENT_TO_PATH[outcome.intent]",
+          "        return {",
+          "            \"parts\": parts, \"route_source\": \"parts\" if part_route else \"whole\",",
+          "            \"intent\": outcome.intent, \"intent_confidence\": outcome.confidence, \"path\": path,",
+          "            \"trace\": [*state.trace, \"classify\"],",
+          "        }"
+        ],
+        mappings: [
+          { start: 1, end: 14, nodes: ["classify"], edges: ["e_plan_classify"] },
+          { start: 16, end: 31, nodes: ["classify"], edges: ["e_cls_tools", "e_cls_retrieve", "e_cls_parts", "e_cls_refund", "e_cls_complaint", "e_cls_fixed"] }
+        ]
+      },
+      "evidence.py": {
+        label: "gate/evidence.py",
+        path: "src/support_agent/gate/evidence.py",
+        lines: [
+          "def evaluate(query: str, chunks: list[RetrievedChunk], settings: GateSettings) -> GateResult:",
+          "    threshold = settings.threshold",
+          "    # 4 信号加权评分（默认权重：0.5 / 0.2 / 0.15 / 0.15）",
+          "    signals = {",
+          "        \"top_score\": top_score(chunks),            # top-1 重排分 (sigmoid)",
+          "        \"good_count\": good_count(chunks, settings), # 高分块数量 / 3",
+          "        \"margin\": margin(chunks),                  # top-1 - top-2 间隔",
+          "    }",
+          "    hit = key_hit(query, chunks, settings)          # 关键实体/型号命中率",
+          "    if hit is not None:",
+          "        signals[\"key_hit\"] = hit",
+          "    score = weighted_score(signals, settings)",
+          "",
+          "    # 一票否决 (Veto)：特定实体或型号未出现在 top-3 块中直接拒绝",
+          "    missed = settings.require_specific_term_hit and specific_term_missed(query, chunks, settings)",
+          "    model_missed = settings.require_model_number_hit and model_number_missed(query, chunks, settings)",
+          "    passed = bool(chunks) and not missed and not model_missed and score >= threshold",
+          "",
+          "    reason = (",
+          "        \"passed\" if passed",
+          "        else \"empty_retrieval\" if not chunks",
+          "        else \"key_terms_absent\" if missed",
+          "        else \"model_number_absent\" if model_missed",
+          "        else \"below_threshold\"",
+          "    )",
+          "    return GateResult(score=score, signals=signals, passed=passed, threshold=threshold, reason=reason)"
+        ],
+        mappings: [
+          { start: 1, end: 12, nodes: ["gate", "gate_parts", "refund_retrieve"], edges: ["e_ret_gate", "e_gate_ans"] },
+          { start: 14, end: 26, nodes: ["gate", "handoff"], edges: ["e_gate_ho", "e_gate_ans"] }
+        ]
+      },
+      "knowledge.py": {
+        label: "nodes/knowledge.py",
+        path: "src/support_agent/graph/nodes/knowledge.py",
+        lines: [
+          "class KnowledgePath:",
+          "    def retrieve(self, state: ConversationState) -> dict[str, Any]:",
+          "        # 1. 元数据过滤 + 精确答案缓存查询 (Commit 26)",
+          "        filters = knowledge_filters(state.rewritten_query, self.deps.settings)",
+          "        eligible, reason = answer_cache_lookup_eligibility(state, self.deps.settings.cache)",
+          "        if eligible:",
+          "            cached, hit_layer = self.deps.answer_cache().get(query=state.rewritten_query, ...)",
+          "            if cached is not None:",
+          "                return {\"answer\": cached.answer, \"answer_cache_hit\": hit_layer, ...}",
+          "        # 2. 混合检索 (Dense+BM25+RRF+Rerank) + 门店隔离过滤 (Store Scope)",
+          "        ranked, filters_applied = retrieve_with_filters(self.deps.knowledge_retriever(), query, pool, filters)",
+          "        chunks, store, dropped = scope_chunks(state.rewritten_query, ranked, scope, top_k)",
+          "        return {\"retrieval\": chunks, \"filters\": filters, \"trace\": [*state.trace, \"retrieve\"]}",
+          "",
+          "    def gate(self, state: ConversationState) -> dict[str, Any]:",
+          "        result = evaluate(state.rewritten_query, state.retrieval, self.deps.settings.gate)",
+          "        return {\"gate\": result, \"trace\": [*state.trace, \"gate\"]}",
+          "",
+          "    def answer(self, state: ConversationState) -> dict[str, Any]:",
+          "        if state.gate is None or not state.gate.passed:",
+          "            return self.handoff(state)  # 门控不可绕过",
+          "        # 覆盖度结构化生成：要求每条事实附带逐字引用，否则 handoff",
+          "        coverage = self._request_coverage(state, self.prompt, sources_prompt)",
+          "        status, text = render_covered_answer(coverage, chunks)",
+          "        if status != \"answered\":",
+          "            return self._answer_handoff(current, status)",
+          "        return {\"answer\": text, \"grounding_drafts\": drafts, \"trace\": [*state.trace, \"answer\"]}",
+          "",
+          "    def handoff(self, state: ConversationState) -> dict[str, Any]:",
+          "        reason = HandoffReason.DEPENDENCY_UNAVAILABLE if state.retrieval_dependency_unavailable else HandoffReason.LOW_EVIDENCE",
+          "        return {**make_handoff(current, reason), \"trace\": current.trace}"
+        ],
+        mappings: [
+          { start: 2, end: 13, nodes: ["retrieve"], edges: ["e_ret_gate", "e_ret_cache"] },
+          { start: 15, end: 17, nodes: ["gate"], edges: ["e_gate_ans", "e_gate_ho"] },
+          { start: 19, end: 27, nodes: ["answer", "ground"], edges: ["e_ans_ground"] },
+          { start: 29, end: 31, nodes: ["handoff"], edges: ["e_ho_out"] }
+        ]
+      },
+      "refund.py": {
+        label: "nodes/refund.py",
+        path: "src/support_agent/graph/nodes/refund.py",
+        lines: [
+          "class RefundPath:",
+          "    def identify_order(self, state: ConversationState) -> dict[str, Any]:",
+          "        # 优先从 PinnedFacts / 正则 / fast 模型提取订单号",
+          "        order_id = state.pinned_facts.latest_order_id() or extract_order_id(query)",
+          "        if order_id:",
+          "            service.get_order(order_id, state.customer_id)  # 强校验归属权",
+          "            return {\"refund_order_id\": order_id}",
+          "        # 未指定订单时触发 LangGraph interrupt，暂停等待用户点选",
+          "        orders = service.list_recent_orders(state.customer_id)",
+          "        selected = interrupt({\"type\": \"order_picker\", \"orders\": choices})",
+          "        return {\"refund_order_id\": selected}",
+          "",
+          "    def load_order(self, state: ConversationState) -> dict[str, Any]:",
+          "        # 读取真实订单事实 + 检查该商品是否已有 pending_review 退款单 (Commit 20b)",
+          "        order = service.get_order(state.refund_order_id, state.customer_id)",
+          "        pending = service.pending_refund_item_ids(order_id, customer_id, idempotency_key=key)",
+          "        return {\"order_context\": {\"order\": order, \"days_since_order\": days, \"pending_refund_item_ids\": pending}}",
+          "",
+          "    def retrieve_policy(self, state: ConversationState) -> dict[str, Any]:",
+          "        # 按订单下单日期过滤历史政策版本 (Commit 23)，再过 Evidence Gate",
+          "        filters = RetrievalFilters(as_of=order.order_date)",
+          "        ranked, _ = retrieve_with_filters(retriever, policy_query(order), pool, filters)",
+          "        gate = evaluate(query, chunks, self.deps.settings.gate)",
+          "        return {\"retrieval\": chunks, \"gate\": gate}",
+          "",
+          "    def decide(self, state: ConversationState) -> dict[str, Any]:",
+          "        # 结构化决策 + 代码级时间窗口硬校验（超期绝不批准）",
+          "        decision = check_decision(raw_decision, order_context, chunks)",
+          "        return {\"refund_decision\": decision}",
+          "",
+          "    def act(self, state: ConversationState) -> dict[str, Any]:",
+          "        # 幂等键 + SELECT FOR UPDATE 行锁创建 pending_review 退款申请",
+          "        req = service.create_refund_request(order_id, customer_id, item_ids, idempotency_key=key)",
+          "        return {\"answer\": reply, \"trace\": [*state.trace, \"refund_act\"]}"
+        ],
+        mappings: [
+          { start: 2, end: 11, nodes: ["after_sales"], edges: ["e_ref_load"] },
+          { start: 13, end: 17, nodes: ["refund_load"], edges: ["e_ref_ret"] },
+          { start: 19, end: 24, nodes: ["refund_retrieve"], edges: ["e_ref_dec"] },
+          { start: 26, end: 29, nodes: ["refund_decide"], edges: ["e_ref_act"] },
+          { start: 31, end: 34, nodes: ["refund_act"], edges: ["e_ref_out"] }
+        ]
+      },
+      "builder.py": {
+        label: "context/builder.py",
+        path: "src/support_agent/context/builder.py",
+        lines: [
+          "class ContextBuilder:",
+          "    \"\"\"所有 11 个 LLM 节点统一走此构建器，保证前缀稳定以最大化 KV Prefix Cache。\"\"\"",
+          "    def build(self, node: str, *, task_prompt: str, history=(), customer_profile=None, ...) -> BuiltContext:",
+          "        # L0_global: 全局共享系统指令（绝不放时间戳/ID，跨节点复用前缀）",
+          "        l0_text = render_shared_l0(tool_names) if profile.share_prefix else task_prompt",
+          "        messages.append(SystemMessage(content=l0_text))",
+          "        breakpoints.append(Breakpoint(layer=\"L0_global\", ttl_s=3600))",
+          "",
+          "        # L1_session: 会话级客户长期记忆（第1轮冻结加载，会话内不变）",
+          "        if customer_profile:",
+          "            messages.append(SystemMessage(content=f\"Customer profile:\\n{customer_profile}\"))",
+          "            breakpoints.append(Breakpoint(layer=\"L1_session\", ttl_s=300))",
+          "",
+          "        # L2_compacted: 分块压缩后的冻结摘要块（Chunked Compaction）",
+          "        for idx, block in enumerate(compacted_blocks):",
+          "            messages.append(SystemMessage(content=f\"Conversation summary block {idx+1}:\\n{block}\"))",
+          "",
+          "        # L3_history: 只追加不修改的近期对话历史（命中 DeepSeek 前缀缓存最高 85.1%）",
+          "        messages.extend(sanitise_history_messages(history))",
+          "",
+          "        # L4_turn: 当前轮动态内容（任务指令/证据块/PinnedFacts/工具结果，仅此处裁剪）",
+          "        messages.extend(self._trim_l4_to_budget(task_prompt, evidence, pinned_facts, budget))",
+          "        return BuiltContext(node=node, messages=messages, prefix_hash=prefix_hash, breakdown=breakdown)"
+        ],
+        mappings: [
+          { start: 1, end: 23, nodes: ["input_guard", "rewrite", "plan", "classify", "tools", "answer", "ground", "refund_decide", "complaint"], edges: [] }
+        ]
+      },
+      "guards.py": {
+        label: "nodes/guards.py",
+        path: "src/support_agent/graph/nodes/{input,output}_guard.py",
+        lines: [
+          "# === InputGuard (src/support_agent/graph/nodes/input_guard.py) ===",
+          "class InputGuard:",
+          "    def __call__(self, state: ConversationState) -> dict[str, Any]:",
+          "        decision = self.patterns.check(current.content, max_message_chars)",
+          "        if self.settings.classifier.enabled and decision.action != \"block\":",
+          "            result, _ = self.deps.models.structured(\"input_guard\", role, _Suspicion, built)",
+          "        if decision.action == \"block\":",
+          "            # 原始攻击文本仅保留在私有 handoff 载荷，历史中脱敏为 [blocked message]",
+          "            return make_handoff(blocked, HandoffReason.GUARDRAIL_BLOCKED)",
+          "        return {**reset_turn(), \"input_guard_action\": decision.action}",
+          "",
+          "# === OutputGuard (src/support_agent/graph/nodes/output_guard.py) ===",
+          "class OutputGuard:",
+          "    def _violation(self, state: ConversationState) -> OutputFlag | None:",
+          "        if self.checks.prompt_leaked(state.answer): return \"prompt_leak\"",
+          "        if self.checks.foreign_pii(state.answer, allowed_email, _evidence(state)): return \"foreign_pii\"",
+          "        if self.checks.unbacked_commitment(state): return \"unbacked_commitment\"",
+          "        return None",
+          "",
+          "    def __call__(self, state: ConversationState) -> dict[str, Any]:",
+          "        if self._violation(state) is None:",
+          "            self._maybe_cache_answer(state)              # 写回精确答案缓存",
+          "            self._maybe_extract_memories_on_handoff(state) # 长期记忆治理写入",
+          "            self._maybe_record_online_event(state)       # 在线漂移检测事件",
+          "            handoff_update = self._maybe_enqueue_handoff(state, state.handoff)",
+          "            return {\"answer\": state.answer, \"messages\": [AIMessage(content=state.answer)], **handoff_update}",
+          "        return make_handoff(current, HandoffReason.GUARDRAIL_BLOCKED)"
+        ],
+        mappings: [
+          { start: 1, end: 10, nodes: ["input_guard"], edges: ["e_in_rewrite", "e_in_out"] },
+          { start: 12, end: 27, nodes: ["output_guard", "end"], edges: ["e_out_end"] }
+        ]
+      },
+      "hybrid.py": {
+        label: "retrieval/hybrid.py",
+        path: "src/support_agent/retrieval/hybrid.py + api/runner.py",
+        lines: [
+          "# === HybridRetriever (src/support_agent/retrieval/hybrid.py) ===",
+          "class HybridRetriever:",
+          "    def retrieve(self, query: str, top_k: int, filters: RetrievalFilters | None = None):",
+          "        # 双路召回：BGE-M3 1024维稠密向量 + Milvus BM25 稀疏全文 (各 Top 50)",
+          "        sources = {",
+          "            \"dense\": self.dense.retrieve(query, self.config.dense_top_k, filters=filters),",
+          "            \"bm25\":  self.bm25.retrieve(query,  self.config.bm25_top_k,  filters=filters),",
+          "        }",
+          "        # Reciprocal Rank Fusion (k = 60) -> BGE Cross-Encoder Rerank Top 5",
+          "        fused = rrf({src: [c.chunk_id for c in res] for src, res in sources.items()}, self.config.rrf_k)",
+          "        return [chunks[cid] for cid, _ in fused[:top_k]]",
+          "",
+          "# === FastAPI SSE Runner (src/support_agent/api/runner.py) ===",
+          "def _traced_turn(graph, input_or_command, config, ...):",
+          "    for updates in graph.stream(input_or_command, config, stream_mode=\"updates\", durability=\"sync\"):",
+          "        for node, update in updates.items():",
+          "            if node == \"__interrupt__\":",
+          "                update = update[0].value  # 退款选单中断事件",
+          "            events = events_for_update(node, update, chunk_words)",
+          "            if node == \"classify\": yield from events  # 路由状态先推前端",
+          "            elif events: terminal = events            # 正文等 output_guard 通过后再发布",
+          "    yield from terminal",
+          "    yield SseEvent(name=\"done\", data={\"latency_ms\": ..., \"trace\": route, \"gate\": gate})"
+        ],
+        mappings: [
+          { start: 1, end: 11, nodes: ["retrieve", "retrieve_part", "refund_retrieve"], edges: ["e_ret_gate"] },
+          { start: 13, end: 23, nodes: ["start", "classify", "after_sales", "output_guard", "end"], edges: ["e_out_end"] }
+        ]
+      }
+    };
+
+    const ZONES = [
+      { id: "z-entry", x: 18, y: 16, w: 944, h: 116, label: "1. 入口与前置护栏 (Entry & Guardrails)" },
+      { id: "z-plan", x: 18, y: 146, w: 944, h: 98, label: "2. 理解、记忆注入与意图路由 (Rewrite · Plan · Classify)" },
+      { id: "z-paths", x: 18, y: 258, w: 944, h: 382, label: "3. 五大固定执行路径 (5 Fixed Execution Paths)" },
+      { id: "z-exit", x: 18, y: 654, w: 944, h: 90, label: "4. 统一输出护栏与持久化发布 (Output Guard & SSE Publish)" }
+    ];
+
+    const NODES = [
+      { id: "start", label: "START", sub: "FastAPI SSE / Turn Lease", x: 56, y: 48, w: 155, h: 58, kind: "entry", buildLines: [4, 11], implFile: "hybrid.py", implLines: [13, 23], title: "会话入口 (START)", metric: "Concurrency ≤ 32 · P95 293ms", desc: "接收带 Bearer 鉴权的客户请求，获取 Redis Turn Lease 并发锁与 DailySpendCap 预算检查，读取 Postgres Checkpointer 状态。", tags: ["FastAPI SSE", "Redis Turn Lease", "Postgres Checkpoint"] },
+      { id: "input_guard", label: "input_guard", sub: "规则 + 分类器防注入", x: 310, y: 48, w: 180, h: 58, kind: "guard", buildLines: [14, 19], implFile: "guards.py", implLines: [1, 10], title: "输入安全护栏 (InputGuard)", metric: "Red-Team v2 ASR 0/72", desc: "在任何改写/分类之前检测提示词注入、越狱与超长输入。高危攻击直接 block 并路由到 output_guard 移交人工，同时脱敏历史消息。", tags: ["Prompt Injection", "Fail-Closed", "Redaction"] },
+      { id: "human_mode", label: "human_mode", sub: "人工接管直通 · 0 LLM", x: 690, y: 48, w: 200, h: 58, kind: "handoff", buildLines: [4, 12], implFile: "build.py", implLines: [4, 12], title: "人工接管模式 (human_mode)", metric: "0 LLM Calls", desc: "一旦会话进入人工队列，后续用户消息由入口条件边直接转发至 HandoffQueueStore，全程不调用任何大模型。", tags: ["Zero LLM", "Agent Console", "Handoff Queue"] },
+      { id: "rewrite", label: "rewrite", sub: "指代消解 + 记忆 + 压缩", x: 110, y: 174, w: 215, h: 56, kind: "core", buildLines: [21, 22], implFile: "rewrite.py", implLines: [1, 27], title: "查询改写与上下文装配 (rewrite)", metric: "Cache Hit 79.9% (Chunked)", desc: "加载 L1 长期客户记忆、提取 PinnedFacts（订单号/型号）、执行超预算分块压缩 (L2)，并在第 2 轮及以后将多轮指代改写为独立检索查询。", tags: ["PinnedFacts", "L2 Compaction", "L1 Long-Term Memory"] },
+      { id: "plan", label: "plan", sub: "多问题拆分 (Multipart)", x: 390, y: 174, w: 200, h: 56, kind: "core", buildLines: [23, 23], implFile: "build.py", implLines: [23, 23], title: "多子问题规划 (Planner)", metric: "Half-Answerable 13/20 vs 0/20", desc: "识别包含多个独立诉求的复合提问，拆分为带 grounded key_terms 的子问题列表，为并行检索与部分回答做准备。", tags: ["Query Decomposition", "Grounded Terms"] },
+      { id: "classify", label: "classify", sub: "9 意图 → 5 固定路径", x: 660, y: 174, w: 220, h: 56, kind: "core", buildLines: [24, 31], implFile: "classify.py", implLines: [1, 31], title: "结构化意图分类 (Classifier)", metric: "Intent Acc 90.48% · Cache 85.1%", desc: "将用户请求映射到 9 个领域意图与 5 条固定执行路径；若为多知识子问题则通过 LangGraph Send 动态扇出到 retrieve_part。", tags: ["9 Intents", "5 Paths", "LangGraph Send"] },
+      { id: "tools", label: "tools (Path A)", sub: "OrderService + 模板回复", x: 34, y: 294, w: 162, h: 64, kind: "pathA", buildLines: [65, 67], implFile: "build.py", implLines: [65, 67], title: "订单工具路径 (ToolsPath)", metric: "45/48 事实精准 · 0 跨客户泄露", desc: "绑定当前 customer_id 的只读订单/物流工具循环（上限 5 步）。模型只选工具，代码按模板渲染回复；非查单问题自动回退到 retrieve。", tags: ["Customer-Scoped", "Template Replies", "Fallback → Knowledge"] },
+      { id: "retrieve", label: "retrieve", sub: "Cache / Hybrid+Rerank", x: 222, y: 294, w: 172, h: 62, kind: "pathB", buildLines: [33, 34], implFile: "knowledge.py", implLines: [2, 13], title: "混合检索与缓存 (retrieve)", metric: "Recall@5 1.0000 · MRR@5 0.9938", desc: "先查精确答案缓存（命中直达 output_guard）；未命中则执行 BGE-M3 + Milvus BM25 + RRF(k=60) + BGE Rerank + 门店范围过滤。", tags: ["BGE-M3 + BM25", "RRF k=60", "Store Scope", "Answer Cache"] },
+      { id: "gate", label: "gate", sub: "4 信号加权 + 型号一票否决", x: 222, y: 384, w: 172, h: 62, kind: "gate", buildLines: [35, 35], implFile: "evidence.py", implLines: [1, 26], title: "证据门控 (Evidence Gate)", metric: "No-Answer False Accept 0/30", desc: "核心安全防线（不可绕过）：综合 top_score、good_count、margin、key_hit 评分，叠加实体/型号 Veto。不通过强制走 handoff。", tags: ["4 Signals", "Model Veto", "Fail-Closed"] },
+      { id: "answer", label: "answer", sub: "覆盖度检查 + 引用生成", x: 222, y: 474, w: 172, h: 58, kind: "pathB", buildLines: [36, 36], implFile: "knowledge.py", implLines: [19, 27], title: "引用覆盖生成 (answer)", metric: "Explicit Coverage Required", desc: "要求模型针对每个子问题给出明确逐字引用与覆盖声明；若存在未覆盖或隐含推断，则拒绝猜测并转为移交。", tags: ["Citations", "Coverage Check"] },
+      { id: "ground", label: "ground", sub: "逐条声明事实验证", x: 222, y: 558, w: 172, h: 58, kind: "guard", buildLines: [37, 37], implFile: "build.py", implLines: [37, 37], title: "声明落地核验 (GroundingPath)", metric: "60/60 合成幻觉拦截", desc: "拆分回答中的所有事实声明，校验字面量与引用原文一致性；剔除无依据声明或在核心声明失效时移交人工。", tags: ["Claim Verification", "Literal Check"] },
+      { id: "retrieve_part", label: "retrieve_part ×N", sub: "Send 并行子问题检索", x: 422, y: 294, w: 158, h: 58, kind: "pathB", buildLines: [45, 51], implFile: "build.py", implLines: [45, 51], title: "多子问题并行检索 (retrieve_part)", metric: "LangGraph Send Fan-out", desc: "对 Planner 拆出的每个知识子问题独立发起检索，避免跨文档信号互相稀释。", tags: ["Parallel Send", "Per-Part Retrieval"] },
+      { id: "merge", label: "merge", sub: "去重聚合证据池", x: 422, y: 374, w: 158, h: 50, kind: "pathB", buildLines: [45, 51], implFile: "build.py", implLines: [45, 51], title: "多路结果聚合 (merge)", metric: "Source Isolation", desc: "汇总各并行分片检索结果并统一编号，同时保留每个子问题的局部来源隔离边界。", tags: ["Fan-In", "Dedup"] },
+      { id: "gate_parts", label: "gate_parts", sub: "分项门控 · 可部分作答", x: 422, y: 444, w: 158, h: 54, kind: "gate", buildLines: [45, 51], implFile: "evidence.py", implLines: [1, 26], title: "分项证据门控 (gate_parts)", metric: "0/10 No-Answer FA", desc: "独立评估每个子问题的证据门控：可答部分送入 answer，不可答部分精准生成局部 handoff。", tags: ["Partial Answer", "Per-Part Gate"] },
+      { id: "handoff", label: "handoff", sub: "结构化人工移交载荷", x: 422, y: 558, w: 158, h: 58, kind: "handoff", buildLines: [38, 38], implFile: "knowledge.py", implLines: [29, 31], title: "人工移交节点 (handoff)", metric: "Full Snapshot Payload", desc: "当证据不足或依赖故障时生成标准 HandoffPayload（含对话、改写查询、检索快照、原因码），不编造答案。", tags: ["Low Evidence", "Dependency Fail-Closed"] },
+      { id: "after_sales", label: "after_sales", sub: "识别订单 / interrupt 选单", x: 608, y: 294, w: 170, h: 54, kind: "pathC", buildLines: [53, 59], implFile: "refund.py", implLines: [2, 11], title: "退款订单识别 (identify_order)", metric: "Human-in-the-loop Interrupt", desc: "优先读 PinnedFacts 或提取订单号；若缺失则调用 LangGraph interrupt() 挂起图，前端弹出订单选择器，恢复后继续。", tags: ["interrupt()", "Order Picker", "Ownership Check"] },
+      { id: "refund_load", label: "refund_load", sub: "读取事实 + 查重复退款", x: 608, y: 366, w: 170, h: 52, kind: "pathC", buildLines: [54, 60], implFile: "refund.py", implLines: [13, 17], title: "加载订单事实 (load_order)", metric: "Refund Fraud 3/10 → 0/10", desc: "从 OrderService 加载真实下单/签收天数，并查询该商品是否已有 pending_review 退款单，杜绝重复申退。", tags: ["OrderService", "Pending Guard"] },
+      { id: "refund_retrieve", label: "refund_retrieve", sub: "按订单日过滤政策 + Gate", x: 608, y: 436, w: 170, h: 54, kind: "gate", buildLines: [55, 61], implFile: "refund.py", implLines: [19, 24], title: "历史政策检索 (retrieve_policy)", metric: "Wrong Version 24/24 → 0/24", desc: "使用订单真实下单日期作为 as_of 元数据过滤检索对应历史版本的退款政策，并强制经过 Evidence Gate。", tags: ["Policy Versioning", "as_of Filter", "Gate"] },
+      { id: "refund_decide", label: "refund_decide", sub: "结构化决策 + 窗口硬校验", x: 608, y: 508, w: 170, h: 50, kind: "pathC", buildLines: [56, 62], implFile: "refund.py", implLines: [26, 29], title: "退款资格决策 (decide)", metric: "0 Wrong Final Yes", desc: "基于订单事实与政策引用做出结构化判定；代码级硬校验「N天内」时间窗口与待审商品，防止模型误批。", tags: ["Window Check", "Cited Reasons"] },
+      { id: "refund_act", label: "refund_act", sub: "行锁 + 幂等创建退款单", x: 608, y: 574, w: 170, h: 50, kind: "pathC", buildLines: [57, 63], implFile: "refund.py", implLines: [31, 34], title: "执行退款写入 (act)", metric: "SELECT FOR UPDATE + Idempotency", desc: "携带 turn 幂等键并加数据库行锁写入 pending_review 退款申请，高并发重试绝不重复落库。", tags: ["Idempotency Key", "Row Lock"] },
+      { id: "complaint", label: "complaint (D)", sub: "共情安抚 → 高优移交", x: 804, y: 294, w: 142, h: 58, kind: "pathD", buildLines: [68, 70], implFile: "build.py", implLines: [68, 70], title: "投诉路径 (ComplaintPath)", metric: "High Priority Handoff", desc: "生成简短共情回复（过滤掉不当承诺词），随后自动进入高优先级人工队列。", tags: ["Empathetic Ack", "High Priority"] },
+      { id: "fixed", label: "fixed (E)", sub: "闲聊模板 · 0 LLM", x: 804, y: 382, w: 142, h: 58, kind: "pathE", buildLines: [69, 71], implFile: "build.py", implLines: [69, 71], title: "固定回复路径 (fixed_reply)", metric: "0 LLM Calls", desc: "处理打招呼与闲聊，直接返回本地静态模板，零模型耗时与费用。", tags: ["Zero LLM", "Template"] },
+      { id: "output_guard", label: "output_guard", sub: "泄密/PII/承诺检查 · 缓存 · 入队", x: 260, y: 678, w: 300, h: 54, kind: "guard", buildLines: [73, 76], implFile: "guards.py", implLines: [12, 27], title: "统一输出护栏 (OutputGuard)", metric: "Zero Unchecked Drafts Published", desc: "所有路径的唯一发布关口：检查提示词泄露、越权 PII 与无依据承诺；通过后才写入消息历史、答案缓存、在线漂移事件及人工队列。", tags: ["Prompt Leak", "Foreign PII", "Cache Write", "Online Drift"] },
+      { id: "end", label: "END", sub: "SSE 推送正文 + done 元数据", x: 690, y: 678, w: 200, h: 54, kind: "entry", buildLines: [75, 76], implFile: "hybrid.py", implLines: [20, 23], title: "回合结束 (END)", metric: "SSE Stream + Langfuse Trace", desc: "将校验通过的最终回答、引用芯片、trace 路径、gate 分数与成本元数据通过 SSE 推送给前端，并结束 Langfuse 根 Span。", tags: ["SSE Done", "Langfuse", "Prometheus"] }
+    ];
+
+    const NODE_MAP = Object.fromEntries(NODES.map(n => [n.id, n]));
+
+    const EDGES = [
+      { id: "e_start_in", from: "start", to: "input_guard", d: "M 211 77 L 310 77", label: "normal" },
+      { id: "e_start_human", from: "start", to: "human_mode", d: "M 133 48 C 133 24, 790 24, 790 48", label: "human_mode" },
+      { id: "e_human_end", from: "human_mode", to: "end", d: "M 890 77 L 954 77 L 954 705 L 890 705", label: "0 LLM" },
+      { id: "e_in_rewrite", from: "input_guard", to: "rewrite", d: "M 400 106 L 400 132 L 217 132 L 217 174", label: "allow" },
+      { id: "e_in_out", from: "input_guard", to: "output_guard", d: "M 310 92 L 26 92 L 26 705 L 260 705", label: "block" },
+      { id: "e_rewrite_plan", from: "rewrite", to: "plan", d: "M 325 202 L 390 202" },
+      { id: "e_plan_classify", from: "plan", to: "classify", d: "M 590 202 L 660 202" },
+      { id: "e_cls_tools", from: "classify", to: "tools", d: "M 710 230 L 710 248 L 115 248 L 115 294", label: "A" },
+      { id: "e_cls_retrieve", from: "classify", to: "retrieve", d: "M 730 230 L 730 256 L 308 256 L 308 294", label: "B" },
+      { id: "e_cls_parts", from: "classify", to: "retrieve_part", d: "M 750 230 L 750 264 L 501 264 L 501 294", label: "Send" },
+      { id: "e_cls_refund", from: "classify", to: "after_sales", d: "M 770 230 L 770 272 L 693 272 L 693 294", label: "C" },
+      { id: "e_cls_complaint", from: "classify", to: "complaint", d: "M 810 230 L 810 268 L 875 268 L 875 294", label: "D" },
+      { id: "e_cls_fixed", from: "classify", to: "fixed", d: "M 855 230 L 855 258 L 950 258 L 950 411 L 946 411", label: "E" },
+      { id: "e_tools_ret", from: "tools", to: "retrieve", d: "M 196 325 L 222 325", label: "fallback" },
+      { id: "e_tools_out", from: "tools", to: "output_guard", d: "M 115 358 L 115 692 L 260 692" },
+      { id: "e_ret_gate", from: "retrieve", to: "gate", d: "M 308 356 L 308 384" },
+      { id: "e_ret_cache", from: "retrieve", to: "output_guard", d: "M 222 342 L 204 342 L 204 684 L 260 684", label: "cache" },
+      { id: "e_gate_ans", from: "gate", to: "answer", d: "M 308 446 L 308 474", label: "pass" },
+      { id: "e_gate_ho", from: "gate", to: "handoff", d: "M 394 422 L 408 422 L 408 587 L 422 587", label: "fail" },
+      { id: "e_ans_ground", from: "answer", to: "ground", d: "M 308 532 L 308 558" },
+      { id: "e_ground_out", from: "ground", to: "output_guard", d: "M 308 616 L 308 678" },
+      { id: "e_rp_merge", from: "retrieve_part", to: "merge", d: "M 501 352 L 501 374" },
+      { id: "e_merge_gp", from: "merge", to: "gate_parts", d: "M 501 424 L 501 444" },
+      { id: "e_gp_ans", from: "gate_parts", to: "answer", d: "M 422 478 L 394 500", label: "pass" },
+      { id: "e_gp_ho", from: "gate_parts", to: "handoff", d: "M 501 498 L 501 558", label: "fail" },
+      { id: "e_ho_out", from: "handoff", to: "output_guard", d: "M 501 616 L 501 678" },
+      { id: "e_ref_load", from: "after_sales", to: "refund_load", d: "M 693 348 L 693 366" },
+      { id: "e_ref_ret", from: "refund_load", to: "refund_retrieve", d: "M 693 418 L 693 436" },
+      { id: "e_ref_dec", from: "refund_retrieve", to: "refund_decide", d: "M 693 490 L 693 508", label: "pass" },
+      { id: "e_ref_act", from: "refund_decide", to: "refund_act", d: "M 693 558 L 693 574" },
+      { id: "e_ref_out", from: "refund_act", to: "output_guard", d: "M 693 624 L 693 644 L 535 644 L 535 678" },
+      { id: "e_comp_out", from: "complaint", to: "output_guard", d: "M 875 352 L 875 366 L 792 366 L 792 648 L 548 648 L 548 678" },
+      { id: "e_fix_out", from: "fixed", to: "output_guard", d: "M 875 440 L 875 654 L 560 654 L 560 678" },
+      { id: "e_out_end", from: "output_guard", to: "end", d: "M 560 705 L 690 705" }
+    ];
+
+    const SCENARIOS = [
+      {
+        id: "knowledge_pass", name: "政策问答 (通过门控)",
+        steps: [
+          { node: "start", edge: null, file: "build.py", lines: [4, 11], msg: "收到客户请求，加载 Postgres Checkpoint 与 Redis Turn Lease" },
+          { node: "input_guard", edge: "e_start_in", file: "guards.py", lines: [1, 10], msg: "InputGuard 规则 + 分类器通过 (action=allow)" },
+          { node: "rewrite", edge: "e_in_rewrite", file: "rewrite.py", lines: [9, 27], msg: "加载 L1 长期记忆、提取 PinnedFacts、必要时分块压缩，并在多轮时改写查询" },
+          { node: "plan", edge: "e_rewrite_plan", file: "build.py", lines: [23, 23], msg: "Planner 判断为单问题，不触发拆分" },
+          { node: "classify", edge: "e_plan_classify", file: "classify.py", lines: [6, 31], msg: "Classifier 判定 intent=product_question → 路由至 Path B (retrieve)" },
+          { node: "retrieve", edge: "e_cls_retrieve", file: "hybrid.py", lines: [2, 11], msg: "BGE-M3 + BM25 + RRF(k=60) + Rerank Top 5 + 门店隔离过滤" },
+          { node: "gate", edge: "e_ret_gate", file: "evidence.py", lines: [1, 18], msg: "Evidence Gate 4信号得分 0.84 ≥ 阈值，型号 BHD340/10 命中 → PASS" },
+          { node: "answer", edge: "e_gate_ans", file: "knowledge.py", lines: [19, 27], msg: "CoverageAnswer 生成带 [1][2] 逐字引用的草稿回复" },
+          { node: "ground", edge: "e_ans_ground", file: "build.py", lines: [37, 37], msg: "GroundingPath 拆分并校验每条声明字面量，全部通过" },
+          { node: "output_guard", edge: "e_ground_out", file: "guards.py", lines: [12, 26], msg: "OutputGuard 检查无泄密/无越权PII，写入答案缓存与漂移事件" },
+          { node: "end", edge: "e_out_end", file: "hybrid.py", lines: [20, 23], msg: "SSE 推送带引用芯片的正文 + done 元数据，完成回合" }
+        ]
+      },
+      {
+        id: "no_answer", name: "超纲拒答 (门控拦截)",
+        steps: [
+          { node: "start", edge: null, file: "build.py", lines: [4, 11], msg: "收到超纲提问，进入标准会话流程" },
+          { node: "input_guard", edge: "e_start_in", file: "guards.py", lines: [1, 10], msg: "非恶意注入，InputGuard 放行" },
+          { node: "rewrite", edge: "e_in_rewrite", file: "build.py", lines: [21, 22], msg: "查询改写保持关键实体「gold bars」「Cash App Pay」" },
+          { node: "plan", edge: "e_rewrite_plan", file: "build.py", lines: [23, 23], msg: "进入规划节点" },
+          { node: "classify", edge: "e_plan_classify", file: "build.py", lines: [24, 31], msg: "归类为 policy_question → 固定边进入 retrieve" },
+          { node: "retrieve", edge: "e_cls_retrieve", file: "knowledge.py", lines: [2, 13], msg: "检索 Top 5 证据块，但无任何块包含 Cash App Pay 或 gold bars" },
+          { node: "gate", edge: "e_ret_gate", file: "evidence.py", lines: [14, 26], msg: "Evidence Gate 触发 Veto (key_terms_absent) → 强制拒绝！", status: "blocked" },
+          { node: "handoff", edge: "e_gate_ho", file: "knowledge.py", lines: [29, 31], msg: "绝不编造答案，构造 HandoffPayload(reason=low_evidence)", status: "blocked" },
+          { node: "output_guard", edge: "e_ho_out", file: "guards.py", lines: [20, 26], msg: "将移交工单写入 HandoffQueueStore，准备通知人工客服" },
+          { node: "end", edge: "e_out_end", file: "hybrid.py", lines: [20, 23], msg: "前端展示转人工提示，No-Answer False Accept = 0%" }
+        ]
+      },
+      {
+        id: "multipart", name: "多问题并行 (Send)",
+        steps: [
+          { node: "start", edge: null, file: "build.py", lines: [4, 11], msg: "收到包含 2 个独立子问题的复合提问" },
+          { node: "input_guard", edge: "e_start_in", file: "guards.py", lines: [1, 10], msg: "InputGuard 检查通过" },
+          { node: "rewrite", edge: "e_in_rewrite", file: "build.py", lines: [21, 22], msg: "改写保留两个子问题语义" },
+          { node: "plan", edge: "e_rewrite_plan", file: "build.py", lines: [23, 23], msg: "Planner 拆分为 Part 1 (保修政策) 与 Part 2 (加密货币支付)" },
+          { node: "classify", edge: "e_plan_classify", file: "build.py", lines: [24, 31], msg: "两项均为知识意图 → LangGraph Send 并行扇出至 retrieve_part" },
+          { node: "retrieve_part", edge: "e_cls_parts", file: "build.py", lines: [45, 51], msg: "并行检索 Part 1 与 Part 2，互不干扰 Top-5 排序" },
+          { node: "merge", edge: "e_rp_merge", file: "build.py", lines: [45, 51], msg: "聚合两路检索结果并保持来源隔离" },
+          { node: "gate_parts", edge: "e_merge_gp", file: "evidence.py", lines: [1, 26], msg: "Part 1 PASS，Part 2 FAIL → 支持部分作答 + 精准局部移交" },
+          { node: "answer", edge: "e_gp_ans", file: "knowledge.py", lines: [19, 27], msg: "仅回答有证据的 Part 1，并对 Part 2 生成定向人工转接" },
+          { node: "ground", edge: "e_ans_ground", file: "build.py", lines: [37, 37], msg: "校验 Part 1 声明与引用原文一致" },
+          { node: "output_guard", edge: "e_ground_out", file: "guards.py", lines: [20, 26], msg: "OutputGuard 校验通过并入队局部移交工单" },
+          { node: "end", edge: "e_out_end", file: "hybrid.py", lines: [20, 23], msg: "返回带引用的部分回答 + 局部人工移交提示" }
+        ]
+      },
+      {
+        id: "refund", name: "退款子流 (Interrupt)",
+        steps: [
+          { node: "start", edge: null, file: "build.py", lines: [4, 11], msg: "客户发起退款请求（未提供订单号）" },
+          { node: "input_guard", edge: "e_start_in", file: "guards.py", lines: [1, 10], msg: "InputGuard 通过" },
+          { node: "rewrite", edge: "e_in_rewrite", file: "build.py", lines: [21, 22], msg: "改写查询" },
+          { node: "plan", edge: "e_rewrite_plan", file: "build.py", lines: [23, 23], msg: "单任务请求，跳过拆分" },
+          { node: "classify", edge: "e_plan_classify", file: "build.py", lines: [24, 31], msg: "识别 intent=refund_request → 路由至 Path C (after_sales)" },
+          { node: "after_sales", edge: "e_cls_refund", file: "refund.py", lines: [2, 11], msg: "未找到订单号 → 调用 interrupt() 暂停并推送订单选择器，用户选定 ORD-000065 恢复" },
+          { node: "refund_load", edge: "e_ref_load", file: "refund.py", lines: [13, 17], msg: "读取真实订单事实 (days_since_order) 并校验无重复待审退款" },
+          { node: "refund_retrieve", edge: "e_ref_ret", file: "refund.py", lines: [19, 24], msg: "按订单下单日期 as_of 过滤对应历史版本退款政策并过 Gate" },
+          { node: "refund_decide", edge: "e_ref_dec", file: "refund.py", lines: [26, 29], msg: "结构化判定 + 代码级时间窗口硬校验通过" },
+          { node: "refund_act", edge: "e_ref_act", file: "refund.py", lines: [31, 34], msg: "加行锁 + 幂等键写入 pending_review 退款申请" },
+          { node: "output_guard", edge: "e_ref_out", file: "guards.py", lines: [20, 26], msg: "OutputGuard 校验通过" },
+          { node: "end", edge: "e_out_end", file: "hybrid.py", lines: [20, 23], msg: "推送带政策引用的退款申请确认" }
+        ]
+      },
+      {
+        id: "tools_fallback", name: "查单回退知识 (Fallback)",
+        steps: [
+          { node: "start", edge: null, file: "build.py", lines: [4, 11], msg: "收到物流时效类问题" },
+          { node: "input_guard", edge: "e_start_in", file: "guards.py", lines: [1, 10], msg: "InputGuard 通过" },
+          { node: "rewrite", edge: "e_in_rewrite", file: "build.py", lines: [21, 22], msg: "查询改写完成" },
+          { node: "plan", edge: "e_rewrite_plan", file: "build.py", lines: [23, 23], msg: "单问题直通" },
+          { node: "classify", edge: "e_plan_classify", file: "build.py", lines: [24, 31], msg: "分类为 shipping_delivery → 进入 Path A (tools)" },
+          { node: "tools", edge: "e_cls_tools", file: "build.py", lines: [65, 67], msg: "ToolsPath 发现并非具体查单，设置 fallback_to_knowledge=True 回退！" },
+          { node: "retrieve", edge: "e_tools_ret", file: "knowledge.py", lines: [2, 13], msg: "无缝转入知识路径，检索通用配送政策" },
+          { node: "gate", edge: "e_ret_gate", file: "evidence.py", lines: [1, 18], msg: "Evidence Gate 校验通过" },
+          { node: "answer", edge: "e_gate_ans", file: "knowledge.py", lines: [19, 27], msg: "基于配送政策生成带引用回答" },
+          { node: "ground", edge: "e_ans_ground", file: "build.py", lines: [37, 37], msg: "声明核验通过" },
+          { node: "output_guard", edge: "e_ground_out", file: "guards.py", lines: [20, 26], msg: "OutputGuard 发布回复" },
+          { node: "end", edge: "e_out_end", file: "hybrid.py", lines: [20, 23], msg: "成功挽救误分到工具路径的政策问题" }
+        ]
+      },
+      {
+        id: "guardrail_block", name: "提示注入拦截 (Block)",
+        steps: [
+          { node: "start", edge: null, file: "build.py", lines: [4, 11], msg: "收到疑似提示词注入攻击" },
+          { node: "input_guard", edge: "e_start_in", file: "guards.py", lines: [1, 10], msg: "InputGuard 命中注入规则 → action=block，脱敏历史并跳过后续所有节点！", status: "blocked" },
+          { node: "output_guard", edge: "e_in_out", file: "guards.py", lines: [20, 27], msg: "直接进入 OutputGuard，以 high 优先级入队人工审核", status: "blocked" },
+          { node: "end", edge: "e_out_end", file: "hybrid.py", lines: [20, 23], msg: "返回安全拦截与人工接管响应，0 信息泄露" }
+        ]
+      },
+      {
+        id: "human_mode", name: "人工接管直通 (0 LLM)",
+        steps: [
+          { node: "start", edge: null, file: "build.py", lines: [4, 12], msg: "检查 Checkpoint 发现 state.human_mode == True" },
+          { node: "human_mode", edge: "e_start_human", file: "build.py", lines: [4, 12], msg: "直接将消息追加到活跃人工工单队列，全程 0 次 LLM 调用" },
+          { node: "end", edge: "e_human_end", file: "hybrid.py", lines: [20, 23], msg: "立即返回固定确认回执并通知坐席控制台" }
+        ]
+      }
+    ];
+
+    const INFRA_LINKS = {
+      context: { file: "builder.py", lines: [1, 23], nodes: ["input_guard", "rewrite", "plan", "classify", "tools", "answer", "ground", "refund_decide", "complaint"] },
+      retrieval: { file: "hybrid.py", lines: [1, 11], nodes: ["retrieve", "retrieve_part", "refund_retrieve"] },
+      gate: { file: "evidence.py", lines: [1, 26], nodes: ["gate", "gate_parts", "refund_retrieve"] },
+      sse: { file: "hybrid.py", lines: [13, 23], nodes: ["start", "classify", "after_sales", "output_guard", "end"] }
+    };
+
+    const state = {
+      activeFile: "build.py",
+      selectedNode: "gate",
+      hoveredNodes: new Set(),
+      hoveredEdges: new Set(),
+      activeNodes: new Set(["gate"]),
+      activeEdges: new Set(["e_ret_gate", "e_gate_ans", "e_gate_ho"]),
+      activeLineRange: [35, 35],
+      hoveredLineRange: null,
+      activeInfra: null,
+      scenarioId: null,
+      stepIndex: -1,
+      isPlaying: false,
+      speedMs: 1100,
+      timer: null,
+      scale: 1, tx: 0, ty: 0
+    };
+
+    const PY_KEYWORDS = new Set([
+      "def", "class", "return", "if", "elif", "else", "for", "in", "not", "and", "or",
+      "is", "None", "True", "False", "lambda", "yield", "from", "with", "as", "try", "except"
+    ]);
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function highlightPythonLine(raw) {
+      let comment = "", code = raw, inStr = null;
+      for (let i = 0; i < raw.length; i++) {
+        const ch = raw[i];
+        if ((ch === '"' || ch === "'") && raw[i - 1] !== "\\") {
+          inStr = inStr === ch ? null : (inStr || ch);
+        } else if (ch === "#" && !inStr) {
+          code = raw.slice(0, i);
+          comment = raw.slice(i);
+          break;
+        }
+      }
+      const tokenRe = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b)/g;
+      let out = "", last = 0, m;
+      while ((m = tokenRe.exec(code)) !== null) {
+        out += escapeHtml(code.slice(last, m.index));
+        const tok = m[0];
+        if (tok.startsWith('"') || tok.startsWith("'")) out += `<span class="tok-str">${escapeHtml(tok)}</span>`;
+        else if (/^\d/.test(tok)) out += `<span class="tok-num">${tok}</span>`;
+        else if (PY_KEYWORDS.has(tok)) out += `<span class="tok-kw">${tok}</span>`;
+        else if (/^[A-Z][A-Za-z0-9_]+$/.test(tok)) out += `<span class="tok-cls">${tok}</span>`;
+        else if (code[m.index + tok.length] === "(") out += `<span class="tok-fn">${tok}</span>`;
+        else out += escapeHtml(tok);
+        last = tokenRe.lastIndex;
+      }
+      out += escapeHtml(code.slice(last));
+      if (comment) out += `<span class="tok-com">${escapeHtml(comment)}</span>`;
+      return out || " ";
+    }
+
+    function findMappingForLine(fileKey, lineNum) {
+      let best = null;
+      for (const m of CODE_FILES[fileKey].mappings) {
+        if (lineNum >= m.start && lineNum <= m.end) {
+          if (!best || (m.end - m.start) < (best.end - best.start)) best = m;
+        }
+      }
+      return best;
+    }
+
+    function renderFileTabs() {
+      const tabsEl = document.getElementById("file-tabs");
+      tabsEl.innerHTML = "";
+      for (const [key, f] of Object.entries(CODE_FILES)) {
+        const btn = document.createElement("button");
+        btn.className = "file-tab" + (key === state.activeFile ? " active" : "");
+        btn.textContent = f.label;
+        btn.onclick = () => {
+          state.activeFile = key;
+          state.activeInfra = null;
+          updateInfraPills();
+          renderFileTabs();
+          renderCode();
+        };
+        tabsEl.appendChild(btn);
+      }
+    }
+
+    function renderCode(scrollToActive = false) {
+      const file = CODE_FILES[state.activeFile];
+      document.getElementById("active-file-path").textContent = file.path;
+      const container = document.getElementById("code-container");
+      container.innerHTML = "";
+      const isSim = state.scenarioId !== null && state.stepIndex >= 0;
+
+      file.lines.forEach((rawLine, idx) => {
+        const lineNum = idx + 1;
+        const mapping = findMappingForLine(state.activeFile, lineNum);
+        const row = document.createElement("div");
+        row.className = "code-line" + (mapping ? " linked" : "");
+        row.dataset.line = lineNum;
+
+        const inActive = state.activeLineRange && lineNum >= state.activeLineRange[0] && lineNum <= state.activeLineRange[1];
+        const inHover = state.hoveredLineRange && lineNum >= state.hoveredLineRange[0] && lineNum <= state.hoveredLineRange[1];
+        if (inActive) row.classList.add(isSim ? "is-sim-active" : "is-active");
+        else if (inHover) row.classList.add("is-hovered");
+
+        row.innerHTML = `<span class="line-num">${lineNum}</span><span class="line-dot">${mapping ? "<span></span>" : ""}</span><span class="line-code">${highlightPythonLine(rawLine)}</span>`;
+
+        if (mapping) {
+          row.addEventListener("mouseenter", () => {
+            state.hoveredNodes = new Set(mapping.nodes);
+            state.hoveredEdges = new Set(mapping.edges || []);
+            state.hoveredLineRange = [mapping.start, mapping.end];
+            syncCodeLineClasses();
+            syncGraphClasses();
+          });
+          row.addEventListener("mouseleave", () => {
+            state.hoveredNodes.clear();
+            state.hoveredEdges.clear();
+            state.hoveredLineRange = null;
+            syncCodeLineClasses();
+            syncGraphClasses();
+          });
+          row.addEventListener("click", () => {
+            stopPlayback();
+            clearScenarioHighlight();
+            state.activeInfra = null;
+            updateInfraPills();
+            state.activeNodes = new Set(mapping.nodes);
+            state.activeEdges = new Set(mapping.edges || []);
+            state.activeLineRange = [mapping.start, mapping.end];
+            state.selectedNode = mapping.nodes[0];
+            syncCodeLineClasses();
+            syncGraphClasses();
+            updateInspector(state.selectedNode);
+            document.getElementById("code-link-badge").textContent = `已联动 ${mapping.nodes.length} 个节点`;
+          });
+        }
+        container.appendChild(row);
+      });
+
+      if (scrollToActive && state.activeLineRange) {
+        const target = container.querySelector(`[data-line="${state.activeLineRange[0]}"]`);
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
+    function syncCodeLineClasses() {
+      const container = document.getElementById("code-container");
+      const isSim = state.scenarioId !== null && state.stepIndex >= 0;
+      for (const row of container.children) {
+        const lineNum = Number(row.dataset.line);
+        const inActive = state.activeLineRange && lineNum >= state.activeLineRange[0] && lineNum <= state.activeLineRange[1];
+        const inHover = state.hoveredLineRange && lineNum >= state.hoveredLineRange[0] && lineNum <= state.hoveredLineRange[1];
+        row.classList.toggle("is-active", Boolean(inActive && !isSim));
+        row.classList.toggle("is-sim-active", Boolean(inActive && isSim));
+        row.classList.toggle("is-hovered", Boolean(!inActive && inHover));
+      }
+    }
+
+    function kindAccentVar(kind) {
+      switch (kind) {
+        case "guard": return "var(--warning)";
+        case "gate": case "handoff": return "var(--error)";
+        case "pathA": return "var(--chart-2)";
+        case "pathB": return "var(--chart-1)";
+        case "pathC": return "var(--chart-4)";
+        case "pathD": return "var(--chart-5)";
+        case "pathE": return "var(--muted-foreground)";
+        case "core": return "var(--chart-3)";
+        default: return "var(--primary)";
+      }
+    }
+
+    function buildSvgDiagram() {
+      const ns = "http://www.w3.org/2000/svg";
+      const zonesLayer = document.getElementById("zones-layer");
+      const edgesLayer = document.getElementById("edges-layer");
+      const nodesLayer = document.getElementById("nodes-layer");
+
+      for (const z of ZONES) {
+        const rect = document.createElementNS(ns, "rect");
+        rect.setAttribute("x", z.x); rect.setAttribute("y", z.y);
+        rect.setAttribute("width", z.w); rect.setAttribute("height", z.h);
+        rect.setAttribute("rx", 10); rect.setAttribute("class", "zone-box");
+        zonesLayer.appendChild(rect);
+
+        const text = document.createElementNS(ns, "text");
+        text.setAttribute("x", z.x + 12); text.setAttribute("y", z.y + 18);
+        text.setAttribute("class", "zone-label"); text.textContent = z.label;
+        zonesLayer.appendChild(text);
+      }
+
+      for (const e of EDGES) {
+        const path = document.createElementNS(ns, "path");
+        path.setAttribute("id", `edge-${e.id}`);
+        path.setAttribute("d", e.d);
+        path.setAttribute("class", "graph-edge");
+        path.setAttribute("marker-end", "url(#arrow-default)");
+        edgesLayer.appendChild(path);
+
+        if (e.label) {
+          const len = path.getTotalLength();
+          const pt = path.getPointAtLength(len * 0.48);
+          const w = e.label.length * 6.5 + 10;
+          const g = document.createElementNS(ns, "g");
+          const bg = document.createElementNS(ns, "rect");
+          bg.setAttribute("x", pt.x - w / 2); bg.setAttribute("y", pt.y - 8);
+          bg.setAttribute("width", w); bg.setAttribute("height", 15);
+          bg.setAttribute("rx", 4); bg.setAttribute("class", "edge-label-bg");
+          const lbl = document.createElementNS(ns, "text");
+          lbl.setAttribute("x", pt.x); lbl.setAttribute("y", pt.y + 3);
+          lbl.setAttribute("text-anchor", "middle"); lbl.setAttribute("class", "edge-label-text");
+          lbl.textContent = e.label;
+          g.appendChild(bg); g.appendChild(lbl);
+          edgesLayer.appendChild(g);
+        }
+      }
+
+      for (const n of NODES) {
+        const g = document.createElementNS(ns, "g");
+        g.setAttribute("id", `node-${n.id}`);
+        g.setAttribute("class", "graph-node");
+        g.setAttribute("transform", `translate(${n.x}, ${n.y})`);
+
+        const bg = document.createElementNS(ns, "rect");
+        bg.setAttribute("width", n.w); bg.setAttribute("height", n.h);
+        bg.setAttribute("rx", 9); bg.setAttribute("class", "node-bg");
+
+        const bar = document.createElementNS(ns, "rect");
+        bar.setAttribute("x", 0); bar.setAttribute("y", 6);
+        bar.setAttribute("width", 4); bar.setAttribute("height", n.h - 12);
+        bar.setAttribute("rx", 2); bar.setAttribute("fill", kindAccentVar(n.kind));
+
+        const title = document.createElementNS(ns, "text");
+        title.setAttribute("x", 13); title.setAttribute("y", n.h / 2 - 4);
+        title.setAttribute("fill", "var(--foreground)");
+        title.setAttribute("font-size", "12.5"); title.setAttribute("font-weight", "600");
+        title.setAttribute("font-family", "ui-monospace, SFMono-Regular, Menlo, monospace");
+        title.textContent = n.label;
+
+        const sub = document.createElementNS(ns, "text");
+        sub.setAttribute("x", 13); sub.setAttribute("y", n.h / 2 + 13);
+        sub.setAttribute("fill", "var(--muted-foreground)");
+        sub.setAttribute("font-size", "10.5"); sub.textContent = n.sub;
+
+        g.appendChild(bg); g.appendChild(bar); g.appendChild(title); g.appendChild(sub);
+
+        g.addEventListener("mouseenter", () => {
+          state.hoveredNodes = new Set([n.id]);
+          state.hoveredEdges = new Set(EDGES.filter(e => e.from === n.id || e.to === n.id).map(e => e.id));
+          if (state.activeFile === "build.py") state.hoveredLineRange = n.buildLines;
+          else if (state.activeFile === n.implFile) state.hoveredLineRange = n.implLines;
+          syncGraphClasses();
+          syncCodeLineClasses();
+        });
+        g.addEventListener("mouseleave", () => {
+          state.hoveredNodes.clear();
+          state.hoveredEdges.clear();
+          state.hoveredLineRange = null;
+          syncGraphClasses();
+          syncCodeLineClasses();
+        });
+        g.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          selectNodeFromDiagram(n.id, false);
+        });
+        nodesLayer.appendChild(g);
+      }
+    }
+
+    function selectNodeFromDiagram(nodeId, preferImpl = false) {
+      stopPlayback();
+      clearScenarioHighlight();
+      state.activeInfra = null;
+      updateInfraPills();
+      const n = NODE_MAP[nodeId];
+      if (!n) return;
+      state.selectedNode = nodeId;
+      state.activeNodes = new Set([nodeId]);
+      state.activeEdges = new Set(EDGES.filter(e => e.from === nodeId || e.to === nodeId).map(e => e.id));
+
+      if (preferImpl) {
+        state.activeFile = n.implFile; state.activeLineRange = n.implLines;
+      } else if (state.activeFile === "build.py") {
+        state.activeLineRange = n.buildLines;
+      } else if (n.implFile !== "build.py") {
+        state.activeFile = n.implFile; state.activeLineRange = n.implLines;
+      } else {
+        state.activeFile = "build.py"; state.activeLineRange = n.buildLines;
+      }
+
+      renderFileTabs();
+      renderCode(true);
+      syncGraphClasses();
+      updateInspector(nodeId);
+      document.getElementById("code-link-badge").textContent = `定位 ${state.activeFile} L${state.activeLineRange[0]}–${state.activeLineRange[1]}`;
+    }
+
+    function syncGraphClasses() {
+      const isSim = state.scenarioId !== null && state.stepIndex >= 0;
+      const scenario = isSim ? SCENARIOS.find(s => s.id === state.scenarioId) : null;
+      const visitedNodes = new Set(), visitedEdges = new Set();
+      let currentNode = null, currentEdge = null, currentBlocked = false;
+
+      if (scenario) {
+        for (let i = 0; i <= state.stepIndex; i++) {
+          const st = scenario.steps[i];
+          if (i < state.stepIndex) {
+            visitedNodes.add(st.node);
+            if (st.edge) visitedEdges.add(st.edge);
+          } else {
+            currentNode = st.node;
+            currentEdge = st.edge;
+            currentBlocked = st.status === "blocked";
+          }
+        }
+      }
+
+      for (const n of NODES) {
+        const el = document.getElementById(`node-${n.id}`);
+        if (!el) continue;
+        el.classList.remove("is-hovered", "is-active", "is-sim-visited", "is-sim-current", "is-sim-blocked", "is-dimmed");
+        if (isSim) {
+          if (n.id === currentNode) el.classList.add(currentBlocked ? "is-sim-blocked" : "is-sim-current");
+          else if (visitedNodes.has(n.id)) el.classList.add("is-sim-visited");
+          else el.classList.add("is-dimmed");
+        } else {
+          if (state.activeNodes.has(n.id)) el.classList.add("is-active");
+          if (state.hoveredNodes.has(n.id)) el.classList.add("is-hovered");
+        }
+      }
+
+      for (const e of EDGES) {
+        const el = document.getElementById(`edge-${e.id}`);
+        if (!el) continue;
+        el.classList.remove("is-hovered", "is-active", "is-sim-visited", "is-sim-active", "is-sim-blocked", "is-dimmed");
+        if (isSim) {
+          if (e.id === currentEdge) {
+            el.classList.add(currentBlocked ? "is-sim-blocked" : "is-sim-active");
+            el.setAttribute("marker-end", currentBlocked ? "url(#arrow-error)" : "url(#arrow-sim)");
+          } else if (visitedEdges.has(e.id)) {
+            el.classList.add("is-sim-visited");
+            el.setAttribute("marker-end", "url(#arrow-sim)");
+          } else {
+            el.classList.add("is-dimmed");
+            el.setAttribute("marker-end", "url(#arrow-default)");
+          }
+        } else {
+          const isAct = state.activeEdges.has(e.id);
+          const isHov = state.hoveredEdges.has(e.id);
+          if (isAct) el.classList.add("is-active");
+          if (isHov) el.classList.add("is-hovered");
+          el.setAttribute("marker-end", (isAct || isHov) ? "url(#arrow-active)" : "url(#arrow-default)");
+        }
+      }
+    }
+
+    function animatePacketAlongEdge(edgeId, blocked = false) {
+      const layer = document.getElementById("packet-layer");
+      layer.innerHTML = "";
+      if (!edgeId) return;
+      const path = document.getElementById(`edge-${edgeId}`);
+      if (!path) return;
+      const ns = "http://www.w3.org/2000/svg";
+      const circle = document.createElementNS(ns, "circle");
+      circle.setAttribute("r", "5.5");
+      circle.setAttribute("fill", blocked ? "var(--error)" : "var(--success)");
+      circle.setAttribute("filter", "url(#glow-sim)");
+      layer.appendChild(circle);
+
+      const total = path.getTotalLength();
+      const duration = Math.min(520, state.speedMs * 0.55);
+      const startTs = performance.now();
+      function tick(now) {
+        const t = Math.min(1, (now - startTs) / duration);
+        const pt = path.getPointAtLength(total * (1 - Math.pow(1 - t, 2)));
+        circle.setAttribute("cx", pt.x);
+        circle.setAttribute("cy", pt.y);
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function updateInspector(nodeId) {
+      const n = NODE_MAP[nodeId];
+      if (!n) return;
+      document.getElementById("insp-badge").textContent = n.label;
+      document.getElementById("insp-title").textContent = n.title;
+      document.getElementById("insp-metric").textContent = n.metric || "";
+      document.getElementById("insp-desc").textContent = n.desc;
+      document.getElementById("insp-tags").innerHTML = n.tags.map(t => `<span class="insp-tag">${t}</span>`).join("");
+    }
+
+    function renderScenarioBar() {
+      const bar = document.getElementById("scenario-bar");
+      for (const sc of SCENARIOS) {
+        const btn = document.createElement("button");
+        btn.className = "scenario-btn";
+        btn.dataset.scenario = sc.id;
+        btn.textContent = sc.name;
+        btn.onclick = () => startScenario(sc.id, true);
+        bar.appendChild(btn);
+      }
+    }
+
+    function updateScenarioButtons() {
+      document.querySelectorAll(".scenario-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.scenario === state.scenarioId);
+      });
+    }
+
+    function startScenario(scenarioId, autoPlay = true) {
+      stopPlayback();
+      state.activeInfra = null;
+      updateInfraPills();
+      state.scenarioId = scenarioId;
+      state.stepIndex = 0;
+      updateScenarioButtons();
+      applyScenarioStep();
+      if (autoPlay) startPlayback();
+    }
+
+    function applyScenarioStep() {
+      const sc = SCENARIOS.find(s => s.id === state.scenarioId);
+      if (!sc || state.stepIndex < 0 || state.stepIndex >= sc.steps.length) return;
+      const step = sc.steps[state.stepIndex];
+      state.selectedNode = step.node;
+      state.activeFile = step.file;
+      state.activeLineRange = step.lines;
+
+      renderFileTabs();
+      renderCode(true);
+      syncGraphClasses();
+      updateInspector(step.node);
+      animatePacketAlongEdge(step.edge, step.status === "blocked");
+
+      document.getElementById("sim-status-dot").style.background = step.status === "blocked" ? "var(--error)" : "var(--success)";
+      document.getElementById("sim-step-text").textContent = `[${state.stepIndex + 1}/${sc.steps.length}] ${step.node} — ${step.msg}`;
+      document.getElementById("code-link-badge").textContent = `场景回放 · ${step.file} L${step.lines[0]}–${step.lines[1]}`;
+      document.getElementById("btn-prev").disabled = state.stepIndex <= 0;
+      document.getElementById("btn-next").disabled = state.stepIndex >= sc.steps.length - 1;
+    }
+
+    function startPlayback() {
+      if (!state.scenarioId) { startScenario(SCENARIOS[0].id, true); return; }
+      const sc = SCENARIOS.find(s => s.id === state.scenarioId);
+      if (state.stepIndex >= sc.steps.length - 1) { state.stepIndex = 0; applyScenarioStep(); }
+      state.isPlaying = true;
+      updatePlayButton();
+      clearInterval(state.timer);
+      state.timer = setInterval(() => {
+        if (state.stepIndex < sc.steps.length - 1) { state.stepIndex++; applyScenarioStep(); }
+        else stopPlayback();
+      }, state.speedMs);
+    }
+
+    function stopPlayback() {
+      state.isPlaying = false;
+      clearInterval(state.timer);
+      state.timer = null;
+      updatePlayButton();
+    }
+
+    function updatePlayButton() {
+      document.getElementById("play-icon").textContent = state.isPlaying ? "⏸" : "▶";
+      document.getElementById("play-label").textContent = state.isPlaying ? "暂停" : "播放流程";
+    }
+
+    function clearScenarioHighlight() {
+      state.scenarioId = null;
+      state.stepIndex = -1;
+      document.getElementById("packet-layer").innerHTML = "";
+      document.getElementById("sim-status-dot").style.background = "var(--muted-foreground)";
+      document.getElementById("sim-step-text").textContent = "自由探索模式 — 点击任意节点查看源码，或点击上方场景播放动态流转";
+      updateScenarioButtons();
+    }
+
+    function updateInfraPills() {
+      document.querySelectorAll(".infra-pill").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.infra === state.activeInfra);
+      });
+    }
+
+    function applyTransform() {
+      document.getElementById("pan-zoom-group").setAttribute("transform", `translate(${state.tx}, ${state.ty}) scale(${state.scale})`);
+      document.getElementById("zoom-readout").textContent = `${Math.round(state.scale * 100)}%`;
+    }
+
+    function setupPanZoom() {
+      const viewport = document.getElementById("svg-viewport");
+      let dragging = false, startX = 0, startY = 0, origTx = 0, origTy = 0;
+      viewport.addEventListener("mousedown", (e) => {
+        if (e.target.closest(".graph-node")) return;
+        dragging = true; startX = e.clientX; startY = e.clientY; origTx = state.tx; origTy = state.ty;
+      });
+      window.addEventListener("mousemove", (e) => {
+        if (!dragging) return;
+        state.tx = origTx + (e.clientX - startX);
+        state.ty = origTy + (e.clientY - startY);
+        applyTransform();
+      });
+      window.addEventListener("mouseup", () => { dragging = false; });
+      viewport.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        state.scale = Math.min(2.2, Math.max(0.55, state.scale * (e.deltaY < 0 ? 1.1 : 0.91)));
+        applyTransform();
+      }, { passive: false });
+      document.getElementById("zoom-in").onclick = () => { state.scale = Math.min(2.2, state.scale * 1.15); applyTransform(); };
+      document.getElementById("zoom-out").onclick = () => { state.scale = Math.max(0.55, state.scale / 1.15); applyTransform(); };
+      document.getElementById("zoom-fit").onclick = () => { state.scale = 1; state.tx = 0; state.ty = 0; applyTransform(); };
+    }
+
+    function setupResizer() {
+      const resizer = document.getElementById("resizer");
+      const leftPane = document.getElementById("left-pane");
+      let dragging = false;
+      resizer.addEventListener("mousedown", () => { dragging = true; resizer.classList.add("dragging"); });
+      window.addEventListener("mousemove", (e) => {
+        if (!dragging) return;
+        leftPane.style.width = `${Math.min(68, Math.max(26, (e.clientX / window.innerWidth) * 100))}%`;
+      });
+      window.addEventListener("mouseup", () => { dragging = false; resizer.classList.remove("dragging"); });
+    }
+
+    function init() {
+      renderScenarioBar();
+      buildSvgDiagram();
+      renderFileTabs();
+      renderCode(false);
+      syncGraphClasses();
+      updateInspector(state.selectedNode);
+      setupPanZoom();
+      setupResizer();
+
+      document.getElementById("btn-play").onclick = () => state.isPlaying ? stopPlayback() : startPlayback();
+      document.getElementById("btn-prev").onclick = () => {
+        stopPlayback();
+        if (state.scenarioId && state.stepIndex > 0) { state.stepIndex--; applyScenarioStep(); }
+      };
+      document.getElementById("btn-next").onclick = () => {
+        stopPlayback();
+        if (!state.scenarioId) { startScenario(SCENARIOS[0].id, false); return; }
+        const sc = SCENARIOS.find(s => s.id === state.scenarioId);
+        if (state.stepIndex < sc.steps.length - 1) { state.stepIndex++; applyScenarioStep(); }
+      };
+      document.getElementById("btn-speed").onclick = () => {
+        state.speedMs = state.speedMs === 1100 ? 550 : 1100;
+        document.getElementById("btn-speed").textContent = state.speedMs === 1100 ? "1x" : "2x";
+        if (state.isPlaying) startPlayback();
+      };
+      document.getElementById("btn-reset").onclick = () => {
+        stopPlayback(); clearScenarioHighlight(); state.activeInfra = null; updateInfraPills();
+        state.activeFile = "build.py"; state.selectedNode = "gate";
+        state.activeNodes = new Set(["gate"]); state.activeEdges = new Set(["e_ret_gate", "e_gate_ans", "e_gate_ho"]);
+        state.activeLineRange = [35, 35];
+        renderFileTabs(); renderCode(true); syncGraphClasses(); updateInspector("gate");
+      };
+      document.getElementById("btn-theme").onclick = () => {
+        const root = document.documentElement;
+        const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        root.setAttribute("data-theme", next);
+        document.getElementById("btn-theme").textContent = next === "dark" ? "☀ 亮色" : "☾ 暗色";
+      };
+      document.getElementById("btn-toggle-view-mode").onclick = () => {
+        const n = NODE_MAP[state.selectedNode];
+        if (!n) return;
+        if (state.activeFile === "build.py" && n.implFile !== "build.py") {
+          selectNodeFromDiagram(n.id, true);
+        } else {
+          state.activeFile = "build.py"; state.activeLineRange = n.buildLines;
+          renderFileTabs(); renderCode(true);
+          document.getElementById("code-link-badge").textContent = `编排视角 · build.py L${n.buildLines[0]}–${n.buildLines[1]}`;
+        }
+      };
+      document.querySelectorAll(".infra-pill").forEach(btn => {
+        btn.onclick = () => {
+          stopPlayback(); clearScenarioHighlight();
+          const key = btn.dataset.infra, info = INFRA_LINKS[key];
+          state.activeInfra = key; updateInfraPills();
+          state.activeFile = info.file; state.activeLineRange = info.lines;
+          state.activeNodes = new Set(info.nodes); state.activeEdges = new Set();
+          state.selectedNode = info.nodes[0];
+          renderFileTabs(); renderCode(true); syncGraphClasses(); updateInspector(state.selectedNode);
+          document.getElementById("code-link-badge").textContent = `横切底座联动 ${info.nodes.length} 个节点`;
+        };
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>

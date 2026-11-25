@@ -197,6 +197,10 @@ def create_app(deps: ApiDeps) -> FastAPI:
     async def console_page() -> FileResponse:
         return FileResponse(STATIC / "console.html")
 
+    @app.get("/visualizer")
+    async def visualizer_page() -> FileResponse:
+        return FileResponse(STATIC / "visualizer.html")
+
     @app.get("/api/customers")
     def customers() -> list[CustomerSummary]:
         try:
