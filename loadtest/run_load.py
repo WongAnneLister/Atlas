@@ -31,7 +31,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 
-from loadtest.locustfile import (
+from loadtest.workload import (
     ATTACK_PROMPTS,
     CHITCHAT_PROMPTS,
     ORDER_PROMPTS,

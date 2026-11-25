@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import sys
 import time
 
 from fastapi.testclient import TestClient
-from loadtest.locustfile import TASK_WEIGHTS
 from loadtest.mock_llm import MockLLMConfig, create_mock_llm_app
+from loadtest.workload import TASK_WEIGHTS
 
 from support_agent.api.app import create_app
 from support_agent.api.backpressure import CustomerAllowlistCache, InFlightLimiter
@@ -144,3 +145,6 @@ def test_locust_task_weights_sum_to_100() -> None:
     assert sum(TASK_WEIGHTS.values()) == 100
     assert TASK_WEIGHTS["policy_question"] == 50
     assert TASK_WEIGHTS["attack"] == 5
+    # Importing loadtest.workload in pytest must never trigger locust / gevent monkey-patching.
+    assert "locust" not in sys.modules
+    assert "gevent" not in sys.modules
