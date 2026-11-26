@@ -1,0 +1,191 @@
+{
+  "metrics": {
+    "answers_with_any_unsupported_claim": {
+      "interval": {
+        "point": 0.029411764705882353,
+        "low": 0.0,
+        "high": 0.06862745098039216
+      },
+      "n": 102,
+      "count": 3,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "citation_validity": {
+      "interval": {
+        "point": 0.7763888888888888,
+        "low": 0.7041666666666667,
+        "high": 0.8458333333333333
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "claims_removed_per_answer": {
+      "interval": {
+        "point": 0.0784313725490196,
+        "low": 0.0,
+        "high": 0.20588235294117646
+      },
+      "n": 102,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "false_accept": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 30,
+      "count": 0,
+      "wilson_upper": 0.11351339317396873,
+      "rule_of_three_upper": 0.1
+    },
+    "false_reject": {
+      "interval": {
+        "point": 0.2,
+        "low": 0.13333333333333333,
+        "high": 0.275
+      },
+      "n": 120,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "full_answer_rate": {
+      "interval": {
+        "point": 0.8,
+        "low": 0.6666666666666666,
+        "high": 0.9333333333333333
+      },
+      "n": 30,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "graph_mrr_at_5": {
+      "interval": {
+        "point": 0.9770833333333333,
+        "low": 0.9479166666666666,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "graph_recall_at_5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9583333333333334,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "latency_p50": {
+      "interval": {
+        "point": 5.935670832986943,
+        "low": 5.475645083002746,
+        "high": 6.888189917081036
+      },
+      "n": 150,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "latency_p95": {
+      "interval": {
+        "point": 24.828885291004553,
+        "low": 16.946415457990952,
+        "high": 55.57086033304222
+      },
+      "n": 150,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "low_grounding_handoff_rate": {
+      "interval": {
+        "point": 0.02912621359223301,
+        "low": 0.0,
+        "high": 0.06796116504854369
+      },
+      "n": 103,
+      "count": 3,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "noanswer_false_accept": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 30,
+      "count": 0,
+      "wilson_upper": 0.11351339317396873,
+      "rule_of_three_upper": 0.1
+    },
+    "part_recall_at_5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9583333333333334,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": 118,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "partial_answer_rate": {
+      "interval": {
+        "point": 0.03333333333333333,
+        "low": 0.0,
+        "high": 0.1
+      },
+      "n": 30,
+      "count": 1,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "pass_rate": {
+      "interval": {
+        "point": 0.64,
+        "low": 0.5666666666666667,
+        "high": 0.7134999999999991
+      },
+      "n": 150,
+      "count": 96,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "claim_support_rate": {
+      "interval": {
+        "point": 0.9877049180327869,
+        "low": 0.9713114754098361,
+        "high": 1.0
+      },
+      "n": 244,
+      "count": 241,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    }
+  },
+  "statistics": {
+    "latency_p50": "p50",
+    "latency_p95": "p95",
+    "first_token_p50": "p50",
+    "first_token_p95": "p95"
+  },
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

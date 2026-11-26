@@ -1,0 +1,21 @@
+{
+  "v1-test-25b": "e2e-test-20261122-07cf8f59-7203ff90",
+  "v1-test-9b73": "e2e-test-20261126-9b7350e6-781fefb3",
+  "v1-test-fix": "e2e-test-20261126-7f0973a1-91a09bb2",
+  "v1-dev-25b": "e2e-dev-20261122-07cf8f59-14184b67",
+  "v1-dev-9b73": "e2e-dev-20261126-9b7350e6-3755e1ae",
+  "v1-dev-cur": "e2e-dev-20261126-7f0973a1-2c19b373",
+  "v1-dev-legacy": "e2e-dev-20261126-7f0973a1-7a6b1a4a",
+  "v1-dev-answer": "e2e-dev-20261126-7f0973a1-cbd581b2",
+  "mp-test-25b": "multipart-test-20261122-07cf8f59-5995ba37f1a3437faa7f60a57a730a73",
+  "mp-test-9b73": "multipart-test-20261126-9b7350e6-7952421bee4b4ecaaf56cf66891b2257",
+  "mp-test-fix": "multipart-test-20261126-9bbd3648-95ac86702e6c41e99f8f4beaff6c543f",
+  "mp-dev-25b": "multipart-dev-20261122-07cf8f59-f8201bd667324f178518830ad34d1805",
+  "mp-dev-9b73": "multipart-dev-20261126-9b7350e6-ed1df34809124430a9f888b0e515c738",
+  "smoke-gate-9b73": "smoke-test-20261126-9b7350e6-6801cc06",
+  "redteam-9b73": "redteam-test-20261126-9b7350e6-64843094",
+  "smoke-gate-fix": "smoke-test-20261126-9bbd3648-355a4829",
+  "redteam-fix": "redteam-test-20261126-9bbd3648-9f3a9c5f",
+  "latency-25b": "smoke-test-20261122-07cf8f59-309f9b4a",
+  "latency-9b73": "smoke-test-20261126-9b7350e6-7bc8f588"
+}
