@@ -56,10 +56,11 @@ def render(runs: list[Path]) -> str:
         f"- Scenarios: `scenarios_v1@{entry.version}` (`{file_hash(SCENARIOS)}`)",
         f"- Date (UTC): {datetime.now(UTC):%Y-%m-%d}",
         "",
-        "Fact retention now counts only checkpoints whose turn the conversation reached;",
-        "before, a checkpoint after the simulated user's last turn counted as a miss.",
+        "Fact retention counts only checkpoints whose turn the conversation reached with a",
+        "probe that did not restate the fact; before, a checkpoint after the simulated user's",
+        "last turn counted as a miss.",
         "",
-        "| Run | Items sha256 | Conversations | Task success | Fact checkpoints reached "
+        "| Run | Items sha256 | Conversations | Task success | Fact checkpoints probed "
         "| Fact retention |",
         "|---|---|---:|---|---:|---|",
     ]

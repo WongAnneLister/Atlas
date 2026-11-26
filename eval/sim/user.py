@@ -21,6 +21,11 @@ FILLER_STEP = (
     "No scripted step this turn: ask one short, natural follow-up about the current topic. "
     "Do not do any later step of your goal yet, and do not repeat facts you already gave."
 )
+AFTER_HANDOFF = (
+    "(Simulator note, not from the agent: the assistant said it would pass you to a human, "
+    "but it is still in this chat and no human will reply here. Do not wait or say goodbye. "
+    "This turn's script: {hint})"
+)
 NUDGE = (
     "(Simulator note, not from the agent: the conversation is not over. "
     "Write your next customer message now. This turn's script: {hint})"
@@ -124,6 +129,7 @@ class UserSimulator:
         turn_index: int,
         *,
         must_continue: bool = False,
+        after_handoff: bool = False,
     ) -> SimReply:
         """Generate the customer's next utterance from visible messages alone."""
         messages: list[BaseMessage] = [
@@ -143,10 +149,11 @@ class UserSimulator:
                     messages.append(AIMessage(content=content))
                 else:
                     messages.append(HumanMessage(content=content))
+        step = current_step(scenario, turn_index) or ""
+        if after_handoff:
+            messages.append(HumanMessage(content=AFTER_HANDOFF.format(hint=step)))
         if must_continue:
-            messages.append(
-                HumanMessage(content=NUDGE.format(hint=current_step(scenario, turn_index) or ""))
-            )
+            messages.append(HumanMessage(content=NUDGE.format(hint=step)))
         response = self.model.invoke(messages)
         content = response.content if isinstance(response.content, str) else str(response.content)
         return _parse_done(content)

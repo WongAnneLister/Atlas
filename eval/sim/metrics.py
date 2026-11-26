@@ -113,14 +113,22 @@ def _count_redundant_questions(
 def _fact_retention(
     scenario: Scenario, transcript: ConversationTranscript
 ) -> tuple[float | None, int]:
-    """Return (retention over reached checkpoints, number of reached checkpoints).
+    """Return (retention over valid probes, number of valid probes).
 
     A checkpoint is the turn at which the script asks the agent to recall a fact. The
     simulated user can finish before that turn; such a checkpoint was never asked, so it
-    is not reached and is left out instead of counting as a miss.
+    is not reached and is left out instead of counting as a miss. A probe message that
+    restates the fact itself is left out too, since repeating it back tests no memory.
     """
     last_turn = max((turn.turn_index for turn in transcript.turns), default=0)
-    reached = [cp for cp in scenario.checkpoints if cp.turn_hint <= last_turn]
+    probes = {turn.turn_index: turn.user_message.lower() for turn in transcript.turns}
+    reached = [
+        cp
+        for cp in scenario.checkpoints
+        if cp.turn_hint <= last_turn
+        # A probe that restates the fact does not test recall.
+        and not any(sub.lower() in probes.get(cp.turn_hint, "") for sub in cp.expected_substrings)
+    ]
     if not reached:
         return None, 0
     hits = 0

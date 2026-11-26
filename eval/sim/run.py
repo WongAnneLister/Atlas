@@ -209,15 +209,18 @@ async def run_scenario_over_api(
     # Scripted scenarios probe recall at fixed turns; the chat must reach them.
     min_turns = scripted_turns(scenario)
     early_done: list[int] = []
+    # After a handoff the simulated customer tends to wait for a human and skip its script.
+    handed_off = False
     for turn_idx in range(1, scenario.max_turns + 1):
-        sim_reply = simulator.next_turn(scenario, visible_history, turn_idx)
+        remind = handed_off and turn_idx <= min_turns
+        sim_reply = simulator.next_turn(scenario, visible_history, turn_idx, after_handoff=remind)
         # Before the last checkpoint the chat goes on; at that turn a message must be sent.
         too_early = turn_idx < min_turns or (turn_idx == min_turns and not sim_reply.text)
         if sim_reply.done and too_early:
             early_done.append(turn_idx)
             if not sim_reply.text:
                 sim_reply = simulator.next_turn(
-                    scenario, visible_history, turn_idx, must_continue=True
+                    scenario, visible_history, turn_idx, must_continue=True, after_handoff=remind
                 )
             if turn_idx < min_turns:
                 sim_reply = SimReply(text=sim_reply.text, done=False)
@@ -325,6 +328,8 @@ async def run_scenario_over_api(
         if sim_reply.done:
             stop_reason = "done"
             break
+        if parsed["handoff_reason"] is not None:
+            handed_off = True
         if parsed["handoff_reason"] is not None and turn_idx >= min_turns:
             stop_reason = "handoff"
             break

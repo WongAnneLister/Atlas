@@ -584,3 +584,51 @@ def test_scripted_brief_shows_only_the_current_step() -> None:
     assert json.loads(_scenario_brief(scripted, 4))["current_script_hint"] is None
     free = _sample_scenario(script_hints=["Turn 1: ask status."], checkpoints=[])
     assert json.loads(_scenario_brief(free, 1))["script_hints"] == ["Turn 1: ask status."]
+
+
+def test_a_probe_that_restates_the_fact_is_not_scored_as_recall() -> None:
+    scenario = _sample_scenario(
+        checkpoints=[
+            FactCheckpoint(turn_hint=2, fact_key="order_id", expected_substrings=["ORD-000009"])
+        ]
+    )
+    transcript = ConversationTranscript(
+        scenario_id=scenario.id,
+        category=scenario.category,
+        customer_id="CUST-0001",
+        turns=[
+            SimTurn(turn_index=1, user_message="Check ORD-000009.", agent_message="In transit."),
+            SimTurn(
+                turn_index=2,
+                user_message="Confirm ORD-000009 for me?",
+                agent_message="ORD-000009 is in transit.",
+            ),
+        ],
+    )
+    ev = evaluate_transcript(scenario, transcript)
+    assert ev.fact_retention is None
+    assert ev.fact_checkpoints_reached == 0
+
+
+def test_after_a_handoff_the_customer_is_told_the_assistant_is_still_there() -> None:
+    from eval.sim.user import AFTER_HANDOFF
+    from langchain_core.messages import BaseMessage
+
+    seen: list[list[BaseMessage]] = []
+
+    class _Recorder(FakeListChatModel):
+        def invoke(self, messages: Any, *args: Any, **kwargs: Any) -> Any:
+            seen.append(list(messages))
+            return super().invoke(messages, *args, **kwargs)
+
+    scenario = _sample_scenario(
+        script_hints=["Turn 3: ask which order we discussed."],
+        checkpoints=[
+            FactCheckpoint(turn_hint=3, fact_key="order_id", expected_substrings=["ORD-000009"])
+        ],
+    )
+    sim = UserSimulator(_Recorder(responses=["Which order was it?"]), model_name="fake")
+    history = [("user", "Check ORD-000009."), ("assistant", "I'll pass you to a human.")]
+    sim.next_turn(scenario, history, 3, after_handoff=True)  # type: ignore[arg-type]
+    note = str(seen[-1][-1].content)
+    assert note == AFTER_HANDOFF.format(hint="ask which order we discussed.")

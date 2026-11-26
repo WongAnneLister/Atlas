@@ -88,7 +88,7 @@ def render_sim_report(
         f"{aggregate['redundant_questions']['n']} |",
         f"| Fact retention | {_fmt_ci(aggregate['fact_retention'], pct=True)} | "
         f"{aggregate['fact_retention']['n']} |",
-        f"| Fact checkpoints reached | {_reached(aggregate)} | "
+        f"| Fact checkpoints probed (reached, fact not restated) | {_reached(aggregate)} | "
         f"{aggregate.get('fact_checkpoints', {}).get('total', 0)} |",
         f"| Loop rate | {_fmt_ci(aggregate['loop_rate'], pct=True)} | "
         f"{aggregate['loop_rate']['n']} |",
