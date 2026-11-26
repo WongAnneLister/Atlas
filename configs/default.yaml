@@ -477,7 +477,9 @@ context:
     classify: {total_tokens: 2048, history_max_tokens: 400, evidence_min_ratio: 0.0, share_prefix: false, recent_turns: 2}
     plan: {total_tokens: 2048, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
     input_guard: {total_tokens: 1024, history_max_tokens: 0, evidence_min_ratio: 0.0, share_prefix: false}
-    answer: {total_tokens: 12000, history_max_tokens: 3000, evidence_min_ratio: 0.40, share_prefix: true}
+    # Pre-builder answer prompt (the layout the gate and claim checks were calibrated on);
+    # dev showed no difference, so the prompt change must earn its place. See PROGRESS.
+    answer: {total_tokens: 12000, history_max_tokens: 3000, evidence_min_ratio: 0.40, share_prefix: true, legacy_layout: true}
     tools: {total_tokens: 8192, history_max_tokens: 2048, evidence_min_ratio: 0.0, share_prefix: true}
     decide: {total_tokens: 8192, history_max_tokens: 1500, evidence_min_ratio: 0.35, share_prefix: true}
     complaint: {total_tokens: 4096, history_max_tokens: 1024, evidence_min_ratio: 0.0, share_prefix: true}

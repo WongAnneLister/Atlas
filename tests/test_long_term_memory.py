@@ -355,7 +355,12 @@ def test_l1_bytes_identical_across_turns_even_with_mid_turn_l4_lookup() -> None:
     assert "Spanish" in l4_hints_t2[0]
 
     # Build Turn 1 and Turn 2 contexts; L0+L1 message bytes must remain identical!
-    builder = ContextBuilder(settings.context)
+    # This checks the builder's layering, so use the builder layout for the answer node.
+    context = settings.context.model_copy(deep=True)
+    context.profiles["answer"] = context.profiles["answer"].model_copy(
+        update={"legacy_layout": False}
+    )
+    builder = ContextBuilder(context)
     ctx_t1 = builder.build(
         "answer",
         task_prompt="Answer using sources.",

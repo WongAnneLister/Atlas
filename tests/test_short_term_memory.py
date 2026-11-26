@@ -166,8 +166,9 @@ def test_invalid_summary_retries_then_falls_back_to_extractive_and_reuses_l0_l2_
 
     with GraphDeps(settings=settings, fast_model=bad_model) as deps:
         builder = deps.context_builder()
+        # A main-conversation node that keeps the builder layout (answer uses the legacy one).
         parent_l0_l2 = builder.build(
-            "answer",
+            "tools",
             task_prompt="Answer.",
             user_text="Current?",
             compacted_blocks=[b0.text],
