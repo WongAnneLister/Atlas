@@ -65,6 +65,7 @@ def reset_turn() -> dict[str, Any]:
         "refund_decision": None,
         "refund_request": None,
         "handoff": None,
+        "handoff_delivery_failed": False,
         "tool_errors": 0,
         "consecutive_tool_errors": 0,
         "agent_steps": 0,

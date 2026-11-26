@@ -107,3 +107,5 @@ class ConversationState(BaseModel):
     # Human handoff takeover mode (Commit 31): checkpointed across turns until resolved.
     human_mode: bool = False
     active_handoff_id: str | None = None
+    # Per turn: the handoff or the customer's message did not reach the human queue.
+    handoff_delivery_failed: bool = False

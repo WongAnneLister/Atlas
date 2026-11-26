@@ -1,7 +1,7 @@
 """Compile the fixed rewrite → classify → path workflow with checkpointing."""
 
+import logging
 from collections.abc import Callable
-from contextlib import suppress
 from typing import Any
 
 from langchain_core.messages import AIMessage
@@ -29,6 +29,8 @@ from support_agent.graph.nodes.tools_path import ToolsPath
 from support_agent.graph.parts import PartRetrievalRequest
 from support_agent.graph.state import ConversationState
 from support_agent.reliability.events import collect_events
+
+logger = logging.getLogger(__name__)
 
 
 def route_by_path(state: ConversationState) -> str:
@@ -139,13 +141,22 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
         if state.messages and isinstance(state.messages[-1].content, str):
             text = state.messages[-1].content.strip()
         queue = deps.handoff_queue()
+        delivery_failed = False
         if queue is not None and state.active_handoff_id and text:
-            with suppress(Exception):
+            try:
                 queue.add_message(
                     state.active_handoff_id,
                     sender="customer",
                     author=state.customer_id or "customer",
                     text=text,
+                )
+            except Exception as error:
+                # The ack below promises delivery; the failure must not be silent.
+                delivery_failed = True
+                logger.error(
+                    "Customer message not added to handoff %s: %s",
+                    state.active_handoff_id,
+                    type(error).__name__,
                 )
         ack = deps.settings.handoff.human_mode_ack
         return {
@@ -154,6 +165,7 @@ def build_graph(deps: GraphDeps) -> CompiledStateGraph[ConversationState, None, 
             "messages": [AIMessage(content=ack)],
             "human_mode": True,
             "active_handoff_id": state.active_handoff_id,
+            "handoff_delivery_failed": delivery_failed,
             "trace": [*state.trace, "human_mode"],
         }
 
