@@ -20,6 +20,7 @@ import logging
 import math
 import subprocess
 import time
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -304,6 +305,24 @@ def _config_hash(settings: Settings) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]
 
 
+def recall_scores(
+    answer: str, profile: str, hints: Sequence[str], tokens: Sequence[str]
+) -> tuple[bool, bool, bool]:
+    """Return (fact used in the reply, memory loaded into the prompt, redundant question).
+
+    Use counts only when the reply itself carries the fact. A memory that reached the
+    prompt but not the reply is reported separately, so loading is not scored as use.
+    """
+    answer_low = answer.casefold()
+    loaded_low = f"{profile} {' '.join(hints)}".casefold()
+    wanted = [token.casefold() for token in tokens]
+    return (
+        any(token in answer_low for token in wanted),
+        any(token in loaded_low for token in wanted),
+        any(pattern in answer_low for pattern in _REDUNDANT_PATTERNS),
+    )
+
+
 @dataclass
 class ScenarioResult:
     scenario_id: str
@@ -311,6 +330,7 @@ class ScenarioResult:
     arm: Literal["memory_off", "memory_on"]
     latency_ms: float
     fact_used: bool | None
+    memory_loaded: bool | None
     redundant_question: bool | None
     stale_error: bool | None
     leaked: bool | None
@@ -401,17 +421,19 @@ def _run_one(
         combined_low = f"{answer_low} {profile_low} {hints_low}"
 
         fact_used: bool | None = None
+        memory_loaded: bool | None = None
         redundant_q: bool | None = None
         stale_err: bool | None = None
         leaked: bool | None = None
         del_ok: bool | None = None
 
         if scenario.group == "recall":
-            fact_used = any(tok in answer_low for tok in scenario.expected_fact_tokens) or (
-                any(tok in profile_low for tok in scenario.expected_fact_tokens)
-                and not any(p in answer_low for p in _REDUNDANT_PATTERNS)
+            fact_used, memory_loaded, redundant_q = recall_scores(
+                state.answer or "",
+                state.customer_profile or "",
+                state.turn_memory_hints,
+                scenario.expected_fact_tokens,
             )
-            redundant_q = any(p in answer_low for p in _REDUNDANT_PATTERNS)
         elif scenario.group == "stale_update":
             mentions_stale = any(tok in answer_low for tok in scenario.stale_tokens)
             mentions_updated = any(tok in answer_low for tok in scenario.updated_tokens)
@@ -432,6 +454,7 @@ def _run_one(
             arm=arm,
             latency_ms=elapsed_ms,
             fact_used=fact_used,
+            memory_loaded=memory_loaded,
             redundant_question=redundant_q,
             stale_error=stale_err,
             leaked=leaked,
@@ -465,6 +488,7 @@ def _summarise_arm(results: list[ScenarioResult]) -> dict[str, Any]:
     mean_rows = sum(len(r.stored_memories) for r in results) / len(results) if results else 0.0
     return {
         "fact_used": (sum(1 for r in recalls if r.fact_used), len(recalls)),
+        "memory_loaded": (sum(1 for r in recalls if r.memory_loaded), len(recalls)),
         "redundant": (sum(1 for r in recalls if r.redundant_question), len(recalls)),
         "stale_err": (sum(1 for r in stales if r.stale_error), len(stales)),
         "leaks": (sum(1 for r in leaks if r.leaked), len(leaks)),
@@ -513,6 +537,10 @@ def render_report(
         (
             f"| Cross-session fact use (recall) | {_rate_str(*s_off['fact_used'])} "
             f"| {_rate_str(*s_on['fact_used'])} |"
+        ),
+        (
+            f"| Recall memory loaded into the prompt (diagnostic) "
+            f"| {_rate_str(*s_off['memory_loaded'])} | {_rate_str(*s_on['memory_loaded'])} |"
         ),
         (
             f"| Redundant questions in session 2 | {_rate_str(*s_off['redundant'])} "

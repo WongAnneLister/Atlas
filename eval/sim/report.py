@@ -24,6 +24,12 @@ def _git_sha() -> str:
         return "unknown"
 
 
+def _reached(aggregate: dict[str, Any]) -> str:
+    """Checkpoints the conversations reached; fact retention is scored only on these."""
+    counts = aggregate.get("fact_checkpoints") or {}
+    return f"{counts.get('reached', 0)}/{counts.get('total', 0)}"
+
+
 def _fmt_ci(entry: dict[str, Any], *, pct: bool = False) -> str:
     mean = entry.get("mean")
     if mean is None:
@@ -82,6 +88,8 @@ def render_sim_report(
         f"{aggregate['redundant_questions']['n']} |",
         f"| Fact retention | {_fmt_ci(aggregate['fact_retention'], pct=True)} | "
         f"{aggregate['fact_retention']['n']} |",
+        f"| Fact checkpoints reached | {_reached(aggregate)} | "
+        f"{aggregate.get('fact_checkpoints', {}).get('total', 0)} |",
         f"| Loop rate | {_fmt_ci(aggregate['loop_rate'], pct=True)} | "
         f"{aggregate['loop_rate']['n']} |",
         f"| Handoff appropriateness | {_fmt_ci(aggregate['handoff_appropriate'], pct=True)} | "

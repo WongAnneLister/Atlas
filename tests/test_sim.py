@@ -382,3 +382,62 @@ def test_asgi_runner_completes_handles_interrupt_and_stops_at_max_turns(
     assert "Tokens per turn curve" in report_md
     validity_md = render_validity_template(transcripts, sample_size=10)
     assert "Simulator validity review" in validity_md
+
+
+def test_a_checkpoint_after_the_last_turn_is_not_reached_and_not_a_miss() -> None:
+    # The script asks for recall at turn 5; the simulated user said goodbye at turn 2.
+    scenario = _sample_scenario(
+        checkpoints=[
+            FactCheckpoint(turn_hint=2, fact_key="order_id", expected_substrings=["ORD-000009"]),
+            FactCheckpoint(turn_hint=5, fact_key="order_id", expected_substrings=["ORD-000009"]),
+        ]
+    )
+    turns = [
+        SimTurn(turn_index=1, user_message="Check ORD-000009.", agent_message="In transit."),
+        SimTurn(
+            turn_index=2, user_message="Thanks, bye.", agent_message="ORD-000009 is on its way."
+        ),
+    ]
+    short = ConversationTranscript(
+        scenario_id=scenario.id, category=scenario.category, customer_id="CUST-0001", turns=turns
+    )
+    ev = evaluate_transcript(scenario, short)
+    assert ev.fact_retention == 1.0
+    assert (ev.fact_checkpoints, ev.fact_checkpoints_reached) == (2, 1)
+
+    none_reached = ConversationTranscript(
+        scenario_id=scenario.id,
+        category=scenario.category,
+        customer_id="CUST-0001",
+        turns=turns[:1],
+    )
+    ev_none = evaluate_transcript(
+        _sample_scenario(
+            checkpoints=[
+                FactCheckpoint(turn_hint=5, fact_key="order_id", expected_substrings=["X"])
+            ]
+        ),
+        none_reached,
+    )
+    assert ev_none.fact_retention is None
+    agg = aggregate_evaluations([ev, ev_none], n_resamples=50, seed=27)
+    assert agg["fact_checkpoints"] == {"reached": 1, "total": 3}
+    assert agg["fact_retention"]["n"] == 1
+
+
+def test_rescore_reports_reached_checkpoints_from_saved_transcripts(tmp_path: Path) -> None:
+    from eval.sim import rescore
+
+    scenario = load_scenarios(rescore.SCENARIOS)[0]
+    run = tmp_path / "sim-test-x"
+    run.mkdir()
+    transcript = ConversationTranscript(
+        scenario_id=scenario.id,
+        category=scenario.category,
+        customer_id=scenario.customer_id,
+        turns=[SimTurn(turn_index=1, user_message="hi", agent_message="hello")],
+    )
+    (run / "items.jsonl").write_text(transcript.model_dump_json() + "\n")
+    text = rescore.render([run])
+    assert "| `sim-test-x` |" in text
+    assert f"0/{len(scenario.checkpoints)}" in text

@@ -129,3 +129,39 @@ def test_kv_benchmark_skips_cleanly_without_gpu(monkeypatch: Any) -> None:
     result = mod.run_kv_benchmark(prompts_path=Path("nonexistent.jsonl"), vllm_url=None)
     assert result["status"] == "skipped"
     assert "no GPU" in result["reason"]
+
+
+def test_stable_prefix_ignores_growing_history_and_tracks_compaction() -> None:
+    from eval.context_ab import _prefix_change_rate
+    from eval.sim.models import ConversationTranscript, SimTurn
+
+    builder = ContextBuilder(ContextSettings(), llm_provider="deepseek")
+    history: list[BaseMessage] = []
+    calls = []
+    for turn in range(1, 5):
+        blocks = ["frozen summary"] if turn >= 4 else []
+        built = builder.build(
+            "tools", task_prompt="T", user_text=f"q{turn}", history=history, compacted_blocks=blocks
+        )
+        calls.append(
+            {"node": "tools", "prefix_hash": built.prefix_hash, "stable_hash": built.stable_hash}
+        )
+        history = [*history, HumanMessage(content=f"q{turn}"), AIMessage(content=f"a{turn}")]
+    # The full prefix changes every turn; only the compaction at turn 4 changes L0..L2.
+    assert len({c["prefix_hash"] for c in calls}) == 4
+    assert len({c["stable_hash"] for c in calls}) == 2
+    transcript = ConversationTranscript(
+        scenario_id="s",
+        category="topic_switch",
+        customer_id="CUST-0001",
+        turns=[
+            SimTurn(turn_index=i + 1, user_message="u", context_calls=[c])
+            for i, c in enumerate(calls)
+        ],
+    )
+    assert _prefix_change_rate([transcript]) == 1 / 3
+
+    old = transcript.model_copy(deep=True)
+    for turn in old.turns:
+        turn.context_calls = [{"node": "tools", "prefix_hash": "x"}]
+    assert _prefix_change_rate([old]) is None

@@ -45,6 +45,8 @@ class BuiltContext(BaseModel):
     breakdown: ContextBreakdown
     prefix_hash: str
     l0_hash: str
+    # Hash of L0..L2 only: by design it changes only when a summary block is frozen.
+    stable_hash: str = ""
     prefix_message_count: int = Field(default=0, ge=0)
     prefix_bytes: bytes = Field(default=b"", exclude=True)
 
@@ -64,6 +66,7 @@ class ContextCallRecord(BaseModel):
     node: str
     prefix_hash: str
     l0_hash: str
+    stable_hash: str = ""
     total_tokens: int = Field(ge=0)
     budget_tokens: int = Field(gt=0)
     by_layer: dict[StabilityLayer, int]
@@ -223,6 +226,8 @@ class ContextBuilder:
                         ttl_s=ttls.get("L2_compacted", 300),
                     )
                 )
+
+        stable_hash = hashlib.sha256(_serialise_messages(messages)).hexdigest()
 
         # --- L3_history (append-only for chunked; sliding window drops oldest turn each step) ---
         history_capped = False
@@ -443,6 +448,7 @@ class ContextBuilder:
             breakdown=breakdown,
             prefix_hash=prefix_hash,
             l0_hash=l0_hash,
+            stable_hash=stable_hash,
             prefix_message_count=prefix_message_count,
             prefix_bytes=prefix_bytes,
         )
@@ -473,6 +479,7 @@ class ContextBuilder:
             breakdown=breakdown,
             prefix_hash=prefix_hash,
             l0_hash=prefix_hash,
+            stable_hash=prefix_hash,
             prefix_message_count=1,
             prefix_bytes=prefix_bytes,
         )

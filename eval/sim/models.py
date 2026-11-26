@@ -119,6 +119,9 @@ class ScenarioEvaluation(BaseModel):
     turns_to_success: int | None = None
     redundant_questions: int = Field(default=0, ge=0)
     fact_retention: float | None = None
+    # Checkpoints whose turn the conversation reached; only those are scored.
+    fact_checkpoints: int = Field(default=0, ge=0)
+    fact_checkpoints_reached: int = Field(default=0, ge=0)
     loop_detected: bool = False
     handoff_appropriate: bool = True
     tokens_by_turn: list[int] = Field(default_factory=list)

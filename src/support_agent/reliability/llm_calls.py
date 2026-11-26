@@ -176,6 +176,7 @@ class ReliableModels:
                 node=built.node,
                 prefix_hash=built.prefix_hash,
                 l0_hash=built.l0_hash,
+                stable_hash=built.stable_hash,
                 total_tokens=bd.total_tokens,
                 budget_tokens=bd.budget_tokens,
                 by_layer=dict(bd.by_layer),

@@ -110,11 +110,21 @@ def _count_redundant_questions(
     return redundant
 
 
-def _fact_retention(scenario: Scenario, transcript: ConversationTranscript) -> float | None:
-    if not scenario.checkpoints:
-        return None
+def _fact_retention(
+    scenario: Scenario, transcript: ConversationTranscript
+) -> tuple[float | None, int]:
+    """Return (retention over reached checkpoints, number of reached checkpoints).
+
+    A checkpoint is the turn at which the script asks the agent to recall a fact. The
+    simulated user can finish before that turn; such a checkpoint was never asked, so it
+    is not reached and is left out instead of counting as a miss.
+    """
+    last_turn = max((turn.turn_index for turn in transcript.turns), default=0)
+    reached = [cp for cp in scenario.checkpoints if cp.turn_hint <= last_turn]
+    if not reached:
+        return None, 0
     hits = 0
-    for cp in scenario.checkpoints:
+    for cp in reached:
         candidate_replies = [
             turn.agent_message.lower()
             for turn in transcript.turns
@@ -123,7 +133,7 @@ def _fact_retention(scenario: Scenario, transcript: ConversationTranscript) -> f
         combined = "\n".join(candidate_replies)
         if all(sub.lower() in combined for sub in cp.expected_substrings):
             hits += 1
-    return hits / len(scenario.checkpoints)
+    return hits / len(reached), len(reached)
 
 
 def _handoff_appropriate(scenario: Scenario, transcript: ConversationTranscript) -> bool:
@@ -158,6 +168,7 @@ def evaluate_transcript(
     success = _check_outcome(scenario, transcript) and not wrong_customer
     precision, recall = _tool_precision_recall(scenario.expected_tool_calls, observed_tools)
     tokens_by_turn = [turn.input_tokens for turn in transcript.turns]
+    retention, reached = _fact_retention(scenario, transcript)
     had_error = transcript.stop_reason == "error" or any(
         turn.error_type is not None for turn in transcript.turns
     )
@@ -172,7 +183,9 @@ def evaluate_transcript(
         wrong_customer_access=wrong_customer,
         turns_to_success=len(transcript.turns) if success else None,
         redundant_questions=_count_redundant_questions(transcript, judge=redundancy_judge),
-        fact_retention=_fact_retention(scenario, transcript),
+        fact_retention=retention,
+        fact_checkpoints=len(scenario.checkpoints),
+        fact_checkpoints_reached=reached,
         loop_detected=any(count >= loop_threshold for count in call_counts.values()),
         handoff_appropriate=_handoff_appropriate(scenario, transcript),
         tokens_by_turn=tokens_by_turn,
@@ -282,6 +295,10 @@ def aggregate_evaluations(
             seed=seed,
             alpha=alpha,
         ),
+        "fact_checkpoints": {
+            "reached": sum(e.fact_checkpoints_reached for e in evals),
+            "total": sum(e.fact_checkpoints for e in evals),
+        },
         "loop_rate": _mean_ci(
             [1.0 if e.loop_detected else 0.0 for e in evals],
             n_resamples=n_resamples,

@@ -74,18 +74,27 @@ def decompose_cost(
     }
 
 
-def _prefix_change_rate(transcripts: list[ConversationTranscript]) -> float:
-    """Fraction of consecutive conversation turns where the main-node prefix hash changed."""
+def _pct(value: float | None) -> str:
+    return "n/a" if value is None else f"{value * 100:.1f}%"
+
+
+def _prefix_change_rate(transcripts: list[ConversationTranscript]) -> float | None:
+    """Fraction of consecutive turns where the main node's stable prefix (L0..L2) changed.
+
+    The full prefix hash also covers L3 history, which grows every turn, so it changes on
+    every turn for every strategy. Only L0..L2 is meant to stay fixed between compactions.
+    Records written before `stable_hash` existed return None.
+    """
     transitions = 0
     changes = 0
     for tr in transcripts:
         prev_hash: str | None = None
         for turn in tr.turns:
             hashes = [
-                str(c.get("prefix_hash", ""))
+                str(c.get("stable_hash", ""))
                 for c in turn.context_calls
                 if c.get("node") in {"answer", "tools", "decide", "rewrite", "complaint"}
-                and c.get("prefix_hash")
+                and c.get("stable_hash")
             ]
             if not hashes:
                 continue
@@ -95,7 +104,7 @@ def _prefix_change_rate(transcripts: list[ConversationTranscript]) -> float:
                 if cur != prev_hash:
                     changes += 1
             prev_hash = cur
-    return (changes / transitions) if transitions else 0.0
+    return (changes / transitions) if transitions else None
 
 
 def _arm_metrics(
@@ -214,7 +223,7 @@ def render_ab_report(
         "## 1. Four-arm comparison (test split, 95% bootstrap CI)",
         "",
         "| Arm | Task success | Fact retention | Redundant Q | Cache hit ratio | "
-        "Prefix change rate | Mean hist tok | Eff. input units/conv | Latency P50/P95 (s) |",
+        "Stable prefix change rate | Mean hist tok | Eff. input units/conv | Latency P50/P95 (s) |",
         "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for arm, data in results.items():
@@ -224,7 +233,7 @@ def render_ab_report(
         lines.append(
             f"| `{arm}` | {_fmt(agg['task_success'], True)} | "
             f"{_fmt(agg['fact_retention'], True)} | {_fmt(agg['redundant_questions'])} | "
-            f"{hit_pct:.1f}% | {data['prefix_change_rate'] * 100:.1f}% | "
+            f"{hit_pct:.1f}% | {_pct(data['prefix_change_rate'])} | "
             f"{data['mean_history_tokens']:.1f} | "
             f"{data['effective_input_units_per_conv']:.1f} | "
             f"{data['latency_p50_s']:.2f} / {data['latency_p95_s']:.2f} |"
