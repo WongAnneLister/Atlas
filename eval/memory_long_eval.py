@@ -24,6 +24,7 @@ from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
@@ -322,13 +323,19 @@ def save_run(results: list[ScenarioResult], settings: Settings, root: Path) -> P
     )
     provenance = {
         "git_sha": _git_sha(),
-        "dirty": is_dirty(),
+        "dirty": _dirty_at_start(),
         "config_hash": run_config_hash(settings),
         "models": _model_names(settings),
         "date": datetime.now(UTC).isoformat(),
     }
     (run_dir / "run.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
     return run_dir
+
+
+@lru_cache(maxsize=1)
+def _dirty_at_start() -> bool:
+    """Tree state when the run began; outputs written into the repo must not flip it."""
+    return is_dirty()
 
 
 def _git_sha() -> str:
@@ -569,7 +576,7 @@ def render_report(
         "",
         "## Provenance",
         f"- Date: `{datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}`",
-        f"- Git SHA: `{_git_sha()}` (dirty: {is_dirty()})",
+        f"- Git SHA: `{_git_sha()}` (dirty: {_dirty_at_start()})",
         f"- Config hash: `{run_config_hash(settings)}`",
         f"- Memory config hash: `{_config_hash(settings)}`",
         f"- Models: fast=`{fast_name}`, main=`{main_name}`",
@@ -663,6 +670,7 @@ def write_review_csv(on_results: list[ScenarioResult], path: Path) -> int:
 
 
 def main() -> int:
+    _dirty_at_start()
     parser = argparse.ArgumentParser(description="Run Commit 30 multi-session memory eval.")
     parser.add_argument("--workers", type=int, default=3, help="Concurrent scenarios")
     parser.add_argument(
