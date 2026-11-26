@@ -26,9 +26,13 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal
+from uuid import uuid4
 
 from langchain_core.messages import AIMessage, HumanMessage
 
+from eval.e2e_eval import _model_names
+from eval.e2e_speed import run_config_hash
+from eval.run_record import RUNS, is_dirty
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.graph.build import build_graph
 from support_agent.graph.deps import GraphDeps
@@ -291,6 +295,42 @@ def _wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     return (max(0.0, center - half), min(1.0, center + half))
 
 
+def save_run(results: list[ScenarioResult], settings: Settings, root: Path) -> Path:
+    """Save per-scenario rows (gitignored) and provenance next to the report."""
+    run_dir = root / f"memory-long-{datetime.now(UTC):%Y%m%d}-{uuid4().hex[:8]}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    rows = [
+        {
+            "scenario_id": r.scenario_id,
+            "group": r.group,
+            "arm": r.arm,
+            "latency_ms": r.latency_ms,
+            "fact_used": r.fact_used,
+            "memory_loaded": r.memory_loaded,
+            "redundant_question": r.redundant_question,
+            "stale_error": r.stale_error,
+            "leaked": r.leaked,
+            "deletion_honoured": r.deletion_honoured,
+            "storage_bytes": r.storage_bytes,
+            "answer": r.answer,
+            "loaded_memory": r.loaded_memory,
+        }
+        for r in results
+    ]
+    (run_dir / "items.jsonl").write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows), encoding="utf-8"
+    )
+    provenance = {
+        "git_sha": _git_sha(),
+        "dirty": is_dirty(),
+        "config_hash": run_config_hash(settings),
+        "models": _model_names(settings),
+        "date": datetime.now(UTC).isoformat(),
+    }
+    (run_dir / "run.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
+    return run_dir
+
+
 def _git_sha() -> str:
     try:
         return subprocess.check_output(
@@ -338,6 +378,9 @@ class ScenarioResult:
     stored_memories: list[CustomerMemory]
     storage_bytes: int
     answer_preview: str
+    # Full session-2 text, so recall can be re-scored later without model calls.
+    answer: str = ""
+    loaded_memory: str = ""
 
 
 def _run_one(
@@ -462,6 +505,10 @@ def _run_one(
             stored_memories=stored,
             storage_bytes=stats.total_bytes,
             answer_preview=(state.answer or "")[:160].replace("\n", " "),
+            answer=state.answer or "",
+            loaded_memory="\n".join(
+                [state.customer_profile or "", *state.turn_memory_hints]
+            ).strip(),
         )
     finally:
         deps.close()
@@ -512,8 +559,8 @@ def render_report(
     total_stored = sum(len(r.stored_memories) for r in on_results)
     added_lat = s_on["mean_lat_ms"] - s_off["mean_lat_ms"]
 
-    fast_name = settings.llm.fast_model or "env"
-    main_name = settings.llm.main_model or "env"
+    models = _model_names(settings)
+    fast_name, main_name = models["fast"], models["main"]
     off_lat = f"{s_off['mean_lat_ms']:.0f} / {s_off['p50_lat_ms']:.0f} / {s_off['p95_lat_ms']:.0f}"
     on_lat = f"{s_on['mean_lat_ms']:.0f} / {s_on['p50_lat_ms']:.0f} / {s_on['p95_lat_ms']:.0f}"
     del_resurfaced = s_on["del_ok"][1] - s_on["del_ok"][0]
@@ -522,7 +569,8 @@ def render_report(
         "",
         "## Provenance",
         f"- Date: `{datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}`",
-        f"- Git SHA: `{_git_sha()}`",
+        f"- Git SHA: `{_git_sha()}` (dirty: {is_dirty()})",
+        f"- Config hash: `{run_config_hash(settings)}`",
         f"- Memory config hash: `{_config_hash(settings)}`",
         f"- Models: fast=`{fast_name}`, main=`{main_name}`",
         (
@@ -629,6 +677,9 @@ def main() -> int:
         default=REPORTS_DIR / "memory_long_review.csv",
         help="Output CSV for human junk-rate review",
     )
+    parser.add_argument(
+        "--run-root", type=Path, default=RUNS, help="where the per-scenario rows are saved"
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
@@ -678,6 +729,8 @@ def main() -> int:
     )
     report_md = render_report(off_results, on_results, settings, rel_csv)
     args.report.write_text(report_md, encoding="utf-8")
+    run_dir = save_run(off_results + on_results, settings, args.run_root)
+    logger.info("Run record: %s", run_dir)
     logger.info(
         "Wrote %s and %s (%d stored memories for review)",
         args.report,
