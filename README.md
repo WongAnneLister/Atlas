@@ -81,8 +81,8 @@ The hallucination review audits an earlier test run (2026-11-10) than the full-g
 |---|---|---:|---|
 | Security | Red-team v2 overall ASR | 0/73 · 0.00% [0.00%, 5.00%] | [`redteam.md`](eval/reports/redteam.md) |
 | Security | Benign look-alike false blocks | 0/15 · 0.00% [0.00%, 20.39%] | [`redteam.md`](eval/reports/redteam.md) |
-| Context / Cache | Prefix-cache hit ratio (`chunked` vs uncached units/conv) | 79.9% (1300.1 vs 6989.0 units) | [`context_ab.md`](eval/reports/context_ab.md) |
-| Long-term Memory | Cross-session fact use (ON) | 10/10 (100.0%, 95% CI [72.2%, 100.0%]) | [`memory_long.md`](eval/reports/memory_long.md) |
+| Context / Cache | Prefix-cache hit ratio, `chunked` (units/conv vs full-price counterfactual) | 84.1% (1374.9 vs 5764.0 units) | [`context_ab.md`](eval/reports/context_ab.md) |
+| Long-term Memory | Cross-session fact use in the reply (ON; OFF 1/10) | 1/10 (10.0%, 95% CI [1.8%, 40.4%]) | [`memory_long.md`](eval/reports/memory_long.md) |
 | Long-term Memory | Cross-customer canary leaks | 0/6 (0.0%, 95% CI [0.0%, 39.0%]) | [`memory_long.md`](eval/reports/memory_long.md) |
 | Load / Capacity | Throughput before -> after fix (mock LLM, conc=16) | 66.2 -> 77.1 req/s (160/160 (100.00%)) | [`load.md`](eval/reports/load.md) |
 | Load / Capacity | Overall P50 / P95 / P99 before -> after | 229.7 / 346.5 / 404.8 -> 205.6 / 293.6 / 315.7 ms | [`load.md`](eval/reports/load.md) |

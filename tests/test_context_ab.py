@@ -165,3 +165,63 @@ def test_stable_prefix_ignores_growing_history_and_tracks_compaction() -> None:
     for turn in old.turns:
         turn.context_calls = [{"node": "tools", "prefix_hash": "x"}]
     assert _prefix_change_rate([old]) is None
+
+
+def test_rerender_keeps_the_runs_provenance_and_labels_the_counterfactual(tmp_path: Path) -> None:
+    import json
+
+    from eval.context_ab import rerender
+
+    agg = {
+        "task_success": {"mean": 0.5, "low": 0.0, "high": 1.0, "n": 2},
+        "fact_retention": {"mean": None, "low": None, "high": None, "n": 0},
+        "redundant_questions": {"mean": 0.0, "low": 0.0, "high": 0.0, "n": 2},
+    }
+    cost = {
+        "total_input_tokens": 100.0,
+        "uncached_input_tokens": 20.0,
+        "cache_write_tokens": 0.0,
+        "cache_read_tokens": 80.0,
+        "output_tokens": 10.0,
+        "effective_input_units": 28.0,
+        "cache_hit_ratio": 0.8,
+    }
+    arm = {
+        "aggregate": agg,
+        "cost": cost,
+        "prefix_change_rate": None,
+        "mean_history_tokens": 1.0,
+        "effective_input_units_per_conv": 14.0,
+        "latency_p50_s": 1.0,
+        "latency_p95_s": 2.0,
+        "cumulative_units_by_turn": [],
+    }
+    arms = {name: arm for name in ("sliding", "rolling", "chunked", "chunked_nocache")}
+    run = tmp_path / "context-ab-x"
+    run.mkdir()
+    (run / "metrics.json").write_text(json.dumps({"arms": arms, "sweep": []}))
+    (run / "run.json").write_text(
+        json.dumps(
+            {
+                "git_sha": "abc123",
+                "dirty": False,
+                "config_hash": "cfg",
+                "models": {"fast": "f", "main": "m"},
+                "simulator_model": "fast",
+                "date": "2026-11-26T00:00:00+00:00",
+            }
+        )
+    )
+    transcript = {"scenario_id": "s1", "repeat_index": 0}
+    (run / "items.jsonl").write_text(
+        json.dumps({"arm": "chunked", "split": "test", "transcript": transcript}) + "\n"
+    )
+    report = tmp_path / "report.md"
+    assert rerender(run, report, tmp_path / "chart.png") == 0
+    text = report.read_text()
+    assert "- Git SHA: `abc123` (dirty: False)" in text
+    assert "Re-rendered without model calls from saved run `context-ab-x`" in text
+    assert (
+        "| `chunked_nocache` | 50.00% [0.00%, 100.00%] | n/a | 0.00 [0.00, 0.00] | 80.0% |" in text
+    )
+    assert "counterfactual" in text

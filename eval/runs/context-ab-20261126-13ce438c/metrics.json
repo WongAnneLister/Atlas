@@ -1,0 +1,933 @@
+{
+  "arms": {
+    "sliding": {
+      "strategy": "sliding",
+      "aggregate": {
+        "n_runs": 6,
+        "n_scenarios": 6,
+        "task_success": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 6
+        },
+        "tool_call_precision": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 1
+        },
+        "tool_call_recall": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 1
+        },
+        "wrong_customer_access": {
+          "count": 0,
+          "total": 6,
+          "rate": 0.0,
+          "wilson_low": 0,
+          "wilson_high": 0.39033428790216523
+        },
+        "turns_to_success": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "redundant_questions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 6
+        },
+        "fact_retention": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "fact_checkpoints": {
+          "reached": 0,
+          "total": 0
+        },
+        "loop_rate": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 6
+        },
+        "handoff_appropriate": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 6
+        },
+        "error_rate": 0.0,
+        "repeat_task_success_mean_std": null,
+        "categories": {
+          "order_picker_interrupt": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "order_status": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "policy_qa": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "refund_eligible": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "refund_ineligible": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "refund_needs_human": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          }
+        },
+        "tokens_per_turn_curve": [
+          {
+            "turn": 1,
+            "n": 6,
+            "mean_input_tokens": 4926.5,
+            "p95_input_tokens": 6673
+          },
+          {
+            "turn": 2,
+            "n": 3,
+            "mean_input_tokens": 1999,
+            "p95_input_tokens": 1623
+          }
+        ]
+      },
+      "cost": {
+        "total_input_tokens": 35556.0,
+        "uncached_input_tokens": 11108.0,
+        "cache_write_tokens": 0.0,
+        "cache_read_tokens": 24448.0,
+        "output_tokens": 2040.0,
+        "effective_input_units": 13552.8,
+        "cache_hit_ratio": 0.6875914051074361
+      },
+      "effective_input_units_per_conv": 2258.7999999999997,
+      "prefix_change_rate": 0.0,
+      "mean_history_tokens": 59.8,
+      "latency_p50_s": 4.935918375034817,
+      "latency_p95_s": 14.314702459028922,
+      "cumulative_units_by_turn": {
+        "1": 1777.7,
+        "2": 2204.6
+      }
+    },
+    "rolling": {
+      "strategy": "rolling",
+      "aggregate": {
+        "n_runs": 6,
+        "n_scenarios": 6,
+        "task_success": {
+          "mean": 0.16666666666666666,
+          "low": 0.0,
+          "high": 0.5,
+          "n": 6
+        },
+        "tool_call_precision": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 1
+        },
+        "tool_call_recall": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 1
+        },
+        "wrong_customer_access": {
+          "count": 0,
+          "total": 6,
+          "rate": 0.0,
+          "wilson_low": 0,
+          "wilson_high": 0.39033428790216523
+        },
+        "turns_to_success": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 1
+        },
+        "redundant_questions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 6
+        },
+        "fact_retention": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "fact_checkpoints": {
+          "reached": 0,
+          "total": 0
+        },
+        "loop_rate": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 6
+        },
+        "handoff_appropriate": {
+          "mean": 0.16666666666666666,
+          "low": 0.0,
+          "high": 0.5,
+          "n": 6
+        },
+        "error_rate": 0.0,
+        "repeat_task_success_mean_std": null,
+        "categories": {
+          "order_picker_interrupt": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "order_status": {
+            "n": 1,
+            "task_success": 1.0,
+            "handoff_appropriate": 1.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "policy_qa": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "refund_eligible": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "refund_ineligible": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "refund_needs_human": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          }
+        },
+        "tokens_per_turn_curve": [
+          {
+            "turn": 1,
+            "n": 6,
+            "mean_input_tokens": 4005.1666666666665,
+            "p95_input_tokens": 4349
+          },
+          {
+            "turn": 2,
+            "n": 4,
+            "mean_input_tokens": 2982,
+            "p95_input_tokens": 4280
+          }
+        ]
+      },
+      "cost": {
+        "total_input_tokens": 35959.0,
+        "uncached_input_tokens": 11255.0,
+        "cache_write_tokens": 0.0,
+        "cache_read_tokens": 24704.0,
+        "output_tokens": 2263.0,
+        "effective_input_units": 13725.4,
+        "cache_hit_ratio": 0.6870046441780917
+      },
+      "effective_input_units_per_conv": 2287.5666666666666,
+      "prefix_change_rate": 0.0,
+      "mean_history_tokens": 71.61538461538461,
+      "latency_p50_s": 9.879794541979209,
+      "latency_p95_s": 15.379492417094298,
+      "cumulative_units_by_turn": {
+        "1": 1336.3666666666666,
+        "2": 3118.2
+      }
+    },
+    "chunked": {
+      "strategy": "chunked",
+      "aggregate": {
+        "n_runs": 6,
+        "n_scenarios": 6,
+        "task_success": {
+          "mean": 0.16666666666666666,
+          "low": 0.0,
+          "high": 0.5,
+          "n": 6
+        },
+        "tool_call_precision": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 1
+        },
+        "tool_call_recall": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 1
+        },
+        "wrong_customer_access": {
+          "count": 0,
+          "total": 6,
+          "rate": 0.0,
+          "wilson_low": 0,
+          "wilson_high": 0.39033428790216523
+        },
+        "turns_to_success": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 1
+        },
+        "redundant_questions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 6
+        },
+        "fact_retention": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "fact_checkpoints": {
+          "reached": 0,
+          "total": 0
+        },
+        "loop_rate": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 6
+        },
+        "handoff_appropriate": {
+          "mean": 0.16666666666666666,
+          "low": 0.0,
+          "high": 0.5,
+          "n": 6
+        },
+        "error_rate": 0.0,
+        "repeat_task_success_mean_std": null,
+        "categories": {
+          "order_picker_interrupt": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "order_status": {
+            "n": 1,
+            "task_success": 1.0,
+            "handoff_appropriate": 1.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "policy_qa": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "refund_eligible": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "refund_ineligible": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "refund_needs_human": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          }
+        },
+        "tokens_per_turn_curve": [
+          {
+            "turn": 1,
+            "n": 6,
+            "mean_input_tokens": 4756.5,
+            "p95_input_tokens": 6647
+          },
+          {
+            "turn": 2,
+            "n": 3,
+            "mean_input_tokens": 1800,
+            "p95_input_tokens": 1623
+          }
+        ]
+      },
+      "cost": {
+        "total_input_tokens": 33939.0,
+        "uncached_input_tokens": 5395.0,
+        "cache_write_tokens": 0.0,
+        "cache_read_tokens": 28544.0,
+        "output_tokens": 1947.0,
+        "effective_input_units": 8249.4,
+        "cache_hit_ratio": 0.8410383334806565
+      },
+      "effective_input_units_per_conv": 1374.8999999999999,
+      "prefix_change_rate": 0.3333333333333333,
+      "mean_history_tokens": 42.333333333333336,
+      "latency_p50_s": 5.948535375064239,
+      "latency_p95_s": 14.373196749947965,
+      "cumulative_units_by_turn": {
+        "1": 993.3,
+        "2": 1865.2666666666667
+      }
+    },
+    "chunked_nocache": {
+      "strategy": "chunked_nocache",
+      "aggregate": {
+        "n_runs": 6,
+        "n_scenarios": 6,
+        "task_success": {
+          "mean": 0.16666666666666666,
+          "low": 0.0,
+          "high": 0.5,
+          "n": 6
+        },
+        "tool_call_precision": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 1
+        },
+        "tool_call_recall": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 1
+        },
+        "wrong_customer_access": {
+          "count": 0,
+          "total": 6,
+          "rate": 0.0,
+          "wilson_low": 0,
+          "wilson_high": 0.39033428790216523
+        },
+        "turns_to_success": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 1
+        },
+        "redundant_questions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 6
+        },
+        "fact_retention": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "fact_checkpoints": {
+          "reached": 0,
+          "total": 0
+        },
+        "loop_rate": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 6
+        },
+        "handoff_appropriate": {
+          "mean": 0.16666666666666666,
+          "low": 0.0,
+          "high": 0.5,
+          "n": 6
+        },
+        "error_rate": 0.0,
+        "repeat_task_success_mean_std": null,
+        "categories": {
+          "order_picker_interrupt": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "order_status": {
+            "n": 1,
+            "task_success": 1.0,
+            "handoff_appropriate": 1.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "policy_qa": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "refund_eligible": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "refund_ineligible": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          },
+          "refund_needs_human": {
+            "n": 1,
+            "task_success": 0.0,
+            "handoff_appropriate": 0.0,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          }
+        },
+        "tokens_per_turn_curve": [
+          {
+            "turn": 1,
+            "n": 6,
+            "mean_input_tokens": 4859,
+            "p95_input_tokens": 6697
+          },
+          {
+            "turn": 2,
+            "n": 3,
+            "mean_input_tokens": 1810,
+            "p95_input_tokens": 1593
+          }
+        ]
+      },
+      "cost": {
+        "total_input_tokens": 34584.0,
+        "uncached_input_tokens": 5656.0,
+        "cache_write_tokens": 0.0,
+        "cache_read_tokens": 28928.0,
+        "output_tokens": 2001.0,
+        "effective_input_units": 34584.0,
+        "cache_hit_ratio": 0.8364561647004395
+      },
+      "effective_input_units_per_conv": 5764.0,
+      "prefix_change_rate": 0.3333333333333333,
+      "mean_history_tokens": 43.666666666666664,
+      "latency_p50_s": 4.242068374995142,
+      "latency_p95_s": 16.678902207990177,
+      "cumulative_units_by_turn": {
+        "1": 4859.0,
+        "2": 6718.333333333333
+      }
+    }
+  },
+  "sweep": [
+    {
+      "strategy": "chunked",
+      "aggregate": {
+        "n_runs": 3,
+        "n_scenarios": 3,
+        "task_success": {
+          "mean": 0.3333333333333333,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "tool_call_precision": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "tool_call_recall": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "wrong_customer_access": {
+          "count": 0,
+          "total": 3,
+          "rate": 0.0,
+          "wilson_low": 0,
+          "wilson_high": 0.5614970317550454
+        },
+        "turns_to_success": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 1
+        },
+        "redundant_questions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "fact_retention": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "fact_checkpoints": {
+          "reached": 0,
+          "total": 0
+        },
+        "loop_rate": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "handoff_appropriate": {
+          "mean": 0.3333333333333333,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "error_rate": 0.0,
+        "repeat_task_success_mean_std": null,
+        "categories": {
+          "policy_qa": {
+            "n": 3,
+            "task_success": 0.3333333333333333,
+            "handoff_appropriate": 0.3333333333333333,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          }
+        },
+        "tokens_per_turn_curve": [
+          {
+            "turn": 1,
+            "n": 3,
+            "mean_input_tokens": 3221,
+            "p95_input_tokens": 3029
+          },
+          {
+            "turn": 2,
+            "n": 1,
+            "mean_input_tokens": 5915,
+            "p95_input_tokens": 5915
+          },
+          {
+            "turn": 3,
+            "n": 1,
+            "mean_input_tokens": 1527,
+            "p95_input_tokens": 1527
+          }
+        ]
+      },
+      "cost": {
+        "total_input_tokens": 17105.0,
+        "uncached_input_tokens": 9041.0,
+        "cache_write_tokens": 0.0,
+        "cache_read_tokens": 8064.0,
+        "output_tokens": 759.0,
+        "effective_input_units": 9847.4,
+        "cache_hit_ratio": 0.4714410990938322
+      },
+      "effective_input_units_per_conv": 3282.4666666666667,
+      "prefix_change_rate": 0.5,
+      "mean_history_tokens": 23,
+      "latency_p50_s": 27.229950458044186,
+      "latency_p95_s": 58.93089762504678,
+      "cumulative_units_by_turn": {
+        "1": 1723.3999999999999,
+        "2": 7324.0,
+        "3": 7929.4
+      },
+      "chunk_turns": 4
+    },
+    {
+      "strategy": "chunked",
+      "aggregate": {
+        "n_runs": 3,
+        "n_scenarios": 3,
+        "task_success": {
+          "mean": 0.3333333333333333,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "tool_call_precision": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "tool_call_recall": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "wrong_customer_access": {
+          "count": 0,
+          "total": 3,
+          "rate": 0.0,
+          "wilson_low": 0,
+          "wilson_high": 0.5614970317550454
+        },
+        "turns_to_success": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 1
+        },
+        "redundant_questions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "fact_retention": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "fact_checkpoints": {
+          "reached": 0,
+          "total": 0
+        },
+        "loop_rate": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "handoff_appropriate": {
+          "mean": 0.3333333333333333,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "error_rate": 0.0,
+        "repeat_task_success_mean_std": null,
+        "categories": {
+          "policy_qa": {
+            "n": 3,
+            "task_success": 0.3333333333333333,
+            "handoff_appropriate": 0.3333333333333333,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          }
+        },
+        "tokens_per_turn_curve": [
+          {
+            "turn": 1,
+            "n": 3,
+            "mean_input_tokens": 3221,
+            "p95_input_tokens": 3029
+          },
+          {
+            "turn": 2,
+            "n": 1,
+            "mean_input_tokens": 5867,
+            "p95_input_tokens": 5867
+          },
+          {
+            "turn": 3,
+            "n": 1,
+            "mean_input_tokens": 1550,
+            "p95_input_tokens": 1550
+          }
+        ]
+      },
+      "cost": {
+        "total_input_tokens": 17080.0,
+        "uncached_input_tokens": 5304.0,
+        "cache_write_tokens": 0.0,
+        "cache_read_tokens": 11776.0,
+        "output_tokens": 860.0,
+        "effective_input_units": 6481.6,
+        "cache_hit_ratio": 0.6894613583138174
+      },
+      "effective_input_units_per_conv": 2160.5333333333333,
+      "prefix_change_rate": 0.5,
+      "mean_history_tokens": 28.2,
+      "latency_p50_s": 38.89527670794632,
+      "latency_p95_s": 44.260938042076305,
+      "cumulative_units_by_turn": {
+        "1": 648.2,
+        "2": 4972.0,
+        "3": 5600.4
+      },
+      "chunk_turns": 6
+    },
+    {
+      "strategy": "chunked",
+      "aggregate": {
+        "n_runs": 3,
+        "n_scenarios": 3,
+        "task_success": {
+          "mean": 0.3333333333333333,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "tool_call_precision": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "tool_call_recall": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "wrong_customer_access": {
+          "count": 0,
+          "total": 3,
+          "rate": 0.0,
+          "wilson_low": 0,
+          "wilson_high": 0.5614970317550454
+        },
+        "turns_to_success": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 1
+        },
+        "redundant_questions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "fact_retention": {
+          "mean": null,
+          "low": null,
+          "high": null,
+          "n": 0
+        },
+        "fact_checkpoints": {
+          "reached": 0,
+          "total": 0
+        },
+        "loop_rate": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "handoff_appropriate": {
+          "mean": 0.3333333333333333,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "error_rate": 0.0,
+        "repeat_task_success_mean_std": null,
+        "categories": {
+          "policy_qa": {
+            "n": 3,
+            "task_success": 0.3333333333333333,
+            "handoff_appropriate": 0.3333333333333333,
+            "redundant_questions_mean": 0,
+            "loop_rate": 0.0
+          }
+        },
+        "tokens_per_turn_curve": [
+          {
+            "turn": 1,
+            "n": 3,
+            "mean_input_tokens": 3156,
+            "p95_input_tokens": 3029
+          },
+          {
+            "turn": 2,
+            "n": 1,
+            "mean_input_tokens": 6327,
+            "p95_input_tokens": 6327
+          },
+          {
+            "turn": 3,
+            "n": 1,
+            "mean_input_tokens": 1572,
+            "p95_input_tokens": 1572
+          }
+        ]
+      },
+      "cost": {
+        "total_input_tokens": 17367.0,
+        "uncached_input_tokens": 8023.0,
+        "cache_write_tokens": 0.0,
+        "cache_read_tokens": 9344.0,
+        "output_tokens": 915.0,
+        "effective_input_units": 8957.4,
+        "cache_hit_ratio": 0.5380318995796626
+      },
+      "effective_input_units_per_conv": 2985.7999999999997,
+      "prefix_change_rate": 0.5,
+      "mean_history_tokens": 36.2,
+      "latency_p50_s": 46.195946332998574,
+      "latency_p95_s": 54.98763829097152,
+      "cumulative_units_by_turn": {
+        "1": 1274.4,
+        "2": 7427.8,
+        "3": 8078.2
+      },
+      "chunk_turns": 10
+    }
+  ]
+}

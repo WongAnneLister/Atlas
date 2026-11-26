@@ -1,0 +1,10 @@
+{
+  "git_sha": "d3ee431",
+  "dirty": false,
+  "config_hash": "d08c78dba1c439ec084f3d3f14af651d0685d38c2ad8229c95aa6e9a625e30fd",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash"
+  },
+  "date": "2026-11-26T14:56:23.547513+00:00"
+}

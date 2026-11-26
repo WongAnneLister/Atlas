@@ -15,7 +15,7 @@ The dev sweep lets us pick `chunk_turns` without tuning on test data.
 On six test scenarios, `chunked` hit 79.9% cache reads and cost 1300.1 units.
 `sliding` cost 1941.5 units at 77.8% hits, and `rolling` cost 1989.7 at 68.9%.
 Without caching, `chunked_nocache` cost 6989.0 units, while `rolling` had 16.67% task success.
-Source: eval/reports/context_ab.md
+Source: eval/reports/archive/context_ab-5449ce2.md
 
 **Trade-off**
 The test sample had six scenarios, so task success intervals are wide and noisy.

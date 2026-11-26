@@ -16,7 +16,7 @@ Keeping memory as hints only stops old memories from bypassing the evidence gate
 Across thirty live two-session scenarios, cross-session fact use rose from 0/10 to 10/10.
 Stale-memory errors stayed at 0/8, cross-customer canary leaks were 0/6, and deletion held 6/6.
 Storage averaged 100.7 bytes and 1.43 rows per customer, with 43 memories exported for review.
-Source: eval/reports/memory_long.md
+Source: eval/reports/archive/memory_long-3f046b8.md
 
 **Trade-off**
 I stored memories in PostgreSQL with per-customer scoring instead of a separate Milvus partition.

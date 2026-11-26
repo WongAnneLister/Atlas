@@ -217,6 +217,7 @@ def _render_phase2_section(reports_dir: Path, link_prefix: str) -> list[str]:
     rt_benign = redteam.row("benign_lookalike", section="False blocks")[1].split(" (")[0]
     chunked = ctx_ab.row("`chunked`")
     nocache = ctx_ab.row("`chunked_nocache`")
+    mem_recall_off = mem_long.row("Cross-session fact use (recall)")[1].split(" (")[0]
     mem_recall_on = mem_long.row("Cross-session fact use (recall)")[2]
     mem_leaks = mem_long.row("Cross-customer leak rate (canaries)")[2]
     load_rps_before = load_rep.row("Throughput (req/s)")[1]
@@ -244,12 +245,13 @@ def _render_phase2_section(reports_dir: Path, link_prefix: str) -> list[str]:
             f"| {_link('redteam.md', link_prefix)} |"
         ),
         (
-            f"| Context / Cache | Prefix-cache hit ratio (`chunked` vs uncached units/conv) "
+            f"| Context / Cache | Prefix-cache hit ratio, `chunked` (units/conv vs full-price "
+            "counterfactual) "
             f"| {chunked[4]} ({chunked[7]} vs {nocache[7]} units) "
             f"| {_link('context_ab.md', link_prefix)} |"
         ),
         (
-            f"| Long-term Memory | Cross-session fact use (ON) "
+            f"| Long-term Memory | Cross-session fact use in the reply (ON; OFF {mem_recall_off}) "
             f"| {mem_recall_on} | {_link('memory_long.md', link_prefix)} |"
         ),
         (
