@@ -35,6 +35,7 @@ from eval.e2e_speed import (
 from eval.judge import judge_partial_record, partial_payload
 from eval.metrics import partial_answer
 from eval.registry import load_registry
+from eval.run_health import INVALID_RUN_STATUS, invalid_run_message
 from eval.run_record import (
     RUNS,
     Run,
@@ -269,6 +270,9 @@ def main(argv: list[str] | None = None) -> int:
             _record_speed(metadata, speed, scores.summary())
     command = ["eval-multipart", *(sys.argv[1:] if argv is None else argv)]
     run = prepare_e2e(metadata, records, dirty=dirty, command=command)
+    if broken := invalid_run_message(run):
+        sys.stderr.write(f"Invalid run, nothing reported: {broken}\n")
+        return INVALID_RUN_STATUS
     path = write_run(
         run.manifest, run.items, metrics=run.metrics, root=args.run_root, suffix=uuid4().hex
     )

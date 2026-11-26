@@ -32,6 +32,7 @@ from eval.e2e_speed import (
 )
 from eval.intent_eval import runtime_versions, source_hash
 from eval.metrics import accepted
+from eval.run_health import INVALID_RUN_STATUS, invalid_run_message
 from eval.run_record import (
     RUNS,
     Run,
@@ -460,6 +461,12 @@ def main(
         )
         else "price not set",
     )
+    if not settings.chaos.enabled and (broken := invalid_run_message(run)):
+        # Keep the rows for debugging, but out of the way of a resumed collection.
+        parked = output.with_suffix(output.suffix + ".invalid")
+        output.replace(parked)
+        sys.stderr.write(f"Invalid run, nothing reported: {broken}\nRows kept in {parked}\n")
+        return INVALID_RUN_STATUS
     return _save_and_render(run, report, args.run_root, suffix, args.run_pointer, renderer)
 
 
