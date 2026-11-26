@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from langchain_core.messages import AnyMessage, ToolMessage
+from langchain_core.messages import AnyMessage, HumanMessage, ToolMessage
 
 from support_agent.cache.settings import CacheSettings
 from support_agent.graph.intents import Intent, Path
@@ -52,6 +52,19 @@ def has_customer_context_in_history(messages: list[AnyMessage], recent_turns: in
     return False
 
 
+def has_customer_memory(state: ConversationState) -> bool:
+    """Long-term memory enters the answer prompt, so a cached reply could carry it."""
+    profile = (state.customer_profile or "").strip()
+    return bool(profile) or any(hint.strip() for hint in state.turn_memory_hints)
+
+
+def is_multi_turn(state: ConversationState) -> bool:
+    """Earlier turns, summaries and pinned facts enter the answer prompt; the key omits them."""
+    if state.compacted_blocks:
+        return True
+    return sum(isinstance(message, HumanMessage) for message in state.messages) > 1
+
+
 def answer_cache_lookup_eligibility(
     state: ConversationState, settings: CacheSettings
 ) -> tuple[bool, str]:
@@ -75,6 +88,10 @@ def answer_cache_lookup_eligibility(
         or state.refund_request is not None
     ):
         return False, "order_context_present"
+    if has_customer_memory(state):
+        return False, "customer_memory_present"
+    if is_multi_turn(state):
+        return False, "multi_turn"
     if not state.rewritten_query.strip():
         return False, "empty_query"
     if has_customer_specific_text(state.rewritten_query):

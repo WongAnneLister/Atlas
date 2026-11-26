@@ -38,6 +38,7 @@ from support_agent.graph.intents import Intent, Path
 from support_agent.graph.state import CitationRecord, ConversationState
 from support_agent.grounding.claims import ClaimAssessment
 from support_agent.infra.redis import NullRedis
+from support_agent.memory.short_term.compaction import SummaryBlock
 from support_agent.observability.metrics import AtlasMetrics
 from support_agent.retrieval.embed import FakeEmbedder
 from support_agent.retrieval.filters import RetrievalFilters
@@ -222,6 +223,28 @@ def test_answer_cache_eligibility_rules() -> None:
                     HumanMessage(content="Check ORD-000065"),
                     ToolMessage(content='{"status":"delivered"}', tool_call_id="t1"),
                     HumanMessage(content="What is the return window?"),
+                ]
+            }
+        ),
+    ]
+    # Context the answer prompt sees but the cache key omits.
+    ineligible_cases += [
+        base.model_copy(update={"customer_profile": "Owns a Philips W40."}),
+        base.model_copy(update={"turn_memory_hints": ["Prefers email updates."]}),
+        base.model_copy(
+            update={
+                "messages": [
+                    HumanMessage(content="I bought it last week."),
+                    HumanMessage(content="What is the return window?"),
+                ]
+            }
+        ),
+        base.model_copy(
+            update={
+                "compacted_blocks": [
+                    SummaryBlock(
+                        block_id="b1", turns=(1, 6), text="Earlier chat.", created_at_turn=7
+                    )
                 ]
             }
         ),
@@ -484,6 +507,68 @@ def test_graph_end_to_end_caching_staleness_isolation_and_redis_down() -> None:
     )
     assert r4["answer_cache_hit"] is None
     assert any(ev.layer == "answer" and ev.outcome == "bypass" for ev in r4["cache_events"])
+    deps.close()
+
+
+def test_graph_answer_cache_never_serves_one_customers_memory_to_another() -> None:
+    settings = _settings()
+    settings.grounding.enabled = False
+    retriever = CountingRetriever(
+        {"b1": [_chunk("c1", "Generic store returns are accepted within 30 days.")]}, ["b1"]
+    )
+
+    def answer(text: str) -> dict[str, Any]:
+        quote = "returns are accepted within 30 days"
+        return {
+            "parts": [
+                {
+                    "question": "What is the return window?",
+                    "supported": True,
+                    "explicit": True,
+                    "answer": text,
+                    "evidence": [{"source": 1, "quote": quote}],
+                }
+            ]
+        }
+
+    # Customer A's answer is shaped by A's long-term memory (the canary).
+    main_model = StructuredFake(
+        responses=["ok"],
+        payloads=[
+            answer("Returns are accepted within 30 days, CANARY-A."),
+            answer("Returns are accepted within 30 days."),
+        ],
+    )
+    deps = GraphDeps(
+        settings=settings,
+        fast_model=StructuredFake(
+            responses=["ok"], payloads=[{"intent": "policy_question", "confidence": 0.99}]
+        ),
+        main_model=main_model,
+        retriever=retriever,
+        cache_store=NullRedis(),
+        build_id_provider=lambda: "b1",
+        allow_untuned_gate=True,
+    )
+    graph = build_graph(deps)
+    question = [HumanMessage(content="What is the return window?")]
+    a = graph.invoke(
+        {
+            "messages": question,
+            "customer_id": "CUST-0001",
+            "customer_profile": "CANARY-A owns a Philips W40.",
+            "customer_profile_loaded": True,
+        },
+        {"configurable": {"thread_id": "a"}},
+    )
+    b = graph.invoke(
+        {"messages": question, "customer_id": "CUST-0002"},
+        {"configurable": {"thread_id": "b"}},
+    )
+    assert "CANARY-A" in a["answer"]
+    assert "CANARY-A" not in b["answer"]
+    assert b["answer_cache_hit"] is None
+    assert main_model.calls == 2
     deps.close()
 
 
