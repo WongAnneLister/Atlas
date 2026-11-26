@@ -1,0 +1,114 @@
+{
+  "n_runs": 8,
+  "n_scenarios": 8,
+  "task_success": {
+    "mean": 0.5,
+    "low": 0.125,
+    "high": 0.875,
+    "n": 8
+  },
+  "tool_call_precision": {
+    "mean": 0.0,
+    "low": 0.0,
+    "high": 0.0,
+    "n": 8
+  },
+  "tool_call_recall": {
+    "mean": 0.0,
+    "low": 0.0,
+    "high": 0.0,
+    "n": 8
+  },
+  "wrong_customer_access": {
+    "count": 0,
+    "total": 8,
+    "rate": 0.0,
+    "wilson_low": 0,
+    "wilson_high": 0.3244075648838801
+  },
+  "turns_to_success": {
+    "mean": 3.75,
+    "low": 3.25,
+    "high": 4.0,
+    "n": 4
+  },
+  "redundant_questions": {
+    "mean": 0.0,
+    "low": 0.0,
+    "high": 0.0,
+    "n": 8
+  },
+  "fact_retention": {
+    "mean": 0.0,
+    "low": 0.0,
+    "high": 0.0,
+    "n": 1
+  },
+  "fact_checkpoints": {
+    "reached": 1,
+    "total": 12
+  },
+  "loop_rate": {
+    "mean": 0.0,
+    "low": 0.0,
+    "high": 0.0,
+    "n": 8
+  },
+  "handoff_appropriate": {
+    "mean": 0.5,
+    "low": 0.125,
+    "high": 0.875,
+    "n": 8
+  },
+  "error_rate": 0.0,
+  "repeat_task_success_mean_std": null,
+  "categories": {
+    "long_conversation": {
+      "n": 2,
+      "task_success": 0.0,
+      "handoff_appropriate": 0.0,
+      "redundant_questions_mean": 0,
+      "loop_rate": 0.0
+    },
+    "self_correction": {
+      "n": 3,
+      "task_success": 0.6666666666666666,
+      "handoff_appropriate": 0.6666666666666666,
+      "redundant_questions_mean": 0,
+      "loop_rate": 0.0
+    },
+    "topic_switch": {
+      "n": 3,
+      "task_success": 0.6666666666666666,
+      "handoff_appropriate": 0.6666666666666666,
+      "redundant_questions_mean": 0,
+      "loop_rate": 0.0
+    }
+  },
+  "tokens_per_turn_curve": [
+    {
+      "turn": 1,
+      "n": 8,
+      "mean_input_tokens": 3551.125,
+      "p95_input_tokens": 3642
+    },
+    {
+      "turn": 2,
+      "n": 8,
+      "mean_input_tokens": 6287.75,
+      "p95_input_tokens": 8064
+    },
+    {
+      "turn": 3,
+      "n": 6,
+      "mean_input_tokens": 4631.5,
+      "p95_input_tokens": 5003
+    },
+    {
+      "turn": 4,
+      "n": 4,
+      "mean_input_tokens": 2275.75,
+      "p95_input_tokens": 1933
+    }
+  ]
+}
