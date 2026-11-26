@@ -32,10 +32,11 @@ LABELS = {
     "legacy": "all nodes legacy (`7f0973a`)",
     "answer": "answer legacy (`7f0973a`)",
     "fix": "fix: answer legacy",
+    "split": "fix + verify batch split (`a15a011`)",
 }
 TABLES = {
-    "eval_v1 test": ("v1-test", ("25b", "9b73", "fix"), E2E_METRICS),
-    "eval_v1 dev": ("v1-dev", ("25b", "9b73", "cur", "legacy", "answer"), E2E_METRICS),
+    "eval_v1 test": ("v1-test", ("25b", "9b73", "fix", "split"), E2E_METRICS),
+    "eval_v1 dev": ("v1-dev", ("25b", "9b73", "cur", "legacy", "answer", "split"), E2E_METRICS),
     "Multipart test": ("mp-test", ("25b", "9b73", "fix"), MULTIPART_METRICS),
     "Multipart dev": ("mp-dev", ("25b", "9b73"), MULTIPART_METRICS),
 }
@@ -47,6 +48,8 @@ COMPARISONS = {
     "eval_v1 dev: builder vs all legacy": "compare-v1-dev-cur-legacy.md",
     "eval_v1 dev: builder vs answer legacy": "compare-v1-dev-cur-answer.md",
     "eval_v1 dev: answer legacy vs all legacy": "compare-v1-dev-answer-legacy.md",
+    "eval_v1 dev: answer legacy vs verify batch split": "compare-v1-dev-answer-split.md",
+    "eval_v1 test: fix vs verify batch split": "compare-v1-test-fix-split.md",
     "Multipart test: 25b vs after 26-35": "compare-mp-test-25b-9b73.md",
     "Multipart test: after 26-35 vs fix": "compare-mp-test-9b73-fix.md",
     "Multipart dev: 25b vs after 26-35": "compare-mp-dev-25b-9b73.md",

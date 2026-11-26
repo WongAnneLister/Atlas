@@ -19,5 +19,7 @@
   "latency-25b": "smoke-test-20261122-07cf8f59-309f9b4a",
   "latency-9b73": "smoke-test-20261126-9b7350e6-7bc8f588",
   "latency-25b-today": "smoke-test-20261126-07cf8f59-02105599",
-  "latency-main-today": "smoke-test-20261126-5bb57ac9-0d953069"
+  "latency-main-today": "smoke-test-20261126-5bb57ac9-0d953069",
+  "v1-dev-split": "e2e-dev-20261126-a15a011e-510ab4dd",
+  "v1-test-split": "e2e-test-20261126-a15a011e-07795716"
 }

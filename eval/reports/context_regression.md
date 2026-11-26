@@ -37,6 +37,8 @@ days: compare latency only between runs made on the same day, one after the othe
 | latency-9b73 | `smoke-test-20261126-9b7350e6-7bc8f588` | `9b7350e6` | False | `b325476a9edb` |
 | latency-25b-today | `smoke-test-20261126-07cf8f59-02105599` | `07cf8f59` | False | `43b5d6a505e7` |
 | latency-main-today | `smoke-test-20261126-5bb57ac9-0d953069` | `5bb57ac9` | False | `806cd3da1fb2` |
+| v1-dev-split | `e2e-dev-20261126-a15a011e-510ab4dd` | `a15a011e` | False | `c837f431d5f9` |
+| v1-test-split | `e2e-test-20261126-a15a011e-07795716` | `a15a011e` | False | `4dc1fdea638f` |
 
 ## eval_v1 test
 
@@ -45,6 +47,7 @@ days: compare latency only between runs made on the same day, one after the othe
 | 25b baseline (`07cf8f5`) | 0/30 [0%, 11%] | 16/120 [8%, 21%] | 104/150 [62%, 76%] | 25/30 [66%, 93%] | 0.8472 [0.7806, 0.9056] |
 | after 26-35 (`9b7350e`) | 0/30 [0%, 11%] | 24/120 [14%, 28%] | 96/150 [56%, 71%] | 24/30 [63%, 90%] | 0.7764 [0.7042, 0.8458] |
 | fix: answer legacy | 0/30 [0%, 11%] | 15/120 [8%, 20%] | 105/150 [62%, 77%] | 25/30 [66%, 93%] | 0.8597 [0.7958, 0.9167] |
+| fix + verify batch split (`a15a011`) | 0/30 [0%, 11%] | 15/120 [8%, 20%] | 105/150 [62%, 77%] | 25/30 [66%, 93%] | 0.8625 [0.8000, 0.9168] |
 
 ## eval_v1 dev
 
@@ -55,6 +58,7 @@ days: compare latency only between runs made on the same day, one after the othe
 | builder layout (`7f0973a`) | 0/30 [0%, 11%] | 11/120 [5%, 16%] | 109/150 [65%, 79%] | 30/30 [89%, 100%] | 0.8931 [0.8389, 0.9417] |
 | all nodes legacy (`7f0973a`) | 0/30 [0%, 11%] | 13/120 [6%, 18%] | 107/150 [64%, 78%] | 27/30 [74%, 97%] | 0.8736 [0.8152, 0.9236] |
 | answer legacy (`7f0973a`) | 0/30 [0%, 11%] | 14/120 [7%, 19%] | 106/150 [63%, 77%] | 27/30 [74%, 97%] | 0.8653 [0.8041, 0.9181] |
+| fix + verify batch split (`a15a011`) | 0/30 [0%, 11%] | 11/120 [5%, 16%] | 109/150 [65%, 79%] | 28/30 [79%, 98%] | 0.8833 [0.8277, 0.9306] |
 
 ## Multipart test
 
@@ -286,6 +290,59 @@ Source: `eval/runs/context-regression-28b/compare-v1-dev-answer-legacy.md`
 | colloquial-a8161eb7dd5c7f5a336a0dd6ddb6c766191d499dfb61953e398532ad5ee72710 | True | False | None | guardrail_blocked |
 | cross_doc-75b0f8457dab09ccfbd8f9c6112204fd7eb9efa242e6f9cc6b712e79051ad3b8 | False | True | complaint | None |
 | cross_doc-eff062b04a88dd72ced0efe0f902f081df923a0f9eb654c443fb1a1a4c8b72b2 | True | False | None | unsupported_part |
+
+### eval_v1 dev: answer legacy vs verify batch split
+
+Source: `eval/runs/context-regression-28b/compare-v1-dev-answer-split.md`
+
+| Metric | Paired n | A | B | Delta | 95% CI | McNemar p | Verdict |
+|---|---:|---:|---:|---:|---:|---:|---|
+| answers_with_any_unsupported_claim | 111 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| citation_validity | 120 | 0.865278 | 0.883333 | +0.0180556 | [-0.0138889, +0.0541667] | — | no significant change |
+| claims_removed_per_answer | 111 | 0 | 0 | +0 | [+0, +0] | — | no significant change |
+| false_accept | 30 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| false_reject | 120 | 0.116667 | 0.0916667 | -0.025 | [-0.0583333, +0.00833333] | 0.375 | no significant change |
+| full_answer_rate | 30 | 0.9 | 0.933333 | +0.0333333 | [-0.0666667, +0.166667] | 1 | no significant change |
+| graph_mrr_at_5 | 120 | 0.979167 | 0.9875 | +0.00833333 | [+0, +0.025] | — | no significant change |
+| graph_recall_at_5 | 120 | 0.991667 | 1 | +0.00833333 | [+0, +0.025] | — | no significant change |
+| low_grounding_handoff_rate | 111 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| noanswer_false_accept | 30 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| part_recall_at_5 | 120 | 0.991667 | 1 | +0.00833333 | [+0, +0.025] | 1 | no significant change |
+| partial_answer_rate | 30 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| pass_rate | 150 | 0.706667 | 0.726667 | +0.02 | [-0.00666667, +0.0533333] | 0.375 | no significant change |
+| Item | Accepted A | Accepted B | Handoff A | Handoff B |
+|---|---:|---:|---|---|
+| colloquial-073f5c61bb95c1611b08a12b0d953c4bb58faa958e43e019401a7aaeb5f96ebf | False | True | invalid_answer | None |
+| colloquial-941f661aa51acdb3072362a0f17b4dfb52fa1e03191a9f4149e7da494e7acea9 | False | True | guardrail_blocked | None |
+| cross_doc-75b0f8457dab09ccfbd8f9c6112204fd7eb9efa242e6f9cc6b712e79051ad3b8 | False | True | complaint | None |
+| cross_doc-d23e5fcf0bd33960e5025dfc9b529f5f25e41281fa94bfb53daa293262028866 | True | False | None | invalid_answer |
+| cross_doc-fe7010e21aeeda63e5ce3c8a4ed2bf4a0081fae80eea509e9f4dfbfbe08d8d0c | False | True | guardrail_blocked | None |
+
+### eval_v1 test: fix vs verify batch split
+
+Source: `eval/runs/context-regression-28b/compare-v1-test-fix-split.md`
+
+| Metric | Paired n | A | B | Delta | 95% CI | McNemar p | Verdict |
+|---|---:|---:|---:|---:|---:|---:|---|
+| answers_with_any_unsupported_claim | 108 | 0.0185185 | 0.0185185 | +0 | [-0.0277778, +0.0277778] | 1 | no significant change |
+| citation_validity | 120 | 0.859722 | 0.8625 | +0.00277778 | [-0.0333333, +0.0361111] | — | no significant change |
+| claims_removed_per_answer | 108 | 0.0648148 | 0.0648148 | +0 | [-0.166667, +0.166667] | — | no significant change |
+| false_accept | 30 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| false_reject | 120 | 0.125 | 0.125 | +0 | [-0.0333333, +0.0333333] | 1 | no significant change |
+| full_answer_rate | 30 | 0.833333 | 0.833333 | +0 | [+0, +0] | 1 | no significant change |
+| graph_mrr_at_5 | 120 | 0.977083 | 0.977083 | +0 | [+0, +0] | — | no significant change |
+| graph_recall_at_5 | 120 | 0.983333 | 0.983333 | +0 | [+0, +0] | — | no significant change |
+| low_grounding_handoff_rate | 108 | 0.00925926 | 0.00925926 | +0 | [-0.0277778, +0.0277778] | 1 | no significant change |
+| noanswer_false_accept | 30 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| part_recall_at_5 | 120 | 0.983333 | 0.983333 | +0 | [+0, +0] | 1 | no significant change |
+| partial_answer_rate | 30 | 0.0333333 | 0.0333333 | +0 | [+0, +0] | 1 | no significant change |
+| pass_rate | 150 | 0.7 | 0.7 | +0 | [-0.0266667, +0.0266667] | 1 | no significant change |
+| Item | Accepted A | Accepted B | Handoff A | Handoff B |
+|---|---:|---:|---|---|
+| basic_policy-ea4182a11f166da24d06c4b1134c4d40e0ae136ebc8d9f46b660efda1a132416 | False | True | low_grounding | None |
+| colloquial-1cc997ef957e8e28d10ee652483326f042a8a72e95ed28755921a47bf8899a83 | True | False | None | low_grounding |
+| colloquial-f03d337b2bb35d6d9623242cd57883279d75698588ffd78c71d9beda8be0b9a5 | False | True | invalid_answer | None |
+| model_number-024b148af0380c9c257e1426840633f2aa330a8a05c030f05d3ec5b8cd6af7f3 | True | False | None | invalid_answer |
 
 ### Multipart test: 25b vs after 26-35
 
