@@ -22,7 +22,7 @@ from eval.sim.build_scenarios import load_scenarios
 from eval.sim.metrics import aggregate_evaluations, evaluate_transcript
 from eval.sim.models import ConversationTranscript, Scenario, SimTurn, ToolCallRecord
 from eval.sim.report import render_sim_report, render_validity_template
-from eval.sim.user import UserSimulator, build_simulator_model
+from eval.sim.user import SimReply, UserSimulator, build_simulator_model, scripted_turns
 from support_agent.api.app import create_app
 from support_agent.api.deps import ApiDeps
 from support_agent.api.readiness import ReadinessChecks
@@ -206,8 +206,18 @@ async def run_scenario_over_api(
     stop_reason: Literal["done", "max_turns", "handoff", "error"] = "max_turns"
     prev_msg_count = 0
 
+    # Scripted scenarios probe recall at fixed turns; the chat must reach them.
+    min_turns = scripted_turns(scenario)
+    early_done: list[int] = []
     for turn_idx in range(1, scenario.max_turns + 1):
         sim_reply = simulator.next_turn(scenario, visible_history, turn_idx)
+        if sim_reply.done and turn_idx < min_turns:
+            early_done.append(turn_idx)
+            if not sim_reply.text:
+                sim_reply = simulator.next_turn(
+                    scenario, visible_history, turn_idx, must_continue=True
+                )
+            sim_reply = SimReply(text=sim_reply.text, done=False)
         if not sim_reply.text and sim_reply.done:
             stop_reason = "done"
             break
@@ -312,7 +322,7 @@ async def run_scenario_over_api(
         if sim_reply.done:
             stop_reason = "done"
             break
-        if parsed["handoff_reason"] is not None:
+        if parsed["handoff_reason"] is not None and turn_idx >= min_turns:
             stop_reason = "handoff"
             break
 
@@ -324,6 +334,7 @@ async def run_scenario_over_api(
         turns=turns,
         stop_reason=stop_reason,
         simulator_model=simulator.model_name,
+        early_done_ignored=early_done,
     )
 
 

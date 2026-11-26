@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -16,6 +17,10 @@ from support_agent.llm import get_chat_model
 
 PROMPT_PATH = REPO_ROOT / "eval" / "prompts" / "user_sim.md"
 DONE_TOKEN = "[DONE]"
+NUDGE = (
+    "(Simulator note, not from the agent: the conversation is not over. "
+    "Write your next customer message now. This turn's script: {hint})"
+)
 
 
 @dataclass(frozen=True)
@@ -39,9 +44,32 @@ def build_simulator_model(settings: Settings) -> tuple[BaseChatModel, str]:
     return model, str(label)
 
 
+_HINT = re.compile(r"^Turns? (\d+)(?:-(\d+))?:\s*(.+)$")
+
+
+def scripted_turns(scenario: Scenario) -> int:
+    """Last turn the script must reach: its latest fact checkpoint (0 when it has none)."""
+    return max((cp.turn_hint for cp in scenario.checkpoints), default=0)
+
+
+def hint_for_turn(scenario: Scenario, turn_index: int) -> str | None:
+    """The script hint written for this turn, from "Turn N:" or "Turns A-B:" lines."""
+    for hint in scenario.script_hints:
+        match = _HINT.match(hint)
+        if match is None:
+            continue
+        first = int(match.group(1))
+        last = int(match.group(2) or first)
+        if first <= turn_index <= last:
+            return match.group(3)
+    return None
+
+
 def _scenario_brief(scenario: Scenario, turn_index: int) -> str:
     payload = {
         "turn_index": turn_index,
+        "current_script_hint": hint_for_turn(scenario, turn_index),
+        "must_not_finish_before_turn": scripted_turns(scenario),
         "max_turns": scenario.max_turns,
         "persona": scenario.persona.model_dump(),
         "goal": scenario.goal,
@@ -78,6 +106,8 @@ class UserSimulator:
         scenario: Scenario,
         visible_history: list[tuple[Literal["user", "assistant"], str]],
         turn_index: int,
+        *,
+        must_continue: bool = False,
     ) -> SimReply:
         """Generate the customer's next utterance from visible messages alone."""
         messages: list[BaseMessage] = [
@@ -97,6 +127,10 @@ class UserSimulator:
                     messages.append(AIMessage(content=content))
                 else:
                     messages.append(HumanMessage(content=content))
+        if must_continue:
+            messages.append(
+                HumanMessage(content=NUDGE.format(hint=hint_for_turn(scenario, turn_index) or ""))
+            )
         response = self.model.invoke(messages)
         content = response.content if isinstance(response.content, str) else str(response.content)
         return _parse_done(content)

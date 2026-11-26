@@ -105,6 +105,8 @@ class ConversationTranscript(BaseModel):
     turns: list[SimTurn] = Field(default_factory=list)
     stop_reason: Literal["done", "max_turns", "handoff", "error"] = "done"
     simulator_model: str = "unset"
+    # Turns where the simulated user tried to finish before the last scripted checkpoint.
+    early_done_ignored: list[int] = Field(default_factory=list)
     agent_models: dict[str, str] = Field(default_factory=dict)
 
 

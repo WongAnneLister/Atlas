@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from pathlib import Path
 from typing import Any
 
@@ -441,3 +442,115 @@ def test_rescore_reports_reached_checkpoints_from_saved_transcripts(tmp_path: Pa
     text = rescore.render([run])
     assert "| `sim-test-x` |" in text
     assert f"0/{len(scenario.checkpoints)}" in text
+
+
+def _scripted_run(
+    tmp_path: Path, sim_replies: list[str], chunks: list[RetrievedChunk], checkpoint_turn: int
+) -> ConversationTranscript:
+    settings: Settings = get_settings().model_copy(deep=True)
+    settings.orders.db_path = str(tmp_path / "orders.sqlite")
+    settings.planning.enabled = False
+    settings.grounding.enabled = False
+    settings.cache.enabled = False
+    settings.api.rate_limit.per_customer = 1000
+    settings.api.rate_limit.per_ip = 1000
+    seed_orders(settings)
+    order_service = OrderService(platform=settings)
+    scenario = _sample_scenario(
+        id="s-scripted",
+        category="topic_switch",
+        expected_outcome="answer",
+        expected_tool_calls=[],
+        script_hints=[f"Turn {checkpoint_turn}: ask about the return window again."],
+        checkpoints=[
+            FactCheckpoint(
+                turn_hint=checkpoint_turn, fact_key="order_id", expected_substrings=["30"]
+            )
+        ],
+        max_turns=5,
+    )
+    n = len(sim_replies)
+    fast_model = _StructuredFake(
+        responses=["Rewrite query"] * n,
+        payloads=[{"intent": "policy_question", "confidence": 0.99}] * n,
+    )
+    answer = {
+        "parts": [
+            {
+                "question": "What is the return window?",
+                "supported": True,
+                "explicit": True,
+                "answer": "Returns are accepted within 30 days of delivery.",
+                "evidence": [{"source": 1, "quote": "returns are accepted within 30 days"}],
+            }
+        ]
+    }
+    graph_deps = GraphDeps(
+        settings=settings,
+        fast_model=fast_model,
+        main_model=_StructuredFake(responses=["ok"], payloads=[answer] * n),
+        retriever=_StaticRetriever(chunks),
+        order_service=order_service,
+        allow_untuned_gate=True,
+    )
+    simulator = UserSimulator(FakeListChatModel(responses=sim_replies), model_name="fake-sim")
+    try:
+        [transcript] = asyncio.run(
+            run_suite(
+                settings,
+                [scenario],
+                simulator=simulator,
+                graph_deps=graph_deps,
+                order_service=order_service,
+                repeats=1,
+            )
+        )
+    finally:
+        order_service.close()
+    return transcript
+
+
+def test_scripted_chat_ignores_an_early_done_until_its_last_checkpoint(tmp_path: Path) -> None:
+    chunks = [_chunk("Generic store returns are accepted within 30 days of delivery.")]
+    transcript = _scripted_run(
+        tmp_path,
+        [
+            "What is the return window?",
+            "Thanks, that is all. [DONE]",
+            "Sorry, what was the return window again? [DONE]",
+        ],
+        chunks,
+        checkpoint_turn=3,
+    )
+    assert [t.turn_index for t in transcript.turns] == [1, 2, 3]
+    assert transcript.early_done_ignored == [2]
+    assert transcript.stop_reason == "done"
+
+
+def test_scripted_chat_continues_past_a_handoff_until_its_last_checkpoint(tmp_path: Path) -> None:
+    # No evidence: every policy turn hands off, but the script still probes turn 2.
+    transcript = _scripted_run(
+        tmp_path,
+        ["What is the return window?", "And what about exchanges? [DONE]"],
+        [],
+        checkpoint_turn=2,
+    )
+    assert transcript.turns[0].handoff_reason is not None
+    assert [t.turn_index for t in transcript.turns] == [1, 2]
+
+
+def test_simulator_brief_names_this_turns_script_and_the_last_checkpoint() -> None:
+    from eval.sim.user import _scenario_brief, hint_for_turn, scripted_turns
+
+    scenario = _sample_scenario(
+        script_hints=["Turn 1: ask status.", "Turns 2-4: ask about returns.", "Turn 5: recap."],
+        checkpoints=[
+            FactCheckpoint(turn_hint=5, fact_key="order_id", expected_substrings=["ORD-000009"])
+        ],
+    )
+    assert scripted_turns(scenario) == 5
+    assert hint_for_turn(scenario, 3) == "ask about returns."
+    assert hint_for_turn(scenario, 6) is None
+    brief = json.loads(_scenario_brief(scenario, 5))
+    assert brief["current_script_hint"] == "recap."
+    assert brief["must_not_finish_before_turn"] == 5
