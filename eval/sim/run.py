@@ -211,13 +211,16 @@ async def run_scenario_over_api(
     early_done: list[int] = []
     for turn_idx in range(1, scenario.max_turns + 1):
         sim_reply = simulator.next_turn(scenario, visible_history, turn_idx)
-        if sim_reply.done and turn_idx < min_turns:
+        # Before the last checkpoint the chat goes on; at that turn a message must be sent.
+        too_early = turn_idx < min_turns or (turn_idx == min_turns and not sim_reply.text)
+        if sim_reply.done and too_early:
             early_done.append(turn_idx)
             if not sim_reply.text:
                 sim_reply = simulator.next_turn(
                     scenario, visible_history, turn_idx, must_continue=True
                 )
-            sim_reply = SimReply(text=sim_reply.text, done=False)
+            if turn_idx < min_turns:
+                sim_reply = SimReply(text=sim_reply.text, done=False)
         if not sim_reply.text and sim_reply.done:
             stop_reason = "done"
             break

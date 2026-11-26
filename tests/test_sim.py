@@ -554,3 +554,33 @@ def test_simulator_brief_names_this_turns_script_and_the_last_checkpoint() -> No
     brief = json.loads(_scenario_brief(scenario, 5))
     assert brief["current_script_hint"] == "recap."
     assert brief["must_not_finish_before_turn"] == 5
+
+
+def test_an_empty_done_at_the_checkpoint_turn_still_sends_the_probe(tmp_path: Path) -> None:
+    chunks = [_chunk("Generic store returns are accepted within 30 days of delivery.")]
+    transcript = _scripted_run(
+        tmp_path,
+        ["What is the return window?", "[DONE]", "What was the window again? [DONE]"],
+        chunks,
+        checkpoint_turn=2,
+    )
+    assert [t.turn_index for t in transcript.turns] == [1, 2]
+    assert transcript.turns[1].user_message == "What was the window again?"
+    assert transcript.early_done_ignored == [2]
+
+
+def test_scripted_brief_shows_only_the_current_step() -> None:
+    from eval.sim.user import FILLER_STEP, _scenario_brief
+
+    scripted = _sample_scenario(
+        script_hints=["Turn 1: ask status.", "Turn 3: recap."],
+        checkpoints=[
+            FactCheckpoint(turn_hint=3, fact_key="order_id", expected_substrings=["ORD-000009"])
+        ],
+    )
+    brief = json.loads(_scenario_brief(scripted, 2))
+    assert "script_hints" not in brief
+    assert brief["current_script_hint"] == FILLER_STEP
+    assert json.loads(_scenario_brief(scripted, 4))["current_script_hint"] is None
+    free = _sample_scenario(script_hints=["Turn 1: ask status."], checkpoints=[])
+    assert json.loads(_scenario_brief(free, 1))["script_hints"] == ["Turn 1: ask status."]

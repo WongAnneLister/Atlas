@@ -17,6 +17,10 @@ from support_agent.llm import get_chat_model
 
 PROMPT_PATH = REPO_ROOT / "eval" / "prompts" / "user_sim.md"
 DONE_TOKEN = "[DONE]"
+FILLER_STEP = (
+    "No scripted step this turn: ask one short, natural follow-up about the current topic. "
+    "Do not do any later step of your goal yet, and do not repeat facts you already gave."
+)
 NUDGE = (
     "(Simulator note, not from the agent: the conversation is not over. "
     "Write your next customer message now. This turn's script: {hint})"
@@ -65,18 +69,30 @@ def hint_for_turn(scenario: Scenario, turn_index: int) -> str | None:
     return None
 
 
+def current_step(scenario: Scenario, turn_index: int) -> str | None:
+    """What this message must do. Scripted chats get only this step, never later ones."""
+    hint = hint_for_turn(scenario, turn_index)
+    if hint is None and turn_index <= scripted_turns(scenario):
+        return FILLER_STEP
+    return hint
+
+
 def _scenario_brief(scenario: Scenario, turn_index: int) -> str:
-    payload = {
+    payload: dict[str, Any] = {
         "turn_index": turn_index,
-        "current_script_hint": hint_for_turn(scenario, turn_index),
-        "must_not_finish_before_turn": scripted_turns(scenario),
         "max_turns": scenario.max_turns,
         "persona": scenario.persona.model_dump(),
         "goal": scenario.goal,
         "facts": scenario.facts,
         "hidden_info": scenario.hidden_info,
-        "script_hints": scenario.script_hints,
     }
+    if scripted_turns(scenario):
+        # Seeing later steps made the simulated customer do them early, so recall
+        # questions came before their checkpoint turn or were merged into one message.
+        payload["current_script_hint"] = current_step(scenario, turn_index)
+        payload["must_not_finish_before_turn"] = scripted_turns(scenario)
+    else:
+        payload["script_hints"] = scenario.script_hints
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
@@ -129,7 +145,7 @@ class UserSimulator:
                     messages.append(HumanMessage(content=content))
         if must_continue:
             messages.append(
-                HumanMessage(content=NUDGE.format(hint=hint_for_turn(scenario, turn_index) or ""))
+                HumanMessage(content=NUDGE.format(hint=current_step(scenario, turn_index) or ""))
             )
         response = self.model.invoke(messages)
         content = response.content if isinstance(response.content, str) else str(response.content)
