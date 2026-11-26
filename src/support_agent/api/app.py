@@ -52,6 +52,7 @@ from support_agent.api.security import (
     RateLimitUnavailable,
     SessionAuthMiddleware,
     SessionTokens,
+    agent_token,
 )
 from support_agent.graph.build import build_graph
 from support_agent.graph.handoff import HandoffReason, load_templates
@@ -490,7 +491,9 @@ def create_app(deps: ApiDeps) -> FastAPI:
         return DeleteMemoriesResponse(deleted=count)
 
     def require_agent(http: Request) -> None:
-        expected = os.getenv("AGENT_TOKEN") or deps.settings.handoff.demo_agent_token
+        expected = agent_token(deps.settings.handoff.demo_agent_token)
+        if expected is None:
+            raise HTTPException(503, "Agent console is closed: set a private AGENT_TOKEN")
         auth = http.headers.get("authorization", "")
         parts = auth.split()
         if len(parts) != 2 or parts[0].casefold() != "bearer":

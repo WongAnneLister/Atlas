@@ -28,7 +28,8 @@ class HandoffSettings(BaseModel):
     human_mode_enabled: bool = False
     priorities: dict[str, HandoffPriority] = Field(default_factory=_default_priorities)
     sqlite_path: str = "data/processed/handoffs.sqlite"
-    demo_agent_token: str = "atlas-demo-agent"
+    # No default: the agent console stays closed until a private token is configured.
+    demo_agent_token: str | None = None
     human_mode_ack: str = (
         "Your message has been added to your active support ticket. "
         "A human agent will reply shortly."

@@ -23,6 +23,18 @@ _TURN_PATHS = frozenset({"/api/chat", "/api/resume", "/api/feedback"})
 SESSION_REQUIRED = "A valid demo session token is required"
 
 
+# Shipped in earlier versions of `.env.example` and config, so it is public. Never accept it.
+PUBLIC_AGENT_TOKEN = "atlas-demo-agent"
+
+
+def agent_token(configured: str | None) -> str | None:
+    """Return the agent console token, or None when the console must stay closed."""
+    token = (os.getenv("AGENT_TOKEN") or configured or "").strip()
+    if not token or token == PUBLIC_AGENT_TOKEN:
+        return None
+    return token
+
+
 class InvalidSession(ValueError):
     """A request did not provide a valid signed session token."""
 

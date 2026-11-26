@@ -20,7 +20,7 @@ We implemented human takeover with checkpointed `human_mode: bool` and `active_h
 ## 3. Agent Console & Live SSE Delivery
 
 - **UI**: `/console` (`src/support_agent/api/static/console.html`) is a static page served by FastAPI.
-- **Auth**: All `/api/agent/*` endpoints require `Authorization: Bearer <token>` matching `AGENT_TOKEN` (or `handoff.demo_agent_token` in local demo mode).
+- **Auth**: All `/api/agent/*` endpoints require `Authorization: Bearer <token>` matching `AGENT_TOKEN` (or `handoff.demo_agent_token`). There is no default. Without a private token the endpoints return `503`, and the old public value `atlas-demo-agent` is always refused.
 - **Exact AI trace snapshot**: `GET /api/agent/handoffs/{id}` displays the frozen `HandoffPayload` captured at handoff time (conversation, rewritten query, intent, gate score and signals, retrieval snapshot with rerank scores, pinned facts, guardrail flags) — never re-run.
 - **Live replies**: `POST /api/agent/handoffs/{id}/reply` persists the reply and publishes an `agent_reply` event on `HandoffEventBroker`; the customer's chat page subscribes to `GET /api/conversations/{conversation_id}/events` (Bearer customer token) to display replies and resolution notices in real time.
 

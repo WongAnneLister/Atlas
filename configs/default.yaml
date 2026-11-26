@@ -579,7 +579,7 @@ handoff:
   queue_enabled: false
   human_mode_enabled: false
   sqlite_path: data/processed/handoffs.sqlite
-  demo_agent_token: atlas-demo-agent
+  demo_agent_token: null  # set AGENT_TOKEN in .env; the console is closed without it
   priorities:
     complaint: high
     guardrail_blocked: high
