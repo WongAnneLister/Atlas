@@ -7,7 +7,10 @@ import pytest
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from support_agent.config import Settings
+from support_agent.context.budget import ContextOverflow
+from support_agent.context.settings import NodeBudgetProfile
 from support_agent.graph.deps import GraphDeps
+from support_agent.grounding import verify as verify_module
 from support_agent.grounding.claims import Claim, ClaimEvidence
 from support_agent.grounding.verify import verify_claims
 from support_agent.reliability.structured import ParsedResponse
@@ -150,3 +153,83 @@ def test_supported_without_any_excerpt_is_a_structural_failure(monkeypatch):
         verifier(monkeypatch, deps.models, [{**SUPPORT, "evidence": []}, UNSUPPORTED])
         with pytest.raises(ValueError, match="quote"):
             verify_claims(deps.models, "fast", claims())
+
+
+def _long_claims() -> list[Claim]:
+    filler = "The warranty covers parts and labour for the stated period. " * 40
+    return [
+        Claim(
+            number=n,
+            part=0,
+            text=f"Claim {n} is covered.",
+            question="Is it covered?",
+            sources=[ClaimEvidence(n=n, text=f"Claim {n} is covered. {filler}")],
+        )
+        for n in (1, 2, 3)
+    ]
+
+
+def _budgeted(settings: Settings, claims_: list[Claim], fits: int) -> None:
+    """Size the verify budget so `fits` claims fit in one call and `fits + 1` do not."""
+    with GraphDeps(settings) as deps:
+        builder = deps.models.context_builder()
+    prompt = (verify_module._PROMPT).read_text(encoding="utf-8")
+
+    def tokens(batch: list[Claim]) -> int:
+        payload = [
+            {
+                "number": c.number,
+                "claim": c.text,
+                "question": c.question,
+                "sources": [{"n": s.n, "text": s.text} for s in c.sources],
+            }
+            for c in batch
+        ]
+        built = builder.build("verify", task_prompt=prompt, user_text=json.dumps(payload))
+        return built.breakdown.total_tokens
+
+    low, high = tokens(claims_[:fits]), tokens(claims_[: fits + 1])
+    assert low < high
+    settings.context.profiles["verify"] = NodeBudgetProfile(
+        total_tokens=low, history_max_tokens=0, share_prefix=False
+    )
+
+
+def _echo_verdicts(monkeypatch: pytest.MonkeyPatch, model: Any) -> list[list[int]]:
+    batches: list[list[int]] = []
+
+    def structured(site, role, schema, messages, *, recover):
+        numbers = [row["number"] for row in json.loads(messages[-1].content)]
+        batches.append(numbers)
+        rows = [{"number": n, "verdict": "partial"} for n in numbers]
+        return ParsedResponse(schema.model_validate({"verdicts": rows}), "fixture"), None
+
+    monkeypatch.setattr(model, "structured", structured)
+    return batches
+
+
+def test_an_over_budget_batch_is_split_and_every_claim_still_gets_a_verdict(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = Settings()
+    batch = _long_claims()
+    _budgeted(settings, batch, fits=1)
+    with GraphDeps(settings) as deps:
+        calls = _echo_verdicts(monkeypatch, deps.models)
+        result = verify_claims(deps.models, "fast", batch)
+    assert sorted(result) == [1, 2, 3]
+    assert sorted(n for call in calls for n in call) == [1, 2, 3]
+    assert all(len(call) == 1 for call in calls)
+
+
+def test_one_claim_over_budget_still_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
+    settings = Settings()
+    batch = _long_claims()[:1]
+    settings.context.profiles["verify"] = NodeBudgetProfile(
+        total_tokens=50, history_max_tokens=0, share_prefix=False
+    )
+    with GraphDeps(settings) as deps:
+        calls = _echo_verdicts(monkeypatch, deps.models)
+        with pytest.raises(ContextOverflow):
+            verify_claims(deps.models, "fast", batch)
+    assert calls == []

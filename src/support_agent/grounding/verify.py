@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from support_agent.context.budget import ContextOverflow
 from support_agent.graph.coverage import SourceQuote
 from support_agent.grounding.claims import ClaimAssessment, Verdict
 
@@ -17,6 +19,7 @@ if TYPE_CHECKING:
     from support_agent.llm import Role
     from support_agent.reliability.llm_calls import ReliableModels
 
+logger = logging.getLogger(__name__)
 _PROMPT = Path(__file__).resolve().parents[1] / "graph" / "prompts" / "verify_claims.md"
 
 
@@ -38,13 +41,34 @@ class VerificationBatch(BaseModel):
 def verify_claims(
     models: ReliableModels, role: Role, claims: Sequence[Claim]
 ) -> dict[int, ClaimAssessment]:
-    """Require an individual verdict for every submitted claim in one structured call."""
+    """Require an individual verdict for every submitted claim.
+
+    Claims go in one structured call. If their sources exceed the verify token budget, the
+    batch is halved until it fits: each claim is judged only against its own sources, so a
+    smaller batch asks the same question. One claim that alone exceeds the budget still
+    raises `ContextOverflow`, and the answer is handed off as before.
+    """
     if not claims:
         return {}
-    by_number = {claim.number: claim for claim in claims}
-    if len(by_number) != len(claims):
+    if len({claim.number for claim in claims}) != len(claims):
         raise ValueError("Claim numbers must be unique")
+    try:
+        return _verify_batch(models, role, claims)
+    except ContextOverflow:
+        if len(claims) == 1:
+            raise
+        half = len(claims) // 2
+        logger.info("Verify batch of %d claims exceeds its budget; splitting", len(claims))
+        return {
+            **verify_claims(models, role, claims[:half]),
+            **verify_claims(models, role, claims[half:]),
+        }
 
+
+def _verify_batch(
+    models: ReliableModels, role: Role, claims: Sequence[Claim]
+) -> dict[int, ClaimAssessment]:
+    by_number = {claim.number: claim for claim in claims}
     payload = [
         {
             "number": claim.number,
