@@ -51,6 +51,10 @@ COMPARISONS = {
     "Multipart test: after 26-35 vs fix": "compare-mp-test-9b73-fix.md",
     "Multipart dev: 25b vs after 26-35": "compare-mp-dev-25b-9b73.md",
     "Smoke latency, run alone: 25b vs after 26-35": "compare-latency-25b-9b73.md",
+    "Smoke latency, same 25b code: 2026-11-22 vs 2026-11-26": "compare-latency-25b-nov22-today.md",
+    "Smoke latency, same day (2026-11-26): 25b vs main `5bb57ac`": (
+        "compare-latency-today-25b-main.md"
+    ),
 }
 GATES = {"after 26-35 (`9b7350e`)": "gate-9b73.md", "fix": "gate-fix.md"}
 
@@ -142,7 +146,8 @@ def render(evidence: Path = EVIDENCE, root: Path = RUNS) -> str:
         f"ablation result: `{(evidence / 'decisions.md').relative_to(REPO_ROOT)}`. Dev arms",
         "tied, so the fix is the rule's tie-break, not a measured dev gain; test ran once for",
         "the adopted arm. Collection used `--workers 3` and the rerank cache except the gate",
-        "smoke and the latency runs, which ran one item at a time.",
+        "smoke and the latency runs, which ran one item at a time. Latency drifts between",
+        "days: compare latency only between runs made on the same day, one after the other.",
         "",
         *provenance_lines(runs, root),
         *table_lines(runs, root),

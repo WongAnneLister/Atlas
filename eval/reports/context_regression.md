@@ -9,7 +9,8 @@ is answered by the agent. The decision rule for the fix was written before any d
 ablation result: `eval/runs/context-regression-28b/decisions.md`. Dev arms
 tied, so the fix is the rule's tie-break, not a measured dev gain; test ran once for
 the adopted arm. Collection used `--workers 3` and the rerank cache except the gate
-smoke and the latency runs, which ran one item at a time.
+smoke and the latency runs, which ran one item at a time. Latency drifts between
+days: compare latency only between runs made on the same day, one after the other.
 
 ## Runs
 
@@ -34,6 +35,8 @@ smoke and the latency runs, which ran one item at a time.
 | redteam-fix | `redteam-test-20261126-9bbd3648-9f3a9c5f` | `9bbd3648` | False | `b7c4a09905b0` |
 | latency-25b | `smoke-test-20261122-07cf8f59-309f9b4a` | `07cf8f59` | False | `ffd7fc9bcdc7` |
 | latency-9b73 | `smoke-test-20261126-9b7350e6-7bc8f588` | `9b7350e6` | False | `b325476a9edb` |
+| latency-25b-today | `smoke-test-20261126-07cf8f59-02105599` | `07cf8f59` | False | `43b5d6a505e7` |
+| latency-main-today | `smoke-test-20261126-5bb57ac9-0d953069` | `5bb57ac9` | False | `806cd3da1fb2` |
 
 ## eval_v1 test
 
@@ -414,6 +417,54 @@ Source: `eval/runs/context-regression-28b/compare-latency-25b-9b73.md`
 |---|---:|---:|---|---|
 | colloquial-446217d7521df6af5c067f05ec9fed48b090d941c68eb84b58e0469965b5687c | True | False | None | incomplete_evidence |
 | model_number-024b148af0380c9c257e1426840633f2aa330a8a05c030f05d3ec5b8cd6af7f3 | True | False | None | invalid_answer |
+
+### Smoke latency, same 25b code: 2026-11-22 vs 2026-11-26
+
+Source: `eval/runs/context-regression-28b/compare-latency-25b-nov22-today.md`
+
+| Metric | Paired n | A | B | Delta | 95% CI | McNemar p | Verdict |
+|---|---:|---:|---:|---:|---:|---:|---|
+| answers_with_any_unsupported_claim | 36 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| citation_validity | 40 | 0.875 | 0.866667 | -0.00833333 | [-0.025, +0] | — | no significant change |
+| claims_removed_per_answer | 36 | 0 | 0 | +0 | [+0, +0] | — | no significant change |
+| false_accept | 30 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| false_reject | 40 | 0.1 | 0.1 | +0 | [+0, +0] | 1 | no significant change |
+| full_answer_rate | 10 | 0.9 | 0.9 | +0 | [+0, +0] | 1 | no significant change |
+| graph_mrr_at_5 | 40 | 0.975 | 0.975 | +0 | [+0, +0] | — | no significant change |
+| graph_recall_at_5 | 40 | 0.975 | 0.975 | +0 | [+0, +0] | — | no significant change |
+| latency_p50 | 70 | 9.98041 | 15.1727 | +5.19226 | [+3.14029, +5.74732] | — | worse |
+| latency_p95 | 70 | 22.5288 | 26.0289 | +3.5001 | [+1.43242, +4.69442] | — | worse |
+| low_grounding_handoff_rate | 36 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| noanswer_false_accept | 30 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| part_recall_at_5 | 40 | 0.975 | 0.975 | +0 | [+0, +0] | 1 | no significant change |
+| partial_answer_rate | 10 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| pass_rate | 70 | 0.514286 | 0.514286 | +0 | [+0, +0] | 1 | no significant change |
+| Item | Accepted A | Accepted B | Handoff A | Handoff B |
+|---|---:|---:|---|---|
+
+### Smoke latency, same day (2026-11-26): 25b vs main `5bb57ac`
+
+Source: `eval/runs/context-regression-28b/compare-latency-today-25b-main.md`
+
+| Metric | Paired n | A | B | Delta | 95% CI | McNemar p | Verdict |
+|---|---:|---:|---:|---:|---:|---:|---|
+| answers_with_any_unsupported_claim | 36 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| citation_validity | 40 | 0.866667 | 0.866667 | +0 | [+0, +0] | — | no significant change |
+| claims_removed_per_answer | 36 | 0 | 0 | +0 | [+0, +0] | — | no significant change |
+| false_accept | 30 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| false_reject | 40 | 0.1 | 0.1 | +0 | [+0, +0] | 1 | no significant change |
+| full_answer_rate | 10 | 0.9 | 0.9 | +0 | [+0, +0] | 1 | no significant change |
+| graph_mrr_at_5 | 40 | 0.975 | 0.975 | +0 | [+0, +0] | — | no significant change |
+| graph_recall_at_5 | 40 | 0.975 | 0.975 | +0 | [+0, +0] | — | no significant change |
+| latency_p50 | 70 | 15.1727 | 11.8434 | -3.32925 | [-4.33058, -2.17318] | — | better |
+| latency_p95 | 70 | 26.0289 | 25.6282 | -0.400737 | [-3.69439, +8.26288] | — | no significant change |
+| low_grounding_handoff_rate | 36 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| noanswer_false_accept | 30 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| part_recall_at_5 | 40 | 0.975 | 0.975 | +0 | [+0, +0] | 1 | no significant change |
+| partial_answer_rate | 10 | 0 | 0 | +0 | [+0, +0] | 1 | no significant change |
+| pass_rate | 70 | 0.514286 | 0.514286 | +0 | [+0, +0] | 1 | no significant change |
+| Item | Accepted A | Accepted B | Handoff A | Handoff B |
+|---|---:|---:|---|---|
 
 ## Release gate (knowledge smoke + red-team smoke)
 

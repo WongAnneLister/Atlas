@@ -17,5 +17,7 @@
   "smoke-gate-fix": "smoke-test-20261126-9bbd3648-355a4829",
   "redteam-fix": "redteam-test-20261126-9bbd3648-9f3a9c5f",
   "latency-25b": "smoke-test-20261122-07cf8f59-309f9b4a",
-  "latency-9b73": "smoke-test-20261126-9b7350e6-7bc8f588"
+  "latency-9b73": "smoke-test-20261126-9b7350e6-7bc8f588",
+  "latency-25b-today": "smoke-test-20261126-07cf8f59-02105599",
+  "latency-main-today": "smoke-test-20261126-5bb57ac9-0d953069"
 }
