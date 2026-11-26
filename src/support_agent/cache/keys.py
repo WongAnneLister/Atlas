@@ -16,6 +16,7 @@ _ANSWER_PROMPT_FILES = (
     "answer_parts.md",
     "verify_claims.md",
     "split_claims.md",
+    "global_preamble.md",
 )
 
 
@@ -133,6 +134,8 @@ def prompt_version_hash(prompts_dir: Path, settings: Settings) -> str:
             "gate": settings.gate.model_dump(mode="json"),
             "grounding": settings.grounding.model_dump(mode="json"),
             "knowledge": settings.knowledge.model_dump(mode="json"),
+            # The answer prompt layout (preamble, date, facts, budget) depends on these.
+            "context": settings.context.model_dump(mode="json"),
             "rerank_top_k": settings.retrieval.rerank_top_k,
             "store_scope": settings.retrieval.store_scope.model_dump(mode="json"),
         }

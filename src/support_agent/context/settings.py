@@ -16,6 +16,9 @@ class NodeBudgetProfile(BaseModel):
     evidence_min_ratio: float = Field(default=0.0, ge=0.0, le=1.0)
     share_prefix: bool = True
     recent_turns: int | None = Field(default=None, ge=0)
+    # True sends this node's pre-ContextBuilder layout (see context/legacy.py) even when the
+    # builder is enabled; `context.enabled: false` does the same for every node.
+    legacy_layout: bool = False
 
 
 class CacheAdapterSettings(BaseModel):

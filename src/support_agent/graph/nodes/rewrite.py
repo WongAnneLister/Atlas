@@ -184,6 +184,10 @@ def make_rewrite_node(
                     compacted_blocks=[b.text for b in blocks],
                     pinned_facts=facts.render_dict() or None if st_cfg.enabled else None,
                     extra_l4_messages=format_turn_memory_messages(turn_memory_hints),
+                    # Before the ContextBuilder: the last N human turns, current turn included.
+                    legacy_turns=state.messages[
+                        human_indices[-settings.intent.rewrite_history_turns :][0] :
+                    ],
                 )
                 response, _ = models.invoke("rewrite", "fast", built)
                 if not isinstance(response.content, str) or not response.content.strip():

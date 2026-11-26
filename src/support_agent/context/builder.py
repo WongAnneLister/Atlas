@@ -21,6 +21,7 @@ from support_agent.context.budget import (
     TokenCounter,
 )
 from support_agent.context.cache_adapter import Breakpoint, apply_cache_breakpoints
+from support_agent.context.legacy import legacy_messages
 from support_agent.context.sections import (
     LAYER_ORDER,
     StabilityLayer,
@@ -144,9 +145,18 @@ class ContextBuilder:
         pinned_facts: dict[str, Any] | None = None,
         current_date: date | str | None = None,
         extra_l4_messages: Sequence[BaseMessage] = (),
+        legacy_turns: Sequence[BaseMessage] | None = None,
     ) -> BuiltContext:
         profile = self.settings.profile_for(node)
         budget = profile.total_tokens
+        if not self.settings.enabled or profile.legacy_layout:
+            return self._legacy(
+                node,
+                legacy_messages(
+                    task_prompt, user_text, turns=legacy_turns, extra=extra_l4_messages
+                ),
+                budget,
+            )
         ttls = self.settings.cache_adapter.layer_ttls
         by_layer: dict[StabilityLayer, int] = dict.fromkeys(LAYER_ORDER, 0)
         by_section: dict[str, int] = {}
@@ -434,6 +444,36 @@ class ContextBuilder:
             prefix_hash=prefix_hash,
             l0_hash=l0_hash,
             prefix_message_count=prefix_message_count,
+            prefix_bytes=prefix_bytes,
+        )
+
+    def _legacy(self, node: str, messages: list[BaseMessage], budget: int) -> BuiltContext:
+        """Wrap the pre-ContextBuilder layout so callers and traces keep one interface."""
+        system_tokens = self.counter.count_message(messages[0])
+        rest_tokens = sum(self.counter.count_message(m) for m in messages[1:])
+        by_layer: dict[StabilityLayer, int] = dict.fromkeys(LAYER_ORDER, 0)
+        by_layer["L0_global"] = system_tokens
+        by_layer["L4_turn"] = rest_tokens
+        prefix_bytes = _serialise_messages(messages[:1])
+        prefix_hash = hashlib.sha256(prefix_bytes).hexdigest()
+        breakdown = ContextBreakdown(
+            node=node,
+            total_tokens=system_tokens + rest_tokens,
+            budget_tokens=budget,
+            by_layer=by_layer,
+            by_section={"system_instructions": system_tokens, "user_message": rest_tokens},
+            dropped=[],
+            prefix_hash=prefix_hash,
+            l0_hash=prefix_hash,
+            history_capped=False,
+        )
+        return BuiltContext(
+            node=node,
+            messages=messages,
+            breakdown=breakdown,
+            prefix_hash=prefix_hash,
+            l0_hash=prefix_hash,
+            prefix_message_count=1,
             prefix_bytes=prefix_bytes,
         )
 
