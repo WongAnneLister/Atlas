@@ -16,7 +16,7 @@ Putting pinned facts in `L4` lets us track corrections without changing the cach
 Across four ablation arms on 11 scenarios, task success stayed 27.27% with 0.00 redundant questions.
 Cache hit ratio was 77.5% with both enabled versus 55.6% for the baseline.
 Mean tokens per turn dropped from 3691.5 to 3402.8, with 0.00 compactions below budget.
-Source: eval/reports/memory_short.md
+Source: eval/reports/archive/memory_short-67616c1.md
 
 **Trade-off**
 Compaction did not fire in these short live runs because history stayed under budget.

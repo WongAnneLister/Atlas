@@ -16,7 +16,7 @@ We also record exact token breakdowns and cache hit ratios for every model call.
 On 30 nightly test runs, DeepSeek prefix-cache hit ratios reached 85.1% on `classify`.
 `tools` hit 64.7%, `decide` hit 67.6%, and `answer` hit 38.3% with 0/30 wrong accesses.
 Task success was 26.67% versus 36.67% before, with overlapping intervals, and retention was 0.00%.
-Source: eval/reports/context.md
+Source: eval/reports/archive/context-4b906b9.md
 
 **Trade-off**
 Keeping `L0` to `L3` append-only means we do not trim old history every turn.

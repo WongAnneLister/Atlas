@@ -1,0 +1,14 @@
+{
+  "git_sha": "8411005411e898b8f8d60cfad70a9c59ebf0dba6",
+  "dirty": false,
+  "config_hash": "64e5a949589d2b240299aa07ef5c992e12c7f58f6e485174d98006b0a514a83a",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash"
+  },
+  "simulator_model": "fast",
+  "n_scenarios": 11,
+  "repeats": 1,
+  "date": "2026-11-27T05:37:01+00:00",
+  "note": "run.json written after collection from the run log and the run's commit (the eval at that commit did not save one)"
+}

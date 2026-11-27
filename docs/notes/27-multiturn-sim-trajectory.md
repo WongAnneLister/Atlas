@@ -16,7 +16,7 @@ Running through the real API also checks interrupts and customer isolation end t
 Across 30 nightly test runs, task success was 36.67% with 0.0943 repeat variance.
 Wrong customer access was 0 of 30, and fact retention was 16.67%.
 Handoff appropriateness was 33.33%, with 0.00% loop rate and 0.00% run errors.
-Source: eval/reports/sim.md
+Source: eval/reports/archive/sim-3b26cdf.md
 
 **Trade-off**
 A simulated user can make mistakes or drift out of character during long chats.
