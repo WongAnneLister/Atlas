@@ -70,6 +70,11 @@ class ToolsPath:
         prompt_file = "tools_path_template.md" if template else "tools_path.md"
         self.prompt = (PROMPTS / prompt_file).read_text(encoding="utf-8")
         self.reminder = "Finish now by calling the reply tool; do not write the reply yourself."
+        self.relookup = (
+            "No order data was read in this turn, so no reply can be written yet. Look the order "
+            "up with the order tools first; if the customer did not repeat the order ID, use the "
+            "one they gave earlier in this conversation."
+        )
         self.templates = load_templates("order_replies.yaml") if template else {}
 
     def __call__(self, state: ConversationState) -> dict[str, Any]:
@@ -115,6 +120,7 @@ class ToolsPath:
         had_success = False
         called_any = False
         reminded = False
+        relooked = False
         last_error: str | None = None
         lookups: list[Lookup] = []
         for step in range(cfg.max_steps):
@@ -206,6 +212,15 @@ class ToolsPath:
                     return {**_updates(state), **make_handoff(state, HandoffReason.TOOL_ERROR)}
             decision = next((c for c in response.tool_calls if c["name"] == REPLY_TOOL), None)
             if template and decision is not None:
+                wants_order_data = decision["args"].get("answer_from_order_data") is True
+                # No lookup this turn: none succeeded and none failed.
+                if wants_order_data and not lookups and last_error is None and not relooked:
+                    # Replies are written only from this turn's lookups. A follow-up such as
+                    # "which order was that?" gets one chance to read the order again.
+                    relooked = True
+                    state.trace.append("relookup_reminder")
+                    messages.append(ToolMessage(content=self.relookup, tool_call_id=decision["id"]))
+                    continue
                 return self._reply(state, decision["args"], lookups, last_error)
         return {**_updates(state), **make_handoff(state, HandoffReason.AGENT_STEP_CAP)}
 

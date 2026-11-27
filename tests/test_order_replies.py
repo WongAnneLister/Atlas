@@ -182,3 +182,22 @@ def test_graph_routes_a_policy_question_from_the_order_path_through_the_gate(
     ]
     assert result["handoff"].reason == HandoffReason.LOW_EVIDENCE
     assert "friend" not in result["answer"]
+
+
+def test_a_reply_with_no_lookup_this_turn_gets_one_chance_to_read_the_order(
+    seeded: Any,
+) -> None:
+    # "Which order were we discussing?": the model knows the id from earlier turns but
+    # replies before reading it again. One reminder, then the normal lookup and reply.
+    order_id = _order_id(seeded)
+    result, model = _run(seeded, reply(True), call(order_id=order_id), reply(True))
+    assert "relookup_reminder" in result["trace"]
+    assert result["trace"][-1] == "reply:order_data"
+    assert result["answer"].startswith(f"Order {order_id}")
+    assert "earlier in this conversation" in str(model.seen[1][-1].content)
+
+
+def test_a_second_reply_without_a_lookup_still_hands_off(seeded: Any) -> None:
+    result, _ = _run(seeded, reply(True), reply(True))
+    assert result["trace"].count("relookup_reminder") == 1
+    assert result["handoff"].reason == HandoffReason.TOOL_ERROR
