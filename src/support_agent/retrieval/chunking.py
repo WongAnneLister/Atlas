@@ -22,7 +22,8 @@ from support_agent.data.validate_docs import parse_document
 from support_agent.retrieval.tokenization import Tokenizer
 
 # 2: under the token strategy, a product section longer than max_tokens is split.
-CHUNKER_VERSION = "2"
+# 3: only a product section longer than chunk.product_whole_max_tokens is split.
+CHUNKER_VERSION = "3"
 
 
 class Chunk(BaseModel):
@@ -112,8 +113,9 @@ def section_pieces(
     if config.strategy == "token":
         if not is_product:
             return split_text(prose, tokenizer, config.max_tokens, config.overlap_tokens)
-        # A short catalog entry stays one unheaded chunk; a whole manual obeys max_tokens.
-        if tokenizer.count(prose) <= config.max_tokens:
+        # A catalog entry up to product_whole_max_tokens stays one unheaded chunk; a whole
+        # manual past it is cut to max_tokens.
+        if tokenizer.count(prose) <= config.product_whole_max_tokens:
             return [prose]
         return manual_windows(prose, header, tokenizer, config.max_tokens, config.overlap_tokens)
     if is_product:

@@ -1,0 +1,113 @@
+{
+  "alias": "atlas_c28d_live",
+  "builds": [
+    {
+      "build_id": "4aece1a3ed4f4905837a125c9249857e",
+      "chunker_version": "1",
+      "collection": "support_chunks_b4aece1a3ed4f4905837a125c9249857e",
+      "created_at": "2026-11-22T06:45:59.866657",
+      "docs_hash": "298801aa5342ba7b8b3cf8bc353d53c3031ba6b34e811d834c98e05f3e687b6e",
+      "embed_model": "BAAI/bge-m3",
+      "embed_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+      "embedding_profile": {
+        "embedding_dim": 1024,
+        "embedding_max_tokens": 8192,
+        "embedding_model": "BAAI/bge-m3",
+        "embedding_normalize": true,
+        "embedding_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "embedding_use_fp16": false,
+        "embedding_window_tokens": 1024
+      },
+      "eval_run_id": "index-release-dev-smoke-20261122-cd121855-0694d4ac5c8f4448bab5d7f51ebd6329",
+      "fingerprint": "91246ae476dfe6446f3407548f340e8fb68f0dd572846a56465b6675fa5de7c8",
+      "mode": "full",
+      "override_reason": null,
+      "parent_build_id": "f66917e90d854635a44dbdac16e6e4c1",
+      "released_at": "2026-11-22T07:12:15.852106",
+      "status": "released"
+    },
+    {
+      "build_id": "ef8bc336eb7d4e00946007771ff96a1b",
+      "chunker_version": "1",
+      "collection": "support_chunks_bef8bc336eb7d4e00946007771ff96a1b",
+      "created_at": "2026-11-22T03:47:27.399815",
+      "docs_hash": "8e8efe061f0a8d60c5afb30cb0d94b97a749110f6fdae80d53bb617925be2a1d",
+      "embed_model": "BAAI/bge-m3",
+      "embed_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+      "embedding_profile": {
+        "embedding_dim": 1024,
+        "embedding_max_tokens": 8192,
+        "embedding_model": "BAAI/bge-m3",
+        "embedding_normalize": true,
+        "embedding_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "embedding_use_fp16": false,
+        "embedding_window_tokens": 1024
+      },
+      "eval_run_id": "index-release-dev-smoke-20261122-5ccd15aa-2fe3eb2d5e9f47e9b958510b9ddb67b2",
+      "fingerprint": "349cad45dd7ff32ce8e4d1e42c2d36be7312e7913f5b0caf114a2347927424fe",
+      "mode": "incremental",
+      "override_reason": null,
+      "parent_build_id": "f66917e90d854635a44dbdac16e6e4c1",
+      "released_at": "2026-11-22T04:19:14.911360",
+      "status": "retired"
+    },
+    {
+      "build_id": "f66917e90d854635a44dbdac16e6e4c1",
+      "chunker_version": "1",
+      "collection": "support_chunks_bf66917e90d854635a44dbdac16e6e4c1",
+      "created_at": "2026-11-21T12:50:15.983623",
+      "docs_hash": "d6a143e7ab0c28431450034b4aeb6581f136ae72b483c90ba53dac3ef8c79b66",
+      "embed_model": "BAAI/bge-m3",
+      "embed_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+      "embedding_profile": {
+        "embedding_dim": 1024,
+        "embedding_max_tokens": 8192,
+        "embedding_model": "BAAI/bge-m3",
+        "embedding_normalize": true,
+        "embedding_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "embedding_use_fp16": false,
+        "embedding_window_tokens": 1024
+      },
+      "eval_run_id": "index-release-dev-smoke-20261122-5ccd15aa-e123956c2ab64a4f9fd6d796dba81fc4",
+      "fingerprint": "349cad45dd7ff32ce8e4d1e42c2d36be7312e7913f5b0caf114a2347927424fe",
+      "mode": "full",
+      "override_reason": null,
+      "parent_build_id": "828c9e89a73b4ed8984744aaf051d136",
+      "released_at": "2026-11-22T03:46:38.485664",
+      "status": "retired"
+    },
+    {
+      "build_id": "828c9e89a73b4ed8984744aaf051d136",
+      "chunker_version": "1",
+      "collection": "support_chunks",
+      "created_at": "2026-11-21T12:48:02.639440",
+      "docs_hash": "d6a143e7ab0c28431450034b4aeb6581f136ae72b483c90ba53dac3ef8c79b66",
+      "embed_model": "BAAI/bge-m3",
+      "embed_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+      "embedding_profile": {
+        "embedding_dim": 1024,
+        "embedding_max_tokens": 8192,
+        "embedding_model": "BAAI/bge-m3",
+        "embedding_normalize": true,
+        "embedding_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "embedding_use_fp16": false,
+        "embedding_window_tokens": 1024
+      },
+      "eval_run_id": null,
+      "fingerprint": "349cad45dd7ff32ce8e4d1e42c2d36be7312e7913f5b0caf114a2347927424fe",
+      "mode": "adopted",
+      "override_reason": null,
+      "parent_build_id": null,
+      "released_at": "2026-11-21T12:48:03.883473",
+      "status": "retired"
+    }
+  ],
+  "drift": false,
+  "milvus_collection": "support_chunks_b4aece1a3ed4f4905837a125c9249857e",
+  "registry": {
+    "alias": "atlas_c28d_live",
+    "build_id": "4aece1a3ed4f4905837a125c9249857e",
+    "previous_build_id": "f66917e90d854635a44dbdac16e6e4c1"
+  },
+  "registry_collection": "support_chunks_b4aece1a3ed4f4905837a125c9249857e"
+}

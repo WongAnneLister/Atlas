@@ -13,7 +13,11 @@ Documents split at section markers first; policy chunks never cross a section bo
 Within a long section, paragraph endings are preferred, then sentence endings, then token offsets.
 Overlapping source windows retain the configured number of tokens within each section.
 Token counts use the pinned BGE fast tokenizer, excluding special tokens and heading prefixes.
-Product sections always remain a single chunk, even when an entire manual exceeds the policy budget.
+A product section up to `chunk.product_whole_max_tokens` (4096, half the verify budget) remains a
+single chunk. A longer one (a whole manual) is cut with the policy budget and overlap since chunker
+version 3 (28e); with `chunk.product_window_header` each window starts with the product heading,
+because the reranker and the gate read only chunk text. Version 2 split every product section over
+512 tokens and was refused at release (28d). The measured ingestion section below predates both.
 Current sections retain their source text and IDs. Synthetic history has separate IDs.
 Chunk ids hash section id and its local chunk index. Full rebuilds remove obsolete rows.
 Heading paths are prepended only to encoder input when enabled; displayed and BM25 text stay raw.

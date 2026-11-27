@@ -83,7 +83,7 @@ def main(*, preview: bool = False) -> None:
         f"| sections | {len({c.section_id for c in chunks})} |",
         f"| chunks | {len(chunks)} |",
         f"| policy chunks | {len(policies)} |",
-        f"| whole product chunks | {len(products)} |",
+        f"| product chunks | {len(products)} |",
         f"| average body tokens | {mean(c.n_tokens for c in chunks):.2f} |",
         f"| maximum body tokens | {max(c.n_tokens for c in chunks)} |",
         f"| maximum policy body tokens | {max((c.n_tokens for c in policies), default=0)} |",

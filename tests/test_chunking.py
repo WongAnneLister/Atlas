@@ -65,16 +65,39 @@ def test_token_strategy_keeps_a_short_product_section_whole_and_unheaded() -> No
     assert len(chunks) == 1 and chunks[0].text == body and chunks[0].n_tokens == 7
 
 
+def test_token_strategy_keeps_a_product_section_under_the_whole_limit_as_one_chunk() -> None:
+    # The first split rule (every product section over max_tokens) was refused by the release
+    # check: two headed BHD510/03 windows (635 tokens) outranked the asked-for model (28d).
+    config = get_settings().chunk.model_copy(
+        update={
+            "max_tokens": 10,
+            "overlap_tokens": 2,
+            "strategy": "token",
+            "product_whole_max_tokens": 20,
+        }
+    )
+    body = " ".join(f"m{i}." for i in range(15))
+    text = document(
+        "catalog",
+        ["fixture"],
+        "2026-11-09",
+        ["## Philips XY100\n<!-- section: product.XY100 -->\n\n" + body],
+    )
+    chunks = chunk_document(text, config, WhitespaceTokenizer())
+    assert len(chunks) == 1 and chunks[0].text == body and chunks[0].n_tokens == 15
+
+
 @pytest.mark.parametrize("header", [False, True])
-def test_token_strategy_splits_a_long_product_manual_to_max_tokens(header: bool) -> None:
+def test_token_strategy_splits_a_product_manual_over_the_whole_limit(header: bool) -> None:
     # A whole manual in one catalog chunk reached 12331 tokens and overflowed the answer
-    # and verify budgets (PROGRESS, found in 27c). It must obey chunk.max_tokens too.
+    # and verify budgets (PROGRESS, found in 27c). Past the limit it obeys max_tokens.
     config = get_settings().chunk.model_copy(
         update={
             "max_tokens": 10,
             "overlap_tokens": 2,
             "strategy": "token",
             "product_window_header": header,
+            "product_whole_max_tokens": 20,
         }
     )
     body = " ".join(f"m{i}." for i in range(40))
@@ -200,3 +223,10 @@ def test_manual_windows_start_with_the_product_heading() -> None:
     assert len(chunks) > 1
     assert all(c.text.startswith("Philips XY100\n\n") and c.n_tokens <= 10 for c in chunks)
     assert {w for c in chunks for w in c.text.split()} - {"Philips", "XY100"} == set(body.split())
+
+
+def test_default_whole_product_limit_leaves_room_in_the_verify_budget() -> None:
+    # A source kept whole must fit the claim-check prompt with room to spare (28d).
+    settings = get_settings()
+    verify = settings.context.profiles["verify"].total_tokens
+    assert settings.chunk.max_tokens <= settings.chunk.product_whole_max_tokens <= verify // 2

@@ -179,12 +179,18 @@ chunk:
   # faq_unit: one FAQ per chunk, headed manual windows. It is not the default yet:
   # it raised no-answer false accepts end to end (eval/reports/chunking_e2e.md).
   strategy: token
-  # Under token, a product manual longer than max_tokens is cut with max_tokens and
-  # overlap_tokens; the product_window_* sizes apply to faq_unit only.
+  # Under token, a product section longer than product_whole_max_tokens is cut with
+  # max_tokens and overlap_tokens; the product_window_* sizes apply to faq_unit only.
   product_window_tokens: 400
   product_overlap_tokens: 50
   # Both strategies: each manual window starts with the product heading.
   product_window_header: true
+  # Half the verify budget (context.profiles.verify.total_tokens 8192), so a source kept
+  # whole fits the claim-check prompt with room to spare. Counted with the BGE tokenizer,
+  # not the context budget's approximate counter, hence the margin.
+  # Set after the first release check refused splitting every section over max_tokens:
+  # two headed BHD510/03 windows (635 tokens) outranked the asked-for model (PROGRESS 28d).
+  product_whole_max_tokens: 4096
 
 gate:
   weights:

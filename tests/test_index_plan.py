@@ -159,8 +159,8 @@ def test_chunker_golden_section() -> None:
             "Returns close after thirty days.",
         )
     ]
-    # Version 2 changed only long product sections; policy sections keep their chunks.
-    expected = {"1": policy, "2": policy}
+    # Versions 2 and 3 changed only long product sections; policy sections keep their chunks.
+    expected = {"1": policy, "2": policy, "3": policy}
     chunks = chunk_document(
         document(("returns.window", "Window", "Returns close after thirty days.")),
         Settings().chunk,
