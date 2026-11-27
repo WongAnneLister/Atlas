@@ -1,0 +1,29 @@
+{
+  "git_sha": "dfa1aa548a6e442e67bcec7494249037b47f7b3a",
+  "dirty": false,
+  "config_hash": "e97f37a4e55747fa7df9c0cfc7d67c04e2838b539e14048b39a6cc21958c6805",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash"
+  },
+  "source_run": "memory-short-20261127-50c91ed3",
+  "source_arm": "both",
+  "date": "2026-11-27T12:30:08.873897+00:00",
+  "rows": [
+    {
+      "probe": "sim-049-long_conversation:14",
+      "arm": "on",
+      "overrides": {},
+      "n": 5,
+      "tool_error": 0,
+      "recalled": 0,
+      "relookup": 0,
+      "handoffs": {
+        "unsupported_part": 4,
+        "low_grounding": 1
+      },
+      "answer_tokens_max": 6399
+    }
+  ],
+  "invalid": null
+}
