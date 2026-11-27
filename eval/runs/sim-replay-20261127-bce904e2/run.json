@@ -1,0 +1,54 @@
+{
+  "git_sha": "dca0cc14a6153306de120d065624b71757210cee",
+  "dirty": false,
+  "config_hash": "4581d1641f1a1b861ae35a0c0008d10cba0a0313063b09372ff5058c4f6901e1",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash"
+  },
+  "source_run": "sim-dev-20261126-ede1c409",
+  "date": "2026-11-27T03:40:49.234005+00:00",
+  "rows": [
+    {
+      "probe": "sim-036-topic_switch:5",
+      "arm": "on",
+      "overrides": {},
+      "n": 5,
+      "tool_error": 0,
+      "recalled": 5,
+      "relookup": 0
+    },
+    {
+      "probe": "sim-036-topic_switch:5",
+      "arm": "off",
+      "overrides": {
+        "agent.order_relookup": false
+      },
+      "n": 5,
+      "tool_error": 0,
+      "recalled": 5,
+      "relookup": 0
+    },
+    {
+      "probe": "sim-047-long_conversation:10",
+      "arm": "on",
+      "overrides": {},
+      "n": 5,
+      "tool_error": 0,
+      "recalled": 5,
+      "relookup": 4
+    },
+    {
+      "probe": "sim-047-long_conversation:10",
+      "arm": "off",
+      "overrides": {
+        "agent.order_relookup": false
+      },
+      "n": 5,
+      "tool_error": 3,
+      "recalled": 2,
+      "relookup": 0
+    }
+  ],
+  "invalid": null
+}
