@@ -80,6 +80,8 @@ def test_fit_drops_the_lowest_ranked_source_first_and_keeps_one_per_part() -> No
     assert kept == {0: {1: a}, 1: {4: d}} and built == "built" and dropped == 2
     assert candidates[0] == {1: a, 2: b, 3: c}, "the input is not changed"
     assert fit_sources(candidates, lambda kept: None) is None
+    # Under the budget nothing is dropped: the prompt is the one sent before the fit.
+    assert fit_sources(candidates, lambda kept: "built") == (candidates, "built", 0)
 
 
 def test_parts_answer_drops_a_low_ranked_manual_instead_of_overflowing() -> None:
@@ -126,3 +128,24 @@ def test_the_switch_restores_the_old_over_budget_call() -> None:
     with GraphDeps(settings, main_model=main) as deps:
         KnowledgePath(deps).answer(_parts_state([evidence(0.99)[0], _manual()]))
     assert "Table of contents" in str(main.messages[-1].content)
+
+
+def test_exposure_bound_flags_only_items_whose_sources_exceed_the_budget() -> None:
+    from eval.answer_budget_exposure import upper_bound
+
+    from support_agent.context.budget import ApproxTokenCounter
+
+    count = ApproxTokenCounter(chars_per_token=3.8, message_overhead=4)
+    gate = {"passed": True}
+    small = {"heading_path": "Returns", "text": "Items can be returned within 30 days."}
+    big = {"heading_path": "Catalog > Manual", "text": "Safety notes. " * 5000}
+    parts = {
+        "route_source": "parts",
+        "parts": [{"text": QUESTION, "gate": gate, "retrieved_sources": [small, big]}],
+    }
+    assert upper_bound(parts, {}, count) > 12000
+    parts["parts"][0]["retrieved_sources"] = [small]
+    assert upper_bound(parts, {}, count) < 12000
+    whole = {"route_source": "whole", "gate": gate, "retrieved_section_ids": ["s1", "s1"]}
+    assert upper_bound(whole, {"s1": big["text"]}, count) > 12000
+    assert upper_bound({**whole, "gate": {"passed": False}}, {}, count) is None
