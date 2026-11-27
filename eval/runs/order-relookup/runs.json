@@ -1,0 +1,6 @@
+{
+  "sim-dev-checkpoints": "sim-dev-20261127-ae512f7c",
+  "smoke-gate": "smoke-test-20261127-b0f36a6e-18d0e3ca",
+  "redteam-smoke": "redteam-test-20261127-b0f36a6e-da69bf41",
+  "code": "b0f36a6"
+}
