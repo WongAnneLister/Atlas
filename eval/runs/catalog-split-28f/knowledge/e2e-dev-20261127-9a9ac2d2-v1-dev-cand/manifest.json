@@ -1,0 +1,82 @@
+{
+  "kind": "e2e",
+  "split": "dev",
+  "git_sha": "9a9ac2d20bcf825dc247e7c7f8f792d01f0cc174",
+  "config_hash": "9d10b494e6dfbc0e15a7c74b9c3e1dcda3748e5374c4aa3ddf93b74b41c197ad",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash"
+  },
+  "datasets": {
+    "eval_v1": {
+      "version": "v1",
+      "sha256": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9"
+    }
+  },
+  "seed": 17,
+  "dirty": false,
+  "started_at": "2026-11-27T08:50:29.571891Z",
+  "ended_at": "2026-11-27T08:54:45.518880Z",
+  "cost_usd": null,
+  "cost_note": "price not set",
+  "command": [
+    "eval-e2e",
+    "--split",
+    "dev",
+    "--workers",
+    "3",
+    "--rerank-cache",
+    "--output",
+    "<scratch>/cache/v1-dev-cand.jsonl",
+    "--report",
+    "<scratch>/reports/v1-dev-cand.md",
+    "--run-root",
+    "<scratch>/runs",
+    "--run-suffix",
+    "v1-dev-cand",
+    "--run-pointer",
+    "<scratch>/runs/v1-dev-cand.pointer"
+  ],
+  "source": {
+    "record_type": "metadata",
+    "git_sha": "9a9ac2d20bcf825dc247e7c7f8f792d01f0cc174",
+    "config_hash": "9d10b494e6dfbc0e15a7c74b9c3e1dcda3748e5374c4aa3ddf93b74b41c197ad",
+    "eval_file_hash": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9",
+    "corpus_hash": "60e259f600ed4ae895106d14385edcb6cfcf12071ec0219a32a936a209c5c6fd",
+    "models": {
+      "fast": "deepseek-flash",
+      "main": "deepseek-flash"
+    },
+    "dataset_versions": {
+      "flipkart_faqs": "NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228",
+      "philips_manuals": "InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84",
+      "maktek_faqs": "MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240",
+      "bitext": "bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443"
+    },
+    "split": "dev",
+    "date": "2026-11-27T08:50:29.571891+00:00",
+    "customer_id": "CUST-0001",
+    "threshold": 0.15,
+    "code_hash": "c0164da6a912d32fb21766d97c7b05fe804d156d3d486e634cf569f581a0481b",
+    "prompt_hash": "d07c2edd66bc51309170f0d0957ebdbcea311b84066d4d68600353beda50ec98",
+    "runtime": {
+      "langchain": "1.4.9",
+      "langchain-core": "1.7.6",
+      "langgraph": "1.2.20",
+      "langchain-deepseek": "1.1.1",
+      "langchain-openai": "1.7.4",
+      "openai": "3.48.0"
+    },
+    "chaos": null,
+    "endpoint_host": "api.deepseek.com",
+    "build_id": "91f848b9ffc442e8a723fce164a9f035",
+    "workers": 3,
+    "latency_comparable": false,
+    "rerank_scores": {
+      "cache": "scores.sqlite",
+      "profile": "0c9ef29f8d43452a83de0604bba4fd337f3f037feabb14ea32393a4c6cee62c1",
+      "from_cache": 8658,
+      "scored": 142
+    }
+  }
+}

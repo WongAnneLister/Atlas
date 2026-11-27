@@ -1,0 +1,191 @@
+{
+  "metrics": {
+    "answers_with_any_unsupported_claim": {
+      "interval": {
+        "point": 0.018018018018018018,
+        "low": 0.0,
+        "high": 0.04504504504504504
+      },
+      "n": 111,
+      "count": 2,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "citation_validity": {
+      "interval": {
+        "point": 0.8763888888888888,
+        "low": 0.8180555555555554,
+        "high": 0.9291666666666667
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "claims_removed_per_answer": {
+      "interval": {
+        "point": 0.06306306306306306,
+        "low": 0.0,
+        "high": 0.18018018018018017
+      },
+      "n": 111,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "false_accept": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 30,
+      "count": 0,
+      "wilson_upper": 0.11351339317396873,
+      "rule_of_three_upper": 0.1
+    },
+    "false_reject": {
+      "interval": {
+        "point": 0.10833333333333334,
+        "low": 0.058333333333333334,
+        "high": 0.16666666666666666
+      },
+      "n": 120,
+      "count": 13,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "full_answer_rate": {
+      "interval": {
+        "point": 0.8333333333333334,
+        "low": 0.7,
+        "high": 0.9666666666666667
+      },
+      "n": 30,
+      "count": 25,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "graph_mrr_at_5": {
+      "interval": {
+        "point": 0.9770833333333333,
+        "low": 0.9479166666666666,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "graph_recall_at_5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9583333333333334,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "latency_p50": {
+      "interval": {
+        "point": 4.1897242499981076,
+        "low": 3.963114209007472,
+        "high": 4.553122374927625
+      },
+      "n": 150,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "latency_p95": {
+      "interval": {
+        "point": 8.11872595793102,
+        "low": 6.998852999997325,
+        "high": 11.362756750080734
+      },
+      "n": 150,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "low_grounding_handoff_rate": {
+      "interval": {
+        "point": 0.009009009009009009,
+        "low": 0.0,
+        "high": 0.02702702702702703
+      },
+      "n": 111,
+      "count": 1,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "noanswer_false_accept": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 30,
+      "count": 0,
+      "wilson_upper": 0.11351339317396873,
+      "rule_of_three_upper": 0.1
+    },
+    "part_recall_at_5": {
+      "interval": {
+        "point": 0.9833333333333333,
+        "low": 0.9583333333333334,
+        "high": 1.0
+      },
+      "n": 120,
+      "count": 118,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "partial_answer_rate": {
+      "interval": {
+        "point": 0.03333333333333333,
+        "low": 0.0,
+        "high": 0.1
+      },
+      "n": 30,
+      "count": 1,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "pass_rate": {
+      "interval": {
+        "point": 0.7133333333333334,
+        "low": 0.64,
+        "high": 0.7866666666666666
+      },
+      "n": 150,
+      "count": 107,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "claim_support_rate": {
+      "interval": {
+        "point": 0.9925925925925926,
+        "low": 0.9814814814814815,
+        "high": 1.0
+      },
+      "n": 270,
+      "count": 268,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    }
+  },
+  "statistics": {
+    "latency_p50": "p50",
+    "latency_p95": "p95",
+    "first_token_p50": "p50",
+    "first_token_p95": "p95"
+  },
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}
