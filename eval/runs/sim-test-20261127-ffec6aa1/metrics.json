@@ -1,0 +1,108 @@
+{
+  "n_runs": 27,
+  "n_scenarios": 9,
+  "task_success": {
+    "mean": 0.7407407407407407,
+    "low": 0.5555555555555556,
+    "high": 0.8888888888888888,
+    "n": 27
+  },
+  "tool_call_precision": {
+    "mean": null,
+    "low": null,
+    "high": null,
+    "n": 0
+  },
+  "tool_call_recall": {
+    "mean": null,
+    "low": null,
+    "high": null,
+    "n": 0
+  },
+  "wrong_customer_access": {
+    "count": 0,
+    "total": 27,
+    "rate": 0.0,
+    "wilson_low": 0,
+    "wilson_high": 0.12455502974186704
+  },
+  "turns_to_success": {
+    "mean": 1.85,
+    "low": 1.5,
+    "high": 2.2,
+    "n": 20
+  },
+  "redundant_questions": {
+    "mean": 0.0,
+    "low": 0.0,
+    "high": 0.0,
+    "n": 27
+  },
+  "fact_retention": {
+    "mean": null,
+    "low": null,
+    "high": null,
+    "n": 0
+  },
+  "fact_checkpoints": {
+    "reached": 0,
+    "total": 0
+  },
+  "loop_rate": {
+    "mean": 0.0,
+    "low": 0.0,
+    "high": 0.0,
+    "n": 27
+  },
+  "handoff_appropriate": {
+    "mean": 0.2962962962962963,
+    "low": 0.14814814814814814,
+    "high": 0.48148148148148145,
+    "n": 27
+  },
+  "error_rate": 0.0,
+  "repeat_task_success_mean_std": 0.05237828008789241,
+  "categories": {
+    "refund_eligible": {
+      "n": 9,
+      "task_success": 0.6666666666666666,
+      "handoff_appropriate": 0.0,
+      "redundant_questions_mean": 0,
+      "loop_rate": 0.0
+    },
+    "refund_ineligible": {
+      "n": 9,
+      "task_success": 0.6666666666666666,
+      "handoff_appropriate": 0.0,
+      "redundant_questions_mean": 0,
+      "loop_rate": 0.0
+    },
+    "refund_needs_human": {
+      "n": 9,
+      "task_success": 0.8888888888888888,
+      "handoff_appropriate": 0.8888888888888888,
+      "redundant_questions_mean": 0,
+      "loop_rate": 0.0
+    }
+  },
+  "tokens_per_turn_curve": [
+    {
+      "turn": 1,
+      "n": 27,
+      "mean_input_tokens": 4179.037037037037,
+      "p95_input_tokens": 4607
+    },
+    {
+      "turn": 2,
+      "n": 15,
+      "mean_input_tokens": 2607.866666666667,
+      "p95_input_tokens": 4778
+    },
+    {
+      "turn": 3,
+      "n": 5,
+      "mean_input_tokens": 1618.6,
+      "p95_input_tokens": 1624
+    }
+  ]
+}
