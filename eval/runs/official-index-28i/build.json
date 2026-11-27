@@ -1,0 +1,17 @@
+{
+  "build_id": "37e01bfb62564c5493eac3fa9fe76049",
+  "chunk_count": 291,
+  "chunk_sizes": {
+    "count": 291,
+    "hard_max_tokens": 4096,
+    "max_tokens": 2989,
+    "over_max_tokens": 2,
+    "p99_tokens": 512
+  },
+  "collection": "support_chunks_b37e01bfb62564c5493eac3fa9fe76049",
+  "copied_chunks": 0,
+  "docs_hash": "298801aa5342ba7b8b3cf8bc353d53c3031ba6b34e811d834c98e05f3e687b6e",
+  "elapsed_s": 284.7208196250722,
+  "embedded_chunks": 291,
+  "mode": "full"
+}
