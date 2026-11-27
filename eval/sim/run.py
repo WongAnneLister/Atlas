@@ -439,7 +439,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     repeats = args.repeats if args.repeats is not None else settings.eval.sim.repeats
     sim_model, sim_name = build_simulator_model(settings)
-    simulator = UserSimulator(sim_model, model_name=sim_name)
+    simulator = UserSimulator(sim_model, model_name=sim_name, retry=settings.reliability.retry)
 
     order_service = OrderService(platform=settings)
     graph_deps = GraphDeps(settings=settings, order_service=order_service)

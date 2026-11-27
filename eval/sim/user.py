@@ -14,6 +14,8 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, System
 from eval.sim.models import Scenario
 from support_agent.config import REPO_ROOT, Settings
 from support_agent.llm import get_chat_model
+from support_agent.reliability.retry import retry_call
+from support_agent.reliability.settings import RetrySettings
 
 PROMPT_PATH = REPO_ROOT / "eval" / "prompts" / "user_sim.md"
 DONE_TOKEN = "[DONE]"
@@ -117,10 +119,20 @@ class UserSimulator:
         *,
         model_name: str = "injected",
         prompt: str | None = None,
+        retry: RetrySettings | None = None,
     ) -> None:
         self.model = model
         self.model_name = model_name
         self.prompt = prompt if prompt is not None else PROMPT_PATH.read_text(encoding="utf-8")
+        self.retry = retry
+
+    def _invoke(self, messages: list[BaseMessage]) -> BaseMessage:
+        """One simulator call; a dropped connection is retried like the agent's own calls."""
+        if self.retry is None:
+            return self.model.invoke(messages)
+        return retry_call(
+            lambda _remaining: self.model.invoke(messages), policy=self.retry, is_idempotent=True
+        )
 
     def next_turn(
         self,
@@ -154,7 +166,7 @@ class UserSimulator:
             messages.append(HumanMessage(content=AFTER_HANDOFF.format(hint=step)))
         if must_continue:
             messages.append(HumanMessage(content=NUDGE.format(hint=step)))
-        response = self.model.invoke(messages)
+        response = self._invoke(messages)
         content = response.content if isinstance(response.content, str) else str(response.content)
         return _parse_done(content)
 
@@ -177,9 +189,7 @@ class UserSimulator:
             f"Hidden info: {json.dumps(scenario.hidden_info, ensure_ascii=False)}\n"
             f"Candidates: {json.dumps(candidates, ensure_ascii=False)}"
         )
-        response = self.model.invoke(
-            [SystemMessage(content=self.prompt), HumanMessage(content=prompt)]
-        )
+        response = self._invoke([SystemMessage(content=self.prompt), HumanMessage(content=prompt)])
         text = (
             response.content if isinstance(response.content, str) else str(response.content)
         ).strip()

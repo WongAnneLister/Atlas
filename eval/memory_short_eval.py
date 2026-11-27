@@ -168,7 +168,7 @@ def main(argv: list[str] | None = None) -> int:
     scenarios = _select(load_scenarios(args.scenarios), include_long=args.include_long)
     by_id = {s.id: s for s in scenarios}
     sim_model, sim_name = build_simulator_model(base_settings)
-    simulator = UserSimulator(sim_model, model_name=sim_name)
+    simulator = UserSimulator(sim_model, model_name=sim_name, retry=base_settings.reliability.retry)
 
     results: dict[str, dict[str, Any]] = {}
     arm_transcripts: dict[str, list[ConversationTranscript]] = {}

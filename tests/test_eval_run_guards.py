@@ -158,3 +158,32 @@ def test_strict_memory_extraction_raises_instead_of_storing_nothing() -> None:
     assert extract_memory_candidates(**kwargs) == []
     with pytest.raises(RuntimeError, match="Insufficient Balance"):
         extract_memory_candidates(**kwargs, strict=True)
+
+
+def test_simulator_retries_a_dropped_connection_instead_of_crashing_the_run() -> None:
+    import httpx
+    from eval.sim.user import UserSimulator
+    from langchain_core.messages import AIMessage as Reply
+
+    from support_agent.reliability.settings import RetrySettings
+
+    class _Flaky:
+        calls = 0
+
+        def invoke(self, messages: Any) -> Reply:
+            self.calls += 1
+            if self.calls == 1:
+                raise httpx.ConnectError("Connection error.")
+            return Reply(content="Where is my order?")
+
+    policy = RetrySettings(
+        max_attempts=3, base_delay_s=0, max_delay_s=0, jitter_ratio=0, budget_s=5
+    )
+    model = _Flaky()
+    simulator = UserSimulator(model, model_name="flaky", prompt="p", retry=policy)  # type: ignore[arg-type]
+    reply = simulator.next_turn(_sample_scenario(), [], 1)
+    assert reply.text == "Where is my order?" and model.calls == 2
+    with pytest.raises(httpx.ConnectError):
+        UserSimulator(_Flaky(), model_name="flaky", prompt="p").next_turn(  # type: ignore[arg-type]
+            _sample_scenario(), [], 1
+        )
