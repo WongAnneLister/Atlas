@@ -414,6 +414,10 @@ def test_final_sale_yes_without_final_sale_policy_becomes_human(seeded: Any) -> 
         ("ORD-000008", "Refund and return policy.", "yes", "handoff"),
         ("ORD-000008", "Cancelled orders can receive refunds.", "yes", "request"),
         ("ORD-000001", "Refund and return policy.", "no", "answer"),
+        # A refusal for a status the policy never names is not the model's call either:
+        # a cancelled order's refund was refused by the return window (27c sim-028).
+        ("ORD-000008", "You can return products within 90 days of purchase.", "no", "handoff"),
+        ("ORD-000008", "Cancelled orders are refunded automatically.", "no", "answer"),
     ],
 )
 def test_seed_edge_order_decisions_are_checked_before_action(
@@ -457,6 +461,28 @@ def test_item_with_a_pending_request_is_not_requested_again(seeded: Any) -> None
     assert result["trace"][-4:] == ["refund_retrieve", "refund_decide", "handoff", "output_guard"]
     assert result["order_context"]["pending_refund_item_ids"] == [item]
     assert result["handoff"].reason.value == "policy_requires_human"
+    assert result.get("refund_request") is None
+    with service.repository.connection() as connection:
+        assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 1
+
+
+def test_order_whose_open_items_are_all_in_review_gets_a_status_reply(seeded: Any) -> None:
+    settings, service = seeded
+    order = service.get_order("ORD-000001", "CUST-0001")
+    items = [item.item_id for item in order.items]
+    service.create_refund_request(
+        order.order_id, order.customer_id, items, "Earlier", idempotency_key="earlier-chat"
+    )
+    main = DecisionFake(responses=["unused"], decisions=[yes_decision(order)])
+    with deps(settings, service, main) as graph_deps:
+        result = invoke(build_graph(graph_deps), "Refund ORD-000001", thread="later-chat")
+    assert result["trace"][-3:] == ["refund_decide", "refund_act", "output_guard"]
+    # Told the request is already in review, instead of an unexplained second handoff.
+    assert result["handoff"] is None
+    assert (
+        f"already has a refund request in review for {', '.join(sorted(items))}"
+        in (result["answer"])
+    )
     assert result.get("refund_request") is None
     with service.repository.connection() as connection:
         assert connection.exec_driver_sql("SELECT COUNT(*) FROM refund_requests").fetchone()[0] == 1

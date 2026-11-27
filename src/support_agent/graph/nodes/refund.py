@@ -31,6 +31,11 @@ from support_agent.retrieval.filters import RetrievalFilters, retrieve_with_filt
 from support_agent.retrieval.scope import scope_chunks
 
 logger = logging.getLogger(__name__)
+
+PENDING_REPLY = (
+    "This order already has a refund request in review for {items}. A human agent will "
+    "review it, so you do not need to ask again."
+)
 ORDER_ID = re.compile(r"\bORD[- ]?\d{6}\b", re.IGNORECASE)
 
 
@@ -270,6 +275,16 @@ class RefundPath:
     def act(self, state: ConversationState) -> dict[str, Any]:
         if state.handoff is not None:
             return {}
+        if pending := self._all_open_items_pending(state):
+            # The request is already queued for human review; say so instead of a second,
+            # unexplained handoff. Item ids come from OrderService, not from the model.
+            answer = PENDING_REPLY.format(items=", ".join(pending))
+            return {
+                "answer": answer,
+                "citations": [],
+                "messages": [AIMessage(content=answer)],
+                "trace": [*state.trace, "refund_act"],
+            }
         decision = self._decision(state)
         if decision is None:
             return self._handoff(state, HandoffReason.POLICY_REQUIRES_HUMAN)
@@ -366,6 +381,16 @@ class RefundPath:
             "currency": order.currency,
             "item_names": [item.name for item in order.items],
         }
+
+    @classmethod
+    def _all_open_items_pending(cls, state: ConversationState) -> list[str]:
+        """Item ids, when every item still refundable already has a request in review."""
+        order = cls._order_from_state(state)
+        pending = set((state.order_context or {}).get("pending_refund_item_ids") or [])
+        if order is None or not pending:
+            return []
+        open_items = {i.item_id for i in order.items if i.refunded_quantity < i.quantity}
+        return sorted(open_items) if open_items and open_items <= pending else []
 
     @staticmethod
     def _order_from_state(state: ConversationState) -> Order | None:

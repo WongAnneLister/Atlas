@@ -94,7 +94,11 @@ def check_decision(
             return decision.model_copy(
                 update={"eligible": "needs_human", "citations": valid_citations}
             )
-    if decision.eligible == "yes" and order.status.value not in {
+    # A return-window rule is written for delivered goods. A yes or no for an order in any
+    # other status (cancelled, paid, in transit, ...) stands only if a cited source names
+    # that status; otherwise the policy does not cover it and a human decides. Without the
+    # "no" side, a cancelled order's refund was refused by the 90-day return window.
+    if decision.eligible in {"yes", "no"} and order.status.value not in {
         "delivered",
         "partially_refunded",
     }:
