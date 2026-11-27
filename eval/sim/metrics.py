@@ -9,7 +9,7 @@ from collections import Counter, defaultdict
 from collections.abc import Callable
 from typing import Any
 
-from eval.sim.models import ConversationTranscript, Scenario, ScenarioEvaluation
+from eval.sim.models import ConversationTranscript, Scenario, ScenarioEvaluation, SimTurn
 from eval.stats import bootstrap_ci, wilson_interval
 
 _ASK_ORDER_ID = re.compile(
@@ -52,7 +52,7 @@ def _check_outcome(scenario: Scenario, transcript: ConversationTranscript) -> bo
         if not refund_created:
             return False
     elif expected == "refund_denied":
-        if refund_created or handoff_reasons:
+        if refund_created or not _denied_then_only_user_handoffs(turns):
             return False
         if not all_agent_text.strip():
             return False
@@ -70,6 +70,36 @@ def _check_outcome(scenario: Scenario, transcript: ConversationTranscript) -> bo
         return False
     return not (
         checks.expect_handoff_reason and checks.expect_handoff_reason not in handoff_reasons
+    )
+
+
+def _turn_route(turn: SimTurn) -> list[str]:
+    """The nodes of this turn only: the thread trace after its last input guard."""
+    starts = [i for i, step in enumerate(turn.route) if step == "input_guard"]
+    return turn.route[starts[-1] :] if starts else list(turn.route)
+
+
+def _denied_then_only_user_handoffs(turns: list[SimTurn]) -> bool:
+    """A refusal turn, and no handoff except ones the customer asked for after it.
+
+    The refusal text tells the customer they can ask a human to review it. A customer who
+    then asks for one has not undone a correct refusal (27c: sim-022 failed 3/3 this way).
+    """
+    denial = next(
+        (
+            index
+            for index, turn in enumerate(turns)
+            if "refund_act" in _turn_route(turn)
+            and turn.handoff_reason is None
+            and turn.refund_request_id is None
+        ),
+        None,
+    )
+    if denial is None:
+        return False
+    return all(
+        turn.handoff_reason is None or (index > denial and turn.handoff_reason == "user_requested")
+        for index, turn in enumerate(turns)
     )
 
 

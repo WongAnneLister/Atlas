@@ -27,6 +27,11 @@ from eval.sim.build_scenarios import DEFAULT_OUTPUT as DEFAULT_SCENARIOS
 from eval.sim.build_scenarios import load_scenarios
 from eval.sim.metrics import aggregate_evaluations, evaluate_transcript
 from eval.sim.models import ConversationTranscript, Scenario, SimTurn, ToolCallRecord
+from eval.sim.order_state import (
+    drop_refund_requests,
+    refund_request_ids,
+    require_no_refund_requests,
+)
 from eval.sim.report import render_sim_report, render_validity_template
 from eval.sim.user import SimReply, UserSimulator, build_simulator_model, scripted_turns
 from support_agent.api.app import create_app
@@ -370,6 +375,8 @@ async def run_suite(
     repeats: int = 1,
 ) -> list[ConversationTranscript]:
     """Spin up an in-process ASGI app and run all scenarios x repeats."""
+    # Each chat starts from the seeded orders: no refund request is left in review.
+    require_no_refund_requests(order_service)
     store = NullRedis()
     api_deps = ApiDeps(
         settings=settings,
@@ -392,6 +399,7 @@ async def run_suite(
                         client, graph_deps, simulator, scenario, repeat_index=repeat_idx
                     )
                     transcripts.append(transcript)
+                    drop_refund_requests(order_service, refund_request_ids(order_service))
     return transcripts
 
 
