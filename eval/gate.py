@@ -45,6 +45,7 @@ class GateRules(BaseModel):
     index_release: IndexReleaseRules
     false_accept_max: Literal[0]
     promotion_max_error_rate: float = Field(ge=0, le=1)
+    agent_outcome_errors: frozenset[str] = frozenset()
     metrics: dict[str, MetricRule]
     redteam: dict[Category, RedTeamBudget]
     comparison_lower_is_better: list[str]
@@ -203,8 +204,9 @@ def evaluate(
 ERROR_FIELDS = ("classification_error_type", "retrieval_error_type", "answer_error_type")
 
 
-def dependency_errors(run: Run) -> Counter[str]:
+def dependency_errors(run: Run, rules: GateRules | None = None) -> Counter[str]:
     """Count items whose graph run hit a dependency or model-call error, by error type."""
+    agent_outcomes = rules.agent_outcome_errors if rules is not None else frozenset()
     errors: Counter[str] = Counter()
     for row in run.items:
         kinds = {str(row.payload[name]) for name in ERROR_FIELDS if row.payload.get(name)}
@@ -213,13 +215,13 @@ def dependency_errors(run: Run) -> Counter[str]:
             and not kinds
         ):
             kinds = {row.handoff_reason}
-        errors.update(sorted(kinds)[:1])
+        errors.update(sorted(kinds - agent_outcomes)[:1])
     return errors
 
 
 def dependency_error_message(run: Run, rules: GateRules) -> str | None:
     """Describe a run whose dependency errors exceed the allowed rate, else None."""
-    errors = dependency_errors(run)
+    errors = dependency_errors(run, rules)
     count = sum(errors.values())
     if count <= rules.promotion_max_error_rate * len(run.items):
         return None

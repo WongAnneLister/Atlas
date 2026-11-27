@@ -187,3 +187,78 @@ def test_simulator_retries_a_dropped_connection_instead_of_crashing_the_run() ->
         UserSimulator(_Flaky(), model_name="flaky", prompt="p").next_turn(  # type: ignore[arg-type]
             _sample_scenario(), [], 1
         )
+
+
+def test_the_agents_own_context_overflow_does_not_void_a_run() -> None:
+    from eval.run_health import invalid_errors_message, invalid_transcripts_message
+
+    overflow = ConversationTranscript(
+        scenario_id="sim-049",
+        category="long_conversation",
+        customer_id="CUST-0001",
+        turns=[
+            SimTurn(turn_index=14, user_message="again", dependency_error="ContextOverflow"),
+            SimTurn(turn_index=15, user_message="again", dependency_error="ContextOverflow"),
+        ],
+    )
+    assert invalid_transcripts_message([overflow] + [_chat()] * 10) is None
+    assert invalid_errors_message(["ContextOverflow", None, None], "scenarios") is None
+    # A real dependency error after an overflow in the same chat still counts.
+    overflow.turns.append(
+        SimTurn(turn_index=16, user_message="hi", dependency_error="APIStatusError")
+    )
+    assert transcript_error(overflow) == "APIStatusError"
+
+
+def test_the_release_gate_does_not_count_context_overflow_as_a_dependency_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from eval.gate import dependency_errors, load_rules
+
+    from test_run_health import _broken, _multipart_run
+
+    overflow = {
+        "trace": ["answer", "verify", "handoff"],
+        "answer_error_type": "ContextOverflow",
+        "handoff": {"reason": "low_grounding"},
+    }
+    assert dependency_errors(_multipart_run(overflow, monkeypatch), load_rules()) == {}
+    dead = _multipart_run(_broken(None), monkeypatch)
+    assert dependency_errors(dead, load_rules())["ImportError"] == 1
+
+
+def test_memory_short_renders_a_saved_run_with_its_own_provenance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import json
+
+    monkeypatch.setattr(
+        memory_short_eval, "load_scenarios", lambda path: [_sample_scenario(nightly=True)]
+    )
+    overflow = _chat("ContextOverflow")
+    rows = [
+        {"arm": arm, "transcript": (overflow if arm == "both" else _chat()).model_dump()}
+        for arm, *_ in memory_short_eval.ARMS
+    ]
+    run_dir = tmp_path / "memory-short-saved"
+    run_dir.mkdir()
+    (run_dir / "items.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    report = tmp_path / "memory_short.md"
+    with pytest.raises(FileNotFoundError):
+        memory_short_eval.main(["--from-run", str(run_dir), "--report", str(report)])
+    provenance = {
+        "git_sha": "abc123",
+        "dirty": False,
+        "config_hash": "cfg",
+        "models": {"fast": "f", "main": "m"},
+        "simulator_model": "fast",
+        "n_scenarios": 1,
+        "repeats": 1,
+        "date": "2026-11-27T05:37:01+00:00",
+    }
+    (run_dir / "run.json").write_text(json.dumps(provenance))
+    assert memory_short_eval.main(["--from-run", str(run_dir), "--report", str(report)]) == 0
+    text = report.read_text()
+    assert "`abc123` (dirty: False)" in text and "2026-11-27" in text
+    assert "both: ContextOverflow x1 turns" in text
+    assert (run_dir / "metrics.json").exists()

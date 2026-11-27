@@ -6,6 +6,12 @@ false_accept_max: 0
 # The release check uses the same rate: such a run fails as "Invalid run", not as a
 # metric regression, so an outage is not read as a code change.
 promotion_max_error_rate: 0.05
+# Error types raised by the agent's own code, not by a dependency. The agent fails closed
+# on them (a handoff), so they are measured as agent behaviour and never void a run.
+# Added on 2026-11-27, after the test-split memory_short rerun was refused for one
+# ContextOverflow: an over-budget answer prompt made verify overflow, and the turn
+# handed off with low_grounding. That is an agent defect to report, not an outage.
+agent_outcome_errors: [ContextOverflow]
 # Registered before collecting any commit 22b evidence.
 # Changed during 22b, after the first live run: the serving index itself passes one test-split
 # no-answer item at the gate (0.1512 against 0.15; listed in eval/reports/threshold_sweep.md),

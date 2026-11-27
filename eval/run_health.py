@@ -41,10 +41,11 @@ def state_dependency_error(values: Mapping[str, Any]) -> str | None:
 
 def invalid_errors_message(errors: Iterable[str | None], unit: str) -> str | None:
     """The gate's error-rate rule over units that each carry their first error or None."""
+    rules = load_rules()
     found = list(errors)
-    counts = Counter(error for error in found if error)
+    counts = Counter(e for e in found if e and e not in rules.agent_outcome_errors)
     count = sum(counts.values())
-    if count <= load_rules().promotion_max_error_rate * len(found):
+    if count <= rules.promotion_max_error_rate * len(found):
         return None
     kinds = ", ".join(f"{kind} x{n}" for kind, n in counts.most_common())
     return (
@@ -54,9 +55,15 @@ def invalid_errors_message(errors: Iterable[str | None], unit: str) -> str | Non
 
 
 def transcript_error(transcript: ConversationTranscript) -> str | None:
-    """A chat counts once: its first model error, else its first HTTP or stream error."""
+    """A chat counts once: its first dependency error, else its first HTTP or stream error.
+
+    Errors the agent raises itself (`agent_outcome_errors`) are skipped, so a later real
+    dependency error in the same chat is still found.
+    """
+    skip = load_rules().agent_outcome_errors
     for field in ("dependency_error", "error_type"):
-        if found := next((getattr(t, field) for t in transcript.turns if getattr(t, field)), None):
+        values = (getattr(t, field) for t in transcript.turns)
+        if found := next((v for v in values if v and v not in skip), None):
             return str(found)
     if transcript.stop_reason == "error" and not transcript.turns:
         return "session_error"
