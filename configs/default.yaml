@@ -179,8 +179,11 @@ chunk:
   # faq_unit: one FAQ per chunk, headed manual windows. It is not the default yet:
   # it raised no-answer false accepts end to end (eval/reports/chunking_e2e.md).
   strategy: token
+  # Under token, a product manual longer than max_tokens is cut with max_tokens and
+  # overlap_tokens; the product_window_* sizes apply to faq_unit only.
   product_window_tokens: 400
   product_overlap_tokens: 50
+  # Both strategies: each manual window starts with the product heading.
   product_window_header: true
 
 gate:

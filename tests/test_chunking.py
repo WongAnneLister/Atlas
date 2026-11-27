@@ -50,21 +50,48 @@ def test_paragraph_then_sentence_splitting_keeps_all_source_words() -> None:
     assert all(len(piece.split()) <= 6 for piece in pieces)
 
 
-def test_token_strategy_keeps_products_whole_despite_policy_budget() -> None:
+def test_token_strategy_keeps_a_short_product_section_whole_and_unheaded() -> None:
     config = get_settings().chunk.model_copy(
-        update={"max_tokens": 2, "overlap_tokens": 1, "strategy": "token"}
+        update={"max_tokens": 8, "overlap_tokens": 2, "strategy": "token"}
     )
     body = "one two three four five six seven"
     text = document(
         "catalog",
         ["fixture"],
         "2026-11-09",
-        [
-            "## Model A\n<!-- section: product.A -->\n\n" + body,
-        ],
+        ["## Model A\n<!-- section: product.A -->\n\n" + body],
     )
     chunks = chunk_document(text, config, WhitespaceTokenizer())
     assert len(chunks) == 1 and chunks[0].text == body and chunks[0].n_tokens == 7
+
+
+@pytest.mark.parametrize("header", [False, True])
+def test_token_strategy_splits_a_long_product_manual_to_max_tokens(header: bool) -> None:
+    # A whole manual in one catalog chunk reached 12331 tokens and overflowed the answer
+    # and verify budgets (PROGRESS, found in 27c). It must obey chunk.max_tokens too.
+    config = get_settings().chunk.model_copy(
+        update={
+            "max_tokens": 10,
+            "overlap_tokens": 2,
+            "strategy": "token",
+            "product_window_header": header,
+        }
+    )
+    body = " ".join(f"m{i}." for i in range(40))
+    text = document(
+        "catalog",
+        ["fixture"],
+        "2026-11-09",
+        ["## Philips XY100\n<!-- section: product.XY100 -->\n\n" + body],
+    )
+    chunks = chunk_document(text, config, WhitespaceTokenizer())
+    assert len(chunks) > 1
+    assert all(c.section_id == "product.XY100" for c in chunks)
+    assert all(c.n_tokens <= config.max_tokens for c in chunks)
+    assert len({c.chunk_id for c in chunks}) == len(chunks)
+    assert all(c.text.startswith("Philips XY100\n\n") == header for c in chunks)
+    words = {w for c in chunks for w in c.text.split()} - {"Philips", "XY100"}
+    assert words == set(body.split())
 
 
 def test_fake_embedder_is_deterministic_normalised_and_distinguishes_inputs() -> None:

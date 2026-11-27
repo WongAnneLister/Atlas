@@ -175,7 +175,8 @@ class ChunkSettings(BaseModel):
     max_tokens: int = Field(gt=0)
     overlap_tokens: int = Field(ge=0)
     prepend_heading: bool
-    # "token": fixed token windows inside each section, whole product manuals.
+    # "token": fixed token windows inside each section; a product manual longer than
+    # max_tokens is cut into max_tokens windows too.
     # "faq_unit": one FAQ question and answer per chunk, product manuals in windows.
     strategy: Literal["token", "faq_unit"] = "token"
     product_window_tokens: int = Field(default=400, gt=0)

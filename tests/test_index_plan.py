@@ -152,15 +152,15 @@ def test_chunker_golden_section() -> None:
     from support_agent.retrieval.chunking import CHUNKER_VERSION, chunk_document
     from support_agent.retrieval.tokenization import WhitespaceTokenizer
 
-    expected = {
-        "1": [
-            (
-                "f49364abdc6fd57dd040e75c21faf27044d973171979df8d5fc6d676dff5294f",
-                "Returns > Window",
-                "Returns close after thirty days.",
-            )
-        ]
-    }
+    policy = [
+        (
+            "f49364abdc6fd57dd040e75c21faf27044d973171979df8d5fc6d676dff5294f",
+            "Returns > Window",
+            "Returns close after thirty days.",
+        )
+    ]
+    # Version 2 changed only long product sections; policy sections keep their chunks.
+    expected = {"1": policy, "2": policy}
     chunks = chunk_document(
         document(("returns.window", "Window", "Returns close after thirty days.")),
         Settings().chunk,

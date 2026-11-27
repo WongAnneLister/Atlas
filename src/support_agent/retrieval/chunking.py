@@ -21,7 +21,8 @@ from support_agent.data.section_metadata import (
 from support_agent.data.validate_docs import parse_document
 from support_agent.retrieval.tokenization import Tokenizer
 
-CHUNKER_VERSION = "1"
+# 2: under the token strategy, a product section longer than max_tokens is split.
+CHUNKER_VERSION = "2"
 
 
 class Chunk(BaseModel):
@@ -86,22 +87,39 @@ def faq_units(prose: str) -> list[str]:
     return [unit.strip() for unit in _FAQ_START.split(prose) if unit.strip()]
 
 
+def manual_windows(
+    prose: str, header: str, tokenizer: Tokenizer, maximum: int, overlap: int
+) -> list[str]:
+    """Cut a product manual into windows that each start with its optional heading."""
+    budget = maximum - (tokenizer.count(header) + 2 if header else 0)
+    if budget <= overlap:
+        raise ValueError("A product heading leaves no room for its manual window")
+    windows = [
+        f"{header}\n\n{window}" if header else window
+        for window in split_text(prose, tokenizer, budget, overlap)
+    ]
+    if any(tokenizer.count(window) > maximum for window in windows):
+        raise ValueError("A headed manual window exceeds its token budget")
+    return windows
+
+
 def section_pieces(
     sid: str, prose: str, config: ChunkSettings, tokenizer: Tokenizer, heading: str = ""
 ) -> list[str]:
     """Cut one section according to the configured strategy."""
     is_product = sid.startswith("product.")
+    header = heading if is_product and config.product_window_header and heading else ""
     if config.strategy == "token":
-        if is_product:
+        if not is_product:
+            return split_text(prose, tokenizer, config.max_tokens, config.overlap_tokens)
+        # A short catalog entry stays one unheaded chunk; a whole manual obeys max_tokens.
+        if tokenizer.count(prose) <= config.max_tokens:
             return [prose]
-        return split_text(prose, tokenizer, config.max_tokens, config.overlap_tokens)
+        return manual_windows(prose, header, tokenizer, config.max_tokens, config.overlap_tokens)
     if is_product:
-        header = heading if config.product_window_header and heading else ""
-        budget = config.product_window_tokens - (tokenizer.count(header) + 2 if header else 0)
-        if budget <= config.product_overlap_tokens:
-            raise ValueError("A product heading leaves no room for its manual window")
-        windows = split_text(prose, tokenizer, budget, config.product_overlap_tokens)
-        return [f"{header}\n\n{window}" if header else window for window in windows]
+        return manual_windows(
+            prose, header, tokenizer, config.product_window_tokens, config.product_overlap_tokens
+        )
     pieces: list[str] = []
     for unit in faq_units(prose):
         if tokenizer.count(unit) <= config.max_tokens:
