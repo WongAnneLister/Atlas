@@ -191,6 +191,11 @@ chunk:
   # Set after the first release check refused splitting every section over max_tokens:
   # two headed BHD510/03 windows (635 tokens) outranked the asked-for model (PROGRESS 28d).
   product_whole_max_tokens: 4096
+  # Ingest-time hard cap on every chunk (28g): `make ingest` and index builds fail and name
+  # each chunk over it; nothing is truncated. Validated: at least max_tokens and
+  # product_whole_max_tokens, at most half the verify budget. Same budget-derived value as
+  # product_whole_max_tokens, kept as its own key because it guards every strategy.
+  hard_max_tokens: 4096
 
 gate:
   weights:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from bisect import bisect_right
 from collections.abc import Mapping
@@ -41,6 +42,44 @@ class Chunk(BaseModel):
     effective_from: date | None = None
     effective_to: date | None = None
     region: str = "global"
+
+
+class ChunkSizeError(ValueError):
+    """A built chunk is over chunk.hard_max_tokens; the build stops instead of indexing it."""
+
+
+class ChunkSizeStats(BaseModel):
+    count: int
+    max_tokens: int
+    p99_tokens: int
+    over_max_tokens: int
+    hard_max_tokens: int
+
+
+def chunk_size_stats(chunks: list[Chunk], config: ChunkSettings) -> ChunkSizeStats:
+    """Size distribution for build records: max, nearest-rank p99 and count over max_tokens."""
+    sizes = sorted(chunk.n_tokens for chunk in chunks)
+    rank = max(1, math.ceil(0.99 * len(sizes)))
+    return ChunkSizeStats(
+        count=len(sizes),
+        max_tokens=sizes[-1] if sizes else 0,
+        p99_tokens=sizes[rank - 1] if sizes else 0,
+        over_max_tokens=sum(size > config.max_tokens for size in sizes),
+        hard_max_tokens=config.hard_max_tokens,
+    )
+
+
+def check_chunk_sizes(chunks: list[Chunk], config: ChunkSettings) -> None:
+    """Fail on any chunk over the hard cap, naming each one. Nothing is truncated."""
+    oversized = [chunk for chunk in chunks if chunk.n_tokens > config.hard_max_tokens]
+    if oversized:
+        listed = "; ".join(
+            f"{chunk.chunk_id} {chunk.section_id} {chunk.n_tokens} tokens" for chunk in oversized
+        )
+        raise ChunkSizeError(
+            f"{len(oversized)} chunk(s) over the {config.hard_max_tokens}-token "
+            f"chunk.hard_max_tokens cap: {listed}"
+        )
 
 
 def split_text(text: str, tokenizer: Tokenizer, maximum: int, overlap: int) -> list[str]:
@@ -211,6 +250,7 @@ def load_chunks(folder: Path, config: ChunkSettings, tokenizer: Tokenizer) -> li
     ]
     if not chunks:
         raise ValueError("No chunks found; run make data-docs")
+    check_chunk_sizes(chunks, config)
     if len({chunk.chunk_id for chunk in chunks}) != len(chunks):
         raise ValueError("Duplicate section ids across source documents")
     if metadata.keys() != {chunk.section_id for chunk in chunks}:

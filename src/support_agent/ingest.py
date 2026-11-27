@@ -13,7 +13,13 @@ from pydantic import BaseModel, Field
 
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
-from support_agent.retrieval.chunking import Chunk, embedding_text, load_chunks
+from support_agent.retrieval.chunking import (
+    Chunk,
+    ChunkSizeStats,
+    chunk_size_stats,
+    embedding_text,
+    load_chunks,
+)
 from support_agent.retrieval.embed import BgeM3Embedder, Embedder
 from support_agent.retrieval.index_plan import default_docs_dir, load_corpus
 from support_agent.retrieval.milvus_store import ChunkStore, MilvusStore
@@ -38,6 +44,7 @@ class IngestRun(BaseModel):
     encoder_window_tokens: int
     embedding_windows: int = 0
     chunk_count: int = 0
+    chunk_sizes: ChunkSizeStats | None = None
     stored_count: int | None = None
     server_version: str | None = None
     timings_s: dict[str, float] = Field(default_factory=dict)
@@ -90,6 +97,7 @@ def run(settings: Settings, *, chunks_only: bool = False) -> IngestRun:
         text = "".join(chunk.model_dump_json() + "\n" for chunk in chunks)
         write_text(output / "chunks.jsonl", text)
         run_info.chunk_count = len(chunks)
+        run_info.chunk_sizes = chunk_size_stats(chunks, settings.chunk)
         run_info.chunk_hash = digest(text)
         run_info.corpus_hash = load_corpus(default_docs_dir(settings)).docs_hash
         run_info.timings_s["chunking"] = perf_counter() - started

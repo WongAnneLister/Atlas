@@ -30,7 +30,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         eval-cross-doc-failures eval-multipart-build eval-multipart eval-query-planning-report \
         eval-claims-build eval-claims-label eval-claims eval-claims-verify eval-claim-grounding-report eval-context-regression-report eval-sim-rescore eval-answer-budget-exposure eval-sim-replay \
         eval-cache eval-sim-build eval-sim eval-context eval-memory-short eval-memory-long eval-context-ab bench-kv loop-report seed-handoff-demo drift-report replay-traffic loadtest \
-        eval-index-release eval-index-lifecycle eval-rerank-cache eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
+        eval-index-release eval-chunk-sizes eval-index-lifecycle eval-rerank-cache eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
 
 define todo
 	@echo "$@: not implemented yet (commit $(1))"
@@ -281,6 +281,10 @@ notes:
 	$(RUN) python scripts/check_notes.py --build
 
 check: lint typecheck test notes-check
+
+# Chunk size distribution and hard-cap check of saved builds: CHUNK_SIZE_ARGS="<build_id>... [--output path]"
+eval-chunk-sizes:
+	$(RUN) python -m eval.chunk_sizes $(CHUNK_SIZE_ARGS)
 
 eval-index-release:
 	$(RUN) python -m eval.index_release $(INDEX_EVAL_ARGS)

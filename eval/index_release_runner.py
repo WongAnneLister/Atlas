@@ -9,9 +9,25 @@ from eval.index_release import (
 )
 from eval.run_record import read_run
 from support_agent.config import Settings
+from support_agent.retrieval.chunking import chunk_size_stats
 from support_agent.retrieval.index_models import BuildRecord
 from support_agent.retrieval.index_plan import embedding_profile
 from support_agent.retrieval.index_release import Check, Decision
+from support_agent.retrieval.index_snapshot import load_build_chunks
+
+
+def chunk_size_note(settings: Settings, role: str, build_id: str) -> str:
+    """One release-report line with a build's chunk size distribution (28g)."""
+    try:
+        stats = chunk_size_stats(load_build_chunks(settings, build_id), settings.chunk)
+    except (OSError, ValueError) as error:
+        reason = type(error).__name__
+        return f"{role} build {build_id} chunk sizes: snapshot unavailable ({reason})."
+    return (
+        f"{role} build {build_id} chunk sizes: {stats.count} chunks, max {stats.max_tokens}, "
+        f"p99 {stats.p99_tokens}, {stats.over_max_tokens} over chunk.max_tokens "
+        f"({settings.chunk.max_tokens}); hard cap {stats.hard_max_tokens}."
+    )
 
 
 def check_for(
@@ -73,6 +89,9 @@ def check_for(
             override_reason=override_reason,
             absolute=absolute_ids(selected, config),
         )
+        result.notes.append(chunk_size_note(config, "Candidate", candidate.build_id))
+        if live is not None:
+            result.notes.append(chunk_size_note(config, "Live", live.build_id))
         return result, path.name
 
     return check

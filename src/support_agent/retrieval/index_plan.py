@@ -68,7 +68,8 @@ def index_fingerprint(settings: Settings, *, legacy_schema: bool = False) -> str
         json_text(
             {
                 "embedding": embedding_profile(settings),
-                "chunk": settings.chunk.model_dump(mode="json"),
+                # The hard cap only guards a build; it never changes a chunk or a vector.
+                "chunk": settings.chunk.model_dump(mode="json", exclude={"hard_max_tokens"}),
                 "index_schema": schema,
                 "chunker_version": CHUNKER_VERSION,
                 "store_schema_version": "1" if legacy_schema else STORE_SCHEMA_VERSION,

@@ -186,6 +186,8 @@ class ChunkSettings(BaseModel):
     product_window_header: bool = False
     # Token strategy: the largest product section kept as one chunk.
     product_whole_max_tokens: int = Field(default=4096, gt=0)
+    # No built chunk may exceed this; ingest and index builds fail and name the chunk.
+    hard_max_tokens: int = Field(default=4096, gt=0)
 
     @model_validator(mode="after")
     def _valid_overlap(self) -> ChunkSettings:
@@ -193,6 +195,10 @@ class ChunkSettings(BaseModel):
             raise ValueError("chunk.overlap_tokens must be smaller than max_tokens")
         if self.product_whole_max_tokens < self.max_tokens:
             raise ValueError("chunk.product_whole_max_tokens must be at least max_tokens")
+        if self.hard_max_tokens < self.max_tokens:
+            raise ValueError("chunk.hard_max_tokens must be at least max_tokens")
+        if self.product_whole_max_tokens > self.hard_max_tokens:
+            raise ValueError("chunk.product_whole_max_tokens must not exceed hard_max_tokens")
         if self.product_overlap_tokens >= self.product_window_tokens:
             raise ValueError("chunk.product_overlap_tokens must be smaller than the window")
         return self
@@ -557,6 +563,9 @@ class Settings(BaseSettings):
             if self.redis.backend == "null":
                 raise ValueError("prod requires Redis")
         validate_reliability(self)
+        verify = self.context.profiles.get("verify")
+        if verify is not None and self.chunk.hard_max_tokens > verify.total_tokens // 2:
+            raise ValueError("chunk.hard_max_tokens must be at most half the verify budget")
         return self
 
     @classmethod

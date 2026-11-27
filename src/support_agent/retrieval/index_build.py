@@ -15,7 +15,14 @@ from pydantic import BaseModel
 
 from support_agent.config import REPO_ROOT, Settings
 from support_agent.data.doc_models import digest, json_text
-from support_agent.retrieval.chunking import CHUNKER_VERSION, Chunk, embedding_text
+from support_agent.retrieval.chunking import (
+    CHUNKER_VERSION,
+    Chunk,
+    ChunkSizeStats,
+    check_chunk_sizes,
+    chunk_size_stats,
+    embedding_text,
+)
 from support_agent.retrieval.embed import BgeM3Embedder, Embedder
 from support_agent.retrieval.index_models import BuildMode, BuildRecord, Corpus
 from support_agent.retrieval.index_plan import (
@@ -42,6 +49,7 @@ class BuildResult(BaseModel):
     chunk_count: int
     elapsed_s: float
     docs_hash: str
+    chunk_sizes: ChunkSizeStats
 
 
 def store_for(settings: Settings, collection: str) -> MilvusStore:
@@ -212,6 +220,8 @@ def build_index(
         changed = chunks_for(
             corpus, sorted(corpus.sections.keys() - set(copy_ids)), settings, active_tokenizer
         )
+        # Copied rows count too: a build never stores a chunk over the cap.
+        check_chunk_sizes([*changed, *(row.chunk for row in copied)], settings.chunk)
         vectors = []
         if changed:
             model = embedder or BgeM3Embedder(settings.retrieval, active_tokenizer)
@@ -249,6 +259,7 @@ def build_index(
         chunk_count=len(chunks),
         elapsed_s=perf_counter() - started,
         docs_hash=plan.docs_hash,
+        chunk_sizes=chunk_size_stats(chunks, settings.chunk),
     )
     try:
         _save_latest(settings, result, chunks)
