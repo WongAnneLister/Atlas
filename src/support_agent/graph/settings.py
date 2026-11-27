@@ -24,6 +24,9 @@ class PlanningSettings(BaseModel):
 
 class KnowledgeSettings(BaseModel):
     partial_answers: bool
+    # Drop lowest-ranked sources until the answer prompt fits its token budget, instead of
+    # sending an over-budget prompt (see graph/nodes/answer_budget.py). Off only to measure it.
+    fit_answer_budget: bool = True
 
 
 class IntentEvalSettings(BaseModel):

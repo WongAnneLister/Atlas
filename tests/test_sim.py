@@ -716,3 +716,26 @@ def test_a_turn_records_the_model_error_the_graph_hit(tmp_path: Path) -> None:
     finally:
         order_service.close()
     assert transcript.turns[0].dependency_error is not None
+
+
+def test_replay_reads_one_arm_of_an_ablation_run(tmp_path: Path) -> None:
+    import json
+
+    from eval.sim.models import ConversationTranscript, SimTurn
+    from eval.sim.replay import load_recorded
+
+    def chat(text: str) -> dict[str, Any]:
+        return ConversationTranscript(
+            scenario_id="sim-049",
+            category="long_conversation",
+            customer_id="CUST-0001",
+            turns=[SimTurn(turn_index=1, user_message=text)],
+        ).model_dump(mode="json")
+
+    rows = [
+        {"arm": "baseline", "transcript": chat("old")},
+        {"arm": "both", "transcript": chat("new")},
+    ]
+    (tmp_path / "items.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    recorded = load_recorded(tmp_path, "both")
+    assert recorded["sim-049"].turns[0].user_message == "new"

@@ -18,6 +18,7 @@ import asyncio
 import hashlib
 import json
 import sys
+from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from functools import lru_cache
@@ -124,12 +125,24 @@ def outcome(scenario: Scenario, transcript: ConversationTranscript, probe: Probe
         for sub in cp.expected_substrings
     ]
     if turn is None:
-        return {"reached": False, "handoff": None, "recalled": False, "relookup": False}
+        return {
+            "reached": False,
+            "handoff": None,
+            "recalled": False,
+            "relookup": False,
+            "answer_tokens": 0,
+        }
+    answer_tokens = [
+        int(call.get("total_tokens", 0) or 0)
+        for call in turn.context_calls
+        if call.get("node") == "answer"
+    ]
     return {
         "reached": True,
         "handoff": turn.handoff_reason,
         "recalled": bool(wanted) and all(s.lower() in turn.agent_message.lower() for s in wanted),
         "relookup": "relookup_reminder" in probe_turn_route(turn),
+        "answer_tokens": max(answer_tokens, default=0),
     }
 
 
@@ -154,35 +167,55 @@ def render(source: Path, rows: list[dict[str, Any]], provenance: dict[str, Any])
         "",
         f"- Git SHA: `{provenance['git_sha']}` (dirty: {provenance['dirty']})",
         f"- Models: {', '.join(f'{k}=`{v}`' for k, v in provenance['models'].items())}",
-        f"- Source run: `{source.name}` (items sha256 `{digest}`)",
+        f"- Source run: `{source.name}` (items sha256 `{digest}`)"
+        + (f", arm `{provenance['source_arm']}`" if provenance.get("source_arm") else ""),
         f"- Date (UTC): {provenance['date'][:10]}",
         "",
         "The recorded customer messages are sent unchanged up to the probe turn; the agent",
         "runs for real. Each arm overrides config on the same code.",
         "",
         "| Probe | Arm | Overrides | Repeats | tool_error handoff | Recalled the fact "
-        "| Re-read reminder fired |",
-        "|---|---|---|---:|---|---|---|",
+        "| Re-read reminder fired | Handoff reasons | Answer prompt tokens (max) |",
+        "|---|---|---|---:|---|---|---|---|---:|",
     ]
     for row in rows:
         n = row["n"]
+        reasons = ", ".join(f"{k} x{v}" for k, v in sorted(row.get("handoffs", {}).items()))
         lines.append(
             f"| `{row['probe']}` | {row['arm']} | `{json.dumps(row['overrides'])}` | {n} | "
             f"{_rate(row['tool_error'], n)} | {_rate(row['recalled'], n)} | "
-            f"{_rate(row['relookup'], n)} |"
+            f"{_rate(row['relookup'], n)} | {reasons or 'none'} | "
+            f"{row.get('answer_tokens_max', 0)} |"
         )
     return "\n".join(lines) + "\n"
 
 
+def load_recorded(source: Path, source_arm: str | None) -> dict[str, ConversationTranscript]:
+    """Saved chats by scenario. Ablation runs wrap each chat as {"arm", "transcript"}."""
+    recorded: dict[str, ConversationTranscript] = {}
+    for line in (source / "items.jsonl").read_text(encoding="utf-8").splitlines():
+        if not line:
+            continue
+        row = json.loads(line)
+        if source_arm is not None:
+            if row.get("arm") != source_arm:
+                continue
+            row = row["transcript"]
+        transcript = ConversationTranscript.model_validate(row)
+        recorded.setdefault(transcript.scenario_id, transcript)
+    return recorded
+
+
 def run(
-    source: Path, probes: list[Probe], arms: list[Arm], repeats: int, run_root: Path
+    source: Path,
+    probes: list[Probe],
+    arms: list[Arm],
+    repeats: int,
+    run_root: Path,
+    source_arm: str | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], Path]:
     scenarios = {s.id: s for s in load_scenarios(SCENARIOS)}
-    lines = (source / "items.jsonl").read_text(encoding="utf-8").splitlines()
-    recorded = {
-        t.scenario_id: t
-        for t in (ConversationTranscript.model_validate_json(line) for line in lines if line)
-    }
+    recorded = load_recorded(source, source_arm)
     base = get_settings().model_copy(deep=True)
     base.api.rate_limit.per_customer = 10000
     base.api.rate_limit.per_ip = 10000
@@ -192,6 +225,7 @@ def run(
         "config_hash": run_config_hash(base),
         "models": _model_names(base),
         "source_run": source.name,
+        "source_arm": source_arm,
         "date": datetime.now(UTC).isoformat(),
     }
     rows: list[dict[str, Any]] = []
@@ -230,6 +264,8 @@ def run(
                     "tool_error": sum(o["handoff"] == "tool_error" for o in outcomes),
                     "recalled": sum(o["recalled"] for o in outcomes),
                     "relookup": sum(o["relookup"] for o in outcomes),
+                    "handoffs": dict(Counter(str(o["handoff"]) for o in outcomes if o["handoff"])),
+                    "answer_tokens_max": max((o["answer_tokens"] for o in outcomes), default=0),
                 }
             )
             items.extend(
@@ -267,6 +303,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--run-root", type=Path, required=True)
+    parser.add_argument("--source-arm", help="arm to replay from an ablation run's items")
     parser.add_argument("--skip-preflight", action="store_true", help="offline tests only")
     args = parser.parse_args(argv)
     _dirty_at_start()
@@ -279,6 +316,7 @@ def main(argv: list[str] | None = None) -> int:
         [parse_arm(a) for a in args.arm],
         args.repeats,
         args.run_root,
+        args.source_arm,
     )
     if broken := provenance.pop("invalid", None):
         sys.stderr.write(f"Invalid run, nothing reported: {broken}\nRows kept in {run_dir}\n")

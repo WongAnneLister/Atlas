@@ -241,6 +241,7 @@ planning:
 
 knowledge:
   partial_answers: true
+  fit_answer_budget: true   # drop low-ranked sources to fit the answer budget; see graph/nodes/answer_budget.py
 
 intent_eval:
   seed: 42

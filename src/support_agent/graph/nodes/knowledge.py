@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from typing import Any
 
 from support_agent.cache.eligibility import answer_cache_lookup_eligibility
 from support_agent.cache.metrics import record_cache_event
 from support_agent.context.budget import ContextOverflow
+from support_agent.context.builder import BuiltContext
 from support_agent.gate.evidence import evaluate
 from support_agent.graph.coverage import (
     CoverageAnswer,
@@ -25,6 +27,7 @@ from support_agent.graph.handoff import (
 )
 from support_agent.graph.intents import INTENT_TO_PATH, Path
 from support_agent.graph.model_data import source_blocks
+from support_agent.graph.nodes.answer_budget import Sources, fit_sources
 from support_agent.graph.nodes.knowledge_reply import check_citations, multipart_reply, whole_reply
 from support_agent.graph.parts import QueryPart
 from support_agent.graph.state import ConversationState
@@ -165,11 +168,15 @@ class KnowledgePath:
             return self.handoff(state)
         if state.route_source == "parts":
             return self._answer_parts(state)
-        chunks = state.retrieval[: self.deps.settings.retrieval.rerank_top_k]
-        sources = source_blocks(chunks)
-        coverage = self._request_coverage(
-            state, self.prompt, f"Question:\n{state.rewritten_query}\n\nSources:\n{sources}"
-        )
+        top = state.retrieval[: self.deps.settings.retrieval.rerank_top_k]
+
+        def whole_data(kept: Sources) -> str:
+            sources = source_blocks(list(kept[0].values()))
+            return f"Question:\n{state.rewritten_query}\n\nSources:\n{sources}"
+
+        fitted = self._fit(state, self.prompt, {0: dict(enumerate(top, start=1))}, whole_data)
+        chunks = list(fitted[0][0].values()) if fitted else []
+        coverage = self._request_coverage(state, fitted[1] if fitted else None)
         if isinstance(coverage, dict):
             return coverage
         status, text = render_covered_answer(coverage, chunks)
@@ -212,19 +219,23 @@ class KnowledgePath:
             return self.handoff(state)
 
         # The model sees no question or source belonging only to a failed part.
-        data = [
-            {
-                "question": state.parts[index].text,
-                "sources": [
-                    {"number": n, "heading": chunk.heading_path, "text": chunk.text}
-                    for n, chunk in sources.items()
-                ],
-            }
-            for index, sources in candidates.items()
-        ]
-        coverage = self._request_coverage(
-            state, self.parts_prompt, json.dumps(data, ensure_ascii=False)
-        )
+        def parts_data(kept: Sources) -> str:
+            data = [
+                {
+                    "question": state.parts[index].text,
+                    "sources": [
+                        {"number": n, "heading": chunk.heading_path, "text": chunk.text}
+                        for n, chunk in sources.items()
+                    ],
+                }
+                for index, sources in kept.items()
+            ]
+            return json.dumps(data, ensure_ascii=False)
+
+        fitted = self._fit(state, self.parts_prompt, candidates, parts_data)
+        if fitted is not None:
+            candidates = fitted[0]
+        coverage = self._request_coverage(state, fitted[1] if fitted else None)
         if isinstance(coverage, dict):
             return coverage
         current = state.model_copy(update={"coverage": coverage})
@@ -283,9 +294,8 @@ class KnowledgePath:
             }
         return multipart_reply(current, paragraphs, trace)
 
-    def _request_coverage(
-        self, state: ConversationState, prompt: str, data: str
-    ) -> CoverageAnswer | dict[str, Any]:
+    def _build(self, state: ConversationState, prompt: str, data: str) -> BuiltContext | None:
+        """The answer context, or None when it exceeds the answer token budget."""
         try:
             built = self.deps.context_builder().build(
                 "answer",
@@ -302,6 +312,41 @@ class KnowledgePath:
                 current_date=self.deps.settings.orders.today,
                 extra_l4_messages=format_turn_memory_messages(state.turn_memory_hints),
             )
+        except ContextOverflow:
+            return None
+        if (
+            not self.deps.settings.context.enabled
+            or not self.deps.settings.knowledge.fit_answer_budget
+        ):
+            # The context switch restores the pre-builder call exactly, which had no budget;
+            # the knowledge switch keeps the old over-budget call so the fix can be measured.
+            return built
+        # The answer profile's legacy layout does not enforce the budget itself.
+        breakdown = built.breakdown
+        return built if breakdown.total_tokens <= breakdown.budget_tokens else None
+
+    def _fit(
+        self,
+        state: ConversationState,
+        prompt: str,
+        candidates: Sources,
+        render: Callable[[Sources], str],
+    ) -> tuple[Sources, BuiltContext] | None:
+        fitted = fit_sources(candidates, lambda kept: self._build(state, prompt, render(kept)))
+        if fitted is None:
+            return None
+        kept, built, dropped = fitted
+        if dropped:
+            logger.info("Answer sources trimmed to the token budget: %d dropped", dropped)
+        return kept, built
+
+    def _request_coverage(
+        self, state: ConversationState, built: BuiltContext | None
+    ) -> CoverageAnswer | dict[str, Any]:
+        try:
+            if built is None:
+                profile = self.deps.settings.context.profile_for("answer")
+                raise ContextOverflow("answer", profile.total_tokens + 1, profile.total_tokens)
             response, _ = self.deps.models.structured(
                 "answer",
                 "main",
