@@ -189,3 +189,10 @@ def test_yes_outside_a_retrieved_purchase_window_goes_to_a_human(
 def test_window_check_leaves_no_decisions_alone() -> None:
     decision = RefundDecision(eligible="no", reasons=["Window expired [1]."], citations=[1])
     assert check_decision(decision, order(), _window_state(35)).eligible == "no"
+
+
+def test_the_shipped_config_uses_the_adopted_v3_decision_prompt() -> None:
+    # Adopted in 12e under the rule in eval/runs/refund-v3-12d/decisions.md.
+    from support_agent.config import get_settings
+
+    assert get_settings().refund.decision_version == "v3"
