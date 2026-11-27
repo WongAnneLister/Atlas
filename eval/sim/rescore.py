@@ -45,7 +45,30 @@ def rescore(run_dir: Path) -> dict[str, Any]:
     )
 
 
-def render(runs: list[Path]) -> str:
+def scenario_lines(runs: list[Path]) -> list[str]:
+    """Task successes per scenario and run, each scored with the current metrics."""
+    scenarios = {s.id: s for s in load_scenarios(SCENARIOS)}
+    counts: dict[str, dict[str, tuple[int, int]]] = {}
+    for run in runs:
+        lines = (run / "items.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in filter(None, lines):
+            transcript = ConversationTranscript.model_validate_json(line)
+            ok = evaluate_transcript(scenarios[transcript.scenario_id], transcript).task_success
+            done, total = counts.setdefault(transcript.scenario_id, {}).get(run.name, (0, 0))
+            counts[transcript.scenario_id][run.name] = (done + int(ok), total + 1)
+    header = "| Scenario | " + " | ".join(f"`{run.name}`" for run in runs) + " |"
+    rows = [
+        "| `"
+        + scenario
+        + "` | "
+        + " | ".join("{}/{}".format(*by_run.get(run.name, (0, 0))) for run in runs)
+        + " |"
+        for scenario, by_run in sorted(counts.items())
+    ]
+    return ["## Task success by scenario", "", header, "|---|" + "---:|" * len(runs), *rows, ""]
+
+
+def render(runs: list[Path], *, by_scenario: bool = False) -> str:
     entry = load_registry()["scenarios_v1"]
     lines = [
         "# Simulator transcripts re-scored with the current metrics",
@@ -72,15 +95,18 @@ def render(runs: list[Path]) -> str:
             f"| `{run.name}` | `{digest}` | {agg['n_runs']} | {_ci(agg['task_success'])} | "
             f"{reached['reached']}/{reached['total']} | {_ci(agg['fact_retention'])} |"
         )
-    return "\n".join(lines) + "\n"
+    if by_scenario:
+        lines.extend(["", *scenario_lines(runs)])
+    return "\n".join(lines).rstrip("\n") + "\n"
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("runs", nargs="+", type=Path, help="saved sim run directories")
     parser.add_argument("--output", type=Path, default=REPORT)
+    parser.add_argument("--by-scenario", action="store_true", help="add a per-scenario table")
     args = parser.parse_args(argv)
-    write_text(args.output, render(args.runs))
+    write_text(args.output, render(args.runs, by_scenario=args.by_scenario))
     return 0
 
 

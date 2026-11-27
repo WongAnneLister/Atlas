@@ -445,6 +445,29 @@ def test_rescore_reports_reached_checkpoints_from_saved_transcripts(tmp_path: Pa
     assert f"0/{len(scenario.checkpoints)}" in text
 
 
+def test_rescore_can_report_task_success_per_scenario(tmp_path: Path) -> None:
+    from eval.sim import rescore
+
+    scenario = load_scenarios(rescore.SCENARIOS)[0]
+    runs = []
+    for name in ("sim-before", "sim-after"):
+        run = tmp_path / name
+        run.mkdir()
+        transcript = ConversationTranscript(
+            scenario_id=scenario.id,
+            category=scenario.category,
+            customer_id=scenario.customer_id,
+            turns=[SimTurn(turn_index=1, user_message="hi", agent_message="hello")],
+        )
+        (run / "items.jsonl").write_text(transcript.model_dump_json() + "\n")
+        runs.append(run)
+    text = rescore.render(runs, by_scenario=True)
+    assert "## Task success by scenario" in text
+    assert "| Scenario | `sim-before` | `sim-after` |" in text
+    assert f"| `{scenario.id}` | 0/1 | 0/1 |" in text
+    assert "## Task success by scenario" not in rescore.render(runs)
+
+
 def _scripted_run(
     tmp_path: Path, sim_replies: list[str], chunks: list[RetrievedChunk], checkpoint_turn: int
 ) -> ConversationTranscript:
