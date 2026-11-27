@@ -7,6 +7,7 @@ import asyncio
 import json
 import statistics
 import subprocess
+import sys
 from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -14,6 +15,7 @@ from typing import Any
 from uuid import uuid4
 
 from eval.e2e_speed import run_config_hash
+from eval.run_health import INVALID_RUN_STATUS, invalid_transcripts_message
 from eval.sim.build_scenarios import DEFAULT_OUTPUT as DEFAULT_SCENARIOS
 from eval.sim.build_scenarios import load_scenarios
 from eval.sim.metrics import aggregate_evaluations, evaluate_transcript
@@ -238,6 +240,9 @@ def main(argv: list[str] | None = None) -> int:
     write_text(
         run_dir / "items.jsonl", "\n".join(tr.model_dump_json() for tr in transcripts) + "\n"
     )
+    if broken := invalid_transcripts_message(transcripts):
+        sys.stderr.write(f"Invalid run, nothing reported: {broken}\nRows kept in {run_dir}\n")
+        return INVALID_RUN_STATUS
     write_text(
         run_dir / "metrics.json",
         json.dumps({"aggregate": agg, "context": ctx_summary}, indent=2) + "\n",

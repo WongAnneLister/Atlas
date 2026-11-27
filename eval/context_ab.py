@@ -8,6 +8,7 @@ import json
 import shutil
 import statistics
 import subprocess
+import sys
 from collections import defaultdict
 from datetime import UTC, datetime
 from functools import lru_cache
@@ -17,6 +18,7 @@ from uuid import uuid4
 
 from eval.e2e_eval import _model_names
 from eval.e2e_speed import run_config_hash
+from eval.run_health import INVALID_RUN_STATUS, invalid_arms_message
 from eval.run_record import is_dirty
 from eval.sim.build_scenarios import DEFAULT_OUTPUT as DEFAULT_SCENARIOS
 from eval.sim.build_scenarios import load_scenarios
@@ -427,11 +429,13 @@ def main(argv: list[str] | None = None) -> int:
     prompt_records: list[dict[str, Any]] = []
     # Every transcript, so later metric fixes can re-score this run without model calls.
     item_records: list[dict[str, Any]] = []
+    arm_transcripts: dict[str, list[ConversationTranscript]] = {}
     for strategy in STRATEGIES:
         metrics, transcripts = _run_arm(
             base, test_scenarios, strategy=strategy, simulator=simulator, repeats=args.repeats
         )
         results[strategy] = metrics
+        arm_transcripts[strategy] = transcripts
         item_records.extend(
             {"arm": strategy, "split": "test", "transcript": tr.model_dump(mode="json")}
             for tr in transcripts
@@ -458,6 +462,7 @@ def main(argv: list[str] | None = None) -> int:
             chunk_turns=chunk_k,
         )
         row["chunk_turns"] = chunk_k
+        arm_transcripts[f"chunked-k{chunk_k}"] = sweep_transcripts
         item_records.extend(
             {"arm": f"chunked-k{chunk_k}", "split": "dev", "transcript": tr.model_dump(mode="json")}
             for tr in sweep_transcripts
@@ -485,6 +490,9 @@ def main(argv: list[str] | None = None) -> int:
         "repeats": args.repeats,
     }
     write_text(run_dir / "run.json", json.dumps(provenance, indent=2) + "\n")
+    if broken := invalid_arms_message(arm_transcripts):
+        sys.stderr.write(f"Invalid run, nothing reported: {broken}\nRows kept in {run_dir}\n")
+        return INVALID_RUN_STATUS
 
     chart_saved = _save_cost_chart(results, args.chart)
     kv_note = (

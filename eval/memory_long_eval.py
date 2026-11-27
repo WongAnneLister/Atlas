@@ -19,6 +19,7 @@ import json
 import logging
 import math
 import subprocess
+import sys
 import time
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -33,6 +34,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from eval.e2e_eval import _model_names
 from eval.e2e_speed import run_config_hash
+from eval.run_health import INVALID_RUN_STATUS, invalid_errors_message, state_dependency_error
 from eval.run_record import RUNS, is_dirty
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.graph.build import build_graph
@@ -315,6 +317,7 @@ def save_run(results: list[ScenarioResult], settings: Settings, root: Path) -> P
             "storage_bytes": r.storage_bytes,
             "answer": r.answer,
             "loaded_memory": r.loaded_memory,
+            "dependency_error": r.dependency_error,
         }
         for r in results
     ]
@@ -388,6 +391,8 @@ class ScenarioResult:
     # Full session-2 text, so recall can be re-scored later without model calls.
     answer: str = ""
     loaded_memory: str = ""
+    # First failed model or dependency call in either session; the run is refused on these.
+    dependency_error: str | None = None
 
 
 def _run_one(
@@ -407,6 +412,7 @@ def _run_one(
         memory_store=store,
     )
     stored: list[CustomerMemory] = []
+    extraction_error: str | None = None
     now_s1 = datetime.now(UTC) - timedelta(days=7)
     now_s2 = datetime.now(UTC)
 
@@ -431,14 +437,19 @@ def _run_one(
                 HumanMessage(content=scenario.session1_user),
                 AIMessage(content=scenario.session1_assistant),
             ]
-            candidates = extract_memory_candidates(
-                pinned_facts=PinnedFacts(),
-                compacted_blocks=[],
-                messages=s1_messages,
-                models=deps.models,
-                builder=deps.context_builder(),
-                settings=settings.memory.long_term,
-            )
+            try:
+                candidates = extract_memory_candidates(
+                    pinned_facts=PinnedFacts(),
+                    compacted_blocks=[],
+                    messages=s1_messages,
+                    models=deps.models,
+                    builder=deps.context_builder(),
+                    settings=settings.memory.long_term,
+                    strict=True,
+                )
+            except Exception as error:
+                extraction_error = f"memory_extraction:{type(error).__name__}"
+                candidates = []
             decisions = apply_write_policy(
                 store,
                 scenario.customer_id,
@@ -516,6 +527,7 @@ def _run_one(
             loaded_memory="\n".join(
                 [state.customer_profile or "", *state.turn_memory_hints]
             ).strip(),
+            dependency_error=extraction_error or state_dependency_error(result_dict),
         )
     finally:
         deps.close()
@@ -727,6 +739,13 @@ def main() -> int:
 
     off_results.sort(key=lambda r: r.scenario_id)
     on_results.sort(key=lambda r: r.scenario_id)
+    for arm, results in (("memory_off", off_results), ("memory_on", on_results)):
+        if broken := invalid_errors_message((r.dependency_error for r in results), "scenarios"):
+            run_dir = save_run(off_results + on_results, settings, args.run_root)
+            sys.stderr.write(
+                f"Invalid run, nothing reported: arm {arm}: {broken}\nRows kept in {run_dir}\n"
+            )
+            return INVALID_RUN_STATUS
 
     args.report.parent.mkdir(parents=True, exist_ok=True)
     stored_count = write_review_csv(on_results, args.review_csv)

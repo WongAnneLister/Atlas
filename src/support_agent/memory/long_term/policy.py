@@ -309,6 +309,7 @@ def extract_memory_candidates(
     models: ReliableModels,
     builder: ContextBuilder,
     settings: LongTermMemorySettings,
+    strict: bool = False,
 ) -> list[MemoryCandidate]:
     """Use the fast model with structured output to propose memory candidates."""
     prompt = PROMPT_PATH.read_text(encoding="utf-8")
@@ -342,5 +343,8 @@ def extract_memory_candidates(
         )
         return list(parsed.value.candidates)
     except Exception as error:
+        # Evals pass strict=True: a failed call must not look like "nothing worth storing".
+        if strict:
+            raise
         logger.warning("Long-term memory extraction failed: %s", type(error).__name__)
         return []

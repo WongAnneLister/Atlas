@@ -7,12 +7,14 @@ import asyncio
 import json
 import statistics
 import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 from eval.e2e_speed import run_config_hash
+from eval.run_health import INVALID_RUN_STATUS, invalid_arms_message
 from eval.sim.build_scenarios import DEFAULT_OUTPUT as DEFAULT_SCENARIOS
 from eval.sim.build_scenarios import load_scenarios
 from eval.sim.metrics import aggregate_evaluations, evaluate_transcript
@@ -169,6 +171,7 @@ def main(argv: list[str] | None = None) -> int:
     simulator = UserSimulator(sim_model, model_name=sim_name)
 
     results: dict[str, dict[str, Any]] = {}
+    arm_transcripts: dict[str, list[ConversationTranscript]] = {}
     for arm_name, enabled, facts_on, compact_on in ARMS:
         settings = base_settings.model_copy(deep=True)
         settings.memory.short_term.enabled = enabled
@@ -190,6 +193,7 @@ def main(argv: list[str] | None = None) -> int:
             )
         finally:
             order_service.close()
+        arm_transcripts[arm_name] = transcripts
 
         evals = [
             evaluate_transcript(
@@ -207,6 +211,17 @@ def main(argv: list[str] | None = None) -> int:
 
     run_dir = args.run_root / f"memory-short-{datetime.now(UTC):%Y%m%d}-{uuid4().hex[:8]}"
     run_dir.mkdir(parents=True, exist_ok=True)
+    write_text(
+        run_dir / "items.jsonl",
+        "".join(
+            json.dumps({"arm": arm, "transcript": tr.model_dump(mode="json")}) + "\n"
+            for arm, transcripts in arm_transcripts.items()
+            for tr in transcripts
+        ),
+    )
+    if broken := invalid_arms_message(arm_transcripts):
+        sys.stderr.write(f"Invalid run, nothing reported: {broken}\nRows kept in {run_dir}\n")
+        return INVALID_RUN_STATUS
     write_text(run_dir / "metrics.json", json.dumps(results, indent=2) + "\n")
     write_text(
         args.report,

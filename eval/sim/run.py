@@ -18,7 +18,11 @@ from langchain_core.runnables import RunnableConfig
 from prometheus_client import CollectorRegistry
 
 from eval.registry import file_hash, load_registry
-from eval.run_health import INVALID_RUN_STATUS, invalid_transcripts_message
+from eval.run_health import (
+    INVALID_RUN_STATUS,
+    invalid_transcripts_message,
+    state_dependency_error,
+)
 from eval.sim.build_scenarios import DEFAULT_OUTPUT as DEFAULT_SCENARIOS
 from eval.sim.build_scenarios import load_scenarios
 from eval.sim.metrics import aggregate_evaluations, evaluate_transcript
@@ -183,16 +187,7 @@ def _dependency_error(graph_deps: GraphDeps, thread_id: str) -> str | None:
     """The first model or dependency error the graph recorded for the latest turn."""
     saved = graph_deps.checkpointer().get_tuple({"configurable": {"thread_id": thread_id}})
     values: dict[str, Any] = saved.checkpoint.get("channel_values", {}) if saved else {}
-    for name in ("classification_error_type", "retrieval_error_type", "answer_error_type"):
-        if values.get(name):
-            return str(values[name])
-    for event in values.get("reliability_events") or []:
-        error = getattr(event, "error_type", None)
-        if error is None and isinstance(event, dict):
-            error = event.get("error_type")
-        if error:
-            return str(error)
-    return None
+    return state_dependency_error(values)
 
 
 async def run_scenario_over_api(
