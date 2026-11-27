@@ -31,3 +31,15 @@ def test_multipart_answer_prompt_keeps_single_question_rules_verbatim():
     )
     missing_multipart = [line for line in required_multipart if line not in multipart]
     assert not missing_multipart, "Missing multipart prompt lines:\n" + "\n".join(missing_multipart)
+
+
+def test_both_answer_prompts_ask_for_the_key_fact_first():
+    # Grounding treats a part's first sentence as its main claim. An unsupported opening
+    # summary dropped a part whose substantive sentence was verified (28h, sim-049 turn 14).
+    rule = (
+        "Begin each answer with the sentence that answers the question with its key fact.",
+        "Do not open with a summary, heading, or general statement; every sentence needs a quote.",
+    )
+    for name in ("answer.md", "answer_parts.md"):
+        lines = (PROMPTS / name).read_text(encoding="utf-8").splitlines()
+        assert all(line in lines for line in rule), f"{name} lacks the lead-sentence rule"

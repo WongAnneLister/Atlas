@@ -19,5 +19,7 @@ If a part is unsupported or ambiguous, set supported=false, answer="", and evide
 For a supported part, write a concise answer and supply source numbers with short verbatim
 quotes that directly justify the entire answer, including amounts, conditions, and exclusions.
 Preserve qualifications such as "up to", business days, eligibility, and applicable products.
+Begin each answer with the sentence that answers the question with its key fact.
+Do not open with a summary, heading, or general statement; every sentence needs a quote.
 Do not add general advice or facts absent from the sources. Do not put citation markers
 in the answer text; code adds them from validated evidence. Quotes must occur in source text.
