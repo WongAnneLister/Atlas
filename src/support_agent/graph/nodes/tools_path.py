@@ -214,7 +214,13 @@ class ToolsPath:
             if template and decision is not None:
                 wants_order_data = decision["args"].get("answer_from_order_data") is True
                 # No lookup this turn: none succeeded and none failed.
-                if wants_order_data and not lookups and last_error is None and not relooked:
+                if (
+                    cfg.order_relookup
+                    and wants_order_data
+                    and not lookups
+                    and last_error is None
+                    and not relooked
+                ):
                     # Replies are written only from this turn's lookups. A follow-up such as
                     # "which order was that?" gets one chance to read the order again.
                     relooked = True

@@ -201,3 +201,10 @@ def test_a_second_reply_without_a_lookup_still_hands_off(seeded: Any) -> None:
     result, _ = _run(seeded, reply(True), reply(True))
     assert result["trace"].count("relookup_reminder") == 1
     assert result["handoff"].reason == HandoffReason.TOOL_ERROR
+
+
+def test_the_relookup_switch_restores_the_old_handoff(seeded: Any) -> None:
+    seeded[0].agent.order_relookup = False
+    result, _ = _run(seeded, reply(True), call(order_id=_order_id(seeded)), reply(True))
+    assert "relookup_reminder" not in result["trace"]
+    assert result["handoff"].reason == HandoffReason.TOOL_ERROR

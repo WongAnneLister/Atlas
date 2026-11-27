@@ -28,7 +28,7 @@ COMPOSE_PYTHON ?= $(RUN) python
         results eval-refund-policy eval-refund-decisions eval-validate-all eval-registry-bump \
         eval-time-sensitive-build eval-time-sensitive eval-time-sensitive-e2e eval-policy-versions-report \
         eval-cross-doc-failures eval-multipart-build eval-multipart eval-query-planning-report \
-        eval-claims-build eval-claims-label eval-claims eval-claims-verify eval-claim-grounding-report eval-context-regression-report eval-sim-rescore \
+        eval-claims-build eval-claims-label eval-claims eval-claims-verify eval-claim-grounding-report eval-context-regression-report eval-sim-rescore eval-sim-replay \
         eval-cache eval-sim-build eval-sim eval-context eval-memory-short eval-memory-long eval-context-ab bench-kv loop-report seed-handoff-demo drift-report replay-traffic loadtest \
         eval-index-release eval-index-lifecycle eval-rerank-cache eval-import-legacy eval-judge-calibration eval-smoke-build eval-smoke eval-redteam-build eval-redteam chaos eval-gate eval-baseline
 
@@ -348,6 +348,10 @@ eval-context-regression-report:
 # SIM_RUNS: saved sim run directories whose local items.jsonl is re-scored (no model calls).
 eval-sim-rescore:
 	$(RUN) python -m eval.sim.rescore $(SIM_RUNS)
+
+# SIM_REPLAY_ARGS: --run DIR --probe SCENARIO:TURN --arm NAME[:k=v] --report F --run-root D
+eval-sim-replay:
+	$(RUN) python -m eval.sim.replay $(SIM_REPLAY_ARGS)
 
 eval-cache:
 	$(RUN) python -m eval.cache_eval $(EVAL_CACHE_ARGS)

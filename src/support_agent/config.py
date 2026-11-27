@@ -249,6 +249,9 @@ class AgentSettings(BaseModel):
     order_replies: Literal["free_text", "template"] = "free_text"
     # Tries per grounding check; only a reply without a valid structured call is retried.
     grounding_attempts: int = Field(default=1, ge=1)
+    # Template mode: a reply that claims order data with no lookup this turn gets one
+    # reminder to look the order up (see eval/reports/order_relookup_replay.md).
+    order_relookup: bool = True
 
 
 class RefundSettings(BaseModel):

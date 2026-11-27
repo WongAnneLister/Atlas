@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+import pytest
 from eval.sim.build_scenarios import build_scenarios, load_scenarios, write_scenarios
 from eval.sim.metrics import aggregate_evaluations, evaluate_transcript
 from eval.sim.models import (
@@ -632,3 +633,46 @@ def test_after_a_handoff_the_customer_is_told_the_assistant_is_still_there() -> 
     sim.next_turn(scenario, history, 3, after_handoff=True)  # type: ignore[arg-type]
     note = str(seen[-1][-1].content)
     assert note == AFTER_HANDOFF.format(hint="ask which order we discussed.")
+
+
+def test_replay_sends_the_recorded_messages_and_scores_the_probe_turn(tmp_path: Path) -> None:
+    from eval.sim.replay import (
+        Probe,
+        ReplayCustomer,
+        apply_overrides,
+        outcome,
+        parse_arm,
+        parse_probe,
+    )
+
+    assert parse_probe("sim-036-topic_switch:5") == Probe("sim-036-topic_switch", 5)
+    arm = parse_arm("off:agent.order_relookup=false,agent.max_steps=3")
+    assert arm.overrides == {"agent.order_relookup": False, "agent.max_steps": 3}
+    patched = apply_overrides(Settings(), arm.overrides)
+    assert patched.agent.order_relookup is False and patched.agent.max_steps == 3
+    with pytest.raises(KeyError):
+        apply_overrides(Settings(), {"agent.no_such_switch": True})
+
+    recorded = ConversationTranscript(
+        scenario_id="s-scripted",
+        category="topic_switch",
+        customer_id="CUST-0001",
+        turns=[
+            SimTurn(turn_index=1, user_message="What is the return window?"),
+            SimTurn(turn_index=2, user_message="Sorry, what was the window again?"),
+        ],
+    )
+    customer = ReplayCustomer(recorded)
+    scenario = _sample_scenario(id="s-scripted")
+    assert customer.next_turn(scenario, [], 2).text == "Sorry, what was the window again?"
+    assert customer.next_turn(scenario, [], 3).done
+
+    chunks = [_chunk("Generic store returns are accepted within 30 days of delivery.")]
+    transcript = _scripted_run(tmp_path, ["unused"] * 2, chunks, checkpoint_turn=2)
+    probe_scenario = _sample_scenario(
+        checkpoints=[FactCheckpoint(turn_hint=2, fact_key="window", expected_substrings=["30"])]
+    )
+    result = outcome(probe_scenario, transcript, Probe("s-scripted", 2))
+    assert result["reached"] is True
+    assert result["recalled"] is True
+    assert result["relookup"] is False

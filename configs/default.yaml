@@ -217,6 +217,7 @@ agent:
   order_replies: template    # code renders order replies; see eval/reports/order_replies.md
   order_grounding: false     # free_text mode only; failed in eval/reports/order_grounding.md
   grounding_attempts: 2  # Standalone grounding evaluation control.
+  order_relookup: true   # one re-read when a reply has no lookup; see eval/reports/order_relookup_replay.md
 
 refund:
   policy_query: store_faq      # was order_fields; see eval/reports/refund_policy.md
