@@ -3,8 +3,8 @@
 For each named edge-case order of the first demo customer, run the refund path's policy
 retrieval, gate and decision step, and record the model's raw decision and the decision
 after the code checks. Retrieval is shared across versions and repeats, so only the version
-differs. Expectations come from the generic store policy text and are agent-authored and
-unreviewed; they are a sanity check, not gold labels.
+differs. Expectations come from the generic store policy text. They are agent-authored, except
+the orders in REVIEWED, which the author set; they are a sanity check, not gold labels.
 
 The v3 prompt was written after looking at v2 errors on these same named orders. The
 window holdout checks it on orders it was not written against: every delivered order of
@@ -41,14 +41,18 @@ VERSIONS = ("v1", "v2", "v3")
 GROUPS = ("named", "window_holdout")
 # Generic store policy: returns within 30 days of purchase, final sale not returnable,
 # discount-code purchases refund the amount paid, cancellation only before shipping.
+# Orders whose expectation the author reviewed on 2026-11-28 (scenarios_v1 v2 uses the same).
+REVIEWED = frozenset({"ORD-000002", "ORD-000005", "ORD-000006", "ORD-000007"})
 EXPECTED: dict[str, tuple[set[str], str]] = {
     "ORD-000001": ({"yes"}, "11 days since purchase"),
     "ORD-000002": ({"no"}, "35 days since purchase (29 since delivery)"),
     "ORD-000003": ({"no"}, "37 days since purchase"),
     "ORD-000004": ({"no"}, "96 days since purchase"),
-    "ORD-000005": ({"no"}, "final sale items"),
+    # Set by the author on 2026-11-28: "usually non-returnable ... contact support" leaves doubt.
+    "ORD-000005": ({"needs_human"}, "final sale items; policy says usually, ask support"),
     "ORD-000006": ({"yes"}, "coupon order, 11 days; refund the amount paid"),
-    "ORD-000007": ({"yes", "needs_human"}, "partly refunded; remaining items in window"),
+    # Set by the author on 2026-11-28: the items not yet refunded are an ordinary return.
+    "ORD-000007": ({"yes"}, "partly refunded; remaining items in window"),
     "ORD-000008": ({"needs_human"}, "already cancelled"),
     "ORD-000009": ({"no", "needs_human"}, "in transit; cancel only before shipping"),
     "ORD-000010": ({"needs_human"}, "pending; policy never names this status"),
@@ -227,8 +231,8 @@ def holdout_miss_lines(runs: list[Run]) -> list[str]:
 def order_lines(runs: list[Run]) -> list[str]:
     head = " | ".join(f"`{p}` raw → final" for p in VERSIONS)
     lines = [
-        f"| Order | Expected (unreviewed) | Why | {head} |",
-        "|---|---|---|" + "---|" * len(VERSIONS),
+        f"| Order | Expected | Reviewed | Why | {head} |",
+        "|---|---|---|---|" + "---|" * len(VERSIONS),
     ]
     for order_id, (expected, why) in EXPECTED.items():
         cells = []
@@ -240,7 +244,8 @@ def order_lines(runs: list[Run]) -> list[str]:
             ]
             cells.append(", ".join(f"{r.raw} → {r.final}" for r in part) or "—")
         lines.append(
-            f"| {order_id} | {' or '.join(sorted(expected))} | {why} | {' | '.join(cells)} |"
+            f"| {order_id} | {' or '.join(sorted(expected))} | "
+            f"{'author' if order_id in REVIEWED else 'no'} | {why} | {' | '.join(cells)} |"
         )
     return lines
 
@@ -270,7 +275,8 @@ def write_report(
         " within the purchase window in force on the stored order date, else `no`.",
         f"- Policy query mode `{settings.refund.policy_query}`; gate threshold "
         f"{settings.gate.threshold}; retrieval shared by all versions.",
-        "- Expectations are agent-authored from the generic store policy text and unreviewed.",
+        "- Expectations come from the generic store policy text; agent-authored unless the",
+        "  Reviewed column says the author set them (2026-11-28).",
         "  v3 was written after reading v2 errors on the named orders, so judge it on the holdout.",
         "- History: a first run of v2 and v3 approved every holdout order 35 days after purchase.",
         "  The return-window code check was added after that run, so the holdout is now seen.",

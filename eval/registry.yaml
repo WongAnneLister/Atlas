@@ -153,15 +153,20 @@ datasets:
   - Build claim set for dev and test.
   - Import model-drafted claim labels.
 - name: scenarios_v1
-  version: v1
+  version: v2
   path: eval/sets/scenarios_v1.jsonl
-  sha256: ba9984e2ed57881030d7654d37a857a03575f9b78c6c944e467a7d99799cf6cb
+  sha256: ba487bb1e444c8f9b82d5b9ac67e4a1e0253de3c048435a247fdfb86da3f9506
   items: 60
   splits:
     dev: 30
     test: 30
-  reviewed: 0
+  reviewed: 7
   license_scope: local_only
   changelog:
   - Freeze 60 multi-turn support scenarios (30 dev, 30 test, 10 nightly) derived from
     docs/ORDERS.md and policy documents.
+  - 'Expected outcomes for ORD-000002, 000005, 000006 and 000007 set by the author
+    on 2026-11-28 from the generic store policy text (sim-014 and the ORD-000002 picker:
+    refund_denied; sim-026, sim-027 and the ORD-000006 picker: refund_created; sim-025
+    and the ORD-000005 picker: unchanged, now reviewed). Found as a conflict with
+    eval/refund_decision_eval.py during the v3 trial (12d); ids and categories kept.'

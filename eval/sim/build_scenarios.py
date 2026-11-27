@@ -40,6 +40,7 @@ def _sc(
     max_turns: int = 8,
     checks: SuccessChecks | None = None,
     nightly: bool = False,
+    reviewed: bool = False,
 ) -> Scenario:
     return Scenario(
         id=f"sim-{idx:03d}-{category}",
@@ -57,7 +58,7 @@ def _sc(
         max_turns=max_turns,
         success_checks=checks or SuccessChecks(),
         nightly=nightly,
-        reviewed=False,
+        reviewed=reviewed,
     )
 
 
@@ -231,16 +232,20 @@ def build_scenarios() -> list[Scenario]:
         max_turns=6,
         checks=SuccessChecks(expect_refund_created=True, require_citations=True),
     )
+    # Expected outcome set by the author on 2026-11-28 from the policy text (scenarios_v1 v2).
+    # The 30-day window counts from purchase: bought 35 days ago, so the refund is refused.
+    # The category name is kept so scenario ids stay stable.
     add(
         "dev",
         "refund_eligible",
         "CUST-0001",
         _NEUTRAL,
-        "Request a refund for order ORD-000002 delivered 29 days ago (just inside 30-day window).",
+        "Request a refund for order ORD-000002 bought 35 days ago and delivered 29 days ago.",
         {"order_id": "ORD-000002", "status": "delivered", "reason": "Changed mind"},
-        "refund_created",
+        "refund_denied",
         max_turns=6,
-        checks=SuccessChecks(expect_refund_created=True, require_citations=True),
+        checks=SuccessChecks(expect_refund_created=False, require_citations=True),
+        reviewed=True,
     )
     add(
         "dev",
@@ -370,7 +375,10 @@ def build_scenarios() -> list[Scenario]:
         "handoff:policy_requires_human",
         max_turns=6,
         checks=SuccessChecks(expect_handoff_reason="policy_requires_human"),
+        reviewed=True,
     )
+    # Expected outcome set by the author on 2026-11-28 from the policy text (scenarios_v1 v2).
+    # The policy allows returns with a discount code, refunding the amount paid.
     add(
         "dev",
         "refund_needs_human",
@@ -378,10 +386,13 @@ def build_scenarios() -> list[Scenario]:
         _NEUTRAL,
         "Request a refund for coupon-discounted order ORD-000006.",
         {"order_id": "ORD-000006", "coupon": "DEMO10", "reason": "Changed mind"},
-        "handoff:policy_requires_human",
+        "refund_created",
         max_turns=6,
-        checks=SuccessChecks(expect_handoff_reason="policy_requires_human"),
+        checks=SuccessChecks(expect_refund_created=True, require_citations=True),
+        reviewed=True,
     )
+    # Expected outcome set by the author on 2026-11-28 from the policy text (scenarios_v1 v2).
+    # The items not yet refunded are an ordinary in-window return.
     add(
         "dev",
         "refund_needs_human",
@@ -389,9 +400,10 @@ def build_scenarios() -> list[Scenario]:
         _POLITE,
         "Request a refund for partially refunded order ORD-000007.",
         {"order_id": "ORD-000007", "status": "partially_refunded", "reason": "Return remaining"},
-        "handoff:policy_requires_human",
+        "refund_created",
         max_turns=6,
-        checks=SuccessChecks(expect_handoff_reason="policy_requires_human"),
+        checks=SuccessChecks(expect_refund_created=True, require_citations=True),
+        reviewed=True,
     )
     add(
         "test",
@@ -454,7 +466,10 @@ def build_scenarios() -> list[Scenario]:
         script_hints=["Turn 1: ask for a refund without giving any order number."],
         max_turns=6,
         checks=SuccessChecks(expect_interrupt=True, expect_handoff_reason="policy_requires_human"),
+        reviewed=True,
     )
+    # Expected outcome set by the author on 2026-11-28 from the policy text (scenarios_v1 v2).
+    # Same order as sim-014: bought 35 days ago, outside the 30-day window from purchase.
     add(
         "test",
         "order_picker_interrupt",
@@ -462,12 +477,13 @@ def build_scenarios() -> list[Scenario]:
         _POLITE,
         "Ask to return a recent delivery without naming it; pick ORD-000002 from the picker.",
         {"order_id": "ORD-000002", "reason": "No longer needed"},
-        "refund_created",
+        "refund_denied",
         hidden_info={"order_id": "ORD-000002"},
         script_hints=["Turn 1: ask to return a recent order without naming the ID."],
         max_turns=6,
-        checks=SuccessChecks(expect_interrupt=True, expect_refund_created=True),
+        checks=SuccessChecks(expect_interrupt=True, expect_refund_created=False),
         nightly=True,
+        reviewed=True,
     )
     add(
         "test",
@@ -489,11 +505,12 @@ def build_scenarios() -> list[Scenario]:
         _IMPATIENT,
         "Ask for a refund without naming the order; pick ORD-000006 (coupon) from the picker.",
         {"order_id": "ORD-000006", "reason": "Return coupon order"},
-        "handoff:policy_requires_human",
+        "refund_created",
         hidden_info={"order_id": "ORD-000006"},
         script_hints=["Turn 1: ask for a refund without giving any order ID."],
         max_turns=6,
-        checks=SuccessChecks(expect_interrupt=True, expect_handoff_reason="policy_requires_human"),
+        checks=SuccessChecks(expect_interrupt=True, expect_refund_created=True),
+        reviewed=True,
     )
 
     # 7. topic_switch (6: 3 dev, 3 test)
