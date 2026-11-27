@@ -102,8 +102,8 @@ def check_decision(
         "delivered",
         "partially_refunded",
     }:
-        policy_text = " ".join(chunk.text.casefold() for chunk in cited_chunks)
-        if order.status.value.replace("_", " ") not in policy_text:
+        policy_text = " ".join(chunk.text for chunk in cited_chunks)
+        if not policy_names_status(policy_text, order.status.value):
             return decision.model_copy(
                 update={"eligible": "needs_human", "citations": valid_citations}
             )
@@ -112,6 +112,27 @@ def check_decision(
     if valid_citations != decision.citations:
         return decision.model_copy(update={"eligible": "needs_human", "citations": valid_citations})
     return decision
+
+
+# Spellings of each order status as policy text writes it.
+_STATUS_WORDS = {
+    "cancelled": r"(?:cancell?ed)",
+    "in_transit": r"(?:in transit)",
+    "partially_refunded": r"(?:partially refunded)",
+}
+_BE = r"(?:that |which )?(?:is |are |was |were |has been |have been )?(?:already )?"
+
+
+def policy_names_status(policy_text: str, status: str) -> bool:
+    """True if the text speaks of orders or items in this status, not just the word.
+
+    "Cancelled orders are refunded" or "if your order has been shipped" name a status;
+    "the amount paid" or "pending refunds" do not. A plain substring test let a cited
+    "amount paid" stand for a rule about paid orders (27c, ORD-000011).
+    """
+    word = _STATUS_WORDS.get(status, re.escape(status.replace("_", " ")))
+    pattern = rf"\b{word} (?:orders?|items?|purchases?)\b|\b(?:orders?|items?) {_BE}{word}\b"
+    return re.search(pattern, policy_text, re.IGNORECASE) is not None
 
 
 def outside_window(state: ConversationState) -> bool:

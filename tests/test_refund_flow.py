@@ -338,7 +338,8 @@ def test_missing_order_interrupts_then_resume_continues(seeded: Any) -> None:
             )
         )
         selected_order = service.get_order(selected_id, "CUST-0001")
-        policy = f"{selected_order.status.value} refund policy."
+        status = selected_order.status.value.replace("_", " ")
+        policy = f"{status.capitalize()} orders follow this refund policy."
         if any(item.final_sale for item in selected_order.items):
             policy += " Final sale items require review."
         graph_deps.retriever.text = policy
@@ -418,6 +419,9 @@ def test_final_sale_yes_without_final_sale_policy_becomes_human(seeded: Any) -> 
         # a cancelled order's refund was refused by the return window (27c sim-028).
         ("ORD-000008", "You can return products within 90 days of purchase.", "no", "handoff"),
         ("ORD-000008", "Cancelled orders are refunded automatically.", "no", "answer"),
+        # "amount paid" is not a rule about paid orders (refund_decisions.md, ORD-000011).
+        ("ORD-000011", "Any amount paid will be refunded to the payment source.", "no", "handoff"),
+        ("ORD-000011", "Paid orders can be cancelled before they ship.", "no", "answer"),
     ],
 )
 def test_seed_edge_order_decisions_are_checked_before_action(
@@ -569,7 +573,7 @@ def test_postgres_checkpoint_survives_refund_restart(postgres_database, seeded) 
         orders = [service.get_order(choice["order_id"], "CUST-0001") for choice in picker["orders"]]
         order = next(order for order in orders if order.items[0].refunded_quantity == 0)
         status = order.status.value.replace("_", " ")
-        policy = FixedRetriever(text=f"{status} refund policy for final sale.")
+        policy = FixedRetriever(text=f"{status.capitalize()} orders follow this final sale policy.")
         model = DecisionFake(responses=["unused"], decisions=[yes_decision(order)])
         with deps(settings, service, model, policy) as after:
             second = build_graph(after)
@@ -599,3 +603,26 @@ def test_postgres_checkpoint_survives_refund_restart(postgres_database, seeded) 
             assert persisted["refund_request"] == result["refund_request"]
     finally:
         service.close()
+
+
+@pytest.mark.parametrize(
+    ("text", "status", "named"),
+    [
+        ("Cancelled orders can receive refunds.", "cancelled", True),
+        ("Canceled orders are refunded.", "cancelled", True),
+        ("Any amount paid using prepaid modes will be refunded.", "paid", False),
+        ("Paid orders can be cancelled before shipping.", "paid", True),
+        ("If your order has been shipped, it will be cancelled.", "shipped", True),
+        ("Your order will need to be cancelled first.", "cancelled", False),
+        ("Check if there are any pending refunds expected.", "pending", False),
+        ("Orders in transit cannot be cancelled.", "in_transit", True),
+        ("You can return products within 90 days of purchase.", "cancelled", False),
+        ("Items already refunded cannot be returned.", "refunded", True),
+    ],
+)
+def test_policy_names_a_status_only_when_it_speaks_of_orders_in_it(
+    text: str, status: str, named: bool
+) -> None:
+    from support_agent.graph.refund_decision import policy_names_status
+
+    assert policy_names_status(text, status) is named

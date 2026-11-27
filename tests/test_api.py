@@ -63,7 +63,9 @@ async def client(
             settings,
             fast_model=fast(),
             main_model=DecisionFake(responses=["unused"], decisions=[yes_decision(order)]),
-            retriever=RefundRetriever(text=f"{status} refund policy for final sale."),
+            retriever=RefundRetriever(
+                text=f"{status.capitalize()} orders follow this final sale policy."
+            ),
             order_service=service,
         )
     else:
