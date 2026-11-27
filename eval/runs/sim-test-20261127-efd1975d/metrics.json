@@ -1,0 +1,102 @@
+{
+  "n_runs": 27,
+  "n_scenarios": 9,
+  "task_success": {
+    "mean": 0.14814814814814814,
+    "low": 0.037037037037037035,
+    "high": 0.2962962962962963,
+    "n": 27
+  },
+  "tool_call_precision": {
+    "mean": null,
+    "low": null,
+    "high": null,
+    "n": 0
+  },
+  "tool_call_recall": {
+    "mean": null,
+    "low": null,
+    "high": null,
+    "n": 0
+  },
+  "wrong_customer_access": {
+    "count": 0,
+    "total": 27,
+    "rate": 0.0,
+    "wilson_low": 0,
+    "wilson_high": 0.12455502974186704
+  },
+  "turns_to_success": {
+    "mean": 1.5,
+    "low": 1.0,
+    "high": 2.0,
+    "n": 4
+  },
+  "redundant_questions": {
+    "mean": 0.0,
+    "low": 0.0,
+    "high": 0.0,
+    "n": 27
+  },
+  "fact_retention": {
+    "mean": null,
+    "low": null,
+    "high": null,
+    "n": 0
+  },
+  "fact_checkpoints": {
+    "reached": 0,
+    "total": 0
+  },
+  "loop_rate": {
+    "mean": 0.0,
+    "low": 0.0,
+    "high": 0.0,
+    "n": 27
+  },
+  "handoff_appropriate": {
+    "mean": 0.07407407407407407,
+    "low": 0.0,
+    "high": 0.18518518518518517,
+    "n": 27
+  },
+  "error_rate": 0.0,
+  "repeat_task_success_mean_std": 0.15713484026367722,
+  "categories": {
+    "refund_eligible": {
+      "n": 9,
+      "task_success": 0.2222222222222222,
+      "handoff_appropriate": 0.0,
+      "redundant_questions_mean": 0,
+      "loop_rate": 0.0
+    },
+    "refund_ineligible": {
+      "n": 9,
+      "task_success": 0.0,
+      "handoff_appropriate": 0.0,
+      "redundant_questions_mean": 0,
+      "loop_rate": 0.0
+    },
+    "refund_needs_human": {
+      "n": 9,
+      "task_success": 0.2222222222222222,
+      "handoff_appropriate": 0.2222222222222222,
+      "redundant_questions_mean": 0,
+      "loop_rate": 0.0
+    }
+  },
+  "tokens_per_turn_curve": [
+    {
+      "turn": 1,
+      "n": 27,
+      "mean_input_tokens": 4130.481481481482,
+      "p95_input_tokens": 6656
+    },
+    {
+      "turn": 2,
+      "n": 17,
+      "mean_input_tokens": 2280.470588235294,
+      "p95_input_tokens": 4580
+    }
+  ]
+}
