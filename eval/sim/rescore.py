@@ -31,6 +31,19 @@ def _ci(entry: dict[str, Any]) -> str:
     return f"{entry['mean']:.2%} [{entry['low']:.2%}, {entry['high']:.2%}] (n={entry['n']})"
 
 
+def unexpected_refunds(run_dir: Path) -> int:
+    """Chats that created a refund request where the scenario does not expect one."""
+    scenarios = {s.id: s for s in load_scenarios(SCENARIOS)}
+    lines = (run_dir / "items.jsonl").read_text(encoding="utf-8").splitlines()
+    count = 0
+    for line in filter(None, lines):
+        transcript = ConversationTranscript.model_validate_json(line)
+        created = any(turn.refund_request_id for turn in transcript.turns)
+        if created and scenarios[transcript.scenario_id].expected_outcome != "refund_created":
+            count += 1
+    return count
+
+
 def rescore(run_dir: Path) -> dict[str, Any]:
     scenarios = {s.id: s for s in load_scenarios(SCENARIOS)}
     lines = (run_dir / "items.jsonl").read_text(encoding="utf-8").splitlines()
@@ -79,13 +92,16 @@ def render(runs: list[Path], *, by_scenario: bool = False) -> str:
         f"- Scenarios: `scenarios_v1@{entry.version}` (`{file_hash(SCENARIOS)}`)",
         f"- Date (UTC): {datetime.now(UTC):%Y-%m-%d}",
         "",
+        "Unexpected refunds: chats that created a refund request where the scenario expects",
+        "another outcome.",
+        "",
         "Fact retention counts only checkpoints whose turn the conversation reached with a",
         "probe that did not restate the fact; before, a checkpoint after the simulated user's",
         "last turn counted as a miss.",
         "",
         "| Run | Items sha256 | Conversations | Task success | Fact checkpoints probed "
-        "| Fact retention |",
-        "|---|---|---:|---|---:|---|",
+        "| Fact retention | Unexpected refunds |",
+        "|---|---|---:|---|---:|---|---:|",
     ]
     for run in runs:
         agg = rescore(run)
@@ -93,7 +109,8 @@ def render(runs: list[Path], *, by_scenario: bool = False) -> str:
         reached = agg["fact_checkpoints"]
         lines.append(
             f"| `{run.name}` | `{digest}` | {agg['n_runs']} | {_ci(agg['task_success'])} | "
-            f"{reached['reached']}/{reached['total']} | {_ci(agg['fact_retention'])} |"
+            f"{reached['reached']}/{reached['total']} | {_ci(agg['fact_retention'])} | "
+            f"{unexpected_refunds(run)} |"
         )
     if by_scenario:
         lines.extend(["", *scenario_lines(runs)])

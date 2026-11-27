@@ -468,6 +468,28 @@ def test_rescore_can_report_task_success_per_scenario(tmp_path: Path) -> None:
     assert "## Task success by scenario" not in rescore.render(runs)
 
 
+def test_rescore_counts_refunds_the_scenario_did_not_expect(tmp_path: Path) -> None:
+    from eval.sim import rescore
+
+    scenarios = load_scenarios(rescore.SCENARIOS)
+    denied = next(s for s in scenarios if s.expected_outcome == "refund_denied")
+    created = next(s for s in scenarios if s.expected_outcome == "refund_created")
+    run = tmp_path / "sim-refunds"
+    run.mkdir()
+    rows = [
+        ConversationTranscript(
+            scenario_id=scenario.id,
+            category=scenario.category,
+            customer_id=scenario.customer_id,
+            turns=[SimTurn(turn_index=1, user_message="refund", refund_request_id="REF-1")],
+        ).model_dump_json()
+        for scenario in (denied, created)
+    ]
+    (run / "items.jsonl").write_text("\n".join(rows) + "\n")
+    assert rescore.unexpected_refunds(run) == 1
+    assert "| Unexpected refunds |" in rescore.render([run])
+
+
 def _scripted_run(
     tmp_path: Path, sim_replies: list[str], chunks: list[RetrievedChunk], checkpoint_turn: int
 ) -> ConversationTranscript:
