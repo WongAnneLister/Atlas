@@ -311,6 +311,7 @@ eval:
     nightly_subset_size: 10
     loop_threshold: 3
     validity_sample_size: 10
+    session_customer_limit: 1000   # api.demo_customer_limit inside the simulator (fixture customers)
 
 evaluation:
   sets_dir: eval/sets

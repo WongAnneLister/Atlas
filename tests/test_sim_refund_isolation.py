@@ -98,3 +98,41 @@ def test_a_refusal_followed_by_a_requested_human_still_counts_as_refused() -> No
     assert not evaluate_transcript(scenario, early).task_success
     no_refusal = _refund_chat((["input_guard", "tools"], "user_requested"))
     assert not evaluate_transcript(scenario, no_refusal).task_success
+
+
+def test_a_scenario_customer_outside_the_demo_list_still_gets_a_session(tmp_path: Path) -> None:
+    # 12c: sim-017, sim-018 and sim-023 use CUST-TS01, which is not among the first
+    # api.demo_customer_limit customers, so /api/session answered 403 for all of them.
+    from eval.sim.user import UserSimulator
+    from langchain_core.language_models.fake_chat_models import FakeListChatModel
+
+    from support_agent.graph.deps import GraphDeps
+    from test_sim import _StaticRetriever
+
+    settings, service = _seeded(tmp_path)
+    settings.planning.enabled = False
+    settings.cache.enabled = False
+    assert settings.api.demo_customer_limit < 50
+    graph_deps = GraphDeps(
+        settings=settings,
+        fast_model=FakeListChatModel(responses=["x"]),
+        main_model=FakeListChatModel(responses=["x"]),
+        retriever=_StaticRetriever([]),
+        order_service=service,
+        allow_untuned_gate=True,
+    )
+    scenario = _sample_scenario(id="s-ts01", customer_id="CUST-TS01", checkpoints=[])
+    simulator = UserSimulator(FakeListChatModel(responses=["[DONE]"]), model_name="fake")
+    try:
+        [transcript] = asyncio.run(
+            run_suite(
+                settings,
+                [scenario],
+                simulator=simulator,
+                graph_deps=graph_deps,
+                order_service=service,
+            )
+        )
+    finally:
+        service.close()
+    assert transcript.stop_reason == "done"

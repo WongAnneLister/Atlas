@@ -329,6 +329,9 @@ class SimSettings(BaseModel):
     nightly_subset_size: int = Field(default=10, ge=1)
     loop_threshold: int = Field(default=3, ge=2)
     validity_sample_size: int = Field(default=10, ge=1)
+    # Sessions are limited to the first api.demo_customer_limit customers; scenarios also use
+    # fixture customers outside that list (CUST-TS01), so the simulator raises it.
+    session_customer_limit: int = Field(default=1000, ge=1)
 
 
 class EvalPlatformSettings(BaseModel):

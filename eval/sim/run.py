@@ -378,8 +378,12 @@ async def run_suite(
     # Each chat starts from the seeded orders: no refund request is left in review.
     require_no_refund_requests(order_service)
     store = NullRedis()
+    # The demo allowlist holds the first few customers only; scenario customers such as the
+    # time-sensitive fixture CUST-TS01 fall outside it and every chat failed with 403.
+    api_settings = settings.model_copy(deep=True)
+    api_settings.api.demo_customer_limit = settings.eval.sim.session_customer_limit
     api_deps = ApiDeps(
-        settings=settings,
+        settings=api_settings,
         graph_deps=graph_deps,
         order_service=order_service,
         milvus_check=lambda: True,
