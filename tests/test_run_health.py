@@ -133,3 +133,31 @@ def test_invalid_run_rule_flags_failed_calls_and_passes_handoffs(monkeypatch) ->
         {"trace": ["gate", "handoff"], "handoff": {"reason": "low_evidence"}}, monkeypatch
     )
     assert invalid_run_message(healthy) is None
+
+
+def test_simulator_chats_with_model_errors_are_refused() -> None:
+    from eval.run_health import invalid_transcripts_message
+    from eval.sim.models import ConversationTranscript, SimTurn
+
+    def chat(error: str | None) -> ConversationTranscript:
+        return ConversationTranscript(
+            scenario_id="s",
+            category="policy_qa",
+            customer_id="CUST-0001",
+            turns=[SimTurn(turn_index=1, user_message="hi", dependency_error=error)],
+        )
+
+    assert invalid_transcripts_message([chat(None)] * 20) is None
+    message = invalid_transcripts_message([chat("APIStatusError")] * 10 + [chat(None)] * 10)
+    assert message is not None and "APIStatusError x10" in message
+
+
+def test_replay_preflight_stops_on_a_dead_model(monkeypatch) -> None:
+    from eval.sim import replay
+
+    def dead(role, settings):
+        raise RuntimeError("Error code: 402 - Insufficient Balance")
+
+    monkeypatch.setattr(replay, "get_chat_model", dead)
+    problem = replay.preflight(Settings())
+    assert problem is not None and "Insufficient Balance" in problem

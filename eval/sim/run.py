@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -17,6 +18,7 @@ from langchain_core.runnables import RunnableConfig
 from prometheus_client import CollectorRegistry
 
 from eval.registry import file_hash, load_registry
+from eval.run_health import INVALID_RUN_STATUS, invalid_transcripts_message
 from eval.sim.build_scenarios import DEFAULT_OUTPUT as DEFAULT_SCENARIOS
 from eval.sim.build_scenarios import load_scenarios
 from eval.sim.metrics import aggregate_evaluations, evaluate_transcript
@@ -177,6 +179,22 @@ def _read_checkpoint_diagnostics(
     )
 
 
+def _dependency_error(graph_deps: GraphDeps, thread_id: str) -> str | None:
+    """The first model or dependency error the graph recorded for the latest turn."""
+    saved = graph_deps.checkpointer().get_tuple({"configurable": {"thread_id": thread_id}})
+    values: dict[str, Any] = saved.checkpoint.get("channel_values", {}) if saved else {}
+    for name in ("classification_error_type", "retrieval_error_type", "answer_error_type"):
+        if values.get(name):
+            return str(values[name])
+    for event in values.get("reliability_events") or []:
+        error = getattr(event, "error_type", None)
+        if error is None and isinstance(event, dict):
+            error = event.get("error_type")
+        if error:
+            return str(error)
+    return None
+
+
 async def run_scenario_over_api(
     client: httpx.AsyncClient,
     graph_deps: GraphDeps,
@@ -320,6 +338,7 @@ async def run_scenario_over_api(
                 context_calls=ctx_calls,
                 latency_s=elapsed,
                 error_type=parsed["error_type"],
+                dependency_error=_dependency_error(graph_deps, thread_id),
             )
         )
         if parsed["error_type"] is not None:
@@ -465,6 +484,9 @@ def main(argv: list[str] | None = None) -> int:
         run_dir / "items.jsonl",
         "\n".join(tr.model_dump_json() for tr in transcripts) + "\n",
     )
+    if broken := invalid_transcripts_message(transcripts):
+        sys.stderr.write(f"Invalid run, nothing reported: {broken}\nRows kept in {run_dir}\n")
+        return INVALID_RUN_STATUS
     write_text(run_dir / "metrics.json", json.dumps(agg, indent=2) + "\n")
 
     write_text(

@@ -676,3 +676,43 @@ def test_replay_sends_the_recorded_messages_and_scores_the_probe_turn(tmp_path: 
     assert result["reached"] is True
     assert result["recalled"] is True
     assert result["relookup"] is False
+
+
+def test_a_turn_records_the_model_error_the_graph_hit(tmp_path: Path) -> None:
+    settings: Settings = get_settings().model_copy(deep=True)
+    settings.orders.db_path = str(tmp_path / "orders.sqlite")
+    settings.planning.enabled = False
+    settings.cache.enabled = False
+    seed_orders(settings)
+    order_service = OrderService(platform=settings)
+
+    class _Dead(FakeListChatModel):
+        def with_structured_output(self, schema: Any, **kwargs: Any) -> Any:
+            def fail(_: Any) -> Any:
+                raise RuntimeError("Insufficient Balance")
+
+            return RunnableLambda(fail)
+
+    graph_deps = GraphDeps(
+        settings=settings,
+        fast_model=_Dead(responses=["x"]),
+        main_model=_Dead(responses=["x"]),
+        retriever=_StaticRetriever([]),
+        order_service=order_service,
+        allow_untuned_gate=True,
+    )
+    scenario = _sample_scenario(id="s-dead", checkpoints=[], max_turns=1)
+    simulator = UserSimulator(FakeListChatModel(responses=["Hi [DONE]"]), model_name="fake")
+    try:
+        [transcript] = asyncio.run(
+            run_suite(
+                settings,
+                [scenario],
+                simulator=simulator,
+                graph_deps=graph_deps,
+                order_service=order_service,
+            )
+        )
+    finally:
+        order_service.close()
+    assert transcript.turns[0].dependency_error is not None

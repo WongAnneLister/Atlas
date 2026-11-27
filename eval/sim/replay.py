@@ -27,6 +27,7 @@ from uuid import uuid4
 
 from eval.e2e_eval import _model_names
 from eval.e2e_speed import run_config_hash
+from eval.run_health import INVALID_RUN_STATUS, invalid_transcripts_message
 from eval.run_record import git, is_dirty
 from eval.sim.build_scenarios import load_scenarios
 from eval.sim.models import ConversationTranscript, Scenario, SimTurn
@@ -36,6 +37,7 @@ from eval.stats import wilson_interval
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import write_text
 from support_agent.graph.deps import GraphDeps
+from support_agent.llm import get_chat_model
 from support_agent.orders.service import OrderService
 
 SCENARIOS = REPO_ROOT / "eval/sets/scenarios_v1.jsonl"
@@ -194,6 +196,7 @@ def run(
     }
     rows: list[dict[str, Any]] = []
     items: list[dict[str, Any]] = []
+    every: list[ConversationTranscript] = []
     for probe in probes:
         scenario = scenarios[probe.scenario_id]
         # Stop the chat at the probe turn; the recorded messages drive every turn.
@@ -216,6 +219,7 @@ def run(
             finally:
                 order_service.close()
                 graph_deps.close()
+            every.extend(transcripts)
             outcomes = [outcome(scenario, t, probe) for t in transcripts]
             rows.append(
                 {
@@ -239,8 +243,20 @@ def run(
     run_dir = run_root / f"sim-replay-{datetime.now(UTC):%Y%m%d}-{uuid4().hex[:8]}"
     run_dir.mkdir(parents=True, exist_ok=True)
     write_text(run_dir / "items.jsonl", "".join(json.dumps(i) + "\n" for i in items))
-    write_text(run_dir / "run.json", json.dumps({**provenance, "rows": rows}, indent=2) + "\n")
-    return rows, provenance, run_dir
+    invalid = invalid_transcripts_message(every)
+    record = {**provenance, "rows": rows, "invalid": invalid}
+    write_text(run_dir / "run.json", json.dumps(record, indent=2) + "\n")
+    return rows, {**provenance, "invalid": invalid}, run_dir
+
+
+def preflight(settings: Settings) -> str | None:
+    """One tiny call per model role, so a dead account or key fails before any replay."""
+    for role in ("fast", "main"):
+        try:
+            get_chat_model(role, settings).invoke("Reply with OK")
+        except Exception as error:
+            return f"{role} model unavailable: {type(error).__name__}: {str(error)[:120]}"
+    return None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -251,8 +267,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--run-root", type=Path, required=True)
+    parser.add_argument("--skip-preflight", action="store_true", help="offline tests only")
     args = parser.parse_args(argv)
     _dirty_at_start()
+    if not args.skip_preflight and (problem := preflight(get_settings())):
+        sys.stderr.write(f"Preflight failed, nothing replayed: {problem}\n")
+        return INVALID_RUN_STATUS
     rows, provenance, run_dir = run(
         args.run,
         [parse_probe(p) for p in args.probe],
@@ -260,6 +280,9 @@ def main(argv: list[str] | None = None) -> int:
         args.repeats,
         args.run_root,
     )
+    if broken := provenance.pop("invalid", None):
+        sys.stderr.write(f"Invalid run, nothing reported: {broken}\nRows kept in {run_dir}\n")
+        return INVALID_RUN_STATUS
     write_text(args.report, render(args.run, rows, provenance))
     sys.stdout.write(f"Run record: {run_dir}\n")
     return 0

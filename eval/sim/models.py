@@ -95,6 +95,8 @@ class SimTurn(BaseModel):
     context_calls: list[dict[str, Any]] = Field(default_factory=list)
     latency_s: float = Field(default=0.0, ge=0.0)
     error_type: str | None = None
+    # First model or dependency error recorded by the graph in this turn, if any.
+    dependency_error: str | None = None
 
 
 class ConversationTranscript(BaseModel):
