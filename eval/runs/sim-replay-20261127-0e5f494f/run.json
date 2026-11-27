@@ -1,0 +1,44 @@
+{
+  "git_sha": "ca51a9e1da728d4d03fad35ea05d65856b3f8378",
+  "dirty": false,
+  "config_hash": "2f39b90242766ffbf16d7d65bc1ebb2fb722237526b7697ca8640c7e2940be62",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash"
+  },
+  "source_run": "memory-short-20261127-50c91ed3",
+  "source_arm": "both",
+  "date": "2026-11-27T07:22:23.545391+00:00",
+  "rows": [
+    {
+      "probe": "sim-049-long_conversation:14",
+      "arm": "on",
+      "overrides": {},
+      "n": 5,
+      "tool_error": 0,
+      "recalled": 0,
+      "relookup": 0,
+      "handoffs": {
+        "incomplete_evidence": 2,
+        "invalid_answer": 3
+      },
+      "answer_tokens_max": 11950
+    },
+    {
+      "probe": "sim-049-long_conversation:14",
+      "arm": "off",
+      "overrides": {
+        "knowledge.fit_answer_budget": false
+      },
+      "n": 5,
+      "tool_error": 0,
+      "recalled": 0,
+      "relookup": 0,
+      "handoffs": {
+        "low_grounding": 5
+      },
+      "answer_tokens_max": 47642
+    }
+  ],
+  "invalid": null
+}
