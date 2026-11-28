@@ -53,3 +53,14 @@ def test_classifier_routes_cancel_and_refund_to_the_refund_path():
         lines
     )
     assert "without asking for the money back stays order_status." in lines
+
+
+def test_classifier_separates_permission_account_problems_and_refund_tracking():
+    # 13e: the main classifier errors on the reviewed intent holdout (13d).
+    lines = (PROMPTS / "classify.md").read_text(encoding="utf-8").splitlines()
+    for rule in (
+        "Asking whether one may return, exchange, or replace an item is policy_question;",
+        "A reported problem with an account, sign-up, or subscription action is chitchat_other,",
+        "Checking or tracking the status of a refund is refund_request, not order_status.",
+    ):
+        assert rule in lines

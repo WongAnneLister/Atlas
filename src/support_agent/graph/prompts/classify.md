@@ -31,10 +31,15 @@ Use policy_question even if it describes the customer's situation, an order, or 
 An operational request asks you to inspect private order facts or perform an action.
 Use order_status or shipping_delivery for a specific lookup or order change.
 Use refund_request or return_exchange when asked to start, arrange, or track that process.
+Checking or tracking the status of a refund is refund_request, not order_status.
 Asking how returns work or whether a return is allowed is policy_question.
 Asking you to arrange the return is return_exchange, even without an order id.
+Asking whether one may return, exchange, or replace an item is policy_question;
+asking the store to return, exchange, or replace it is return_exchange.
 Explaining how customers find invoices is policy_question; fetching one is order_status.
 Explaining login recovery is policy_question; changing credentials for the user is unsupported.
+A reported problem with an account, sign-up, or subscription action is chitchat_other,
+unless the customer asks how that action works.
 Store membership, loyalty points, and account security questions are not unrelated chitchat.
 For a mixed request, retain an explicit operational action when one is requested.
 A request to cancel an order and get the money back is refund_request; cancelling
