@@ -12,13 +12,13 @@ datasets:
   changelog:
   - Register the frozen v1 policy and product benchmark
 - name: intent_holdout
-  version: v2
+  version: v3
   path: eval/sets/intent_holdout.jsonl
-  sha256: 8c95805e6536754b0f21fac06b023f6976cfb2947c9a2d03e196927a1cba3e74
+  sha256: 78efeb80ed2dabd30affd37cf3273271325d3128cd927d5d813fed087b96b115
   items: 420
   splits:
     intent_holdout: 420
-  reviewed: 85
+  reviewed: 420
   license_scope: local_only
   changelog:
   - Register the frozen nine-intent benchmark
@@ -27,14 +27,18 @@ datasets:
     human requests, explicit dissatisfaction or a reported payment failure, specific
     order or invoice actions). Model-drafted with a reason per item, approved by the
     author on 2026-11-28; labels in eval/drafts/intent_relabels.yaml. Same questions.'
+  - '13d: every remaining holdout item (335) was reviewed under the same routing rule,
+    so all 420 are author-reviewed; 38 more relabelled to policy_question (public
+    store information or an explicit how-to, where or can-I question), 297 kept. Model-drafted
+    with a reason per item, approved by the author on 2026-11-28. Same questions.'
 - name: intent_extra
-  version: v2
+  version: v3
   path: eval/sets/intent_extra.jsonl
-  sha256: a0613f4eadd5e183c08f2b567a255ac18607f93171263c3c6d43e70761a25786
+  sha256: 2e5f555119e911752948ac8db3ca07dd630105f4adce58a7bc002eb847524343
   items: 110
   splits:
     intent_holdout: 110
-  reviewed: 12
+  reviewed: 76
   license_scope: local_only
   changelog:
   - Register the extra intent evaluation set
@@ -44,6 +48,11 @@ datasets:
     order or invoice actions). Model-drafted with a reason per item, approved by the
     author on 2026-11-28; labels in eval/drafts/intent_relabels.yaml. Same questions.
     (11 of these items are in the extra pool.)'
+  - '13d: every remaining holdout item (335) was reviewed under the same routing rule,
+    so all 420 are author-reviewed; 38 more relabelled to policy_question (public
+    store information or an explicit how-to, where or can-I question), 297 kept. Model-drafted
+    with a reason per item, approved by the author on 2026-11-28. Same questions.
+    (Applies to the extra-pool copies of these items.)'
 - name: holdout_near_miss_v1
   version: v1
   path: eval/sets/holdout_near_miss_v1.jsonl
