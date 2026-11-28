@@ -23,6 +23,14 @@ from starlette.types import Receive, Scope, Send
 from support_agent.api.backpressure import CustomerAllowlistCache, InFlightLimiter
 from support_agent.api.body_limit import BodyLimitMiddleware
 from support_agent.api.budget import DailySpendCap
+from support_agent.api.chunks import (
+    DocumentDetailResponse,
+    SnapshotDocsResponse,
+    SnapshotsResponse,
+    get_document_detail,
+    list_snapshot_docs,
+    list_snapshots,
+)
 from support_agent.api.deps import ApiDeps
 from support_agent.api.events import SseEvent
 from support_agent.api.http_metrics import RequestMetricsMiddleware
@@ -201,6 +209,28 @@ def create_app(deps: ApiDeps) -> FastAPI:
     @app.get("/visualizer")
     async def visualizer_page() -> FileResponse:
         return FileResponse(STATIC / "visualizer.html")
+
+    @app.get("/chunks")
+    async def chunks_page() -> FileResponse:
+        return FileResponse(STATIC / "chunks.html")
+
+    @app.get("/api/chunks/snapshots")
+    async def chunks_snapshots() -> SnapshotsResponse:
+        return await to_thread.run_sync(list_snapshots, deps.settings)
+
+    @app.get("/api/chunks/docs")
+    async def chunks_docs(snapshot: str | None = None) -> SnapshotDocsResponse:
+        try:
+            return await to_thread.run_sync(list_snapshot_docs, deps.settings, snapshot)
+        except FileNotFoundError as error:
+            raise HTTPException(404, str(error)) from error
+
+    @app.get("/api/chunks/docs/{doc_id}")
+    async def chunks_doc_detail(doc_id: str, snapshot: str | None = None) -> DocumentDetailResponse:
+        try:
+            return await to_thread.run_sync(get_document_detail, deps.settings, doc_id, snapshot)
+        except (FileNotFoundError, KeyError) as error:
+            raise HTTPException(404, str(error)) from error
 
     @app.get("/api/customers")
     def customers() -> list[CustomerSummary]:
