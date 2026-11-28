@@ -26,3 +26,11 @@
 - {id: control-action-cancel-refund, text: "Cancel ORD-000013 and refund my money.", expected_path: C}
 - {id: control-action-cancel-money-back, text: "Please cancel order ORD-000009 and give me my money back.", expected_path: C}
 - {id: control-action-cancel-before-ship, text: "Stop order ORD-000011 before it ships.", expected_path: A}
+# Added on 2026-11-28 for 13e, before any inference with the changed prompt. Agent-drafted
+# boundary checks, written fresh (not copied from the intent holdout).
+- {id: control-policy-may-exchange, text: "Am I allowed to exchange a kettle for a bigger size?", expected_path: B}
+- {id: control-policy-may-return-damaged, text: "Is it OK to send back a lamp that arrived scratched?", expected_path: B}
+- {id: control-account-signup-error, text: "Every time I try to register an account I get an error.", expected_path: E}
+- {id: control-account-upgrade-fails, text: "My upgrade to a gold membership keeps failing.", expected_path: E}
+- {id: control-refund-status, text: "Has the refund for ORD-000003 gone through yet?", expected_path: C}
+- {id: control-refund-track, text: "Please check where my reimbursement is.", expected_path: C}
