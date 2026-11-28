@@ -12,27 +12,38 @@ datasets:
   changelog:
   - Register the frozen v1 policy and product benchmark
 - name: intent_holdout
-  version: v1
+  version: v2
   path: eval/sets/intent_holdout.jsonl
-  sha256: db0cf6d259add8fcead8d63947e5ba51e8346c3cd72e91c8ca3b1706875c0dae
+  sha256: 8c95805e6536754b0f21fac06b023f6976cfb2947c9a2d03e196927a1cba3e74
   items: 420
   splits:
     intent_holdout: 420
-  reviewed: 0
+  reviewed: 85
   license_scope: local_only
   changelog:
   - Register the frozen nine-intent benchmark
+  - '13c: 85 items a text rule flagged as possibly informational were reviewed under
+    the routing rule in classify.md; 65 relabelled to policy_question, 20 kept (explicit
+    human requests, explicit dissatisfaction or a reported payment failure, specific
+    order or invoice actions). Model-drafted with a reason per item, approved by the
+    author on 2026-11-28; labels in eval/drafts/intent_relabels.yaml. Same questions.'
 - name: intent_extra
-  version: v1
+  version: v2
   path: eval/sets/intent_extra.jsonl
-  sha256: 35d580aafca414ede6f456cd427d5b9b846fa143756bf716710f8493ce2d27ee
+  sha256: a0613f4eadd5e183c08f2b567a255ac18607f93171263c3c6d43e70761a25786
   items: 110
   splits:
     intent_holdout: 110
-  reviewed: 0
+  reviewed: 12
   license_scope: local_only
   changelog:
   - Register the extra intent evaluation set
+  - '13c: 85 items a text rule flagged as possibly informational were reviewed under
+    the routing rule in classify.md; 65 relabelled to policy_question, 20 kept (explicit
+    human requests, explicit dissatisfaction or a reported payment failure, specific
+    order or invoice actions). Model-drafted with a reason per item, approved by the
+    author on 2026-11-28; labels in eval/drafts/intent_relabels.yaml. Same questions.
+    (11 of these items are in the extra pool.)'
 - name: holdout_near_miss_v1
   version: v1
   path: eval/sets/holdout_near_miss_v1.jsonl

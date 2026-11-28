@@ -1,7 +1,98 @@
 # Author-reviewed intent labels for the intent holdout, under the routing rule in
 # src/support_agent/graph/prompts/classify.md (informational and self-service requests are
-# policy_question; requests to act on a specific order or account keep their intent).
+# policy_question; requests to act on a specific order or account, explicit requests for a
+# human, and explicit dissatisfaction or a reported payment failure keep their intent).
 # Applied by id after selection, so the questions in the set do not change. An entry whose
 # intent equals the drafted label records a reviewed, kept label. Ids only; no source text.
-reviewed_on: null
-labels: []
+#
+# 13c (2026-11-28): the 85 items a text rule flagged as possibly informational (the rule did
+# not use any classifier prediction). Decisions were drafted by the model with a reason per
+# item and approved by the author as a whole; the author decided the six "how do I check my
+# refund status" items (policy_question) separately. Kept labels are listed too.
+reviewed_on: '2026-11-28'
+labels:
+  - {id: 1589591fdafea28d626ba660815fdf847c05e7292f427a0e12dacfa82e8b6161, intent: policy_question}
+  - {id: a9cff26d1f785e89f98bef99450197a63578a5981b1715f4f20f085b3b9c96c3, intent: policy_question}
+  - {id: 61702c12bfaee123549cc1721f91c102c73d4e46770ac496b01599cf3d4e4c68, intent: policy_question}
+  - {id: 30ef1407d702cb1d1029de11dd2f4d8b4a9c3ee4352fa73061389dbc948114bf, intent: policy_question}
+  - {id: 07ed05a88f0ebb34ffa42fa9228d679365ecfb6df1093dc98f6dc2ebe2a1435d, intent: policy_question}
+  - {id: 041f9c1d7d83c6033bfa82111879ea709efe8d9fdbf5b056ceb84295948f7d00, intent: policy_question}
+  - {id: be1a9066943c5cb995c4b7ca19ec64c7dbb2dced1d27e33666ea5215b8121f53, intent: policy_question}
+  - {id: 9b289069f5c04ee1301a19423daeef7c86cc9530549be68d618dabd482e02a6f, intent: policy_question}
+  - {id: 54f9ee14aa121e6840f9c01683e92709d4711003776fea8a3f22eaf5b6135d97, intent: chitchat_other}
+  - {id: b43e3a5efdd231a1dc5b1e8cd4ac544bb34ea133d611c4ae280f270824f2a662, intent: policy_question}
+  - {id: 56edd4115afc9cf0f0d9c37183b2f330e94a296a2e9584ddd514e869dfca4bd3, intent: policy_question}
+  - {id: c5253dfcf6655deb1467c752b86f0175b1cf31c44747f6f38b741d83eaceb9e1, intent: chitchat_other}
+  - {id: 8b08d1d6a158603e8dec36a746173fcffa5b8c516729ea46345711a7dbde31d6, intent: policy_question}
+  - {id: 7148ef38947d37475da9e8b237d293fcd8e9f9b4ed214c03b902564c30b32ae2, intent: complaint}
+  - {id: 90efb1eee4fceb263cb59c69a56250b6e7d0859249c552b31ecfbe533b68f07f, intent: policy_question}
+  - {id: df80ce1da44b99169dbee0d101001a9f8b8a80635423c07e7d097abfaac9a58a, intent: policy_question}
+  - {id: 2f8aba9055b64fb3e59eefd8c4a76f12734c5d313336836e3a4bb1f271158acf, intent: policy_question}
+  - {id: e86508a60b72abc4f263f3da99af2158690103fec6ecd029f4d7177218bf7bdc, intent: complaint}
+  - {id: 4cdf3e2c375f5b0dd995d72dd4e101e6d6251bdff1d90bf4dcd04ce889741ad7, intent: complaint}
+  - {id: 8ab8da59d6770ea00ef21a0662923c29043d14fab62c5f55285a1e2bcbac3c94, intent: policy_question}
+  - {id: d1b38cab5c3fe9d352c5dadf6c077092ec0372bdfd70af0367ffd0a9d0866149, intent: policy_question}
+  - {id: f36c3712e0fd9c1e49f017fc0f3dffc6c9a612aee52565a28e801af4935f1907, intent: policy_question}
+  - {id: d8098a4e85c18b721082a09c0932ef0d61a20a81a768b7b225939ba361042d2f, intent: policy_question}
+  - {id: 48c8ef6527b956b6eaed811114acf448f2c5b3fd09d77d9d4c31de4fb9349085, intent: policy_question}
+  - {id: 43fdf2eccf51cf553e99808f418ee22e477135e7ad025656673d69c963c48258, intent: order_status}
+  - {id: c541f355083dde4a1d86d28d622c80505e1d25a1f84bb0f9b6f3f41703c32abb, intent: policy_question}
+  - {id: 98b2506c382753fcab18c9940add9cfbedde57e19fba1648bd77d4ff7c48df68, intent: policy_question}
+  - {id: f40e18b1c086864f43109314dbc52e46ec98b28ba621829f277d4ab8f1bff352, intent: order_status}
+  - {id: ce6077a275a492e71e16077ec061062c65d3f0c50b00a6ea9094ee22cba96ee0, intent: policy_question}
+  - {id: 5bbeafd097bf68061a9b0b71371b56ab3311437760e19d6cec6b162fb3da3ccf, intent: order_status}
+  - {id: cc690dfdb37b01f4382218e1bc44c67b13172e876c3f31ca089ec260e44b57e6, intent: policy_question}
+  - {id: 892d18771db0c23c005f57dc0ca38b70fb1154769aca8024c88e5b1b69fb541b, intent: policy_question}
+  - {id: 9589e0a36d55522673f1add64d084ab2d84acb8a36126aeb354b72a104f7bf79, intent: policy_question}
+  - {id: e93bad184d3099073def14600156dce6065771e8ee66de267cb77e3ac444c01d, intent: policy_question}
+  - {id: a81f8eb2f910d033c0907c597c5d29659e2a8bd03bcc0771d7f22639cc445380, intent: policy_question}
+  - {id: 4decf466bb61a261300ba8388a03e4d0456a85bc9962feb0745f8178e5d2d0f5, intent: policy_question}
+  - {id: f4951e0cd462817d4bc303c7907b71977b036d7269cf100c5361095c0b3a4236, intent: policy_question}
+  - {id: fce1bcf790fb03e544177006536bb8291764e9287b864e6659b2bb2ffd291787, intent: policy_question}
+  - {id: f2212bf53ce158df7ead7f61c77286c89534a24f4a85d003c6c0b8c4c6d09bbf, intent: policy_question}
+  - {id: 42b422465117995e8499f9d79f95640fae7bab9dcc3751da702217a4fbcd8831, intent: policy_question}
+  - {id: 176d3de5b42d98ecb924c2bdb1bcbd96cf584644214a9092e87c8ed296106d2b, intent: policy_question}
+  - {id: 4cd4c5dc0b3dba221ab2d4992ca6a41c9d0f285ddf457c068bbf63aa70e98d0f, intent: policy_question}
+  - {id: 5300b7634d127f34b7889b978a9e29e93bc6624420011edd63fc02aa24fc84a4, intent: policy_question}
+  - {id: 40a04842af76765991fe3a0a573aac22257c477a2fc10ca54d6b74db9bd85c90, intent: policy_question}
+  - {id: 5327d622c9103f071f9520e4abefbae6e680db119d328ee47c4925d8cafeacc0, intent: policy_question}
+  - {id: 07d5be7b30aba46bcd7932b115906881d8fd39ada814903bfefdaac82f70944d, intent: policy_question}
+  - {id: 49579c3f9ebc3f0ac765da5f5bfe28899f8b2051e256aa871d6a83a14219142b, intent: policy_question}
+  - {id: d02098fe989eb63b5fc02a0f352e16824363dfc1576d8b3a9d8c3dac3b49a503, intent: policy_question}
+  - {id: b8f00a82884d101d73222f83d7a56f6f7611810733ff09dfbbbae455422b324e, intent: policy_question}
+  - {id: 5d5dfb4f120c3b5d041d7f538ad4eaf2a3f7fcc65efd0804187d61f56964bf11, intent: policy_question}
+  - {id: 1c70766f1b6fc4b54d8437b264db8597cdecf0f36017c0966138349871de26ed, intent: policy_question}
+  - {id: 3d6fdb41c15504a743a4fc9b70f26bbe03590b36f481f3b1f968f7b6d90b0829, intent: policy_question}
+  - {id: 224d58da6a4a3ca1bcad926c4af89b60f38d7d31026c96c748dd36225af77a44, intent: policy_question}
+  - {id: eb9dfc3382ec857ef9af616e5aa4515ded85ced45f670c2408f51004bb2788e1, intent: policy_question}
+  - {id: e25431c04ba59515f1da172e71ec0d85018a5bd11f3bc1613d61b014d0130755, intent: policy_question}
+  - {id: 4ebe003d8899e1c673866f42f6ac98a92a03d0358df6bc5857737c338ffbe63a, intent: policy_question}
+  - {id: 701bc5edc436335aa5e3a37bc33ebf3cc246cebad2a8e1222eff5573b813def4, intent: policy_question}
+  - {id: 896b050ca9cefd69088850ac497314d5e6f4fff8091b11ef192f43d78813f54d, intent: policy_question}
+  - {id: 939d9b9b02fc1367a6dbbf7112e77637550c4f23984a8e7fd626527c7e5fd4b9, intent: policy_question}
+  - {id: 9c99c97f0ba4832402a5655484b823c1fff69a6211abec9931a123a30d87304f, intent: policy_question}
+  - {id: f58799a448ecdd986050d8b89b835cb6f38644b8d8d6a7b308e6d7b711956beb, intent: policy_question}
+  - {id: 5185b8fe7cd084c8f1b28efc45a6294d54e119eabd197c11c5ec68935032fca1, intent: policy_question}
+  - {id: ff6bf5af9e39a3b10a027504723fe6d08aca7a5d13b425316da6e99848933d37, intent: policy_question}
+  - {id: 35c062ad476fc8afe0782e01bab77b8ecbe12be24d23933ba45528309b21f9f2, intent: policy_question}
+  - {id: 02b3a1fb7b0572dfea3acf48f18b5e0f4e0d1e48e2c97749a555c5b3699beaee, intent: policy_question}
+  - {id: db40ef4731e5ca283b2175d7591763a5991c4878bb67b01901d7806319f10559, intent: policy_question}
+  - {id: 1ab15814ff18c860f53b0e505ab6568583752b46ce947954ccf4382c4a620368, intent: policy_question}
+  - {id: 7b0f11fc4a097992bf1918d573ff7ee8f69f2081df40f455502e0f1eb9624c0a, intent: policy_question}
+  - {id: 7699d963e410a14839e4dc1dc916c52390c6df1b8e012780e51475f57040da07, intent: policy_question}
+  - {id: 6d1c41d1a9b322a0f22cc1b42b9b151b6f91017e89062064147b28895efb7102, intent: policy_question}
+  - {id: d2bb65ce07f5ea3109799475e2ea5f52f86927ccfff1f1ddedb01cb8b31887d4, intent: policy_question}
+  - {id: dc33cb09b0b732c4d32cb0af5c52d983f184aec656210c180e6b69f801dcb27e, intent: policy_question}
+  - {id: 02587d1ca27f09c0399528e956a30e0aa2bb5321963a494e771933046700c591, intent: talk_to_human}
+  - {id: 44c2e8b116d26330bc5fe4b88c80a11a4018be7f931c6661fa71eda28008ff39, intent: talk_to_human}
+  - {id: be51a9e8b276cf0d937953c89e9c87c313c66ff9abcf27682ed597da710ae446, intent: talk_to_human}
+  - {id: aaf1bf373f63405e22c80a0c7ef0b35f576caec0490e615230829a7900e3a9ec, intent: talk_to_human}
+  - {id: b8e2318d226fec63a3d26fe2daa9218c8a2f6a5277aedafb2d8d6f85fe6cd1e0, intent: talk_to_human}
+  - {id: 9eb72462c3f8b367980a45e27af6263e9562c35e5a71a559968cd865290e98b1, intent: talk_to_human}
+  - {id: b19ba6df9f24ba0df0fdba31145259549876f26e8b00e5da3f2a31e01502207b, intent: talk_to_human}
+  - {id: 7eeda95bd6e7ab26a47f90bc94bedbd3dda1aaeae190d5b273856edd7152dc40, intent: talk_to_human}
+  - {id: 47b14e8508a63744c7222d338487d4edda5c762c12b477f2a4e8c4bbae0ff5d2, intent: talk_to_human}
+  - {id: d1b853cd206f7c11c2bae9020c1de49f56a5e497ec4b9a341db25fbe350dec15, intent: talk_to_human}
+  - {id: dc2d3a8f4caadf6b7e31d46b725364e99022264dd5b8ef7a4070fdcd2eab3a32, intent: talk_to_human}
+  - {id: 4285f7258e6c1bb9c16882560272ec80c6c06e3a35315658e08b0cbb0884005d, intent: policy_question}
+  - {id: 9b72dc8c289a27420c679f62f0ddcbb83561423aa3954ca26b7b24c1996490d3, intent: talk_to_human}
