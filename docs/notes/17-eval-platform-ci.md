@@ -8,7 +8,7 @@ A few changed answers can make a score move by chance. I compare answers to the 
 
 **Number**
 The saved test run accepted zero of 30 questions with no answer. Wilson's method put the upper limit at 11.4 percent.
-Source: eval/reports/e2e.md
+Source: eval/reports/archive/e2e-6cf0e48.md
 
 **Trade-off**
 I kept the question and answer files local. That means the hosted check needs a runner with the data. I still need human labels to measure agreement with the judge.

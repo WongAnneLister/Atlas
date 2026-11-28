@@ -14,13 +14,13 @@ show how much uncertainty remains. See [the eval platform guide](EVAL_PLATFORM.m
 | Eval | Metric | Estimate and interval | Source |
 |---|---|---|---|
 | Full graph · test | false_accept | 0/30 · 0.00% [0.00%, 0.00%] (upper bounds: 10.0% rule of three, 11.4% Wilson) | [`e2e.md`](../eval/reports/e2e.md) |
-| Full graph · test | false_reject | 26/120 · 21.67% [15.00%, 29.17%] | [`e2e.md`](../eval/reports/e2e.md) |
-| Full graph · test | pass_rate | 94/150 · 62.67% [55.33%, 70.67%] | [`e2e.md`](../eval/reports/e2e.md) |
-| Full graph · test | graph_recall_at_5 | 90.83% [85.00%, 95.83%] | [`e2e.md`](../eval/reports/e2e.md) |
-| Full graph · test | graph_mrr_at_5 | 90.83% [85.00%, 95.83%] | [`e2e.md`](../eval/reports/e2e.md) |
-| Full graph · test | citation_validity | 71.04% [63.40%, 78.34%] | [`e2e.md`](../eval/reports/e2e.md) |
-| Full graph · test | latency_p50 | 16.1277 [15.7116, 16.9116] | [`e2e.md`](../eval/reports/e2e.md) |
-| Full graph · test | latency_p95 | 28.1733 [25.3051, 32.1586] | [`e2e.md`](../eval/reports/e2e.md) |
+| Full graph · test | false_reject | 11/120 · 9.17% [4.17%, 15.00%] | [`e2e.md`](../eval/reports/e2e.md) |
+| Full graph · test | pass_rate | 109/150 · 72.67% [65.33%, 80.00%] | [`e2e.md`](../eval/reports/e2e.md) |
+| Full graph · test | graph_recall_at_5 | 98.33% [95.83%, 100.00%] | [`e2e.md`](../eval/reports/e2e.md) |
+| Full graph · test | graph_mrr_at_5 | 97.71% [94.79%, 100.00%] | [`e2e.md`](../eval/reports/e2e.md) |
+| Full graph · test | citation_validity | 88.47% [83.05%, 93.47%] | [`e2e.md`](../eval/reports/e2e.md) |
+| Full graph · test | latency_p50 | 4.2043 [3.8986, 4.5267] | [`e2e.md`](../eval/reports/e2e.md) |
+| Full graph · test | latency_p95 | 12.0432 [8.2355, 23.0948] | [`e2e.md`](../eval/reports/e2e.md) |
 | Evidence gate alone | dev.false_accept | 0/30 · 0.00% [0.00%, 0.00%] (upper bounds: 10.0% rule of three, 11.4% Wilson) | [`threshold_sweep.md`](../eval/reports/threshold_sweep.md) |
 | Evidence gate alone | dev.false_reject | 0/120 · 0.00% [0.00%, 0.00%] (upper bounds: 2.5% rule of three, 3.1% Wilson) | [`threshold_sweep.md`](../eval/reports/threshold_sweep.md) |
 | Evidence gate alone | test.false_accept | 1/30 · 3.33% [0.00%, 10.00%] | [`threshold_sweep.md`](../eval/reports/threshold_sweep.md) |

@@ -39,3 +39,8 @@ classifier rounds 12h and 13e). This is a measurement, not a tuning step.
   borrowed. Fixed in the harness only: the simulator now has its own policy,
   `eval.sim.retry` (6 attempts, delays up to 30 s). Agent code and agent retries are
   unchanged. The sim run is repeated at the fix commit; the e2e run is kept.
+- sim at `c2036d6`, clean, **refused** by the run-health guard (exit 3 after 74 minutes,
+  no report): agent-side `OpenAIConnectionError` in 8 of 90 chats (sim-018, sim-022 x2,
+  sim-049 x2, sim-050 x3), spread over the whole run. A probe right after the run failed
+  13 of 40 HTTPS connections to the provider endpoint, so the network path to the
+  provider was unstable. Not an agent change; the sim run waits for a stable connection.

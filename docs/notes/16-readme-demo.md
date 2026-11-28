@@ -14,7 +14,7 @@ Another test fails if a percentage appears outside the generated table.
 The README shows a test false accept rate of 0.00%.
 That means no unanswerable test question got an answer.
 The cost of that safety is a false reject rate of 21.67%.
-Source: eval/reports/e2e.md
+Source: eval/reports/archive/e2e-6cf0e48.md
 
 **Trade-off**
 The README can only say what the reports say, so some rows look weak.

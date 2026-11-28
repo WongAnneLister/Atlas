@@ -16,7 +16,7 @@ Product questions used 15614 tokens per conversation on average.
 Policy questions used 2644, so product questions cost 5.9 times more.
 Both made about 1.8 model calls, and 98% of product tokens were input.
 So the cost comes from long product sources, not from extra calls.
-Source: eval/reports/e2e.md
+Source: eval/reports/archive/e2e-6cf0e48.md
 
 **Trade-off**
 I have no dollar figures yet, because I did not guess the prices.
