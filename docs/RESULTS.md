@@ -27,8 +27,8 @@ show how much uncertainty remains. See [the eval platform guide](EVAL_PLATFORM.m
 | Evidence gate alone | test.false_reject | 2/120 · 1.67% [0.00%, 4.17%] | [`threshold_sweep.md`](../eval/reports/threshold_sweep.md) |
 | Hybrid + rerank · test | test.hybrid_rerank.overall.recall@5 | 100.00% [100.00%, 100.00%] | [`retrieval.md`](../eval/reports/retrieval.md) |
 | Hybrid + rerank · test | test.hybrid_rerank.overall.mrr@5 | 99.38% [98.12%, 100.00%] | [`retrieval.md`](../eval/reports/retrieval.md) |
-| Intent holdout | accuracy | 380/420 · 90.48% [87.61%, 93.10%] | [`intent.md`](../eval/reports/intent.md) |
-| Intent holdout | path_accuracy | 382/420 · 90.95% [88.10%, 93.57%] | [`intent.md`](../eval/reports/intent.md) |
+| Intent holdout | accuracy | 296/420 · 70.48% [66.19%, 74.76%] | [`intent.md`](../eval/reports/intent.md) |
+| Intent holdout | path_accuracy | 299/420 · 71.19% [66.90%, 75.48%] | [`intent.md`](../eval/reports/intent.md) |
 | Intent holdout | parse_failure_rate | 0/420 · 0.00% [0.00%, 0.00%] (upper bounds: 0.7% rule of three, 0.9% Wilson) | [`intent.md`](../eval/reports/intent.md) |
 | Hallucination audit · test | judge_flagged (kappa: n/a (0/30 labels)) | 8/150 · 5.33% [2.00%, 9.33%] | [`hallucination_review.md`](../eval/reports/hallucination_review.md) |
 

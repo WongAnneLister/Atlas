@@ -14,7 +14,7 @@ I marked uncertain predictions for later evidence checks.
 I measured intent accuracy at 0.9048 across 420 questions.
 I routed 0.9095 of questions to their expected path.
 I recognized 0.7200 of labeled refund requests.
-Source: eval/reports/intent.md
+Source: eval/reports/archive/intent-6cf0e48.md
 
 **Trade-off**
 I used draft labels to get an early baseline.
