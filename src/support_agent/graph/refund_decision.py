@@ -110,6 +110,8 @@ def check_decision(
             )
     if decision.eligible == "yes" and outside_window(state):
         return decision.model_copy(update={"eligible": "needs_human", "citations": valid_citations})
+    if decision.eligible == "no" and unbacked_refusal(order, state):
+        return decision.model_copy(update={"eligible": "needs_human", "citations": valid_citations})
     if valid_citations != decision.citations:
         return decision.model_copy(update={"eligible": "needs_human", "citations": valid_citations})
     return decision
@@ -134,6 +136,21 @@ def policy_names_status(policy_text: str, status: str) -> bool:
     word = _STATUS_WORDS.get(status, re.escape(status.replace("_", " ")))
     pattern = rf"\b{word} (?:orders?|items?|purchases?)\b|\b(?:orders?|items?) {_BE}{word}\b"
     return re.search(pattern, policy_text, re.IGNORECASE) is not None
+
+
+def unbacked_refusal(order: Order, state: ConversationState) -> bool:
+    """True if a "no" for a delivered order lacks the one rule code can confirm.
+
+    For delivered goods the only exclusion code can verify is an exceeded return window.
+    A final-sale item goes to a human: the policy says such items are "usually"
+    non-returnable and asks the customer to contact support (author's label, 12e). Without
+    this, the model refused an order inside its 90-day window while writing that 71 days
+    is inside it (12f, sim-017).
+    """
+    if order.status.value not in {"delivered", "partially_refunded"}:
+        return False
+    open_items = [item for item in order.items if item.refunded_quantity < item.quantity]
+    return any(item.final_sale for item in open_items) or not outside_window(state)
 
 
 def outside_window(state: ConversationState) -> bool:

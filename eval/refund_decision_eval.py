@@ -30,7 +30,13 @@ from support_agent.data.policy_versions import PolicyVersions, load_versions
 from support_agent.graph.deps import GraphDeps
 from support_agent.graph.intents import Intent
 from support_agent.graph.nodes.refund import RefundPath
-from support_agent.graph.refund_decision import CITATION, WINDOW, RefundDecision, outside_window
+from support_agent.graph.refund_decision import (
+    CITATION,
+    WINDOW,
+    RefundDecision,
+    outside_window,
+    unbacked_refusal,
+)
 from support_agent.graph.state import ConversationState
 from support_agent.orders.models import Order
 from support_agent.orders.service import OrderService
@@ -113,6 +119,8 @@ def downgrade_causes(raw: RefundDecision, state: ConversationState, order: Order
             causes.append("items invalid")
         if outside_window(state):
             causes.append("outside a retrieved return window")
+    if raw.eligible == "no" and unbacked_refusal(order, state):
+        causes.append("refusal without an exceeded window, or a final-sale item")
     return causes
 
 

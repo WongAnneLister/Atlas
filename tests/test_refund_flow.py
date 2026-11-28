@@ -414,7 +414,12 @@ def test_final_sale_yes_without_final_sale_policy_becomes_human(seeded: Any) -> 
         ("ORD-000005", "Refund and return policy.", "yes", "handoff"),
         ("ORD-000008", "Refund and return policy.", "yes", "handoff"),
         ("ORD-000008", "Cancelled orders can receive refunds.", "yes", "request"),
-        ("ORD-000001", "Refund and return policy.", "no", "answer"),
+        # A refusal for a delivered order stands only on an exceeded window (12f).
+        ("ORD-000001", "Refund and return policy.", "no", "handoff"),
+        ("ORD-000003", "You can return products within 30 days of purchase.", "no", "answer"),
+        ("ORD-000001", "You can return products within 30 days of purchase.", "no", "handoff"),
+        # Final-sale items go to a human, even when the window has passed (author, 12e).
+        ("ORD-000005", "Final sale items are usually non-returnable.", "no", "handoff"),
         # A refusal for a status the policy never names is not the model's call either:
         # a cancelled order's refund was refused by the return window (27c sim-028).
         ("ORD-000008", "You can return products within 90 days of purchase.", "no", "handoff"),
@@ -513,6 +518,7 @@ def test_write_guard_holds_when_the_pending_read_was_stale(seeded: Any, monkeypa
 @pytest.mark.parametrize("eligible", ["no", "needs_human"])
 def test_no_or_uncertain_decision_creates_no_request(seeded: Any, eligible: str) -> None:
     settings, service = seeded
+    window = FixedRetriever(text="You can return products within 30 days of purchase.")
     main = DecisionFake(
         responses=["unused"],
         decisions=[
@@ -524,8 +530,8 @@ def test_no_or_uncertain_decision_creates_no_request(seeded: Any, eligible: str)
             }
         ],
     )
-    with deps(settings, service, main) as graph_deps:
-        result = invoke(build_graph(graph_deps), "Refund ORD-000001")
+    with deps(settings, service, main, window) as graph_deps:
+        result = invoke(build_graph(graph_deps), "Refund ORD-000003")
     if eligible == "needs_human":
         assert result["handoff"].reason.value == "policy_requires_human"
     else:
