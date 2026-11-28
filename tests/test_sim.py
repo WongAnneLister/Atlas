@@ -427,10 +427,18 @@ def test_a_checkpoint_after_the_last_turn_is_not_reached_and_not_a_miss() -> Non
     assert agg["fact_retention"]["n"] == 1
 
 
+def _scenario_file(tmp_path: Path) -> Path:
+    """The committed scenario builder, written to a temp file: CI has no eval/sets data."""
+    path = tmp_path / "scenarios_v1.jsonl"
+    write_scenarios(build_scenarios(), path, tmp_path / "scenarios_review.csv")
+    return path
+
+
 def test_rescore_reports_reached_checkpoints_from_saved_transcripts(tmp_path: Path) -> None:
     from eval.sim import rescore
 
-    scenario = load_scenarios(rescore.SCENARIOS)[0]
+    scenario_file = _scenario_file(tmp_path)
+    scenario = next(s for s in load_scenarios(scenario_file) if s.checkpoints)
     run = tmp_path / "sim-test-x"
     run.mkdir()
     transcript = ConversationTranscript(
@@ -440,7 +448,7 @@ def test_rescore_reports_reached_checkpoints_from_saved_transcripts(tmp_path: Pa
         turns=[SimTurn(turn_index=1, user_message="hi", agent_message="hello")],
     )
     (run / "items.jsonl").write_text(transcript.model_dump_json() + "\n")
-    text = rescore.render([run])
+    text = rescore.render([run], scenario_file=scenario_file)
     assert "| `sim-test-x` |" in text
     assert f"0/{len(scenario.checkpoints)}" in text
 
@@ -448,7 +456,8 @@ def test_rescore_reports_reached_checkpoints_from_saved_transcripts(tmp_path: Pa
 def test_rescore_can_report_task_success_per_scenario(tmp_path: Path) -> None:
     from eval.sim import rescore
 
-    scenario = load_scenarios(rescore.SCENARIOS)[0]
+    scenario_file = _scenario_file(tmp_path)
+    scenario = load_scenarios(scenario_file)[0]
     runs = []
     for name in ("sim-before", "sim-after"):
         run = tmp_path / name
@@ -461,17 +470,18 @@ def test_rescore_can_report_task_success_per_scenario(tmp_path: Path) -> None:
         )
         (run / "items.jsonl").write_text(transcript.model_dump_json() + "\n")
         runs.append(run)
-    text = rescore.render(runs, by_scenario=True)
+    text = rescore.render(runs, by_scenario=True, scenario_file=scenario_file)
     assert "## Task success by scenario" in text
     assert "| Scenario | `sim-before` | `sim-after` |" in text
     assert f"| `{scenario.id}` | 0/1 | 0/1 |" in text
-    assert "## Task success by scenario" not in rescore.render(runs)
+    assert "## Task success by scenario" not in rescore.render(runs, scenario_file=scenario_file)
 
 
 def test_rescore_counts_refunds_the_scenario_did_not_expect(tmp_path: Path) -> None:
     from eval.sim import rescore
 
-    scenarios = load_scenarios(rescore.SCENARIOS)
+    scenario_file = _scenario_file(tmp_path)
+    scenarios = load_scenarios(scenario_file)
     denied = next(s for s in scenarios if s.expected_outcome == "refund_denied")
     created = next(s for s in scenarios if s.expected_outcome == "refund_created")
     run = tmp_path / "sim-refunds"
@@ -486,8 +496,8 @@ def test_rescore_counts_refunds_the_scenario_did_not_expect(tmp_path: Path) -> N
         for scenario in (denied, created)
     ]
     (run / "items.jsonl").write_text("\n".join(rows) + "\n")
-    assert rescore.unexpected_refunds(run) == 1
-    assert "| Unexpected refunds |" in rescore.render([run])
+    assert rescore.unexpected_refunds(run, scenario_file) == 1
+    assert "| Unexpected refunds |" in rescore.render([run], scenario_file=scenario_file)
 
 
 def _scripted_run(
