@@ -51,6 +51,7 @@ DECISION_VERSIONS: dict[str, tuple[str, type[RefundDecision]]] = {
     "v1": ("refund_decide.md", RefundDecision),
     "v2": ("refund_decide_v2.md", RefundDecisionV2),
     "v3": ("refund_decide_v3.md", RefundDecisionV2),
+    "v4": ("refund_decide_v4.md", RefundDecisionV2),
 }
 
 

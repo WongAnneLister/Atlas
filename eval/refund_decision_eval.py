@@ -37,7 +37,7 @@ from support_agent.orders.service import OrderService
 
 REPORT = Path("eval/reports/refund_decisions.md")
 CUSTOMER = "CUST-0001"
-VERSIONS = ("v1", "v2", "v3")
+VERSIONS = ("v1", "v2", "v3", "v4")
 GROUPS = ("named", "window_holdout")
 # Generic store policy: returns within 30 days of purchase, final sale not returnable,
 # discount-code purchases refund the amount paid, cancellation only before shipping.

@@ -277,8 +277,10 @@ class RefundSettings(BaseModel):
     # "v1": refund_decide.md with a bare schema. "v2": refund_decide_v2.md plus schema
     # field descriptions that ask for a [n] marker in every reason and exact item ids.
     # "v3": the v2 schema with refund_decide_v3.md (purchase-date windows, no "no"
-    # without a rule that excludes the order). See eval/reports/refund_decisions.md.
-    decision_version: Literal["v1", "v2", "v3"] = "v1"
+    # without a rule that excludes the order). "v4": v3 plus a rule that a source covers
+    # orders placed inside its validity dates, even when today is later (12f).
+    # See eval/reports/refund_decisions.md.
+    decision_version: Literal["v1", "v2", "v3", "v4"] = "v1"
 
 
 class EvalStatsSettings(BaseModel):

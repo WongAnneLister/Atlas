@@ -58,6 +58,7 @@ def order() -> Order:
         ("v1", "refund_decide.md", RefundDecision),
         ("v2", "refund_decide_v2.md", RefundDecisionV2),
         ("v3", "refund_decide_v3.md", RefundDecisionV2),
+        ("v4", "refund_decide_v4.md", RefundDecisionV2),
     ],
 )
 def test_decision_version_selects_prompt_and_schema(
@@ -196,3 +197,13 @@ def test_the_shipped_config_uses_the_adopted_v3_decision_prompt() -> None:
     from support_agent.config import get_settings
 
     assert get_settings().refund.decision_version == "v3"
+
+
+def test_v4_says_a_policy_covers_orders_placed_inside_its_validity_dates() -> None:
+    # 12f: under v3 the model sent an in-window order bought under the old 90-day policy to a
+    # human, because that policy is "valid until 2026-09-01" and today is later (sim-017).
+    v3 = (PROMPT_DIR / "refund_decide_v3.md").read_text(encoding="utf-8")
+    v4 = (PROMPT_DIR / "refund_decide_v4.md").read_text(encoding="utf-8")
+    rule = "a source applies to an order whose order_date falls inside them, even when today"
+    assert rule not in v3 and rule in v4
+    assert set(v3.splitlines()) <= set(v4.splitlines())
