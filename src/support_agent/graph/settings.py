@@ -35,6 +35,8 @@ class IntentEvalSettings(BaseModel):
     extra_per_kind: int = Field(gt=0)
     bitext_holdout_fraction: float = Field(gt=0, lt=1)
     extra_drafts: str
+    # Author-reviewed labels, applied by id after selection (13c).
+    relabels: str = "eval/drafts/intent_relabels.yaml"
     cache_dir: str
     max_concurrency: int = Field(gt=0)
     target_accuracy: float = Field(ge=0, le=1)

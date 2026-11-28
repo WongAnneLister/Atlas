@@ -263,6 +263,7 @@ intent_eval:
   extra_per_kind: 40
   bitext_holdout_fraction: 0.2
   extra_drafts: eval/drafts/intent_extra.yaml
+  relabels: eval/drafts/intent_relabels.yaml   # author-reviewed labels, applied after selection
   cache_dir: .cache/intent
   max_concurrency: 4
   target_accuracy: 0.9

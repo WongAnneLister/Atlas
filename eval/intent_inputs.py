@@ -18,6 +18,7 @@ def artifact_hashes(settings: Settings, root: Path = REPO_ROOT) -> dict[str, str
         "retrieval_eval_hash": root / settings.evaluation.sets_dir / "eval_v1.jsonl",
         "draft_hash": root / settings.intent_eval.extra_drafts,
         "prompt_hash": root / "src/support_agent/graph/prompts/classify.md",
+        "relabel_hash": root / settings.intent_eval.relabels,
     }
     hashes = {name: digest(path.read_text()) for name, path in files.items()}
     builder_files = (

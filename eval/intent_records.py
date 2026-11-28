@@ -26,6 +26,30 @@ class ExtraDrafts(BaseModel):
     returns_model: str | None = None
 
 
+class IntentRelabel(BaseModel):
+    """One author decision: the intent this item should carry under the routing rule."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(min_length=1)
+    intent: Intent
+
+
+class IntentRelabels(BaseModel):
+    """Author-reviewed labels; an intent equal to the drafted one records a kept label."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    reviewed_on: str | None = None
+    labels: list[IntentRelabel] = Field(default_factory=list)
+
+    def by_id(self) -> dict[str, Intent]:
+        ids = [label.id for label in self.labels]
+        if len(set(ids)) != len(ids):
+            raise ValueError("Each item may be relabelled once")
+        return {label.id: label.intent for label in self.labels}
+
+
 class IntentRecord(BaseModel):
     item: IntentItem
     predicted: Intent

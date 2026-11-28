@@ -1,0 +1,7 @@
+# Author-reviewed intent labels for the intent holdout, under the routing rule in
+# src/support_agent/graph/prompts/classify.md (informational and self-service requests are
+# policy_question; requests to act on a specific order or account keep their intent).
+# Applied by id after selection, so the questions in the set do not change. An entry whose
+# intent equals the drafted label records a reviewed, kept label. Ids only; no source text.
+reviewed_on: null
+labels: []

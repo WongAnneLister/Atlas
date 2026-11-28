@@ -14,7 +14,7 @@ import yaml
 
 from eval.common import load_items, normalised
 from eval.intent_inputs import artifact_hashes
-from eval.intent_records import ExtraDrafts, IntentItem
+from eval.intent_records import ExtraDrafts, IntentItem, IntentRelabels
 from eval.schema import EvalItem
 from support_agent.config import REPO_ROOT, Settings, get_settings
 from support_agent.data.doc_models import digest, json_text, write_text
@@ -53,12 +53,19 @@ def _item(text: str, intent: Intent, source: str, source_label: str) -> IntentIt
     )
 
 
+def apply_relabel(item: IntentItem, labels: dict[str, Intent]) -> IntentItem:
+    if item.id not in labels:
+        return item
+    return item.model_copy(update={"intent": labels[item.id], "reviewed": True})
+
+
 def build_dataset(
     rows: list[dict[str, str]],
     frozen: list[EvalItem],
     drafts: ExtraDrafts,
     settings: Settings,
     prompt: str,
+    relabels: dict[str, Intent] | None = None,
 ) -> tuple[list[IntentItem], list[IntentItem], dict[str, int]]:
     config = settings.intent_eval
     examples = {normalised(s) for s in re.findall(r'"([^"\n]+)"', prompt)}
@@ -107,6 +114,14 @@ def build_dataset(
             unique.setdefault(key, item)
     extras = [item for item in extras if unique.get(normalised(item.text)) == item]
     selected = select_balanced(list(unique.values()), config.per_intent, config.seed)
+    # Author labels apply after selection, so the same questions stay in the set.
+    labels = relabels or {}
+    unknown = set(labels) - {item.id for item in [*selected, *extras]}
+    if unknown:
+        raise ValueError(f"Relabels name {len(unknown)} item(s) not in the built set")
+    changed = sum(1 for item in selected if item.id in labels and labels[item.id] != item.intent)
+    selected = [apply_relabel(item, labels) for item in selected]
+    extras = [apply_relabel(item, labels) for item in extras]
     missing = set(Intent) - {item.intent for item in selected}
     if missing:
         raise ValueError("Missing benchmark intents: " + ", ".join(sorted(missing)))
@@ -118,6 +133,8 @@ def build_dataset(
         "unique_pool": len(unique),
         "selected": len(selected),
         "extras": len(extras),
+        "author_reviewed": sum(item.reviewed for item in selected),
+        "author_relabelled": changed,
     }
     return extras, selected, stats
 
@@ -136,7 +153,11 @@ def main(argv: list[str] | None = None) -> int:
     draft_path = REPO_ROOT / settings.intent_eval.extra_drafts
     drafts = ExtraDrafts.model_validate(yaml.safe_load(draft_path.read_text()))
     prompt = (REPO_ROOT / "src/support_agent/graph/prompts/classify.md").read_text()
-    extras, selected, stats = build_dataset(rows, frozen, drafts, settings, prompt)
+    relabel_path = REPO_ROOT / settings.intent_eval.relabels
+    relabels = IntentRelabels.model_validate(yaml.safe_load(relabel_path.read_text()) or {})
+    extras, selected, stats = build_dataset(
+        rows, frozen, drafts, settings, prompt, relabels=relabels.by_id()
+    )
     for name, items in (("intent_extra", extras), ("intent_holdout", selected)):
         write_text(folder / f"{name}.jsonl", "".join(i.model_dump_json() + "\n" for i in items))
     manifest = {
