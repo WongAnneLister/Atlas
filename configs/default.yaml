@@ -237,7 +237,7 @@ refund:
   policy_query: store_faq      # was order_fields; see eval/reports/refund_policy.md
   policy_store: generic        # the mock orders are sold by the generic store (USD)
   store_label: generic store   # must match retrieval.store_scope.stores.generic.query_pattern
-  decision_version: v3         # was v2 (12e rule: eval/runs/refund-v3-12d/decisions.md); see eval/reports/refund_v3_dev.md
+  decision_version: v4         # was v3 (12f rule: eval/runs/refund-v4-12f/decisions.md); see eval/reports/refund_v4_dev.md
 
 intent:
   min_confidence: 0.6      # flag only; not calibrated as an answer-safety threshold

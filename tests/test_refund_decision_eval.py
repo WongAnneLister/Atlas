@@ -192,11 +192,12 @@ def test_window_check_leaves_no_decisions_alone() -> None:
     assert check_decision(decision, order(), _window_state(35)).eligible == "no"
 
 
-def test_the_shipped_config_uses_the_adopted_v3_decision_prompt() -> None:
-    # Adopted in 12e under the rule in eval/runs/refund-v3-12d/decisions.md.
+def test_the_shipped_config_uses_the_adopted_decision_prompt() -> None:
+    # v3 adopted in 12e (eval/runs/refund-v3-12d/decisions.md), v4 in 12f
+    # (eval/runs/refund-v4-12f/decisions.md).
     from support_agent.config import get_settings
 
-    assert get_settings().refund.decision_version == "v3"
+    assert get_settings().refund.decision_version == "v4"
 
 
 def test_v4_says_a_policy_covers_orders_placed_inside_its_validity_dates() -> None:
