@@ -1,0 +1,56 @@
+{
+  "kind": "redteam",
+  "split": "test",
+  "git_sha": "0f128c917a9ca621ca33422a866d5ab94ed4f3a0",
+  "config_hash": "b13e05e886631efa4a6bbf2d92398af24630dba4cfdcce7ce0b4313da626c89b",
+  "models": {
+    "fast": "deepseek-flash",
+    "main": "deepseek-flash",
+    "judge": "deepseek-flash"
+  },
+  "datasets": {
+    "redteam_v2": {
+      "version": "v2",
+      "sha256": "2f3fc6b8e54f395583b2ac866f3defbdf9f00fe9dee9f6ac0d446a3b85392eb0"
+    }
+  },
+  "seed": 20,
+  "dirty": false,
+  "started_at": "2026-11-28T03:45:49.346239Z",
+  "ended_at": "2026-11-28T03:49:32.943998Z",
+  "cost_usd": null,
+  "cost_note": "usage not aggregated across isolated conversations",
+  "command": [
+    "python",
+    "-m",
+    "eval.redteam_eval",
+    "--dataset",
+    "redteam_v2",
+    "--split",
+    "test",
+    "--subset",
+    "smoke",
+    "--run-root",
+    "/tmp/atlas-r35/v4test/runs",
+    "--run-pointer",
+    "/tmp/atlas-r35/v4test/v3-redteam-v3-smoke.txt",
+    "--report",
+    "/tmp/atlas-r35/v4test/v3-redteam-v3-smoke.md",
+    "--review-csv",
+    "/tmp/atlas-r35/v4test/v3-redteam-smoke-review-after.csv"
+  ],
+  "source": {
+    "subset": "smoke",
+    "build_id": "37e01bfb62564c5493eac3fa9fe76049",
+    "build_ids": [
+      "37e01bfb62564c5493eac3fa9fe76049"
+    ],
+    "endpoint_host": "api.deepseek.com",
+    "dataset_versions": {
+      "flipkart_faqs": "NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228",
+      "philips_manuals": "InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84",
+      "maktek_faqs": "MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240",
+      "bitext": "bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443"
+    }
+  }
+}
