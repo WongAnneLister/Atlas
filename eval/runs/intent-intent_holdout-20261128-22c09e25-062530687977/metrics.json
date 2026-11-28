@@ -1,0 +1,277 @@
+{
+  "metrics": {
+    "accuracy": {
+      "interval": {
+        "point": 0.9119047619047619,
+        "low": 0.8809523809523809,
+        "high": 0.9380952380952381
+      },
+      "n": 420,
+      "count": 383,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "chitchat_other.precision": {
+      "interval": {
+        "point": 0.8378378378378378,
+        "low": 0.7027027027027027,
+        "high": 0.9459459459459459
+      },
+      "n": 37,
+      "count": 31,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "chitchat_other.recall": {
+      "interval": {
+        "point": 0.8857142857142857,
+        "low": 0.7714285714285715,
+        "high": 0.9714285714285714
+      },
+      "n": 35,
+      "count": 31,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "complaint.precision": {
+      "interval": {
+        "point": 0.9285714285714286,
+        "low": 0.8333333333333334,
+        "high": 1.0
+      },
+      "n": 42,
+      "count": 39,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "complaint.recall": {
+      "interval": {
+        "point": 0.9512195121951219,
+        "low": 0.8780487804878049,
+        "high": 1.0
+      },
+      "n": 41,
+      "count": 39,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "macro_precision": {
+      "interval": {
+        "point": 0.9025566315040001,
+        "low": 0.8671117807430094,
+        "high": 0.932952676682478
+      },
+      "n": 420,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "macro_recall": {
+      "interval": {
+        "point": 0.9125299505399683,
+        "low": 0.8823870576299111,
+        "high": 0.9398903256543908
+      },
+      "n": 420,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "mean_latency_s": {
+      "interval": {
+        "point": 0.8387066445407635,
+        "low": 0.8220116605430944,
+        "high": 0.8564515461585516
+      },
+      "n": 420,
+      "count": null,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "order_status.precision": {
+      "interval": {
+        "point": 0.9393939393939394,
+        "low": 0.8484848484848485,
+        "high": 1.0
+      },
+      "n": 33,
+      "count": 31,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "order_status.recall": {
+      "interval": {
+        "point": 0.6888888888888889,
+        "low": 0.5555555555555556,
+        "high": 0.8222222222222222
+      },
+      "n": 45,
+      "count": 31,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "parse_failure_rate": {
+      "interval": {
+        "point": 0.0,
+        "low": 0.0,
+        "high": 0.0
+      },
+      "n": 420,
+      "count": 0,
+      "wilson_upper": 0.00906343336818131,
+      "rule_of_three_upper": 0.007142857142857143
+    },
+    "path_accuracy": {
+      "interval": {
+        "point": 0.919047619047619,
+        "low": 0.8904761904761904,
+        "high": 0.9428571428571428
+      },
+      "n": 420,
+      "count": 386,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "policy_question.precision": {
+      "interval": {
+        "point": 0.9294871794871795,
+        "low": 0.8846153846153846,
+        "high": 0.967948717948718
+      },
+      "n": 156,
+      "count": 145,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "policy_question.recall": {
+      "interval": {
+        "point": 0.9477124183006536,
+        "low": 0.9084967320261438,
+        "high": 0.9803921568627451
+      },
+      "n": 153,
+      "count": 145,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "product_question.precision": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "product_question.recall": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 30,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "refund_request.precision": {
+      "interval": {
+        "point": 0.9,
+        "low": 0.8,
+        "high": 1.0
+      },
+      "n": 30,
+      "count": 27,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "refund_request.recall": {
+      "interval": {
+        "point": 0.8181818181818182,
+        "low": 0.6666666666666666,
+        "high": 0.9393939393939394
+      },
+      "n": 33,
+      "count": 27,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "return_exchange.precision": {
+      "interval": {
+        "point": 0.7777777777777778,
+        "low": 0.6296296296296297,
+        "high": 0.9259259259259259
+      },
+      "n": 27,
+      "count": 21,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "return_exchange.recall": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 21,
+      "count": 21,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "shipping_delivery.precision": {
+      "interval": {
+        "point": 0.8888888888888888,
+        "low": 0.7777777777777778,
+        "high": 1.0
+      },
+      "n": 27,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "shipping_delivery.recall": {
+      "interval": {
+        "point": 1.0,
+        "low": 1.0,
+        "high": 1.0
+      },
+      "n": 24,
+      "count": 24,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "talk_to_human.precision": {
+      "interval": {
+        "point": 0.9210526315789473,
+        "low": 0.8157894736842105,
+        "high": 1.0
+      },
+      "n": 38,
+      "count": 35,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    },
+    "talk_to_human.recall": {
+      "interval": {
+        "point": 0.9210526315789473,
+        "low": 0.8157894736842105,
+        "high": 1.0
+      },
+      "n": 38,
+      "count": 35,
+      "wilson_upper": null,
+      "rule_of_three_upper": null
+    }
+  },
+  "statistics": {
+    "macro_precision": "macro_precision",
+    "macro_recall": "macro_recall"
+  },
+  "bootstrap": {
+    "n_resamples": 2000,
+    "seed": 17,
+    "alpha": 0.05
+  }
+}

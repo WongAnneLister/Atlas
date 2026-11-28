@@ -9,7 +9,7 @@ Until every label followed the rule, the score mixed label noise with model erro
 **Number**
 Intent accuracy is 0.8619 and path accuracy is 0.8690. Both still miss the configured target.
 
-Source: eval/reports/intent.md
+Source: eval/reports/archive/intent-f9f363d.md
 
 **Trade-off**
 I could tune the prompt on these errors. But then this set would stop being a fair test. Tuning must use the routing dev set instead. That is slower but keeps this score honest.
