@@ -37,6 +37,8 @@ Explaining how customers find invoices is policy_question; fetching one is order
 Explaining login recovery is policy_question; changing credentials for the user is unsupported.
 Store membership, loyalty points, and account security questions are not unrelated chitchat.
 For a mixed request, retain an explicit operational action when one is requested.
+A request to cancel an order and get the money back is refund_request; cancelling
+without asking for the money back stays order_status.
 Otherwise use the informational intent that covers the request; do not discard the
 question because a greeting, an account term, or vague help-seeking appears elsewhere.
 An explicit request for a human takes priority over the topic being discussed.

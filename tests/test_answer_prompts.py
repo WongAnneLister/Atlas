@@ -43,3 +43,13 @@ def test_both_answer_prompts_ask_for_the_key_fact_first():
     for name in ("answer.md", "answer_parts.md"):
         lines = (PROMPTS / name).read_text(encoding="utf-8").splitlines()
         assert all(line in lines for line in rule), f"{name} lacks the lead-sentence rule"
+
+
+def test_classifier_routes_cancel_and_refund_to_the_refund_path():
+    # 12h: "cancel it and refund me" for a shipped order was classified as order_status in
+    # two of three sim-030 runs, so it never reached the refund decision.
+    lines = (PROMPTS / "classify.md").read_text(encoding="utf-8").splitlines()
+    assert "A request to cancel an order and get the money back is refund_request; cancelling" in (
+        lines
+    )
+    assert "without asking for the money back stays order_status." in lines
