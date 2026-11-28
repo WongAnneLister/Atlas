@@ -1,0 +1,95 @@
+{
+  "kind": "intent",
+  "split": "intent_holdout",
+  "git_sha": "dd4273e337190fc9d15a2232b42889eaf52e8e78",
+  "config_hash": "1532b2453c3f10edf3e8032060f996d664280928b6cca7716143c98a5ea4341e",
+  "models": {
+    "fast": "deepseek-flash",
+    "fast_response_1": "deepseek-flash"
+  },
+  "datasets": {
+    "intent_holdout": {
+      "version": "v2",
+      "sha256": "8c95805e6536754b0f21fac06b023f6976cfb2947c9a2d03e196927a1cba3e74"
+    },
+    "eval_v1": {
+      "version": "v1",
+      "sha256": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9"
+    }
+  },
+  "seed": 17,
+  "dirty": false,
+  "started_at": "2026-11-28T05:01:22.351720Z",
+  "ended_at": "2026-11-28T05:02:56.426280Z",
+  "cost_usd": null,
+  "cost_note": "price not set",
+  "command": [
+    "python",
+    "-m",
+    "eval.intent_eval"
+  ],
+  "source": {
+    "metadata": {
+      "git_sha": "dd4273e337190fc9d15a2232b42889eaf52e8e78",
+      "code_hash": "71f62ba124552c9c4243a7adc08d92bdb4a9f02deef8c7698777f515736fc4db",
+      "config_hash": "1532b2453c3f10edf3e8032060f996d664280928b6cca7716143c98a5ea4341e",
+      "prompt_hash": "3f738a599402a9599acc9ab643cffd2df1d77c8650396878fbdccf90f76b83be",
+      "dataset_hash": "8c95805e6536754b0f21fac06b023f6976cfb2947c9a2d03e196927a1cba3e74",
+      "date": "2026-11-28T05:01:22.351720+00:00",
+      "provider": "deepseek",
+      "model": "deepseek-flash",
+      "model_options": {
+        "temperature": 0.0,
+        "extra_body": {
+          "thinking": {
+            "type": "disabled"
+          }
+        }
+      },
+      "dataset_versions": {
+        "bitext": "bitext/Bitext-customer-support-llm-chatbot-training-dataset@430d1a89bd93bd1fa23c16f29dd53e73f0087443",
+        "flipkart_faqs": "NebulaByte/E-Commerce_FAQs@66a7c3105e6001ce7a314f113597b27a7b2e6228",
+        "maktek_faqs": "MakTek/Customer_support_faqs_dataset@858a539411eaeb97cc2c78e3262d067abe8fa240",
+        "philips_manuals": "InfiniFlow/Ecommerce-Customer-Service-Workflow@563e41c016e3d27a4501785e76cc0f3e6fd3fc84"
+      },
+      "sample_stats": {
+        "author_relabelled": 65,
+        "author_reviewed": 85,
+        "conflicting_texts": 0,
+        "extras": 110,
+        "prior_bitext_rows_excluded": 58,
+        "raw_bitext_rows": 26872,
+        "reserved_training_rows": 21400,
+        "selected": 420,
+        "unique_pool": 4958
+      },
+      "input_hashes": {
+        "builder_hash": "858c03976ce85bdfe717790b429c83736c3165933c93b06ee23d75e3f03365b1",
+        "dataset_hash": "8c95805e6536754b0f21fac06b023f6976cfb2947c9a2d03e196927a1cba3e74",
+        "draft_hash": "480c4d40a6cff2aa55800c2cd761ea808cefe0543d7ce3cf9c2a9cfaac04c5e6",
+        "prompt_hash": "3f738a599402a9599acc9ab643cffd2df1d77c8650396878fbdccf90f76b83be",
+        "raw_hash": "6f81102b0100b97b8468eb04368033a23206bf1fde9d53500d5806ec1001a434",
+        "relabel_hash": "6b32229dec2d2f66f36cae547c7f085cc3ae9d18c21c67d049731a75d63bcf26",
+        "retrieval_eval_hash": "fe82c904801b17c7ba8162f01f4d8807c9ee7a3fba3c8c01f341429e17202cf9"
+      },
+      "endpoint": "https://api.deepseek.com/v1",
+      "target_accuracy": 0.9,
+      "runtime": {
+        "langchain": "1.4.9",
+        "langchain-core": "1.7.6",
+        "langgraph": "1.2.20",
+        "langchain-deepseek": "1.1.1",
+        "langchain-openai": "1.7.4",
+        "openai": "3.48.0"
+      },
+      "response_models": [
+        "deepseek-flash"
+      ]
+    },
+    "statistics": {
+      "n_resamples": 2000,
+      "seed": 17,
+      "alpha": 0.05
+    }
+  }
+}

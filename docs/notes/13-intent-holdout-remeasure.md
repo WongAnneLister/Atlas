@@ -9,7 +9,7 @@ The holdout had not run since I changed the classifier on November 11. Its loade
 **Number**
 Intent accuracy is now 0.7048, below the 90% target. Most misses are how-to questions sent to the policy intent.
 
-Source: eval/reports/intent.md
+Source: eval/reports/archive/intent-1a7971a.md
 
 **Trade-off**
 The holdout labels follow topic, while my routing follows informational versus operational work. So the drop mostly measures that mismatch. I have not yet decided which convention the holdout should follow.
