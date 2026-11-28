@@ -9,7 +9,7 @@ After relabelling, I needed to split the gap. Part is labels, and part is the cl
 **Number**
 Intent accuracy is 0.8000, and it still misses the configured target. Path accuracy is 0.8071.
 
-Source: eval/reports/intent.md
+Source: eval/reports/archive/intent-bbad741.md
 
 **Trade-off**
 My review only covered the 85 items the text rule flagged. Some how-to questions with odd wording still carry topic labels. So part of the remaining gap is still labels, not the model.
