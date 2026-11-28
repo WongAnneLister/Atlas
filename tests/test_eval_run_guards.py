@@ -189,6 +189,44 @@ def test_simulator_retries_a_dropped_connection_instead_of_crashing_the_run() ->
         )
 
 
+def test_the_simulator_outlasts_a_network_drop_that_voids_the_agent_policy() -> None:
+    # 2026-11-28: one SSL drop on a simulated-customer call outlasted the agent's 3 quick
+    # attempts (under 2 s in all) and voided a 30-minute full test simulator run.
+    import httpx
+    from eval.sim.user import UserSimulator
+    from langchain_core.messages import AIMessage as Reply
+
+    from support_agent.config import get_settings
+
+    settings = get_settings()
+    patient, agent = settings.eval.sim.retry, settings.reliability.retry
+    assert patient.max_attempts > agent.max_attempts
+    assert patient.max_delay_s >= 10 and patient.budget_s >= patient.max_delay_s
+
+    class _Down:
+        def __init__(self, failures: int) -> None:
+            self.failures, self.calls = failures, 0
+
+        def invoke(self, messages: Any) -> Reply:
+            self.calls += 1
+            if self.calls <= self.failures:
+                raise httpx.ConnectError("EOF occurred in violation of protocol")
+            return Reply(content="Where is my order?")
+
+    instant = {"base_delay_s": 0, "max_delay_s": 0, "jitter_ratio": 0}
+    outage = agent.max_attempts  # one more failure than the agent policy can absorb
+    with pytest.raises(httpx.ConnectError):
+        UserSimulator(
+            _Down(outage),  # type: ignore[arg-type]
+            prompt="p",
+            retry=agent.model_copy(update=instant),
+        ).next_turn(_sample_scenario(), [], 1)
+    model = _Down(outage)
+    simulator = UserSimulator(model, prompt="p", retry=patient.model_copy(update=instant))  # type: ignore[arg-type]
+    assert simulator.next_turn(_sample_scenario(), [], 1).text == "Where is my order?"
+    assert model.calls == outage + 1
+
+
 def test_the_agents_own_context_overflow_does_not_void_a_run() -> None:
     from eval.run_health import invalid_errors_message, invalid_transcripts_message
 

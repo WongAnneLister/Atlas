@@ -43,6 +43,7 @@ from support_agent.reliability.settings import (
     ChaosSettings,
     FallbackSettings,
     ReliabilitySettings,
+    RetrySettings,
     validate_reliability,
 )
 from support_agent.retrieval.index_settings import IndexSettings
@@ -334,6 +335,9 @@ class SimSettings(BaseModel):
     # Sessions are limited to the first api.demo_customer_limit customers; scenarios also use
     # fixture customers outside that list (CUST-TS01), so the simulator raises it.
     session_customer_limit: int = Field(default=1000, ge=1)
+    # The simulated customer is test harness, not the agent: a network drop there should
+    # wait it out rather than void a long run, so it has its own, more patient policy.
+    retry: RetrySettings
 
 
 class EvalPlatformSettings(BaseModel):
@@ -341,7 +345,7 @@ class EvalPlatformSettings(BaseModel):
     multipart_min_overlap: float = Field(gt=0, le=1)
     e2e_speed: E2ESpeedSettings
     claims: ClaimSamplingSettings
-    sim: SimSettings = Field(default_factory=SimSettings)
+    sim: SimSettings
 
 
 def _default_eval_platform() -> EvalPlatformSettings:

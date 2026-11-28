@@ -271,7 +271,7 @@ def main(argv: list[str] | None = None) -> int:
 
     scenarios = _select(list(every.values()), include_long=args.include_long)
     sim_model, sim_name = build_simulator_model(base_settings)
-    simulator = UserSimulator(sim_model, model_name=sim_name, retry=base_settings.reliability.retry)
+    simulator = UserSimulator(sim_model, model_name=sim_name, retry=base_settings.eval.sim.retry)
     provenance = {
         "git_sha": _git_sha(),
         "dirty": _dirty_at_start(),

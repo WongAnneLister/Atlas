@@ -423,7 +423,7 @@ def main(argv: list[str] | None = None) -> int:
     dev_scenarios = [s for s in all_scenarios if s.split == "dev"][: args.dev_limit]
 
     sim_model, sim_name = build_simulator_model(base)
-    simulator = UserSimulator(sim_model, model_name=sim_name, retry=base.reliability.retry)
+    simulator = UserSimulator(sim_model, model_name=sim_name, retry=base.eval.sim.retry)
 
     results: dict[str, dict[str, Any]] = {}
     prompt_records: list[dict[str, Any]] = []

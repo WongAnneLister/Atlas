@@ -196,7 +196,7 @@ def main(argv: list[str] | None = None) -> int:
         load_scenarios(args.scenarios), split=args.split, subset=args.subset, limit=None
     )
     sim_model, sim_name = build_simulator_model(settings)
-    simulator = UserSimulator(sim_model, model_name=sim_name, retry=settings.reliability.retry)
+    simulator = UserSimulator(sim_model, model_name=sim_name, retry=settings.eval.sim.retry)
 
     order_service = OrderService(platform=settings)
     graph_deps = GraphDeps(settings=settings, order_service=order_service)
