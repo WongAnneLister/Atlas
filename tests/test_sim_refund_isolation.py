@@ -91,9 +91,13 @@ def test_a_refusal_followed_by_a_requested_human_still_counts_as_refused() -> No
     asked_human = _refund_chat((REFUSAL, None), (["input_guard", "tools"], "user_requested"))
     assert evaluate_transcript(scenario, asked_human).task_success
     assert evaluate_transcript(scenario, _refund_chat((REFUSAL, None))).task_success
-    # Any other handoff, or a handoff before the refusal, is still a failure.
+    # After the refusal a handoff for any reason keeps it (author, 2026-11-28); sim-024
+    # asked for an exception that no policy covers and was handed off with low_evidence.
+    exception = _refund_chat((REFUSAL, None), (["input_guard", "retrieve"], "low_evidence"))
+    assert evaluate_transcript(scenario, exception).task_success
     policy_handoff = _refund_chat((REFUSAL, None), (REFUSAL, "policy_requires_human"))
-    assert not evaluate_transcript(scenario, policy_handoff).task_success
+    assert evaluate_transcript(scenario, policy_handoff).task_success
+    # A handoff before the refusal, or no refusal at all, is still a failure.
     early = _refund_chat((["input_guard", "tools"], "user_requested"), (REFUSAL, None))
     assert not evaluate_transcript(scenario, early).task_success
     no_refusal = _refund_chat((["input_guard", "tools"], "user_requested"))

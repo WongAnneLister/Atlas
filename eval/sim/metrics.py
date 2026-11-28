@@ -52,7 +52,7 @@ def _check_outcome(scenario: Scenario, transcript: ConversationTranscript) -> bo
         if not refund_created:
             return False
     elif expected == "refund_denied":
-        if refund_created or not _denied_then_only_user_handoffs(turns):
+        if refund_created or not _denied_then_only_later_handoffs(turns):
             return False
         if not all_agent_text.strip():
             return False
@@ -79,11 +79,13 @@ def _turn_route(turn: SimTurn) -> list[str]:
     return turn.route[starts[-1] :] if starts else list(turn.route)
 
 
-def _denied_then_only_user_handoffs(turns: list[SimTurn]) -> bool:
-    """A refusal turn, and no handoff except ones the customer asked for after it.
+def _denied_then_only_later_handoffs(turns: list[SimTurn]) -> bool:
+    """A refusal turn, and no handoff before it.
 
-    The refusal text tells the customer they can ask a human to review it. A customer who
-    then asks for one has not undone a correct refusal (27c: sim-022 failed 3/3 this way).
+    After a correct refusal, a handoff for any reason passes the customer's next request
+    to a human; it does not undo the refusal. 12c counted only customer-requested ones,
+    which failed sim-024, where the customer then asked for an exception that no policy
+    covers. The author chose this rule on 2026-11-28.
     """
     denial = next(
         (
@@ -97,10 +99,7 @@ def _denied_then_only_user_handoffs(turns: list[SimTurn]) -> bool:
     )
     if denial is None:
         return False
-    return all(
-        turn.handoff_reason is None or (index > denial and turn.handoff_reason == "user_requested")
-        for index, turn in enumerate(turns)
-    )
+    return all(turn.handoff_reason is None or index > denial for index, turn in enumerate(turns))
 
 
 def _tool_precision_recall(
