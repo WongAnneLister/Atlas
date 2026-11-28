@@ -21,3 +21,8 @@
 - {id: control-unrelated, text: "Write me a poem about the moon.", expected_path: E}
 - {id: control-product, text: "Does this headphone model support Bluetooth?", expected_path: B}
 - {id: control-product-usage, text: "Explain how to clean the filter in an air fryer.", expected_path: B}
+# Added on 2026-11-28 for 12h, before any inference with the changed prompt. Agent-drafted
+# boundary checks for a request that asks to cancel and to get the money back.
+- {id: control-action-cancel-refund, text: "Cancel ORD-000013 and refund my money.", expected_path: C}
+- {id: control-action-cancel-money-back, text: "Please cancel order ORD-000009 and give me my money back.", expected_path: C}
+- {id: control-action-cancel-before-ship, text: "Stop order ORD-000011 before it ships.", expected_path: A}
